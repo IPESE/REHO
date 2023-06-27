@@ -9,4 +9,23 @@ Overview
 :Short summary: **todo**
 
 .. caution ::
-   TO BE DONE
+   TO BE COMPLETED
+
+
+Features
+========
+
+Strengths of the model
+----------------------
+
+Weaknesses of the model
+---------------------------
+
+Nomenclature
+============
+.. _label_ssec_nomenclature:
+
+Explain:
+https://ipese-web.epfl.ch/lepour/reho_guidelines/structure.html#nomenclature
+
+

@@ -19,7 +19,7 @@
 
 project = 'REHO_documentation'
 copyright = '2023, IPESE, EPFL'
-author = 'D. Lepour and G. Limpens'
+author = 'D. Lepour'
 
 # The full version, including alpha/beta/rc tags
 release = '1.0'

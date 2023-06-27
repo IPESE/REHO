@@ -1,2 +1,2 @@
 Sphinx>=2.1
-sphinxcontrib-bibtex==2.2.0
+sphinxcontrib-bibtex=2.2,<2.3

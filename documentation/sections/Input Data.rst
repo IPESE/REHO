@@ -147,6 +147,45 @@ Scenario Files
 
 TO BE DONE
 
+Change grid price
+~~~~~~~~~~~~~~~~~
+
+Loading Default Prices
+^^^^^^^^^^^^^^^^^^^^^^
+The default prices are loaded using the `initialize_grids()` function with the following code:
+
+.. code-block:: bash
+
+    grids = structure.initialize_grids()
+
+The file `default_grids.csv` can be found in the `preprocessing/units` directory.
+
+Using Custom Prices
+^^^^^^^^^^^^^^^^^^^
+To use custom prices, you have two options:
+
+1. Provide another CSV file to the `initialize_grids()` function:
+
+.. code-block:: bash
+
+    grids = structure.initialize_grids(file="path/to/custom_grids.csv")
+
+   Replace `"path/to/custom_grids.csv"` with the actual file path of your custom CSV file.
+
+2. Use the `Cost_supply_cst` and `Cost_demand_cst` parameters in the `initialize_grids()` function. Here's an example:
+
+.. code-block:: bash
+
+    grids = structure.initialize_grids({
+        'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645},
+        'Oil': {'Cost_supply_cst': 0.16}
+    })
+
+   In this example, the custom prices for electricity and oil are specified. Adjust the values as per your requirements.
+
+Note that you can choose either option to customize the prices according to your needs.
+
+
 Model Input Files
 =================
 

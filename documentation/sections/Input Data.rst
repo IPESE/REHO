@@ -130,7 +130,7 @@ The era (*area_era_m2*) is the floor area, usually estimated as the ground floor
 The facade area (*area_facade_m2*) is the area of all the facade including the area with windows.
 The additional parameter *area_facade_solar_m2* accounts for the facade facing the sun (e.g. oriented south in Belgium).
 The roof area available for solar is taken in parameter *area_roof_solar*, it estimates the equivalent area (in m2)
-of PV that can be installed with the optimal inclinaison (**to be verified**). 
+of PV that can be installed with the optimal inclinaison (**to be verified**).
 
 
 Scenario Files

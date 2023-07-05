@@ -82,9 +82,8 @@ I would list the wrappers used in pre here:
 https://ipese-web.epfl.ch/lepour/reho_guidelines/structure.html#wrapper
 
 
-REHO-model
-==========
-
+Model
+=====
 
 
 Post processing

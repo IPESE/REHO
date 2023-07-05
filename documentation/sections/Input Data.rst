@@ -55,83 +55,157 @@ All parameters are not mandatory for the model. Indeed, some can be substituted 
 such as the number of people living in the building or KPIs used to verify the consistency of the method. Thus, this column
 uses 3 labels: mandatory, additional and KPIs.
 
-.. table:: List of data from buildings
+.. caution::
+   Describe the example (a building with 3 units inside: a service and 2 dwellings + give characteristics (status, ...)
+
+.. table:: List of data from buildings TODO: Add units in table see https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/repository.html#resulting-tables-and-their-main-fields-1
    :name: tab:reho_data_in_buildings
 
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |               Parameters               |   Description                 |    example of value  | Need?       |          Regourped (TBD)     |
    +========================================+===============================+======================+=============+==============================+
-   |               push_test_k              | Construction period           |     1946-1960        | additional  |                              |
+   |               period                   | Construction period           |     1946-1960        | additional  |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |               class                    | Type of utilisation           |     Residential      | additional  |                              |
+   |               class                    | Type of utilisation           |   ['Commercial',     | mandatory   |   usage                      |
+   |                                        |                               |    'Residential',    |             |                              |
+   |                                        |                               |    'Residential']    |             |                              |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |            area_era_m2                 | Floor area                    |        279.0         | mandatory   |                              |
+   |            area_era_m2                 | Floor area                    |        279.0         | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |          area_facade_m2                | area of vertical facades      | 348.5                | mandatory   |                              |
+   |          area_facade_m2                | area of vertical facades      | 348.5                | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |       area_facade_solar_m2             | same but facing south???      | 348.5                | additional  |                              |
+   |       area_facade_solar_m2             | for BIPV                      | 348.5                | additional  |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |         area_roof_solar_m2             | corrected area facing sun     | 148.3                | mandatory   |                              |
+   |         area_roof_solar_m2             | corrected area facing sun     | 148.3                | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |              height_m                  | Height of the building        | 12.83                | additional  |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   | energy_heating_signature_kWh_y         | Yearly space heating demand   | 33280                | KPIs        |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   | energy_hotwater_signature_kWh_y        | Yearly sanitary water demand  | 2464                 | KPIs        |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |  thermal_transmittance_signature       | Thermal inertia               |        0.00202       | mandatory   |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |             id_class                   | ???                           |          II          | mandatory   |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |    thermal_specific_capacity_Wh_m2_K   | expected consumption (EPB)    | 119.4                | mandatory   |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |           energy_el_kWh_y              | Yearly electricity demand     | 5835.5               | KPIs        |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |            capita_cap                  | Number of users of the buildin|  15.2                | additional  |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |               ratio                    | ???                           |         1.0          | mandatory   |                              |
-   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |              status                    | ???                           | ['existing'          | mandatory   |                              |
-   |                                        |                               | 'existing']          |             |                              |
+   |              height_m                  | Height up to the last ceiling | 12.83                | additional  |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |     temperature_cooling_supply_C       |                               |         12.0         | mandatory   |                              |
+   | energy_heating_signature_kWh_y         | Yearly space heating demand   | 33280                | KPIs        |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |     temperature_cooling_return_C       |                               |         17.0         | mandatory   |                              |
+   | energy_hotwater_signature_kWh_y        | Yearly sanitary water demand  | 2464                 | KPIs        |    EPB                       |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |    temperature_heating_supply_C        |                               |         65.0         | mandatory   |                              |
+   |  thermal_transmittance_signature       | Averaged conductance          |        0.00202       | mandatory   |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |    temperature_heating_return_C        |                               |         50.0         | mandatory   |                              |
+   |    thermal_specific_capacity_Wh_m2_K   | Thermal inertia               | 119.4                | mandatory   |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |       temperature_interior_C           | Target temperature to reach   |         20.0         | mandatory   |                              |
+   |           energy_el_kWh_y              | Yearly electricity demand     | 5835.5               | KPIs        |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |            capita_cap                  | Number of users of the buildin|  15.2                | additional  |   usage                      |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |               ratio                    | 0.4 / 0.3 / 0.3               | [0.4, 0.3, 0.3]      | mandatory   |   usage                      |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |              status                    | Electrical appliances         | ['high', 'low'       | mandatory   |  usage                       |
+   |                                        | consumption                   | 'medium',']          |             |                              |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |     temperature_cooling_supply_C       |                               |         12.0         | mandatory   |  Heating technique           |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |     temperature_cooling_return_C       |                               |         17.0         | mandatory   |  Heating technique           |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |    temperature_heating_supply_C        |                               |         65.0         | mandatory   |  Heating technique           |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |    temperature_heating_return_C        |                               |         50.0         | mandatory   |  Heating technique           |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |       temperature_interior_C           | Target temperature to reach   |         20.0         | mandatory   |  Heating technique           |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+
+.. (Norm SIA 3801 => change in datageneration)
+   The example here is a building with 3 floors: Ground is commercial, and 2 floors with dwellings
+   Status: 0 <=> old, 1 <=> refurbished , 2 <=> new
+
 
 Description of data
 -------------------
 
-The parameters presented in Table :ref:`tab:reho_data_in_buildings` can be regrouped in three: Geometry, heating and EPB.
+The parameters presented in Table :ref:`tab:reho_data_in_buildings` can be regrouped in four categories: Usage, Geometry, Heating technique and EPB.
 Each of these groups are detailed with their parameters hereafter.
 
 Geometry of the building
 ~~~~~~~~~~~~~~~~~~~~~~~~
+.. caution::
+   The following must be added to the table:
+   - area_windows_m2
+
+   The description of the parameters must be extended
 
 Following Figure
 illustrates the different geometry related parameters.
 
-.. figure:: /images/reho_facades_and_roof.png
+.. figure:: /images/house_patron_1.png
    :alt: Ilustration of geometry parameters (to be improved).
    :name: fig:reho_facades_and_roofs
 
    Ilustration of geometry parameters (to be improved).
 
-The geometry is mainly defined by distances. On a building, we have floor, facades and roofs.
+
+.. figure:: /images/house_patron_2.png
+   :alt: Ilustration of geometry parameters (to be improved).
+   :name: fig:reho_facades_and_roofs_2
+
+   Remaining parameters
+
+
+
+.. figure:: /images/house_patron_3.png
+   :alt: Ilustration of geometry parameters (to be improved).
+   :name: fig:reho_facades_and_roofs_3
+
+   area_facade_solar_m2
+
+The geometry is mainly defined by distances (in meters). On a building, we have floor, facades and roofs.
 The era (*area_era_m2*) is the floor area, usually estimated as the ground floor area times the number of floors.
 The facade area (*area_facade_m2*) is the area of all the facade including the area with windows.
 The additional parameter *area_facade_solar_m2* accounts for the facade facing the sun (e.g. oriented south in Belgium).
 The roof area available for solar is taken in parameter *area_roof_solar*, it estimates the equivalent area (in m2)
 of PV that can be installed with the optimal inclinaison (**to be verified**).
 
+
+Usage
+~~~~~
+
+.. caution:: The following parameters must be listed:
+   populate the decription.
+   add a table with the different options for each parameter
+
+
+
+.. figure:: /images/multi_homes.png
+   :alt: Ilustration of usage parameters (to be improved).
+   :name: fig:usage
+
+   Illustration of two different building with different usage.
+   The house is a single home with one family living there. It has old electrical appliances.
+   The other building is has two units. The ground floor has a commercial activity over 80m2. The floor has a dwellings
+   over 120m2 (thus it uses 60% of the space while the commercial uses 40%).
+
+
+Energy Performance of the Building (EPB)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. caution:: The following parameters must be listed:
+   - period
+   - energy_heating_signature_kWh_y
+   - energy_hotwater_signature_kWh_y
+   - thermal_transmittance_signature
+   - thermal_specific_capacity_Wh_m2_K
+   - energy_el_kWh_y
+
+TO BE DONE
+
+Heating technique
+~~~~~~~~~~~~~~~~~
+
+.. caution:: The following parameters must be listed:
+   Add a table with differnt technologies and usual supply and return temperatures
+
+
+.. figure:: /images/cooling-heating.png
+   :alt: Ilustration of heating technique parameters (to be improved).
+   :name: fig:cooling-heating
+
+   interior temperature must be 18°C in winter and 24°c in summer.
+   other parameters are shown.
 
 Scenario Files
 ==============

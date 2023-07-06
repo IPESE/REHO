@@ -74,6 +74,8 @@ uses 3 labels: mandatory, additional and KPIs.
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |          area_facade_m2                | area of vertical facades      | 348.5                | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
+   |          area_windows_m2               | area of vertical windows      | 348.5                | mandatory   |    geometry                  |
+   +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |       area_facade_solar_m2             | for BIPV                      | 348.5                | additional  |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |         area_roof_solar_m2             | corrected area facing sun     | 148.3                | mandatory   |    geometry                  |
@@ -85,15 +87,15 @@ uses 3 labels: mandatory, additional and KPIs.
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    | energy_hotwater_signature_kWh_y        | Yearly sanitary water demand  | 2464                 | KPIs        |    EPB                       |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |  thermal_transmittance_signature       | Averaged conductance          |        0.00202       | mandatory   |   EPB                        |
+   |thermal_transmittance_signature_kW_m2_K | Averaged conductance          |        0.00202       | mandatory   |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |    thermal_specific_capacity_Wh_m2_K   | Thermal inertia               | 119.4                | mandatory   |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |           energy_el_kWh_y              | Yearly electricity demand     | 5835.5               | KPIs        |   EPB                        |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |            capita_cap                  | Number of users of the buildin|  15.2                | additional  |   usage                      |
+   |            capita_cap                  | # Users of the building       |  15.2                | additional  |   usage                      |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |               ratio                    | 0.4 / 0.3 / 0.3               | [0.4, 0.3, 0.3]      | mandatory   |   usage                      |
+   |               ratio                    | living space share            | [0.4, 0.3, 0.3]      | mandatory   |   usage                      |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |              status                    | Electrical appliances         | ['high', 'low'       | mandatory   |  usage                       |
    |                                        | consumption                   | 'medium',']          |             |                              |
@@ -164,9 +166,8 @@ of PV that can be installed with the optimal inclinaison (**to be verified**).
 Usage
 ~~~~~
 
-.. caution:: The following parameters must be listed:
-   populate the decription.
-   add a table with the different options for each parameter
+.. caution:: TO DO : - check and validate the decription.
+
 
 
 
@@ -179,25 +180,48 @@ Usage
    The other building is has two units. The ground floor has a commercial activity over 80m2. The floor has a dwellings
    over 120m2 (thus it uses 60% of the space while the commercial uses 40%).
 
+Usage parameters concentrate on how is the building used and who is using the building.
+The user capacity (*capita_cap*) indicates the number of users in the building, influencing energy consumption (**to be verified**).
+The era share (*ratio*) is a significant indicator as it differentiates the proportion of living space in the building allocated to different activities or functions.
+For instance, the building in our example, with a ground floor store and two similar apartments, have a ratio of [0.4,0.3,0.3].
+The electrical appliances status (*status*) indicates the consumption levels of electrical appliances, which could be high, medium, or low.
+The type of the building (*class*) indicates the type of utilization of the as describe in the table below
+These variables permit the model to accurately comprehend and estimate the patterns of energy usage.
+
+Type of buildings
+^^^^^^^^^^^^^^^^^^^^
+
+- Collective housing
+- Individual housing
+- Administrative
+- School
+- Commercial
+- Restaurant
+- Hospital
+- Industry
+- Shed warehouse
+- Sport facilities
+- Covered swimming pool
+- Gathering places
+- Other
+
 
 Energy Performance of the Building (EPB)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. caution:: The following parameters must be listed:
-   - period
-   - energy_heating_signature_kWh_y
-   - energy_hotwater_signature_kWh_y
-   - thermal_transmittance_signature
-   - thermal_specific_capacity_Wh_m2_K
-   - energy_el_kWh_y
+.. caution:: TO DO : - check and validate the decription.
 
-TO BE DONE
+The Energy Performance of Buildings (*EPB*) characterize the energy consumption and efficiency of the building.
+Notably, the construction period (*period*) can indicate the energy efficiency standards in place during the period of construction.
+The thermal transmittance signature (*thermal_transmittance_signature_kW_m2_K*) represents the average conductance of the building, indicating the rate of heat transfer based on its isolation.
+On the other hand, the thermal specific capacity (thermal_specific_capacity_Wh_m2_K) provides information on the building's thermal inertia, i.e., the time it takes for the building to adjust its internal temperature to changes in the external temperature.
+The demands for space heating (*energy_heating_signature_kWh_y*), sanitary water (*energy_hotwater_signature_kWh_y*), and electricity (*energy_el_kWh_y*) are defined on a yearly basis.
 
 Heating technique
 ~~~~~~~~~~~~~~~~~
 
-.. caution:: The following parameters must be listed:
-   Add a table with differnt technologies and usual supply and return temperatures
+.. caution:: TO DO : - check and validate the decription.
+   - Add a table with differnt technologies and usual supply and return temperatures
 
 
 .. figure:: /images/cooling-heating.png
@@ -206,6 +230,13 @@ Heating technique
 
    interior temperature must be 18°C in winter and 24°c in summer.
    other parameters are shown.
+
+The heating technique is maily measured in degrees Celsius. In building we have heating and cooling system.
+They include supply and return temperatures for both heating and cooling.
+The supply and return temperatures for cooling are captured by *temperature_cooling_supply_C* and *temperature_cooling_return_C*, respectively.
+Similarly, the parameters *temperature_heating_supply_C* and *temperature_heating_return_C* represent the corresponding temperatures for the heating system.
+The target temperature to be reached inside the building is defined by the parameter *temperature_interior_C*.
+Understanding these parameters will assist in understanding the heating and cooling characteristics of the building and areas where there may be room for improvement.
 
 Scenario Files
 ==============

@@ -68,9 +68,9 @@ uses 3 labels: mandatory, additional and KPIs.
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |          area_facade_m2                | area of vertical facades      | 348.5                | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |          area_windows_m2               | area of vertical windows      | 348.5                | mandatory   |    geometry                  |
+   |          area_windows_m2               | area of vertical windows      | 80                   | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |       area_facade_solar_m2             | for BIPV                      | 348.5                | additional  |    geometry                  |
+   |       area_facade_solar_m2             | for BIPV                      | 105                  | additional  |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |         area_roof_solar_m2             | corrected area facing sun     | 148.3                | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
@@ -139,22 +139,22 @@ illustrates the different geometry related parameters.
    :alt: Ilustration of geometry parameters (to be improved).
    :name: fig:reho_facades_and_roofs
 
-   Ilustration of geometry parameters (to be improved).
+   Ilustration of geometry parameters
 
 
 .. figure:: /images/house_patron_2_V2.png
    :alt: Ilustration of geometry parameters (to be improved).
    :name: fig:reho_facades_and_roofs_2
 
-   Remaining parameters
+   Ilustration of geometry parameters
 
 
 
-.. figure:: /images/house_patron_3.png
+.. figure:: /images/house_patron_3_V2.png
    :alt: Ilustration of geometry parameters (to be improved).
    :name: fig:reho_facades_and_roofs_3
 
-   area_facade_solar_m2
+   Ilustration of geometry parameters
 
 The geometry is mainly defined by distances (in meters). On a building, we have floor, facades and roofs.
 The era (*area_era_m2*) is the floor area, usually estimated as the ground floor area times the number of floors.
@@ -225,7 +225,7 @@ Heating technique
    - Add a table with differnt technologies and usual supply and return temperatures
 
 
-.. figure:: /images/cooling-heating.png
+.. figure:: /images/cooling-heating_V2.png
    :alt: Ilustration of heating technique parameters (to be improved).
    :name: fig:cooling-heating
 

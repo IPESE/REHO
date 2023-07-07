@@ -27,7 +27,7 @@ There are several input files in the REHO framework, each serving a specific pur
 Figure: Overview of Data Files in the REHO Framework
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. figure:: /images/reho_input_files.png
+.. figure:: /images/reho_input_files_V2.png
    :alt: Overview of data files in the REHO framework.
    :name: fig:reho_data_files
 

@@ -134,14 +134,14 @@ Geometry of the building
 Following Figure
 illustrates the different geometry related parameters.
 
-.. figure:: /images/house_patron_1.png
+.. figure:: /images/house_patron_1_V2.png
    :alt: Ilustration of geometry parameters (to be improved).
    :name: fig:reho_facades_and_roofs
 
    Ilustration of geometry parameters (to be improved).
 
 
-.. figure:: /images/house_patron_2.png
+.. figure:: /images/house_patron_2_V2.png
    :alt: Ilustration of geometry parameters (to be improved).
    :name: fig:reho_facades_and_roofs_2
 

@@ -5,68 +5,86 @@ Input Data
 ++++++++++
 
 .. caution ::
-   UNDER CONSTRUCTION
+   UNDER CONSTRUCTION.
+   **To FEDECOM partners** this page describes the input-data for the
+   prospection design model. Pilots are required to share the information listed
+   in Section :ref:`sec:data:building_info` for each buildings.
+   Please, update the information in the shared document available at:
+   'shared drive <https://docs.google.com/spreadsheets/d/1lK5Zz9cD4d12runQ_tiUMjtU2Dq7QNZ07eLt0lUs5aw/edit?usp=sharing>`_
+
+   Tekniker will lead the collect.
 
 Input files overview
 ====================
 
-.. caution ::
-   EXPLAIN OVERALL STRUCTURE
+The REHO framework requires several input informations at different stage. Please see Section :ref:`label_sec_overview`
+for an overview of the framework and Section :ref:`sec_model` for the detailed formulation of the model.
 
+Figure XX illustrates how input data are used in the framework.
 There are several input files in the REHO framework, each serving a specific purpose:
 
 1. **Building Information File**:
    This file contains information about the buildings involved in the analysis. It will allow REHO to estimate the energy demand, renewable energy potential and allow sector coupling.
 
-2. **Scenario Files**:
-   These files define the scenario for the analysis, such as carbon neutral building, forbidden technologies, feed-in tariff...
+2. **Scenario File**:
+   This file defines the scenario used by the model. It accounts for information such as carbon neutral building, forbidden technologies, feed-in tariff...
 
-3. **Model Input Files**:
-   These files provide the necessary inputs for the REHO model, which are the model parameters and objective function settings.
-
-Figure: Overview of Data Files in the REHO Framework
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+3. **Model Input File**:
+   This file provides the necessary inputs for the REHO model. It is generated based on
+   pre-processing of the framework.
 
 .. figure:: /images/reho_input_files_V2.png
    :alt: Overview of data files in the REHO framework.
    :name: fig:reho_data_files
 
-   Overview of data files in the REHO framework.
+   Overview of data files in the REHO framework. (NB for developers: the Scenario csv is in the form of a py code. Adaptation will be required to either translate the csv content in the py or keep the .py. Anyway, the documnetation should list the parameters within the *scenario* file).
 
-In the following sections, we will describe each data file in detail and explain its purpose.
+In the following sections, we will describe each data file in detail to explain each parameter meaning and purpose.
 
 Building Information File
 =========================
-
+.. _sec:data:building_info:
 
 .. caution ::
    To the attention of FEDECOM partners: this section details the data that needs to be collected.
 
-List of data
-------------
 
-Table :ref:`tab:reho_data_in_buildings` summarises all the parameters needed. In the following,
-the parameters are regrouped by purpose and will be detailed. The tables account for four information:
-(i) parameters' name,
-(ii) description,
-(iii) if it is mandatory,
-(iv) example of value.
-All parameters are not mandatory for the model. Indeed, some can be substituted by a template if not available,
-such as the number of people living in the building or KPIs used to verify the consistency of the method. Thus, this column
-uses 3 labels: mandatory, additional and KPIs.
+This file gives all the details of the building accounted in the community.
+Each building needs to be characterised to estimate its energy demand, its renewable and sector coupling potential.
+The pre processing of the REHO framework allows these estimation based on data listed in :numref:`Table %s <tab:reho_data_in_buildings>` (see Section :ref:`sec_model`).
+
+:numref:`Table %s <tab:reho_data_in_buildings>` lists the 21 parameters used to define a building.
+To ease the understanding, these parameters are regrouped in four categories:
+- Geometry: are the parameters representing the geometry of the building (e.g. area of roof available for solar panels).
+- Usage: are the paraemters characterising the usage of the building (e.g. number of units or affectation).
+- Heating technique: are the parameters characterising the type of heating technique (e.g. floor heating)
+- Energy Performance Building (EPB): are the parameters that describes the heat and electricity performance of the building (e.g. its insulation or appliances age)
+
+The 21 parameters don't have the same importance for the framework.
+Some are **mandatory** and cannot be omitted. Others (**additional**) will be substituted by templates if not given. Template usually use average values for a region, and are thus less accurate than using the real value.
+The last category is **KPIs** and regroup the parameters that are used to verify the consistency of the pre-processing framework.
+
+:numref:`Table %s <tab:reho_data_in_buildings>` also account for a building example.
+The example is a building with three units.
+The first occupies 40% of the floor area, is used as a commerce and with modern appliances.
+The second occupies 25% of the floor area, is used as a residence and uses old appliances (light bulbs, old fridges, ...)
+The third occupies 35% of the floor area, is used as a residence and uses normal appliances.
+The building has a centralised heating and cooling system.
 
 .. caution::
    Describe the example (a building with 3 units inside: a service and 2 dwellings + give characteristics (status, ...)
 
-.. table:: List of data from buildings TODO: Add units in table see https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/repository.html#resulting-tables-and-their-main-fields-1
+.. table:: List of data from buildings
+   .. TODO: Add units in table see https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/repository.html#resulting-tables-and-their-main-fields-1
+
    :name: tab:reho_data_in_buildings
 
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |               Parameters               |   Description                 |    example of value  | Need?       |          Regourped (TBD)     |
    +========================================+===============================+======================+=============+==============================+
-   |            area_era_m2                 | Floor area                    |        279.0         | mandatory   |    geometry                  |
+   |            area_era_m2                 | Floor area                    |        279           | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |          area_facade_m2                | area of vertical facades      | 348.5                | mandatory   |    geometry                  |
+   |          area_facade_m2                | area of vertical facades      | 348                  | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |          area_windows_m2               | area of vertical windows      | 80                   | mandatory   |    geometry                  |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
@@ -96,9 +114,9 @@ uses 3 labels: mandatory, additional and KPIs.
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |            capita_cap                  | # Users of the building       |  15.2                | additional  |  usage                       |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |               ratio                    | living space share            | [0.4, 0.3, 0.3]      | mandatory   |  usage                       |
+   |               ratio                    | living space share            | [0.4, 0.25, 0.35]    | mandatory   |  usage                       |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-   |              status                    | Electrical appliances         | ['high', 'low' ,     | mandatory   |  usage                       |
+   |              status                    | Electrical appliances         | ['low', 'high' ,     | mandatory   |  usage                       |
    |                                        | consumption                   | 'medium']            |             |                              |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
@@ -225,12 +243,21 @@ Heating technique
    - Add a table with differnt technologies and usual supply and return temperatures
 
 
-.. figure:: /images/cooling-heating_V2.png
+.. figure:: /images/heating_V3.png
    :alt: Ilustration of heating technique parameters (to be improved).
-   :name: fig:cooling-heating
+   :name: fig:heating
 
-   interior temperature must be 18°C in winter and 24°c in summer.
-   other parameters are shown.
+   Illustration of different heating techniques and associated parameters.
+   Interior temperature must be 18°C in winter (*temperature_interior_C*). Depending on the technologies
+   the *temperature_heating_supply* (red) and *temperature_heating_return* (blue) differs.
+
+.. figure:: /images/cooling_V3.png
+   :alt: Ilustration of heating technique parameters (to be improved).
+   :name: fig:cooling
+
+   Illustration of a cooling technique and associated parameters.
+   Interior temperature must be 25°C in summer (*temperature_interior_C*). Depending on the technologies
+   the *temperature_cooling_supply* (red) and *temperature_cooling_return* (blue) differs.
 
 The heating technique is maily measured in degrees Celsius. In building we have heating and cooling system.
 They include supply and return temperatures for both heating and cooling.

@@ -1,4 +1,4 @@
-.. _ch_estd:
+.. _sec_model:
 
 Model formulation
 +++++++++++++++++

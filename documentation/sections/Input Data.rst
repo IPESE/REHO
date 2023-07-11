@@ -43,6 +43,7 @@ In the following sections, we will describe each data file in detail to explain 
 
 Building Information File
 =========================
+
 .. _sec:data:building_info:
 
 .. caution ::
@@ -74,9 +75,8 @@ The building has a centralised heating and cooling system.
 .. caution::
    Describe the example (a building with 3 units inside: a service and 2 dwellings + give characteristics (status, ...)
 
+.. TODO: Add units in table see https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/repository.html#resulting-tables-and-their-main-fields-1
 .. table:: List of data from buildings
-   .. TODO: Add units in table see https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/repository.html#resulting-tables-and-their-main-fields-1
-
    :name: tab:reho_data_in_buildings
 
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
@@ -130,11 +130,6 @@ The building has a centralised heating and cooling system.
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
    |       temperature_interior_C           | Target temperature to reach   |         20.0         | mandatory   |  Heating technique           |
    +----------------------------------------+-------------------------------+----------------------+-------------+------------------------------+
-
-.. (Norm SIA 3801 => change in datageneration)
-   The example here is a building with 3 floors: Ground is commercial, and 2 floors with dwellings
-   Status: 0 <=> old, 1 <=> refurbished , 2 <=> new
-
 
 Description of data
 -------------------

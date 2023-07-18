@@ -76,6 +76,7 @@ The building has a centralised heating and cooling system.
    Describe the example (a building with 3 units inside: a service and 2 dwellings + give characteristics (status, ...)
 
 .. TODO: Add units in table see https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/repository.html#resulting-tables-and-their-main-fields-1
+
 .. table:: List of data from buildings
    :name: tab:reho_data_in_buildings
 

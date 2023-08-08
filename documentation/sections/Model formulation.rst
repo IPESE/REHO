@@ -11,9 +11,37 @@ Overview
 ========
 
 The nomenclature explained in Section :ref:`ssec_nomenclature`
+Figure xx gives an overview on how the model works.
 
-GL : I would add a big picture here representing the model and wrappers (pre/post and model).
-I would then explain the link between the different models.
+.. figure:: /images/reho_input_files_V2.png
+   :alt: Overview of model structure including pre and post processing.
+   :name: fig:reho_overview
+
+The figure :numref:`fig:reho_overview` illustrates how the code is structured with its pre and post processing wrappers. The wrappers are executed with python.
+The code itself is a MILP problem solved with ampl API (to be confirmed). The code is using a decomposition method explain in the section :ref:`subsec_decomposition_method`.
+
+.. caution::
+
+   TODO:
+   I would explain how the code works as a flow chart with a big picture here representing the model and wrappers (pre/post and model).
+   I would explain the **decomposition method** and how it results in 2 models (one for buildings and one for district) and how we iterate on.
+   I would explain the **folder structure** to support reader to navigate in.
+
+   This section should give an overview of the wrappers and code. The code should give all the parameters, variables and SET used in the model.
+   The numerical values and sources should be given in the data appendix.
+
+.. caution::
+
+   TODO:
+   The code needs to be modified to the same nomenclature as EnergyScope: SET, Variables and parameters.
+   The name of some parameters could be changed to the same as EnergyScope: Units_Mult_1 (F), Units_Fmin (fmax), ...
+
+
+
+
+Decomposition methodology:
+--------------------------
+.. _subsec_decomposition_method:
 
 Folder structure:
 -----------------
@@ -28,10 +56,10 @@ All AMPL files are in the folder `ampl_model`.
 Inside, you will find 5 files:
 
 - `model.mod` contains the modeling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
-- `scenario.mod` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
-- `data_stream.mod` contains values that specify the operating temperatures of streams and energy conversion units.
-- `data_stream_storage.mod` specifies the operating temperatures of the energy storage units.
 - `master_problem.mod` contains the modeling of the problem for the decomposition approach.
+- `scenario.mod` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
+- `data_stream.dat` contains values that specify the operating temperatures of streams and energy conversion units.
+- `data_stream_storage.dat` specifies the operating temperatures of the energy storage units.
 
 And one folder `units` which contains the model files specific to each technology that can be used in the system. Three subfolders (`district_units`, `h2_units`, and `storage`) are used for easier classification.
 
@@ -81,9 +109,44 @@ Pre-processing
 I would list the wrappers used in pre here:
 https://ipese-web.epfl.ch/lepour/reho_guidelines/structure.html#wrapper
 
+.. caution::
+
+   TODO:
+   Explain how the wrappers are structured and what do they do: each functionalities of them for the pre-processing
+   Which one is the master and how it interacts with others.
+
+processing input data:
+----------------------
+
+.. caution::
+
+   TODO:
+   Explain how the wrappers are structured and what do they do: each functionalities of them for the pre-processing
+   Which one is the master and how it interacts with others.
+
 
 Model
 =====
+
+Decomposition method:
+---------------------
+
+Building model:
+---------------
+
+.. caution::
+
+   TODO:
+   Here I will detail what is accounted in the file 'model.mod'
+
+district model:
+---------------
+
+.. caution::
+
+   TODO:
+   Here I will detail what is accounted in the file 'master_problem.mod'
+
 
 
 Post processing

@@ -1,0 +1,61 @@
+Name,EN_long,EN_short,FR_long,ColorPastel,NamePastel,ColorFlash,NameFlash
+,,,,,,,
+CAPEX,Capital expenses,CAPEX,Coûts d'investissement,#007480,canard,,
+OPEX,Operational expenses,OPEX,Coûts opérationnels,#FEA993,salmon,,
+TOTEX,Total expenses,TOTEX,Coûts totaux,#007480,canard,,
+GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark,,
+,,,,,,,
+Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark,#8B4513,brown
+NaturalGas,Natural gas,NG,Gaz naturel,#413D3A,ardoise,#413D3A,ardoise
+NG_Boiler,Gas boiler,NGB,Chaudière à gaz,#413D3A,ardoise,#413D3A,ardoise
+NG_Cogeneration,NG cogeneration,COGEN,Cogénération,#413D3A,ardoise,#413D3A,ardoise
+Oil,Oil,OIL,Mazout,#000000,dark,#8B4513,brown
+OIL_Boiler,Oil boiler,OB,Chaudière à mazout,#000000,dark,#8B4513,brown
+WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown,#A2CD5A,greenlight
+Wood,Wood network,Wood,Bois,#8B4513,brown,#556B2F,green
+,,,,,,,
+Electricity,Electrical grid,Elec,Réseau électrique,#007480,canard,#00008B,darkblue
+Electrical_grid,Electricity (import),Elec in,Électricité (achat),#007480,canard,#00008B,darkblue
+Electrical_grid_feed_in,Electricity (export),Elec out,Électricité (vente),#4d9ea6,canard_light,#00008B,darkblue
+self_cons,Electricity (self-consumption),Elec SC,Électricité (auto-consommation),#ffd980,yellow_light,#EEAD0E,darkyellow
+Electrical_appliances,Electrical appliances,EL,Électricité domestique,#007480,canard,#76EEC6,turquoise
+Electrical_consumption,Electrical consumption,EL,Électricité consommée,#007480,canard,#0000FF,royalblue
+Electrical_consumption_bp,Electrical consumption with storage,EL,Électricité consommée + stockage,#007480,canard,#0000FF,royalblue
+,,,,,,,
+ElectricalHeater,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light,#9A32CD,purple
+ElectricalHeater_DHW,Electrical heater DHW,EH (DHW),Chauffage électrique (ECS),#ff6666,groseille_light,#9A32CD,purple
+ElectricalHeater_SH,Electrical heater SH,EH (SH),Chauffage électrique,#ff6666,groseille_light,#9A32CD,purple
+,,,,,,,
+HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon,#CD1076,pink
+HeatPump_Air,Heat pump air,HP air,"Pompe à chaleur, air",#FEA993,salmon,#CD1076,pink
+HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, DHN",#FEA993,salmon,#CD1076,pink
+HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",#FEA993,salmon,#CD1076,pink
+HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1076,pink
+,,,,,,,
+Heat,District heating network,DHN,Réseau de chaleur,#FF8C00,orange,#FF3030,red
+DHN_in,District heating network,DHN,Réseau de chaleur,#FF8C00,orange,#EEE685,yellowgrey
+Heat_losses,Heat losses,SH leak,Pertes chaleur,#FF8C00,orange,#CDC8B1,grey
+SH,Space heating,SH,Chauffage,#FF8C00,orange,#FF8C00,orange
+SH_heat,Space heating,SH,Chauffage,#FF8C00,orange,#FF3030,red
+ThermalSolar,Thermal solar panels,TS,Panneaux solaires thermiques,#FF8C00,orange,#FF8C00,orange
+Tank,Tank,Tank,Réservoir,#FF8C00,orange,#FF7F24,orange
+WaterTankSH,Water Tank SH,WT (SH),Ballon d'eau (chauffage),#FF8C00,orange,#FF7F24,orange
+,,,,,,,
+WaterTankDHW,Water Tank DHW,WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux,#B22222,bordeaux
+DHW,Domestic hot water,DHW,Eau chaude sanitaire,#B22222,bordeaux,#B22222,bordeaux
+DataHeat_DHW,Data centers,ICT,Centre de données,#B22222,bordeaux,#EE00EE,magenta
+,,,,,,,
+PV,PV panel,PV,Panneaux solaires PV,#ffd980,yellow_light,#EEAD0E,darkyellow
+PV_roof,PV roof,PV,PV toiture,#ffd980,yellow_light,#EEAD0E,darkyellow
+PV_facades,PV facade,PV,PV façade,#ffc94d,yellow_medium,#EEAD0E,darkyellow
+Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark,#EEAD0E,darkyellow
+Battery,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
+EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue
+,,,,,,,
+Air_Conditioner,Air conditioner,AC,Climatiseur,#00008B,darkblue,#9AC0CD,bluegrey
+Cooling,Fossil-fuel boiler,BO,Chaudière fossile,#00008B,darkblue,#9AC0CD,bluegrey
+,,,,,,,
+Isolation,Refurbishment,REF,Rénovation,#69B58A,green,#9AC0CD,bluegrey
+Isolation_roof,Refurbishment roof,REF1,Isolation toiture,#a9d6bc,green_light,#9AC0CD,bluegrey
+Isolation_facade,Refurbishment facade,REF2,Isolation façade,#87c5a1,green_medium,#9AC0CD,bluegrey
+Isolation_full,Refurbishment full,REF3,Isolation complète,#53ac7a,green_dark,#9AC0CD,bluegrey

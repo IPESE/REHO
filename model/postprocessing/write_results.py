@@ -431,7 +431,8 @@ class dataframes_results_MP(object):
             df7 = get_variable_in_pandas(df, 'diameter_max')
             df8 = get_variable_in_pandas(df, 'DHN_inv_house')
             df8.columns = ["DHN_inv"]
-            df_House = pd.concat([df_House, df7, df8], axis=1)
+            df9 = get_variable_in_pandas(df, 'flowrate_max')
+            df_House = pd.concat([df_House, df7, df8, df9], axis=1)
 
 
         df1 = get_variable_in_pandas(df, 'Costs_op')
@@ -510,8 +511,6 @@ class dataframes_results_MP(object):
         if read_DHN:
             df_DHN = pd.DataFrame([[1, 1, get_variable_in_pandas(df, 'DHN_inv')["DHN_inv"][0], 0, 0]], index=["DHN"], columns=df_Unit.columns)
             df_Unit = pd.concat([df_Unit, df_DHN], axis=0)
-            df_Unit["DHN_factor"] = [0] * len(df_Unit)
-            df_Unit.loc["DHN", "DHN_factor"] = get_parameter_in_pandas(ampl, "delta_enthalpy", False)["delta_enthalpy"][0] / get_parameter_in_pandas(ampl, "sizing_factor", False)["sizing_factor"][0]
         df_Unit.index.names = ['Unit']
         self.df_Unit = df_Unit.sort_index()
         print(self.df_Unit)

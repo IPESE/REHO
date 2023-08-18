@@ -287,7 +287,7 @@ The default prices are loaded using the `initialize_grids()` function with the f
 
     grids = structure.initialize_grids()
 
-The file `default_grids.csv` can be found in the `preprocessing/units` directory.
+The file `grids.csv` can be found in the `preprocessing/units` directory.
 
 Using Custom Prices
 ^^^^^^^^^^^^^^^^^^^

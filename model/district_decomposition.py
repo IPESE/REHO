@@ -359,7 +359,7 @@ class district_decomposition:
         # collect data
         df_Performance = self.return_combined_SP_results(self.results_SP, 'df_Performance')
         df_Performance = df_Performance.drop(index='Network', level='Hub').groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'Hub']).head(1).droplevel('Hub')  # select current Scn_ID and Pareto_ID
-        df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 8)
+        df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 6)
 
         # prepare df to have the same index than the AMPL model
         if not self.method['include_all_solutions']:
@@ -375,7 +375,7 @@ class district_decomposition:
         # assign data
         MP_parameters = {}
         MP_parameters['Costs_inv_rep_SPs'] = df_Performance.Costs_inv + df_Performance.Costs_rep
-        MP_parameters['Costs_ft_SPs'] = pd.DataFrame(np.round(df_Performance.Costs_ft, 8)).set_axis(['Costs_ft_SPs'], axis=1)
+        MP_parameters['Costs_ft_SPs'] = pd.DataFrame(np.round(df_Performance.Costs_ft, 6)).set_axis(['Costs_ft_SPs'], axis=1)
         MP_parameters['GWP_house_constr_SPs'] = pd.DataFrame(df_Performance.GWP_constr).set_axis(['GWP_house_constr_SPs'], axis=1)
 
         df_lca_Units = self.return_combined_SP_results(self.results_SP, 'df_lca_Units')
@@ -415,11 +415,13 @@ class district_decomposition:
                     dT = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"])
                     MP_parameters['delta_enthalpy'] = dT.mean() * 4.18
                     MP_parameters['density'] = 1000
-            MP_parameters['factor_distance_house'] = list(range(1, len(self.buildings_data)+1))
 
             if "area_district" not in MP_parameters:
                 min_x, min_y, max_x, max_y = gpd.GeoDataFrame.from_dict(self.buildings_data, orient="index").total_bounds
                 MP_parameters["area_district"] = (max_x - min_x) * (max_y - min_y)
+        else:
+            if "area_district" in MP_parameters:
+                del MP_parameters["area_district"]
 
         # -------------------------------------------------------------------------------------------------------------
         # Set Sets
@@ -453,6 +455,8 @@ class district_decomposition:
                 if "HeatPump_Geothermal_district" in self.district.UnitsOfDistrict:
                     MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
                     MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
+        if read_DHN:
+            MP_set_indexed["House_ID"] = np.array(range(0, len(self.district.houses)))+1
 
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS

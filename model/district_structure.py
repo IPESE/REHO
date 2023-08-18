@@ -115,7 +115,7 @@ class district:
                 stream = u['name'] + '_' + s
                 self.StreamsOfUnit[name] = np.append(self.StreamsOfUnit[name], stream)
 
-        lca_kpi_list = np.array(pd.read_csv(os.path.join(path_to_parameters, "default_units.csv")).columns)
+        lca_kpi_list = np.array(pd.read_csv(os.path.join(path_to_parameters, "building_units.csv")).columns)
         lca_kpi_list = [key for key in lca_kpi_list if "_1" in key]
         self.lca_kpis = np.array([key.replace("_1", "") for key in lca_kpi_list])
         self.__generate_set_dict()  # generate dictionary containing all sets for AMPL
@@ -439,7 +439,7 @@ def return_storage_units(file):
     return [HC, CH4S, MTZ, ETZ, HS, LHS]
 
 
-def initialize_units(scenario, grids=None, building_data="default_units.csv", district_units=False, storage_units=False):
+def initialize_units(scenario, grids=None, building_data="building_units.csv", district_data="district_units.csv", district_units=False, storage_units=False):
     default_units_to_exclude = ["DataHeat_DHW", "OIL_Boiler", "Air_Conditioner", "DHN_hex"]
     if scenario is None:
         exclude_units = default_units_to_exclude
@@ -451,10 +451,10 @@ def initialize_units(scenario, grids=None, building_data="default_units.csv", di
     building_units = return_building_units(exclude_units, grids, file=building_data)
 
     if storage_units:
-        building_units = np.concatenate([building_units, return_storage_units(file="default_storage.csv")])
+        building_units = np.concatenate([building_units, return_storage_units(file="storage_units.csv")])
 
     if district_units:
-        district_units = return_district_units(exclude_units, grids, file="default_district.csv")
+        district_units = return_district_units(exclude_units, grids, file=district_data)
     else:
         district_units = []
 
@@ -470,7 +470,7 @@ def create_grid(name, Grids_flowrate_out, Grids_flowrate_in, grid_data):
 
     return grid
 
-def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}}, file="default_grids.csv"):
+def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}}, file="grids.csv"):
 
     grid_data = pd.read_csv(os.path.join(path_to_parameters, file))
     grid_data = grid_data.set_index("Grid")

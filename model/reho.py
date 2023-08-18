@@ -663,12 +663,11 @@ class reho(district_decomposition):
         self.initiate_decomposition(SP_scenario_init, Scn_ID=0, Pareto_ID=0)
         self.MP_iteration(scenario_MP, Scn_ID=0, binary=False, Pareto_ID=0, read_DHN=True)
 
-        diameter_square = self.results_MP[0][0][0].df_District["diameter_max"] ** 2
-        heat_flow = diameter_square[0:-1] * self.results_MP[0][0][0].df_Unit.loc["DHN", "DHN_factor"]
+        heat_flow = self.results_MP[0][0][0].df_District["flowrate_max"] * 179.5
+        dhn_inv = self.results_MP[0][0][0].df_District.loc["Network", "DHN_inv"]
+        tau = self.results_SP[0][0][0][0]["Building1"].df_Performance["ANN_factor"][0]
+        dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
         for bui in self.district.houses.keys():
-            tau = self.results_SP[0][0][0][0][bui].df_Performance["ANN_factor"][0]
-            dhn_invh = self.results_MP[0][0][0].df_District["DHN_inv"][bui]
-            dhn_invh = dhn_invh / (tau * heat_flow[bui])
             self.district.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui]*1.001, dhn_invh]
 
         self.pool.close()

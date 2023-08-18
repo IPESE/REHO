@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # Select the desired number of typical days
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
-    # Choose superstructure. Units are defined in the function return_building_units in district_structure.py. Units characteristics are in preprocessing/units/default_units.csv
+    # Choose superstructure. Units are defined in the function return_building_units in district_structure.py. Units characteristics are in preprocessing/units/building_units.csv
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']      # specify some units we want toe exclude
     scenario['enforce_units'] = []
 

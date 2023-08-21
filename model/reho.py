@@ -663,7 +663,11 @@ class reho(district_decomposition):
         self.initiate_decomposition(SP_scenario_init, Scn_ID=0, Pareto_ID=0)
         self.MP_iteration(scenario_MP, Scn_ID=0, binary=False, Pareto_ID=0, read_DHN=True)
 
-        heat_flow = self.results_MP[0][0][0].df_District["flowrate_max"] * 179.5
+        if not self.method["DHN_CO2"]:
+            delta_enthalpy = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"]).mean() * 4.18
+        else:
+            delta_enthalpy = 179.5
+        heat_flow = self.results_MP[0][0][0].df_District["flowrate_max"] * delta_enthalpy
         dhn_inv = self.results_MP[0][0][0].df_District.loc["Network", "DHN_inv"]
         tau = self.results_SP[0][0][0][0]["Building1"].df_Performance["ANN_factor"][0]
         dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
@@ -671,15 +675,8 @@ class reho(district_decomposition):
             self.district.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui]*1.001, dhn_invh]
 
         self.pool.close()
-
-        self.feasible_solutions = 0
         self.method['decentralized'] = method
-        self.number_SP_solutions = pd.DataFrame()
-        self.number_MP_solutions = pd.DataFrame()
-        self.results_SP = WR.encapsulation()
-        self.results_MP = WR.encapsulation()
-        self.solver_attributes_SP = pd.DataFrame()
-        self.solver_attributes_MP = pd.DataFrame()
+        self.initialize_optimization_tracking_attributes()
 
     def get_results_attributes(self, ampl, Scn_ID, ParetoID, scenario):
         if self.method["decomposed"] or self.method['decentralized']:

@@ -326,6 +326,7 @@ data/weather/hour/*
 data/emissions/*
 !data/emissions/electricity_matrix_2019_reduced.csv
 
+plotting/shared_executables_REHO
 # Scripts
 scripts/*
 !scripts/examples/

@@ -45,12 +45,17 @@ def handle_zero_rows(df):
     return df.loc[~is_zero_row]
 
 
-def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False):
+def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, premium_version=False, additional_costs={}):
     df_eco = df_eco.groupby(indexed_on).sum()
     indexes = df_eco.index.tolist()
 
     data_capex = df_eco.xs('investment', level='Category', axis=1).transpose()
     data_capex.index.names = ['Unit']
+
+    # TODO: clean isolation cost
+    if 'isolation' in additional_costs:
+        data_capex.loc[('Isolation'), :] = [0, 0, 0, 0, additional_costs['isolation']]
+
     data_capex = data_capex.reset_index().merge(layout, left_on="Unit", right_on='Name').set_index("Unit").fillna(0)
 
     data_opex = df_eco.xs('operation', level='Category', axis=1).transpose()
@@ -64,7 +69,25 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False):
             new_indices[i] = ('revenues', 'Electrical_grid_feed_in')
     data_opex.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
 
-    data_opex.loc[('costs', 'PV'), :] = data_opex.loc[('avoided', 'PV')]
+    if include_avoided:
+        data_opex.loc[('costs', 'Electrical_grid'), :] = data_opex.loc[('costs', 'Electrical_grid')] + data_opex.loc[('avoided', 'PV')]
+
+    if premium_version:
+        data_opex.loc[('avoided', 'solar_premium'), :] = data_opex.loc[('avoided', 'PV_SC')] * (0.279 - 0.1645) / 0.279
+        data_opex.loc[('revenues', 'solar_value'), :] = data_opex.loc[('revenues', 'Electrical_grid_feed_in')] + \
+                                                     data_opex.loc[('avoided', 'PV_SC')] - data_opex.loc[('avoided', 'solar_premium')]
+        data_opex = data_opex.drop("PV_SC", level='Layer')
+        data_opex = data_opex.drop("Electrical_grid_feed_in", level='Layer')
+
+    data_opex = data_opex.drop("PV", level='Layer')
+
+    # TODO: clean additional costs
+    if 'gasoline' in additional_costs:
+        data_opex.loc[('costs', 'Gasoline'), :] = [additional_costs['gasoline'], additional_costs['gasoline'], 0, 0, 0]
+
+    if 'gasoline' in additional_costs:
+        data_opex.loc[('costs', 'ict'), :] = [additional_costs['ict'], additional_costs['ict'], additional_costs['ict'], 0, 0]
+
     if neg:
         indices = data_opex.index.get_level_values(0)
         neg_indices = indices.str.contains('avoided')
@@ -132,6 +155,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
         df_eco = df_eco.xs('impact', level='Perf_type')
 
     indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, True)
+
+    data_opex = data_opex.drop("avoided", level='type')
 
     x1 = list(range(len(indexes)))
     x2 = [x + 1 / 3 for x in x1]
@@ -225,7 +250,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
     return fig
 
 def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', filename=None,
-                            export_format='html', auto_open=False):
+                            export_format='html', auto_open=False, premium_version=True, additional_costs={}):
     """
         :param results: dictionary from REHO results pickle
         :param plot: choose among 'costs' and 'gwp'
@@ -246,9 +271,9 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
                          'leg_2']
     lang = re.split('_', label)[0]
     if plot == 'costs':
-        change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX',
+        change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/m2/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX',
                              'CAPEX']
-        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/y]', 'Costs', 'TOTEX', 'CHF', 'OPEX',
+        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/m2/y]', 'Costs', 'TOTEX', 'CHF', 'OPEX',
                              'CAPEX']
         df_eco = df_eco.xs('costs', level='Perf_type')
     elif plot == 'gwp':
@@ -258,7 +283,7 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
                              'kgCO2', 'Grid', 'Constr']
         df_eco = df_eco.xs('impact', level='Perf_type')
 
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, False)
+    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, include_avoided=False, premium_version=premium_version, additional_costs=additional_costs)
 
     costs = pd.concat([data_capex, data_opex.xs('costs', level='type')],
                       keys=['investment', 'operation'], names=['Category'])
@@ -297,18 +322,6 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
                            textangle=0, align='center', valign='top',
                            showarrow=False
                            )
-        # fig.add_annotation(
-        #     x=x1[i], y=costs_sum[i] * 0.99, ax=x1[i], ay=costs_sum[i] - 0.04 * max(costs_sum),
-        #     axref='x', ayref='y', text='',
-        #     showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1, arrowcolor='black'
-        # )
-        # if revenues_sum[i] > 0:
-        #     fig.add_annotation(
-        #         x=x2[i], ay=totex[i] + 0.04 * max(totex),
-        #         ax=x2[i], y=totex[i] * 1.01,
-        #         axref='x', ayref='y', text='',
-        #         showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1, arrowcolor='black'
-        #     )
 
     fig.add_trace(
         go.Bar(name=change_data.loc['total', lang], x=x2,
@@ -331,64 +344,35 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
                        y=tech[indexes], width=1 / 3,
                        marker_color=tech["ColorPastel"],
                        hovertemplate='<b>' + tech[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' +
+                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' +
                                      change_data.loc['unites', lang],
                        legendgroup='group1',
                        legendgrouptitle_text=change_data.loc['leg_2', lang],
                        showlegend=True))
     for line, tech in costs.xs('operation', level='Category').iterrows():
-        if line == costs.xs('operation', level='Category').index[-1]:
-            fig.add_trace(
-                go.Bar(name=tech[label], x=x1,
-                       y=tech[indexes], width=1 / 3,
-                       marker_color=tech["ColorPastel"],
-                       hovertemplate='<b>' + tech[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' +
-                                     change_data.loc['unites', lang],
-                       legendgroup='group2',
-                       legendgrouptitle_text=change_data.loc['leg_1', lang],
-                       text='&#8593;', textposition='auto',
-                       showlegend=True))
-        else:
-            fig.add_trace(
-                go.Bar(name=tech[label], x=x1,
-                       y=tech[indexes], width=1 / 3,
-                       marker_color=tech["ColorPastel"],
-                       hovertemplate='<b>' + tech[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' +
-                                     change_data.loc['unites', lang],
-                       legendgroup='group2',
-                       legendgrouptitle_text=change_data.loc['leg_1', lang],
-                       showlegend=True))
+        fig.add_trace(
+            go.Bar(name=tech[label], x=x1,
+                   y=tech[indexes], width=1 / 3,
+                   marker_color=tech["ColorPastel"],
+                   hovertemplate='<b>' + tech[label] + '</b>' +
+                                 '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' +
+                                 change_data.loc['unites', lang],
+                   legendgroup='group2',
+                   legendgrouptitle_text=change_data.loc['leg_1', lang],
+                   showlegend=True))
     for line, layer in revenues.iterrows():
-        if revenues.index[0] == line:
-            fig.add_trace(
-                go.Bar(name=layer[label],
-                       x=x2,
-                       y=layer[indexes],
-                       marker=dict(color=layer["ColorPastel"]),
-                       legendgroup='group2',
-                       legendgrouptitle_text=change_data.loc['x_axis_2', lang],
-                       showlegend=True,
-                       text='&#8595;', textposition='auto',
-                       width=1 / 3,
-                       hovertemplate='<b>' + layer[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc[
-                                         'unites', lang])
-            )
-        else:
-            fig.add_trace(
-                go.Bar(name=layer[label],
-                       x=x2,
-                       y=layer[indexes],
-                       marker=dict(color=layer["ColorPastel"]),
-                       legendgroup='group2',
-                       legendgrouptitle_text=change_data.loc['x_axis_2', lang],
-                       showlegend=True,
-                       width=1 / 3,
-                       hovertemplate='<b>' + layer[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc[
-                                         'unites', lang])
+        fig.add_trace(
+            go.Bar(name=layer[label],
+                   x=x2,
+                   y=layer[indexes],
+                   marker=dict(color=layer["ColorPastel"]),
+                   legendgroup='group2',
+                   legendgrouptitle_text=change_data.loc['x_axis_2', lang],
+                   showlegend=True,
+                   width=1 / 3,
+                   hovertemplate='<b>' + layer[label] + '</b>' +
+                                 '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc[
+                                     'unites', lang])
             )
     # fig.add_trace(
     #     go.Bar(
@@ -420,6 +404,8 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
     if auto_open:
         fig.show()
     return fig
+
+
 
 def plot_pareto(results, label='FR_long', color='ColorPastel', auto_open=False):
 

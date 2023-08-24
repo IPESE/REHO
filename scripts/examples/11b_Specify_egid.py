@@ -13,9 +13,9 @@ def build_district(grids, scenario, transfo_id, egid):
 
     # connect to Suisse database
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
+    reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(transfo_id, egid=egid)
-    units = structure.initialize_units(scenario, grids=grids)
+    units = infrastructure.initialize_units(scenario, grids=grids)
 
     # replace nan in buildings data
     for bui in qbuildings_data["buildings_data"]:
@@ -45,7 +45,7 @@ def execute_DW_with_increasing_BUI():
 
     Method = {"decomposed": False, "decentralized": True}
 
-    grids = structure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.08, "Cost_supply_cst": 0.20},
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.08, "Cost_supply_cst": 0.20},
                                         'NaturalGas': {"Cost_demand_cst": 0.06, "Cost_supply_cst": 0.20}})
 
     # select district data

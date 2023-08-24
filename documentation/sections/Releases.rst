@@ -4,13 +4,13 @@ Releases
 How to cite
 ===========
 
-Refer to
-:cite:t:`middelhauve2021potential`
+.. caution ::
+   TO DO
 
 License
 =======
 
-Copyright (C) <2018-2021> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
+Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
@@ -20,12 +20,13 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 Codes versions
 ==============
-- first release
 
-Authors:
+.. caution ::
+   TO DO
 
-- Dorsan Lepour
 
 Model publications
 ==================
 
+.. caution ::
+   TO DO

@@ -307,7 +307,6 @@ pip-selfcheck.json
 # Data
 data/QBuildings/*
 !data/QBuildings/db/Suisse.ini
-!data/QBuildings/db/Suisse-old.ini
 !data/QBuildings/db/Geneva.ini
 
 data/buildings/*

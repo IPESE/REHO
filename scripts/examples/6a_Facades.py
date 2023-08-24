@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # Set building parameters. We can consider the roofs orientations and add PV on facades.
     reader = QBuildingsReader(load_facades=True, load_roofs=True)       # specify to import as well buildings' roofs and facades data
-    reader.establish_connection('Suisse-old')
+    reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
     # Set specific parameters
@@ -27,8 +27,8 @@ if __name__ == '__main__':
     method = {'use_pv_orientation': True, 'use_facades': False, 'decentralized': False}     # select PV orientation and/or facades methods
 
     # Initialize available units and grids
-    grids = structure.initialize_grids()
-    units = structure.initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)

@@ -1,5 +1,5 @@
 from model.preprocessing.data_generation import *
-import model.district_structure as structure
+import model.infrastructure as infrastructure
 from model.compact_optimization import *
 import model.postprocessing.write_results as WR
 from itertools import groupby
@@ -43,7 +43,7 @@ class district_decomposition:
             self.qbuildings_data = qbuildings_data
         self.buildings_data = qbuildings_data['buildings_data']
         self.ERA = sum([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
-        self.district = structure.district(qbuildings_data, units, grids)
+        self.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
 
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -90,7 +90,7 @@ class district_decomposition:
         self.pool = None
         self.iter = 0  # keeps track of iterations, takes value of last iteration circle
         self.feasible_solutions = 0  # keeps track how many sets of SP solutions are proposed to the MP eg '2' means two per building
-        list_obj = list(self.district.lca_kpis) + ["TOTEX", "CAPEX", "OPEX", "GWP"]
+        list_obj = list(self.infrastructure.lca_kpis) + ["TOTEX", "CAPEX", "OPEX", "GWP"]
         self.flags = {obj: 0 for obj in list_obj} # keep track if the initialization has already been done
 
         # output attributes
@@ -196,19 +196,19 @@ class district_decomposition:
             if self.method['parallel_computation']:
 
                 # to run multiprocesses, a copy of the model is performed with pickles -> make sure there are no ampl libraries
-                results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta)) for h in self.district.houses}
+                results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta)) for h in self.infrastructure.houses}
 
                 # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
                 while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
                     time.sleep(1)
 
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation
-                for h in self.district.houses:
+                for h in self.infrastructure.houses:
                     (df_Results, attr) = results[h].get()
                     self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
             else:
-                for id, h in enumerate(self.district.houses):
+                for id, h in enumerate(self.infrastructure.houses):
                     df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
                     self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
@@ -335,11 +335,11 @@ class district_decomposition:
 
         ampl_MP.cd(path_to_district_units)
         ampl_MP.read('evehicle.mod')
-        if "NG_Boiler_district" in self.district.UnitsOfDistrict:
+        if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
             ampl_MP.read('ng_boiler_district.mod')
-        if "HeatPump_Geothermal_district" in self.district.UnitsOfDistrict:
+        if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
             ampl_MP.read('heatpump_district.mod')
-        if "NG_Cogeneration_district" in self.district.UnitsOfDistrict:
+        if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
             ampl_MP.read('ng_cogeneration_district.mod')
 
         ampl_MP.cd(path_to_units_storage)
@@ -384,11 +384,11 @@ class district_decomposition:
         if not self.method['include_all_solutions']:
             MP_parameters['lca_house_units_SPs'] = MP_parameters['lca_house_units_SPs'].xs(self.feasible_solutions - 1, level="FeasibleSolution", drop_level=False)
 
-        MP_parameters['Grids_Parameters'] = self.district.Grids_Parameters
-        MP_parameters['Grids_Parameters_lca'] = self.district.Grids_Parameters_lca
-        MP_parameters['Units_flowrate'] = self.district.Units_flowrate.query('Unit.str.contains("district")')
-        MP_parameters['Units_Parameters'] = self.district.Units_Parameters.query('index.str.contains("district")')
-        MP_parameters['Units_Parameters_lca'] = self.district.Units_Parameters_lca.query('index.get_level_values("Units").str.contains("district")')
+        MP_parameters['Grids_Parameters'] = self.infrastructure.Grids_Parameters
+        MP_parameters['Grids_Parameters_lca'] = self.infrastructure.Grids_Parameters_lca
+        MP_parameters['Units_flowrate'] = self.infrastructure.Units_flowrate.query('Unit.str.contains("district")')
+        MP_parameters['Units_Parameters'] = self.infrastructure.Units_Parameters.query('index.str.contains("district")')
+        MP_parameters['Units_Parameters_lca'] = self.infrastructure.Units_Parameters_lca.query('index.get_level_values("Units").str.contains("district")')
 
         if self.method['use_dynamic_emission_profiles']:
             ids = self.number_SP_solutions.iloc[-1]
@@ -405,8 +405,8 @@ class district_decomposition:
         MP_parameters['Area_tot'] = self.ERA
 
         if 'EV_plug_out' not in MP_parameters:
-            if len(self.district.UnitsOfDistrict) != 0:
-                if 'EV_district' in self.district.UnitsOfDistrict:
+            if len(self.infrastructure.UnitsOfDistrict) != 0:
+                if 'EV_district' in self.infrastructure.UnitsOfDistrict:
                     MP_parameters['EV_plug_out'] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster)
 
         if read_DHN:
@@ -428,12 +428,12 @@ class district_decomposition:
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
         for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'Lca_kpi']:
-            MP_set_indexed[sets] = self.district.Set[sets]
+            MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
         MP_set_indexed['UnitsOfLayer'] = dict()
-        for layer in self.district.Set['UnitsOfLayer']:
-            lst =  self.district.Set['UnitsOfLayer'][layer]
+        for layer in self.infrastructure.Set['UnitsOfLayer']:
+            lst =  self.infrastructure.Set['UnitsOfLayer'][layer]
             MP_set_indexed['UnitsOfLayer'][layer] = np.array(list(filter(lambda k: 'district' in k, lst)))
 
         MP_set_indexed['FeasibleSolutions'] = df_Performance.index.unique('FeasibleSolution').to_numpy()  # index to array as set
@@ -444,28 +444,28 @@ class district_decomposition:
 
             df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
             df_PV_t = pd.DataFrame()
-            for bui in self.district.houses:
+            for bui in self.infrastructure.houses:
                 dummy = df_Unit_t.xs("PV_" + bui, level="Unit")
                 df_PV_t = pd.concat([df_PV_t, dummy])
             MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
 
-        if "Heat" in self.district.grids.keys():
+        if "Heat" in self.infrastructure.grids.keys():
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
                 T_DHN_mean = (self.parameters["T_DHN_supply_cst"] + self.parameters["T_DHN_return_cst"]) / 2
-                if "HeatPump_Geothermal_district" in self.district.UnitsOfDistrict:
+                if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
                     MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
                     MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
         if read_DHN:
-            MP_set_indexed["House_ID"] = np.array(range(0, len(self.district.houses)))+1
+            MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses)))+1
 
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS
         # ---------------------------------------------------------------------------------------------------------------
-        if len(self.district.district_units) > 0:
+        if len(self.infrastructure.district_units) > 0:
             MP_set_indexed['Units'] = np.array([])
             MP_set_indexed['UnitTypes'] = np.array([])
             MP_set_indexed['UnitsOfType'] = {}
-            for u in self.district.district_units:
+            for u in self.infrastructure.district_units:
                 name = u['name']
                 MP_set_indexed['Units'] = np.append(MP_set_indexed['Units'], [name])
                 if not u['UnitOfType'] in MP_set_indexed['UnitTypes']:
@@ -565,16 +565,16 @@ class district_decomposition:
 
         if self.method['parallel_computation']:
             # to run multiprocesses, a copy of the model is performed with pickles -> make sure ampl libraries are removed
-            results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.district.houses}
+            results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.infrastructure.houses}
 
             while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
                 time.sleep(1)
             # for now the memory which needs to be writable & shared is not parallel -> results have to be stored outside calculation
-            for h in self.district.houses:
+            for h in self.infrastructure.houses:
                 (df_Results, attr) = results[h].get()
                 self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
         else:
-            for h in self.district.houses:
+            for h in self.infrastructure.houses:
                 df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
                 self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
@@ -714,10 +714,10 @@ class district_decomposition:
             # Operation impact
             Cop_h = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi, cost_supply=pi)
             Cop_h_GWP = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_GWP, cost_supply=pi_GWP)
-            Cop_h_lca = [self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_lca.xs(kpi), cost_supply=pi_lca.xs(kpi)) for kpi in self.district.lca_kpis]
+            Cop_h_lca = [self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_lca.xs(kpi), cost_supply=pi_lca.xs(kpi)) for kpi in self.infrastructure.lca_kpis]
             Cop_h_lca = pd.concat(Cop_h_lca, axis=1)
             Cop_h = pd.concat([Cop_h, Cop_h_GWP, Cop_h_lca], axis=1)
-            Cop_h.columns = ["TOTEX", "GWP"] + list(self.district.lca_kpis)
+            Cop_h.columns = ["TOTEX", "GWP"] + list(self.infrastructure.lca_kpis)
             Cop = pd.concat([Cop, Cop_h])
 
             # Investment impact
@@ -812,7 +812,7 @@ class district_decomposition:
         df_Unit = df_Unit.set_index('Unit', append=True)
 
         # append central district units
-        if len(self.district.district_units) > 0:
+        if len(self.infrastructure.district_units) > 0:
             df_U_District = pd.concat([last_results.df_Unit], keys=[(self.iter, 'District')], names=['FeasibleSolution', 'house'])
             df_Unit = pd.concat([df_Unit, df_U_District])
         df_Unit = df_Unit.set_index(df_Unit.index.rename('Hub', level='house'))
@@ -965,7 +965,7 @@ class district_decomposition:
         if dual_variable == 'mu':
             dual_value = df[dual_variable][House]  # dual variable from previous iteration
         elif dual_variable == 'pi_lca':
-            dual_value = df[self.district.Set["Lca_kpi"]].stack()
+            dual_value = df[self.infrastructure.Set["Lca_kpi"]].stack()
             dual_value.index = dual_value.index.reorder_levels((3, 0, 1, 2))
         else:
             dual_value = df[dual_variable]  # dual variable from previous iteration
@@ -1070,11 +1070,11 @@ class district_decomposition:
         parameters_SP: dictionary, Parameters from the script for a single house (f.e. tariffs)
         district_SP: dictionary, The district structure for a single house
         """
-        ID = np.where(h == self.district.House)[0][0]
+        ID = np.where(h == self.infrastructure.House)[0][0]
 
         single_building_data = {"buildings_data": {h: self.buildings_data[h]}}
         buildings_data_SP = {h: self.buildings_data[h]}
-        building_units = {"building_units": self.district.units}
+        building_units = {"building_units": self.infrastructure.units}
 
         for key in self.parameters:
             if key not in self.lists_MP["list_parameters_MP"]:
@@ -1087,10 +1087,10 @@ class district_decomposition:
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
 
-        district_SP = structure.district(single_building_data, building_units, self.district.grids)  # initialize District
+        district_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
 
         # TODO: better integration Units_Parameters specific to each house
-        unit_param = self.district.Units_Parameters.loc[[string.endswith(h) for string in self.district.Units_Parameters.index]]
+        unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]
         district_SP.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = unit_param[["Units_Fmax", "Cost_inv2"]]
 
         return buildings_data_SP, parameters_SP, district_SP

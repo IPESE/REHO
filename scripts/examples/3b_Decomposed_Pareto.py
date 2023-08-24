@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
+    reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
     # Set specific parameters
@@ -28,8 +28,8 @@ if __name__ == '__main__':
     method = {'decomposed': True}
 
     # Initialize available units and grids
-    grids = structure.initialize_grids()
-    units = structure.initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     DW_params = {'max_iter': 2}

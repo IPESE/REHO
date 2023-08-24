@@ -1,17 +1,18 @@
 
 .. _app:bestd_data:
 
-Input Data
+Input data
 ++++++++++
 
 .. caution ::
-   UNDER CONSTRUCTION.
+   Work in progress
+
+.. caution ::
    **To FEDECOM partners** this page describes the input-data for the
    prospection design model. Pilots are required to share the information listed
    in Section :ref:`sec:data:building_info` for each buildings.
    Please, update the information in the shared document available at:
    'shared drive <https://docs.google.com/spreadsheets/d/1lK5Zz9cD4d12runQ_tiUMjtU2Dq7QNZ07eLt0lUs5aw/edit?usp=sharing>`_
-
    Tekniker will lead the collect.
 
 Input files overview
@@ -285,7 +286,7 @@ The default prices are loaded using the `initialize_grids()` function with the f
 
 .. code-block:: bash
 
-    grids = structure.initialize_grids()
+    grids = infrastructure.initialize_grids()
 
 The file `grids.csv` can be found in the `preprocessing/units` directory.
 
@@ -297,7 +298,7 @@ To use custom prices, you have two options:
 
 .. code-block:: bash
 
-    grids = structure.initialize_grids(file="path/to/custom_grids.csv")
+    grids = infrastructure.initialize_grids(file="path/to/custom_grids.csv")
 
    Replace `"path/to/custom_grids.csv"` with the actual file path of your custom CSV file.
 
@@ -305,7 +306,7 @@ To use custom prices, you have two options:
 
 .. code-block:: bash
 
-    grids = structure.initialize_grids({
+    grids = infrastructure.initialize_grids({
         'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645},
         'Oil': {'Cost_supply_cst': 0.16}
     })

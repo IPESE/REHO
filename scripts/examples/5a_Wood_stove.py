@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
+    reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
     # Set specific parameters
@@ -27,12 +27,12 @@ if __name__ == '__main__':
     method = {}
 
     # Initialize available units and grids. You can add more resources layer than simply electricity and gas
-    grids = structure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.10, "Cost_supply_cst": 0.26},
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.10, "Cost_supply_cst": 0.26},
                                         'Wood': {}, 'Oil': {},
                                         'NaturalGas': {'NaturalGas': {"Cost_demand_cst": 0.06, "Cost_supply_cst": 0.20}}})
 
 
-    units = structure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)

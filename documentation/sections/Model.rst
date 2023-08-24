@@ -154,8 +154,8 @@ Files:
   - `write_results.py`: extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes).
 
 
-REHOResults
-~~~~~~~~~~~
+REHO Results
+~~~~~~~~~~~~
 
 The class `REHOResults` is collecting main variables and parameters.
 If you want to access a value, you can check here which attribute you have to call in the result object.
@@ -178,7 +178,7 @@ Examples
 List of examples.
 
 Plotting
-=======
+========
 
 `plotting` contains some shared scripts for plotting.
 

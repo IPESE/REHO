@@ -42,10 +42,10 @@ There are several input files in the REHO framework, each serving a specific pur
 
 In the following sections, we will describe each data file in detail to explain each parameter meaning and purpose.
 
+.. _sec:data:building_info:
+
 Building Information File
 =========================
-
-.. _sec:data:building_info:
 
 .. caution ::
    To the attention of FEDECOM partners: this section details the data that needs to be collected.
@@ -278,10 +278,10 @@ Scenario Files
 TO BE DONE
 
 Change grid price
-~~~~~~~~~~~~~~~~~
+-----------------
 
 Loading Default Prices
-^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~
 The default prices are loaded using the `initialize_grids()` function with the following code:
 
 .. code-block:: bash
@@ -291,7 +291,7 @@ The default prices are loaded using the `initialize_grids()` function with the f
 The file `grids.csv` can be found in the `preprocessing/units` directory.
 
 Using Custom Prices
-^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~
 To use custom prices, you have two options:
 
 1. Provide another CSV file to the `initialize_grids()` function:

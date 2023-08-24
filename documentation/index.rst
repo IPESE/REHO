@@ -45,8 +45,8 @@ Contents
    sections/Overview
    sections/Releases
    sections/Getting started
-   sections/Model formulation
-   sections/Input Data
+   sections/Model
+   sections/Input data
    sections/Bibliography
 
 .. Indices and tables

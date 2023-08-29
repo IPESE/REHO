@@ -143,8 +143,9 @@ sum{T in HP_Tsupply} (HP_E_heating[h,u,p,t,T]/HP_Pmax[h,u,p,t,T]) <= Units_Mult[
 subject to HP_c4{h in House,ui in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],uj in UnitsOfType['WaterTankSH'] inter UnitsOfHouse[h]}:
 Units_Mult[uj] >= if Th_supply_0[h] > 50 then 0.015*Units_Mult[ui]*HP_Eta_nominal[ui,35,20]*(35+273.15)/(35 - (20)) else 0;			#m3
 
+param DHN_CO2_efficiency default 0.95; # The Innovative Concept of Cold District Heating Networks: A Literature Review, Marco Pellegrini
 subject to DHN_heat{h in House, u in {'HeatPump_DHN_'&h}, p in Period, t in Time[p]}:
-Units_demand['Heat',u,p,t] = sum{st in StreamsOfUnit[u], se in ServicesOfStream[st]} Streams_Q[se,st,p,t] - sum{st in StreamsOfUnit[u], T in HP_Tsupply: T = Streams_Tin[st,p,t]} HP_E_heating[h,u,p,t,T]; 									#kW
+Units_demand['Heat',u,p,t]*DHN_CO2_efficiency = sum{st in StreamsOfUnit[u], se in ServicesOfStream[st]} Streams_Q[se,st,p,t] - sum{st in StreamsOfUnit[u], T in HP_Tsupply: T = Streams_Tin[st,p,t]} HP_E_heating[h,u,p,t,T]; 									#kW
 
 subject to enforce_DHN{h in House, u in {'DHN_hex_in_'&h}, v in {'HeatPump_DHN_'&h}}:
 0.95 * sum{p in PeriodStandard, t in Time[p]}(House_Q_heating[h,p,t]* dp[p] * dt[p]) <= sum{p in PeriodStandard, t in Time[p]} (Units_demand['Heat',u,p,t]  * dp[p] * dt[p] + sum{st in StreamsOfUnit[v], se in ServicesOfStream[st]} (Streams_Q[se,st,p,t] * dp[p] * dt[p]));

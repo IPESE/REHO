@@ -328,9 +328,9 @@ class reho(district_decomposition):
         df = pd.DataFrame()
         for i in self.results[Scn_ID].keys():
             if self.scenario["Objective"][0] in self.district.lca_kpis:
-                df2 = pd.DataFrame([self.results[Scn_ID][i].df_lca_Performance[self.scenario["Objective"][0]].iloc[0]], index=[i])
+                df2 = pd.DataFrame([self.results[Scn_ID][i].df_lca_Performance[self.scenario["Objective"][0]].xs("Network")], index=[i])
             else:
-                df2 = pd.DataFrame([self.results[Scn_ID][i].df_Performance['Costs_op'].iloc[0]], index=[i])
+                df2 = pd.DataFrame([self.results[Scn_ID][i].df_Performance['Costs_op'].xs("Network")], index=[i])
             df = pd.concat([df, df2])
         df = df.sort_values([0], ascending=False).reset_index()
 

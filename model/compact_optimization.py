@@ -127,6 +127,7 @@ class compact_optimization():
 
         # -SOLVER OPTIONS
         ampl.setOption('solver', 'gurobi')
+        ampl.eval("option gurobi_options 'NodeFileStart=0.5';")
         #ampl.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=3000';")
 
         # -----------------------------------------------------------------------------------------------------#

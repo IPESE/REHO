@@ -113,7 +113,7 @@ class compact_optimization():
 
     def init_ampl_model(self):
 
-        ampl = AMPL(Environment(AMPL_PATH))
+        ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
         # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS

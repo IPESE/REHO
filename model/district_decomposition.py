@@ -312,7 +312,7 @@ class district_decomposition:
         """
 
         ### Create the ampl Master Problem (MP)
-        ampl_MP = AMPL(Environment(AMPL_PATH))
+        ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('show_stats', 2)

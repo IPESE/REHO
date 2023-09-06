@@ -2,13 +2,14 @@ sqlalchemy==1.4.42
 geoalchemy2==0.12.5
 psycopg2==2.9.4
 pandas==1.5.0
+geopandas==0.13.2
 numpy==1.23.4
 numpy-financial==1.0.0
 amplpy==0.8.5
 matplotlib==3.6.1
 openpyxl~=3.0
 pyshp==2.3.1
-epw==1.2dev2
+git+https://github.com/building-energy/epw.git@master
 scipy==1.9.2
 seaborn
 plotly==5.10

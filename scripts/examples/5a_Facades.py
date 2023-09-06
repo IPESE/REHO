@@ -1,5 +1,5 @@
 from model.reho import *
-from model.preprocessing.QBuildings import *
+from model.preprocessing.QBuildings import QBuildingsReader
 
 
 if __name__ == '__main__':
@@ -9,8 +9,8 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
 
-    # Set building parameters
-    reader = QBuildingsReader()
+    # Set building parameters. We can consider the roofs orientations and add PV on facades.
+    reader = QBuildingsReader(load_facades=True, load_roofs=True)       # specify to import as well buildings' roofs and facades data
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
@@ -24,20 +24,15 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    # add stochasticity in the demand profiles given by the SIA standards, tunable with:
-    # standard deviation on the peak demand
-    # and/or standard deviation on the time-shift
-    method = {'decentralized': True, 'include_stochasticity': True, 'sd_stochasticity': [0.1, 2]}
+    method = {'use_pv_orientation': True, 'use_facades': False, 'building-scale': False}     # select PV orientation and/or facades methods
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
-    DW_params = {'max_iter': 2}
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
-                    cluster=cluster, scenario=scenario, method=method, DW_params=DW_params)
+    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
     reho_model.single_optimization()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='8a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='5a')

@@ -321,6 +321,7 @@ data/weather/clustering_results/*
 !data/weather/clustering_results/timestamp_Geneva_10_24_T_I_W.dat
 !data/weather/clustering_results/westfacades_irr_Geneva_10_24_T_I_W.txtscripts
 data/weather/hour/*
+!data/weather/hour/Geneva-hour.dat
 
 data/emissions/*
 !data/emissions/electricity_matrix_2019_reduced.csv

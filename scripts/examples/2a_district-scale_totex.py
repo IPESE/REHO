@@ -25,7 +25,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # to obtain a district scale design with many buildings, a decomposition of the problem is needed
-    method = {'decomposed': True}
+    method = {'district-scale': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
@@ -38,4 +38,4 @@ if __name__ == '__main__':
     reho_model.single_optimization()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='3a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='2a')

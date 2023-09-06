@@ -6,11 +6,12 @@ if __name__ == '__main__':
 
     # Set scenario
     scenario = dict()
-    scenario['Objective'] = 'TOTEX'
-    scenario['name'] = 'totex'
+    scenario['Objective'] = ['OPEX', 'CAPEX']
+    scenario['nPareto'] = 2
+    scenario['name'] = 'pareto'
 
-    # Set building parameters. We can consider the roofs orientations and add PV on facades.
-    reader = QBuildingsReader(load_facades=True, load_roofs=True)       # specify to import as well buildings' roofs and facades data
+    # Set building parameters
+    reader = QBuildingsReader()
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
@@ -24,15 +25,18 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    method = {'use_pv_orientation': True, 'use_facades': False, 'decentralized': False}     # select PV orientation and/or facades methods
+    method = {'district-scale': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
-    reho_model.single_optimization()
+    DW_params = {'max_iter': 2}
+    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
+                    cluster=cluster, scenario=scenario, method=method, DW_params=DW_params)
+
+    reho_model.generate_pareto_curve()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='6a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='2b')

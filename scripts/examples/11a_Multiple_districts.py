@@ -46,7 +46,7 @@ def execute_DW_with_increasing_BUI():
         Scenario["exclude_units"] = ["ThermalSolar"]
         Scenario["enforce_units"] = []
 
-        Method = {"decomposed": False, "decentralized": True}
+        Method = {'district-scale': False, 'building-scale': True}
 
         grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.08, "Cost_supply_cst": 0.20},
                                             'NaturalGas': {"Cost_demand_cst": 0.06, "Cost_supply_cst": 0.20}})

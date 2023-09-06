@@ -46,7 +46,7 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
-    method = {'decentralized': True}
+    method = {'building-scale': True}
 
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
@@ -54,4 +54,4 @@ if __name__ == '__main__':
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
     reho_model.single_optimization()
 
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='10a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='4c')

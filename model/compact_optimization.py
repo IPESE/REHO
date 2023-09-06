@@ -113,7 +113,7 @@ class compact_optimization():
 
     def init_ampl_model(self):
 
-        ampl = AMPL(Environment(AMPL_PATH))
+        ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
         # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS
@@ -127,6 +127,7 @@ class compact_optimization():
 
         # -SOLVER OPTIONS
         ampl.setOption('solver', 'gurobi')
+        ampl.eval("option gurobi_options 'NodeFileStart=0.5';")
         #ampl.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=3000';")
 
         # -----------------------------------------------------------------------------------------------------#
@@ -662,15 +663,15 @@ def initialize_default_methods(method):
     if 'use_pv_orientation' not in method:
         method['use_pv_orientation'] = False
 
-    if 'include_stochasticity' not in method:
+    if 'include_stochasticity' not in method:  # https://ipese-web.epfl.ch/lepour/lacorte_pds/index.html
         method['include_stochasticity'] = False
     if 'sd_stochasticity' not in method:
         method['sd_stochasticity'] = [0.1, 1]
 
-    if 'decentralized' not in method:
-        method['decentralized'] = False
-    if 'decomposed' not in method:
-        method['decomposed'] = False
+    if 'building-scale' not in method:
+        method['building-scale'] = False
+    if 'district-scale' not in method:
+        method['district-scale'] = False
     if 'parallel_computation' not in method:
         method['parallel_computation'] = True
     if 'switch_off_second_objective' not in method:
@@ -684,7 +685,7 @@ def initialize_default_methods(method):
     if 'use_dynamic_emission_profiles' not in method:
         method['use_dynamic_emission_profiles'] = False
     if 'read_electricity_profiles' not in method:
-        method['read_electricity_profiles'] = False
+        method['read_electricity_profiles'] = None
 
     if 'include_all_solutions' not in method:
         method['include_all_solutions'] = False
@@ -705,9 +706,9 @@ def initialize_default_methods(method):
     if 'use_Storage_Interperiod' not in method:
         method['use_Storage_Interperiod'] = False
 
-    if method['decentralized']:
+    if method['building-scale']:
         method['include_all_solutions'] = False # avoid interactions between optimization scenarios
-        method['decomposed'] = True  # method is using decomposition algorithm
+        method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
 
     return method
 

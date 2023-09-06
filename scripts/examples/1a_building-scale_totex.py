@@ -30,7 +30,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # select some methods as defined in compact_optimization.py (function initialize_default_methods).
-    method = {'decentralized': True}
+    method = {'building-scale': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()    # initialize grid parameters such as energy tariffs. More information is available in example 2b

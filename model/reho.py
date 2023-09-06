@@ -60,7 +60,7 @@ class reho(district_decomposition):
         else:
             self.nPareto = self.scenario['nPareto']  # intermediate points
             self.total_Pareto = self.nPareto * 2 + 2  # total pareto points: both objectives plus boundaries
-        if self.method["decentralized"] and 'EV' not in self.infrastructure.UnitTypes:
+        if self.method['building-scale'] and 'EV' not in self.infrastructure.UnitTypes:
             self.scenario['specific'] = self.scenario['specific'] + ["disallow_exchanges_1", "disallow_exchanges_2"]
 
         # output attributes
@@ -80,7 +80,7 @@ class reho(district_decomposition):
         return scenario
 
     def return_epsilon_init(self, C_max, C_min, pareto_max, pareto, objective):
-        if self.method['decentralized']:
+        if self.method['building-scale']:
             if objective == self.scenario["Objective"][0]:
                 epsilon_init = (C_max - C_min) / (pareto_max + 1) * (pareto - 1) + C_min
             elif objective == self.scenario["Objective"][1]:
@@ -96,7 +96,7 @@ class reho(district_decomposition):
 
     def __annualized_investment(self, ampl, surfaces, Scn_ID, Pareto_ID):
 
-        if self.method["decomposed"] or self.method['decentralized']:
+        if self.method['district-scale'] or self.method['building-scale']:
             df_inv = self.results[Scn_ID][Pareto_ID].df_Performance
             district = (df_inv.Costs_inv[-1] + df_inv.Costs_rep[-1]) / self.ERA
             buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
@@ -113,7 +113,7 @@ class reho(district_decomposition):
 
 
     def __opex_per_house(self, ampl, surfaces, Scn_ID, Pareto_ID):
-        if self.method["decomposed"] or self.method["decentralized"]:
+        if self.method['district-scale'] or self.method['building-scale']:
             df_op = self.results[Scn_ID][Pareto_ID].df_Performance
             district = df_op.Costs_op[-1] / self.ERA
             building = df_op.Costs_op[:-1].div(surfaces.ERA)
@@ -167,7 +167,7 @@ class reho(district_decomposition):
         objective1 = self.scenario["Objective"][0]
         scenario['Objective'] = objective1
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
@@ -199,7 +199,7 @@ class reho(district_decomposition):
         else:
             Pareto_ID = self.nPareto + 2
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
@@ -254,7 +254,7 @@ class reho(district_decomposition):
             print('---------------> ', self.scenario["Objective"][0], ' LIMIT: ', obj1_eps_lim)
 
             # results computation
-            if self.method['decomposed']:
+            if self.method['district-scale']:
                 ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
             else:
                 if self.method['use_facades'] or self.method['use_pv_orientation']:
@@ -298,7 +298,7 @@ class reho(district_decomposition):
                 self.epsilon_constraints['EMOO_obj2'] = np.append(self.epsilon_constraints['EMOO_obj2'], obj2_eps_lim)
                 print('---------------> ', self.scenario["Objective"][1], ' LIMIT: ', obj2_eps_lim)
                 # results computation
-                if self.method['decomposed']:
+                if self.method['district-scale']:
                     ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
                 else:
                     if self.method['use_facades'] or self.method['use_pv_orientation']:
@@ -328,9 +328,9 @@ class reho(district_decomposition):
         df = pd.DataFrame()
         for i in self.results[Scn_ID].keys():
             if self.scenario["Objective"][0] in self.infrastructure.lca_kpis:
-                df2 = pd.DataFrame([self.results[Scn_ID][i].df_lca_Performance[self.scenario["Objective"][0]].iloc[0]], index=[i])
+                df2 = pd.DataFrame([self.results[Scn_ID][i].df_lca_Performance[self.scenario["Objective"][0]].xs("Network")], index=[i])
             else:
-                df2 = pd.DataFrame([self.results[Scn_ID][i].df_Performance['Costs_op'].iloc[0]], index=[i])
+                df2 = pd.DataFrame([self.results[Scn_ID][i].df_Performance['Costs_op'].xs("Network")], index=[i])
             df = pd.concat([df, df2])
         df = df.sort_values([0], ascending=False).reset_index()
 
@@ -345,7 +345,7 @@ class reho(district_decomposition):
         self.results[Scn_ID] = new_order_results
         self.ampl_lib[Scn_ID] = new_order_ampl
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             self.sort_decomp_result(Scn_ID, df['index'].values)
 
 
@@ -395,7 +395,7 @@ class reho(district_decomposition):
 
     def fix_utilities(self, Pareto_ID, Scn_ID, cluster, df_Unit=None, scenario=None):
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             if 'FeasibleSolution' in df_Unit.index.names:
                 df_unit = df_Unit.reset_index(level=['FeasibleSolution','Hub'], drop=True)
             else:
@@ -501,7 +501,7 @@ class reho(district_decomposition):
 
     def single_optimization(self, Pareto_ID=0, Third_ID=None):
         Scn_ID = self.scenario['name']
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
         else:
@@ -542,7 +542,7 @@ class reho(district_decomposition):
     def generate_pareto_actors(self, n_sample=10, bounds=None, actor="Owner"):
         self.method["actors_cost"] = True
         self.method["include_all_solutions"] = True
-        self.method["decentralized"] = True
+        self.method['building-scale'] = True
         self.scenario["Objective"] = "TOTEX_bui"
         self.set_indexed["ActorObjective"] = np.array([actor])
         if bounds != None:
@@ -654,8 +654,8 @@ class reho(district_decomposition):
 
         self.pool = mp.Pool(mp.cpu_count())
         self.iter = 0  # new scenario has to start at iter = 0
-        method = self.method['decentralized']
-        self.method['decentralized'] = True
+        method = self.method['building-scale']
+        self.method['building-scale'] = True
         scenario = self.scenario.copy()
         scenario["specific"] = scenario["specific"] + ["enforce_DHN"]
         scenario_MP, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
@@ -675,11 +675,11 @@ class reho(district_decomposition):
             self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui]*1.001, dhn_invh]
 
         self.pool.close()
-        self.method['decentralized'] = method
+        self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
     def get_results_attributes(self, ampl, Scn_ID, ParetoID, scenario):
-        if self.method["decomposed"] or self.method['decentralized']:
+        if self.method['district-scale'] or self.method['building-scale']:
             df_Results = self.get_df_results_from_MP_and_SPs(Scn_ID, ParetoID)
         else:
             df_Results = WR.dataframes_results(ampl, scenario, self.method, self.buildings_data)
@@ -692,7 +692,7 @@ class reho(district_decomposition):
         df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster)
         self.results[Scn_ID][Pareto_ID].df_KPI = df_KPI
         self.results[Scn_ID][Pareto_ID].df_economics = df_eco
-        if self.method["decentralized"]:
+        if self.method['building-scale']:
             self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 
 

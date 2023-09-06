@@ -6,10 +6,12 @@ from pathlib import Path
 #load_dotenv()
 #AMPL_PATH = os.getenv('AMPL_PATH')
 
-if platform.system() == 'Darwin':
-    AMPL_PATH = "/Users/lepour/Applications/ampl"
-else:
-    AMPL_PATH = "C:/AMPL"
+if "AMPL_PATH" not in os.environ:
+    if platform.system() == 'Darwin':
+        os.environ["AMPL_PATH"] = "/Users/lepour/Applications/ampl"
+    else:
+        os.environ["AMPL_PATH"] = "C:/AMPL"
+
 
 path_to_reho = os.path.dirname(__file__)
 path_to_data = os.path.join(path_to_reho, 'data')
@@ -32,6 +34,9 @@ path_to_configuration = os.path.join(path_to_actors_results, "configurations")
 
 # buildings
 path_to_buildings = os.path.join(path_to_data, 'buildings')
+
+# electricity
+path_to_electricity = os.path.join(path_to_data, 'electricity')
 
 # emissions
 path_to_emissions = os.path.join(path_to_data, 'emissions')

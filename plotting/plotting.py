@@ -669,7 +669,7 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
     ax.set_xticks(idx)
     ax.set_xticklabels(round(df_performance.Costs_inv / era, 1).values)
 
-    plt.title(objectives[0] + "-" + objectives[1] + " Pareto : " + scenario)
+    plt.title(objectives[0] + "-" + objectives[1] + " Pareto : " + str(scenario))
 
     if objectives[0] == "CAPEX":
         obj_x = "CAPEX [CHF/m$^2$yr]"

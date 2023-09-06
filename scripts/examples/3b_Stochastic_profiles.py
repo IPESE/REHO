@@ -1,14 +1,13 @@
 from model.reho import *
-from model.preprocessing.QBuildings import QBuildingsReader
+from model.preprocessing.QBuildings import *
 
 
 if __name__ == '__main__':
 
     # Set scenario
     scenario = dict()
-    scenario['Objective'] = ['OPEX', 'CAPEX']
-    scenario['nPareto'] = 2
-    scenario['name'] = 'pareto'
+    scenario['Objective'] = 'TOTEX'
+    scenario['name'] = 'totex'
 
     # Set building parameters
     reader = QBuildingsReader()
@@ -25,7 +24,10 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    method = {'decomposed': True}
+    # add stochasticity in the demand profiles given by the SIA standards, tunable with:
+    # standard deviation on the peak demand
+    # and/or standard deviation on the time-shift
+    method = {'building-scale': True, 'include_stochasticity': True, 'sd_stochasticity': [0.1, 2]}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
@@ -35,8 +37,7 @@ if __name__ == '__main__':
     DW_params = {'max_iter': 2}
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
                     cluster=cluster, scenario=scenario, method=method, DW_params=DW_params)
-
-    reho_model.generate_pareto_curve()
+    reho_model.single_optimization()
 
     # Save results
     SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='3b')

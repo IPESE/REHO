@@ -58,8 +58,8 @@ class district_decomposition:
 
         # Heat gains from electricity and people, domestic hot water demand, domestic electricity demand
         self.parameters['HeatGains'], self.parameters['DHW_flowrate'], domestic_elec = DGF.profiles_from_sia2024(self.buildings_data, self.File_ID, self.cluster, self.method['include_stochasticity'], self.method['sd_stochasticity'])
-        if self.method["read_electricity_profiles"]:
-            self.parameters['Domestic_electricity'] = el_parser.electricity_to_df(electricity_csv, self.cluster)
+        if self.method["read_electricity_profiles"] is not None:
+            self.parameters['Domestic_electricity'] = el_parser.read_typical_profiles(self.method["read_electricity_profiles"], self.File_ID)
         else:
             self.parameters['Domestic_electricity'] = domestic_elec
 
@@ -184,7 +184,7 @@ class district_decomposition:
         epsilon_init : array, Epsilon constraints to apply for the initialization
         """
         # check if TOTEX, OPEX or multi-objective optimization -> init with beta
-        if self.method['decentralized']:
+        if self.method['building-scale']:
             init_beta = [None]  # keep same objective function
         elif not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0:
             self.flags[scenario['Objective']] = 1  # never been optimized with this objective previously
@@ -239,10 +239,10 @@ class district_decomposition:
         print('INITIATE HOUSE: ', h)
 
         # find district structure and parameter for one single building
-        buildings_data_SP, parameters_SP, district_SP = self.__split_parameter_sets_per_building(h)
+        buildings_data_SP, parameters_SP, infrastructure_SP = self.__split_parameter_sets_per_building(h)
 
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
-        if epsilon_init is not None and self.method['decentralized']:
+        if epsilon_init is not None and self.method['building-scale']:
             emoo = scenario["EMOO"].copy()
             emoo.pop("EMOO_grid")
             if len(emoo) == 1:
@@ -252,14 +252,14 @@ class district_decomposition:
                     scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
             else:
                 raise warnings.warn("Multiple epsilon constraints")
-        elif not self.method['decentralized']:
+        elif not self.method['building-scale']:
             scenario, beta_list = self.get_beta_values(scenario, beta)
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(district_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
         else:
-            REHO = compact_optimization(district_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -312,7 +312,7 @@ class district_decomposition:
         """
 
         ### Create the ampl Master Problem (MP)
-        ampl_MP = AMPL(Environment(AMPL_PATH))
+        ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('show_stats', 2)
@@ -529,7 +529,7 @@ class district_decomposition:
         # -------------------------------------------------------------------------------------------------------------
         # Set scenario and Pareto_IDs
         # ------------------------------------------------------------------------------------------------------------
-        if self.method['decentralized']:
+        if self.method['building-scale']:
             scenario = self.remove_emoo_constraints(scenario)
 
         ampl_MP = self.select_MP_objective(ampl_MP, scenario)
@@ -622,16 +622,16 @@ class district_decomposition:
         parameters_SP['lca_kpi_demand'] = pi_lca.mul(0)
 
         # find district structure, objective, beta and parameter for one single building
-        buildings_data_SP, parameters_SP, district_SP = self.__split_parameter_sets_per_building(House, parameters_SP)
+        buildings_data_SP, parameters_SP, infrastructure_SP = self.__split_parameter_sets_per_building(House, parameters_SP)
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'beta')
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(district_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
         else:
-            REHO = compact_optimization(district_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method)
 
         ampl = REHO.build_model_without_solving()
 
@@ -783,7 +783,7 @@ class district_decomposition:
         if 'threshold_no_improv' not in DW_params: DW_params['threshold_no_improv'] = 0.00005
         if 'grid_cost_exchange' not in DW_params: DW_params['grid_cost_exchange'] = 0.0
         if 'weight_lagrange_cst' not in DW_params: DW_params['weight_lagrange_cst'] = 2.0
-        if self.method['decentralized']: DW_params['max_iter'] = 1
+        if self.method['building-scale']: DW_params['max_iter'] = 1
         return DW_params
 
     def get_final_MP_results(self, Pareto_ID=1, Scn_ID=0):
@@ -900,7 +900,7 @@ class district_decomposition:
         scenario['Objective'] = 'SP_obj_fct'
 
         # add beta values on emoo constraint
-        if isinstance(beta, (float, int)) and not self.method["decentralized"]:
+        if isinstance(beta, (float, int)) and not self.method['building-scale']:
             emoo = scenario["EMOO"].copy()
             for cst in ["EMOO_grid", "EMOO_GU_supply", "EMOO_GU_demand"]:
                 emoo.pop(cst, None)
@@ -1002,7 +1002,7 @@ class district_decomposition:
                           columns=['solving_time', 'constraints', 'presolve_constraints', 'variables', 'presolve_variables',
                                    'presolve_binaries', 'presolve_integer', 'no_objective', 'val_objective'])
 
-        if not self.method['decomposed']:  # for decompose method, stored in solver_attributes_MP or _SP
+        if not self.method['district-scale']:  # for decompose method, stored in solver_attributes_MP or _SP
             self.solver_attributes = pd.concat([self.solver_attributes, df])
 
         return df
@@ -1021,7 +1021,7 @@ class district_decomposition:
         self.number_MP_solutions = self.number_MP_solutions.sort_values(['Pareto_ID', 'FeasibleSolution'])
         self.solver_attributes_SP = self.solver_attributes_SP.sort_values(['Pareto_ID', 'FeasibleSolution'])
         self.solver_attributes_MP = self.solver_attributes_MP.sort_values(['Pareto_ID', 'Iter'])
-        if not self.method['decentralized']:
+        if not self.method['building-scale']:
             self.reduced_costs = self.reduced_costs.sort_values(['Pareto_ID', 'Iter'])
 
     def reset_Results(self):
@@ -1068,7 +1068,7 @@ class district_decomposition:
         -------
         buildings_data_SP: dictionary, egid, surface area, class of the building, ...
         parameters_SP: dictionary, Parameters from the script for a single house (f.e. tariffs)
-        district_SP: dictionary, The district structure for a single house
+        infrastructure_SP: dictionary, The district structure for a single house
         """
         ID = np.where(h == self.infrastructure.House)[0][0]
 
@@ -1087,13 +1087,13 @@ class district_decomposition:
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
 
-        district_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
+        infrastructure_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
 
         # TODO: better integration Units_Parameters specific to each house
         unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]
-        district_SP.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = unit_param[["Units_Fmax", "Cost_inv2"]]
+        infrastructure_SP.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = unit_param[["Units_Fmax", "Cost_inv2"]]
 
-        return buildings_data_SP, parameters_SP, district_SP
+        return buildings_data_SP, parameters_SP, infrastructure_SP
 
     def return_combined_SP_results(self, dict_results, result_dataframe):
 

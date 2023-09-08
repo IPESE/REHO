@@ -78,7 +78,7 @@ class district_decomposition:
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_lodger', 'TransformerCapacity',
                                                 'EV_y', 'EV_plug_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
-                         "list_constraints_MP": ['unidirectional_service', 'NPV_DHN']
+                         "list_constraints_MP": ['unidirectional_service', 'unidirectional_service2', 'NPV_DHN']
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -407,7 +407,7 @@ class district_decomposition:
         if 'EV_plug_out' not in MP_parameters:
             if len(self.district.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.district.UnitsOfDistrict:
-                    MP_parameters['EV_plug_out'] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster)
+                    MP_parameters['EV_pluged_out'], MP_parameters['EV_pluging_in'] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster)
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -857,7 +857,7 @@ class district_decomposition:
 
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
-                            'EMOO_lca_constraint', 'unidirectional_service', 'disallow_exchanges_1', 'disallow_exchanges_2']
+                            'EMOO_lca_constraint', 'unidirectional_service', 'unidirectional_service2', 'disallow_exchanges_1', 'disallow_exchanges_2']
         for cst in list_constraints:
             ampl.getConstraint(cst).drop()
 

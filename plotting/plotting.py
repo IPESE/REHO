@@ -9,7 +9,10 @@ from PIL import Image
 import plotly
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
+#from mpl_axes_aligner import align
+import matplotlib.patches as mpatches
+from matplotlib.lines import Line2D
+from matplotlib.legend_handler import HandlerTuple
 # ---------------------------------------------------------------------------------------------
 # Definition of colors and labels
 cm = dict({'ardoise': '#413D3A', 'perle': '#CAC7C7', 'rouge': '#FF0000', 'groseille': '#B51F1F',
@@ -596,94 +599,116 @@ def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style
 
 
 def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', color='ColorPastel',
-                      save_fig=False, name_fig='pareto_units', format_fig='png'):
+                      save_fig=False, name_fig='pareto_units', format_fig='png', opex_line=False, title=None):
 
-    scenario = list(results.keys())[0]
-    ids = list(results[scenario].keys())
-    era = results[scenario][ids[0]]['df_Buildings'].ERA.sum()
-
-    df_unit = dict_to_df(results, 'df_Unit')
-    df_performance = dict_to_df(results, 'df_Performance')
-
-    df_performance = df_performance.xs((scenario, 'Network'), level=('Scn_ID', 'Hub'))
-    df_performance["CAPEX"] = df_performance["Costs_inv"] + df_performance["Costs_rep"]
-    df_performance["OPEX"] = df_performance["Costs_op"] + df_performance["Costs_grid_connection"]
-    df_performance["TOTEX"] = df_performance["CAPEX"] + df_performance["OPEX"]
-    df_performance["GWP"] = df_performance["GWP_op"] + df_performance["GWP_constr"]
-    df_performance = df_performance.sort_values(by=objectives[0])
-
-    if objectives[0] == "CAPEX":
-        units_stack = "Costs_Unit_inv"
-    elif objectives[0] == "TOTEX":
-        units_stack = "GWP_Unit_constr"
-
-    if objectives[1] == "OPEX":
-        grid_stack = "Costs_op"
-    if objectives[1] == "GWP":
-        grid_stack = "GWP_op"
-
-
-    PV = df_unit[df_unit.index.get_level_values('Unit').str.contains('PV')]
-    PV = PV.groupby(level='Pareto_ID', sort=False).sum() / era
-
-    EH = df_unit[df_unit.index.get_level_values('Unit').str.contains('ElectricalHeater')]
-    EH = EH.groupby(level='Pareto_ID', sort=False).sum() / era
-
-    BAT = df_unit[df_unit.index.get_level_values('Unit').str.contains('Battery')]
-    BAT = BAT.groupby(level='Pareto_ID', sort=False).sum() / era
-
-    BO = df_unit[df_unit.index.get_level_values('Unit').str.contains('NG_Boiler')]
-    BO = BO.groupby(level='Pareto_ID', sort=False).sum() / era
-
-    HP = df_unit[df_unit.index.get_level_values('Unit').str.contains('HeatPump_Air')]
-    HP = HP.groupby(level='Pareto_ID', sort=False).sum() / era
-
-    HS = df_unit[df_unit.index.get_level_values('Unit').str.contains('Tank')]
-    HS = HS.groupby(level='Pareto_ID', sort=False).sum() / era
-
-    idx = np.arange(0, 1, 1 / (len(PV.index)))
-    width = 0.4 * 1 / (len(PV.index))
-
-    # Plotting
     fig, ax = plt.subplots()
     fig.set_size_inches(10, 5)
 
-    ax.bar((idx - 0.5 * width), BO[units_stack], label=layout.loc['Boiler', label], width=width,
-        color=layout.loc['Boiler', color],
-        edgecolor='black')
-    ax.bar((idx - 0.5 * width), HP[units_stack], bottom=BO[units_stack], label=layout.loc['HeatPump_Air', label],
-        width=width,
-        color=layout.loc['HeatPump_Air', color],
-        edgecolor='black')
-    ax.bar((idx - 0.5 * width), EH[units_stack], bottom=HP[units_stack] + BO[units_stack],
-        label=layout.loc['ElectricalHeater', label], width=width, color=layout.loc['ElectricalHeater', color],
-        edgecolor='black')
-    ax.bar((idx - 0.5 * width), PV[units_stack],
-        bottom=EH[units_stack] + HP[units_stack] + BO[units_stack],
-        label=layout.loc['PV', label], width=width, color=layout.loc['PV', color],
-        edgecolor='black')
-    ax.bar((idx - 0.5 * width), HS[units_stack],
-        bottom=PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
-        label=layout.loc['WaterTankSH', label], width=width, color=layout.loc['WaterTankSH', color],
-        edgecolor='black')
-    ax.bar((idx - 0.5 * width), BAT[units_stack],
-        bottom=HS[units_stack] + PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
-        label=layout.loc['Battery', label], width=width, color=layout.loc['Battery', color],
-        edgecolor='black')
-    ax.bar((idx + 0.5 * width), df_performance[grid_stack] / era, label="Resources", width=width,
-        color=cm['salmon'],
-        edgecolor='black')
-    if objectives[1] == "OPEX":
-        ax.bar((idx + 0.5 * width), df_performance.Costs_grid_connection / era,
-            bottom=df_performance.Costs_op.clip(lower=0) / era,
-            label='Grid connection', width=width, color=cm['salmon_light'], edgecolor='black')
+    if not isinstance(results, list):
+        results = [results]
+    nb_pareto = len(results)
 
+    for id_res, res in enumerate(results):
+        scenario = list(res.keys())[0]
+        ids = list(res[scenario].keys())
+        era = res[scenario][ids[0]]['df_Buildings'].ERA.sum()
+
+        df_unit = dict_to_df(res, 'df_Unit')
+        df_performance = dict_to_df(res, 'df_Performance')
+
+        df_performance = df_performance.xs((scenario, 'Network'), level=('Scn_ID', 'Hub'))
+        df_performance["CAPEX"] = df_performance["Costs_inv"] + df_performance["Costs_rep"]
+        df_performance["OPEX"] = df_performance["Costs_op"] + df_performance["Costs_grid_connection"]
+        df_performance["TOTEX"] = df_performance["CAPEX"] + df_performance["OPEX"]
+        df_performance["GWP"] = df_performance["GWP_op"] + df_performance["GWP_constr"]
+        df_performance = df_performance.sort_values(by=objectives[0])
+
+        if objectives[0] == "CAPEX":
+            units_stack = "Costs_Unit_inv"
+        elif objectives[0] == "TOTEX":
+            units_stack = "GWP_Unit_constr"
+
+        if objectives[1] == "OPEX":
+            grid_stack = "Costs_op"
+        if objectives[1] == "GWP":
+            grid_stack = "GWP_op"
+
+
+        PV = df_unit[df_unit.index.get_level_values('Unit').str.contains('PV')]
+        PV = PV.groupby(level='Pareto_ID', sort=False).sum() / era
+
+        EH = df_unit[df_unit.index.get_level_values('Unit').str.contains('ElectricalHeater')]
+        EH = EH.groupby(level='Pareto_ID', sort=False).sum() / era
+
+        BAT = df_unit[df_unit.index.get_level_values('Unit').str.contains('Battery')]
+        BAT = BAT.groupby(level='Pareto_ID', sort=False).sum() / era
+        BAT["Costs_Unit_inv"] = BAT["Costs_Unit_inv"] + df_performance["Costs_rep"]/era
+
+        BO = df_unit[df_unit.index.get_level_values('Unit').str.contains('NG_Boiler')]
+        BO = BO.groupby(level='Pareto_ID', sort=False).sum() / era
+
+        HP = df_unit[df_unit.index.get_level_values('Unit').str.contains('HeatPump')]
+        HP = HP.groupby(level='Pareto_ID', sort=False).sum() / era
+
+        HS = df_unit[df_unit.index.get_level_values('Unit').str.contains('Tank')]
+        HS = HS.groupby(level='Pareto_ID', sort=False).sum() / era
+
+        idx = np.arange(0, 1, 1 / (len(PV.index)))
+        if opex_line:
+            width = 0.4 * 2 / (len(PV.index)*nb_pareto)
+            shift_list = [[0], [-0.5, 0.5], [-1, 0, 1]][nb_pareto-1]
+            shift = shift_list[id_res]
+            hatch = ["", "//", "."]
+            linestyle = ["-", "--", ":"]
+        else:
+            width = 0.4 * 1 / len(PV.index)
+            shift = -0.5
+            hatch = [""]
+
+        # Plotting
+        ax.bar((idx + shift * width), BO[units_stack], label=layout.loc['Boiler', label], width=width,
+            color=layout.loc['Boiler', color],
+            edgecolor='black', hatch=hatch[id_res])
+        ax.bar((idx + shift * width), HP[units_stack], bottom=BO[units_stack], label=layout.loc['HeatPump_Air', label],
+            width=width,
+            color=layout.loc['HeatPump_Air', color],
+            edgecolor='black', hatch=hatch[id_res])
+        ax.bar((idx + shift * width), EH[units_stack], bottom=HP[units_stack] + BO[units_stack],
+            label=layout.loc['ElectricalHeater', label], width=width, color=layout.loc['ElectricalHeater', color],
+            edgecolor='black', hatch=hatch[id_res])
+        ax.bar((idx + shift * width), PV[units_stack],
+            bottom=EH[units_stack] + HP[units_stack] + BO[units_stack],
+            label=layout.loc['PV', label], width=width, color=layout.loc['PV', color],
+            edgecolor='black', hatch=hatch[id_res])
+        ax.bar((idx + shift * width), HS[units_stack],
+            bottom=PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
+            label=layout.loc['WaterTankSH', label], width=width, color=layout.loc['WaterTankSH', color],
+            edgecolor='black', hatch=hatch[id_res])
+        ax.bar((idx + shift * width), BAT[units_stack],
+            bottom=HS[units_stack] + PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
+            label=layout.loc['Battery', label], width=width, color=layout.loc['Battery', color],
+            edgecolor='black', hatch=hatch[id_res])
+
+        if not opex_line:
+            ax.bar((idx + 0.5 * width), df_performance[grid_stack] / era, label="Resources", width=width,
+                color=cm['salmon'],
+                edgecolor='black')
+            if objectives[1] == "OPEX":
+                ax.bar((idx + 0.5 * width), df_performance.Costs_grid_connection / era,
+                    bottom=df_performance.Costs_op.clip(lower=0) / era,
+                    label='Grid connection', width=width, color=cm['salmon_light'], edgecolor='black')
+        else:
+            ax.plot(idx, df_performance[grid_stack] / era, label="Resources", color=cm['salmon'], linestyle=linestyle[id_res])
+            ax.plot(idx, (df_performance[grid_stack]+df_performance.Costs_inv) / era, label="TOTEX", color="red", linestyle=linestyle[id_res])
     ax.axhline(0, color='black', linewidth=0.8)
 
     ax.set_xticks(idx)
-    ax.set_xticklabels(round(df_performance.Costs_inv / era, 1).values)
+    ax.set_xticklabels(round((df_performance.Costs_inv) / era, 1).values)
 
-    plt.title(objectives[0] + "-" + objectives[1] + " Pareto : " + str(scenario))
+    if title:
+        plt.title(title)
+    else:
+        plt.title(objectives[0] + "-" + objectives[1] + " Pareto : " + str(scenario))
 
     if objectives[0] == "CAPEX":
         obj_x = "CAPEX [CHF/m$^2$yr]"
@@ -691,20 +716,46 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
         obj_x = "TOTEX [CHF/m$^2$yr]"
 
     if objectives[1] == "OPEX":
-        obj_y = "[CHF/m$^2$yr]"
+        obj_y = "Costs [CHF/m$^2$yr]"
     elif objectives[1] == "GWP":
         obj_y = "GWP [kgkgCO2/m$^2$yr]"
 
     plt.xlabel(obj_x)
     plt.ylabel(obj_y)
 
-    plt.legend(ncol=2)
+    by_label = merge_handles_labels([plt.gca()])
+    plt.legend(by_label.values(), by_label.keys(), ncol=2, loc="upper left")
+
+    if nb_pareto > 1:
+        hatch_pareto = ['', r'\\\\', r'...']
+        label_pareto = ['coordinated', 'uncoordinated', 'centralised'][0:nb_pareto]
+        ax1 = ax.twinx()
+        ax1.set_yticks([])
+        circ = []
+        for i in range(nb_pareto):
+            circ = circ + [(mpatches.Patch(facecolor='white',  edgecolor='black', hatch=hatch_pareto[i]),
+                            Line2D([0], [0], color="black", linestyle=linestyle[i]))]
+        ax1.legend(circ, label_pareto, loc='lower left', frameon=False, ncol=nb_pareto,
+                   handler_map={tuple: HandlerTuple(ndivide=None)}, handlelength=5)
 
     if save_fig:
         plt.tight_layout()
         plt.savefig((name_fig + '_' + scenario + '.' + format_fig), format=format_fig, dpi=300)
 
     plt.show()
+
+def merge_handles_labels(ax):
+    handles = []
+    labels = []
+    for axis in ax:
+        handle, label = axis.get_legend_handles_labels()
+        handles = handles + handle
+        labels = labels + label
+
+    handles.reverse()
+    labels.reverse()
+    by_label = dict(zip(labels, handles))
+    return by_label
 
 
 def plot_gwp_KPIs(results, save_fig=False, name='GWP', format='png'):
@@ -741,6 +792,64 @@ def plot_gwp_KPIs(results, save_fig=False, name='GWP', format='png'):
         plt.savefig((name + '.' + format), format=format, dpi=300)
 
     plt.show()
+
+
+def plot_LCOE(results, KPI_list, era):
+    fig, ax = plt.subplots(2, figsize=(5.5, 7))
+    ax2 = ax[0].twinx()
+
+    for id_res, res in enumerate(results):
+        style = ["-", "--", ":"][id_res]
+        idx = np.array([res[0][i]["df_Performance"].xs("Network")["Costs_inv"] for i in res[0]]) / era
+        EPFL_light_grey = '#CAC7C7'
+        EPFL_red = '#FF0000'
+        EPFL_leman = '#00A79F'
+        EPFL_canard = '#007480'
+        Salmon = '#FEA993'
+        colors = {"SC": EPFL_light_grey, "PVP": EPFL_red, "LCoE1": Salmon, "SS": EPFL_canard,
+                  "gwp_tot_m2": "black", "gwp_constr_m2": "black", "gwp_op_m2": "black",
+                  "Import max": "black", "Export max": EPFL_red, "electricity import": EPFL_light_grey,
+                  "electricity export": Salmon, "natural gas import": "black"}
+
+        data_annual = {}
+        #data_annual["Import max"] = [res[0][i]["df_Grid_t"].xs(("Electricity", "Network"), level=(0, 1))["Grid_supply"][0:-2].max() for i in res[0]]
+        #data_annual["Export max"] = [res[0][i]["df_Grid_t"].xs(("Electricity", "Network"), level=(0, 1))["Grid_demand"][0:-2].max() for i in res[0]]
+        data_annual["electricity import"] = [res[0][i]["df_Annuals"].xs(("Electricity", "Network"), level=(0, 1))["Supply_MWh"][0] for i in res[0]]
+        data_annual["electricity export"] = [res[0][i]["df_Annuals"].xs(("Electricity", "Network"), level=(0, 1))["Demand_MWh"][0] for i in res[0]]
+        data_annual["natural gas import"] = [res[0][i]["df_Annuals"].xs(("NaturalGas", "Network"), level=(0, 1))["Supply_MWh"][0] for i in res[0]]
+
+        for kpi in KPI_list:
+            kpi_res = [res[0][i]["df_KPI"].xs("Network")[kpi] for i in res[0]]
+            ax[0].plot(idx, kpi_res, marker='.', linestyle=style, color=colors[kpi], label=kpi)
+        ax[0].set_ylabel('performance [kWh/kWh]', color="black")
+        lcoe = np.array([res[0][i]["df_KPI"].xs("Network")["LCoE1"] for i in res[0]]) * 100
+        ax2.plot(idx, lcoe, marker='.', linestyle=style, color=colors["LCoE1"], label="LCoE1")
+
+        for key in data_annual:
+            ax[1].plot(idx, data_annual[key], marker='.', linestyle=style, color=colors[key], label=key)
+        ax[1].set_ylabel('energy flows [GWh]', color="black")
+        ax[1].set_xlabel('capital cost [CHF/m$^2$]', color="black")
+
+    # legend system design
+    ax2.spines["right"].set_color(colors["LCoE1"])
+    ax2.tick_params(axis='y', colors=colors["LCoE1"])
+    ax2.set_ylabel('LCOE [cts CHF/kWh]', color=colors["LCoE1"])
+
+    by_label = merge_handles_labels([ax[0], ax2])
+    ax[0].legend(by_label.values(), by_label.keys())
+    by_label = merge_handles_labels([ax[1]])
+    ax[1].legend(by_label.values(), by_label.keys())
+
+    axx = ax[1].twinx()
+    custom_lines = [Line2D([0], [0], color='black', linewidth=1.5),
+                    Line2D([0], [0], color='black', linewidth=1.5, linestyle='--')]
+    axx.legend(custom_lines, ['coordinated', 'uncoordinated'], bbox_to_anchor=(0.85, -0.2), frameon=False, ncol=2,
+               title='system design')
+    axx.set_axis_off()
+    plt.tight_layout()
+    plt.show()
+
+    return
 
 
 def plot_unit_size(results, units_to_plot):

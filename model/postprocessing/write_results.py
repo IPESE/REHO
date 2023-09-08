@@ -386,7 +386,7 @@ class dataframes_results_MP(object):
     This class contains results of the Master problem of the decomposition
     """
 
-    def __init__(self, ampl, binary=False, method={}, read_DHN=False):
+    def __init__(self, ampl, binary=False, method={}, district=None, read_DHN=False):
 
         df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
         df.columns = ["Varname", "Value"]
@@ -520,11 +520,15 @@ class dataframes_results_MP(object):
         df2 = get_variable_in_pandas(df, 'Units_supply')
         df3 = get_variable_in_pandas(df, 'BAT_E_stored')
         df3 = pd.concat([df3], keys=['Electricity'], names=['Layer'])
-        df4 = get_variable_in_pandas(df, 'EV_E_stored')
-        df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
-        df5 = get_parameter_in_pandas(ampl, 'EV_displacement', multi_index=True)
-        df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-        df_Unit_t = pd.concat([df1, df2, df3, df4, df5], axis=1)
+        df_Unit_t = pd.concat([df1, df2, df3], axis=1)
+
+        if len(district.UnitsOfDistrict) > 0:
+            if "EV_district" in district.UnitsOfDistrict:
+                df4 = get_variable_in_pandas(df, 'EV_E_stored')
+                df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
+                df5 = get_parameter_in_pandas(ampl, 'EV_displacement', multi_index=True)
+                df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
+                df_Unit_t = pd.concat([df_Unit_t, df4, df5], axis=1)
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
         self.df_Unit_t = df_Unit_t.sort_index()
 

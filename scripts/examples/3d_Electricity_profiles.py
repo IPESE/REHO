@@ -10,7 +10,7 @@ if __name__ == '__main__':
     scenario['name'] = 'totex'
 
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv('multiple_buildings.csv', nb_buildings=2)
+    qbuildings_data = reader.read_csv('multiple_buildings.csv', nb_buildings=1)
 
     parameters = {}
 
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    #method = {"read_electricity_profiles": 'aggregated_240.csv'}
+    #method = {"read_electricity_profiles": 'typical_profiles.csv'}
     method = {}
 
     grids = infrastructure.initialize_grids()

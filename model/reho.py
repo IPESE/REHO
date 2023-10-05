@@ -69,6 +69,8 @@ class reho(district_decomposition):
 
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
+        if platform.system() != 'Darwin':
+            os.system('cmd /c ' + os.environ["AMPL_PATH"] + "/ampl_lic restart")  # restart ampl license to avoid crashes
 
     def add_constraints_from_self_scenario(self):
         scenario = {}

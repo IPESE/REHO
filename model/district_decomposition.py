@@ -76,9 +76,9 @@ class district_decomposition:
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_lodger', 'TransformerCapacity',
-                                                'EV_y', 'EV_plug_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init',
+                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
-                         "list_constraints_MP": ['unidirectional_service', 'NPV_DHN']
+                         "list_constraints_MP": []
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -334,7 +334,8 @@ class district_decomposition:
             ampl_MP.read('master_problem_actors.mod')
 
         ampl_MP.cd(path_to_district_units)
-        ampl_MP.read('evehicle.mod')
+        if "EV_district" in self.infrastructure.UnitsOfDistrict:
+            ampl_MP.read('evehicle.mod')
         if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
             ampl_MP.read('ng_boiler_district.mod')
         if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
@@ -404,10 +405,10 @@ class district_decomposition:
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
 
-        if 'EV_plug_out' not in MP_parameters:
+        if 'EV_plugged_out' not in MP_parameters:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
-                    MP_parameters['EV_plug_out'] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster)
+                    MP_parameters['EV_plugged_out'] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster)
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -539,7 +540,7 @@ class district_decomposition:
         # Solve ampl_MP
         ampl_MP.solve()
 
-        df_Results_MP = WR.dataframes_results_MP(ampl_MP, binary, self.method, read_DHN=read_DHN)
+        df_Results_MP = WR.dataframes_results_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
         print(ampl_MP.getCurrentObjective().getValues().toPandas())
 
         df = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl_MP)
@@ -857,7 +858,7 @@ class district_decomposition:
 
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
-                            'EMOO_lca_constraint', 'unidirectional_service', 'disallow_exchanges_1', 'disallow_exchanges_2']
+                            'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2'] + self.lists_MP["list_constraints_MP"]
         for cst in list_constraints:
             ampl.getConstraint(cst).drop()
 
@@ -1051,7 +1052,8 @@ class district_decomposition:
         self.results_MP[Scn_ID][Pareto_ID][iter] = result
         attr = pd.concat([attr], keys=[iter], names=['Iter'])
         self.solver_attributes_MP = pd.concat([self.solver_attributes_MP, attr])
-        self.number_MP_solutions = self.number_SP_solutions.groupby('MP_solution').mean()  # self.number_MP_solutions.append(df, ignore_index=True)
+        col = self.number_SP_solutions.columns.difference(["House"])
+        self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean()
 
     def __split_parameter_sets_per_building(self, h, parameters_SP = dict({})):
         """

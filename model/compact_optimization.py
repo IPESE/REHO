@@ -299,10 +299,10 @@ class compact_optimization():
         self.parameters_to_ampl['SolarGains'] = DGF.solar_gains_profile(ampl, self.buildings_data_compact, File_ID)
 
         # Set default EV plug out profile if EVs are allowed
-        if "EV_plug_out" not in self.parameters_to_ampl:
+        if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plug_out"] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster_compact)
+                    self.parameters_to_ampl["EV_plugged_out"] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster_compact)
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#

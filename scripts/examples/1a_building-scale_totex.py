@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()    # initialize grid parameters such as energy tariffs. More information is available in example 2b
-    units = infrastructure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids, district_units=True)
 
     # Run optimization
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)

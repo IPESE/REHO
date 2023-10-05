@@ -305,13 +305,20 @@ pip-selfcheck.json
 ##### Change only the lines below
 
 # Data
-data/QBuildings/*
-!data/QBuildings/db/Suisse.ini
-!data/QBuildings/db/Geneva.ini
-
 data/buildings/*
 !data/QBuildings/data/single_building.csv
 !data/QBuildings/data/multiple_buildings.csv
+
+data/electricity/*
+!data/electricity/typical_profiles.csv
+!data/electricity/annual_profiles.csv
+
+data/emissions/*
+!data/emissions/electricity_matrix_2019_reduced.csv
+
+data/QBuildings/*
+!data/QBuildings/db/Suisse.ini
+!data/QBuildings/db/Geneva.ini
 
 data/weather/clustering_results/*
 !data/weather/clustering_results/frequency_Geneva_10_24_T_I_W.dat
@@ -323,10 +330,6 @@ data/weather/clustering_results/*
 data/weather/hour/*
 !data/weather/hour/Geneva-hour.dat
 
-data/emissions/*
-!data/emissions/electricity_matrix_2019_reduced.csv
-
-plotting/shared_executables_REHO
 # Scripts
 scripts/*
 !scripts/examples/

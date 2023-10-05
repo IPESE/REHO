@@ -23,9 +23,9 @@ def build_district(grids, scenario, transfo_id, nb_buildings):
 
     # connect to Suisse database
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
+    reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(transfo_id, nb_buildings=nb_buildings)
-    units = structure.initialize_units(scenario, grids=grids, district_units=True)
+    units = infrastructure.initialize_units(scenario, grids=grids, district_units=True)
 
     # replace nan in buildings data
     for bui in qbuildings_data["buildings_data"]:
@@ -54,9 +54,9 @@ def execute_DW_with_increasing_BUI():
     Scenario["enforce_units"] = ["HeatPump_DHN"]
 
     # you can specify if the DHN is based on CO2. If not, a water DHN is taken.
-    Method = {"decomposed": False, "decentralized": True, "DHN_CO2": True}
+    Method = {'district-scale': False, 'building-scale': True, "DHN_CO2": True}
 
-    grids = structure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.08, "Cost_supply_cst": 0.20},
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.08, "Cost_supply_cst": 0.20},
                                         'NaturalGas': {"Cost_demand_cst": 0.06, "Cost_supply_cst": 0.20},
                                         "Heat": {"Cost_demand_cst": 0.001, "Cost_supply_cst": 0.005}})
 

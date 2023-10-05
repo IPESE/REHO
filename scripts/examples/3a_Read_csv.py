@@ -11,8 +11,7 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
-    qbuildings_data = reader.read_db(3658, nb_buildings=1)
+    qbuildings_data = reader.read_csv('multiple_buildings.csv', nb_buildings=2) # you can as well define your district from a csv file instead of reading the database
 
     # Set specific parameters
     parameters = {}
@@ -24,23 +23,15 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    method = {}
+    method = {'building-scale': True}
 
     # Initialize available units and grids
-    grids = structure.initialize_grids()
-    units = structure.initialize_units(scenario, grids=grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
     reho_model.single_optimization()
 
-    # Run new optimization with the capacity of PV and electrical heater being fixed by the sizes of the first optimization
-    reho_model.df_fix_Units = reho_model.results['totex'][0].df_Unit                    # load data on the capacity of units
-    reho_model.fix_units_list = ['PV', 'ElectricalHeater_DHW', 'ElectricalHeater_SH']   # select the ones being fixed
-    reho_model.scenario['Objective'] = 'CAPEX'
-    reho_model.scenario['name'] = 'fixed'
-    reho_model.method['fix_units'] = True                                               # select the method fixing the unit sizes
-    reho_model.single_optimization()
-
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='14a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='3a')

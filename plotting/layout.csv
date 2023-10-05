@@ -8,16 +8,20 @@ GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark,,
 Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark,#8B4513,brown
 NaturalGas,Natural gas,NG,Gaz naturel,#413D3A,ardoise,#413D3A,ardoise
 NG_Boiler,Gas boiler,NGB,Chaudière à gaz,#413D3A,ardoise,#413D3A,ardoise
+NG_Boiler_district,District gas boiler,NGB,Chaudière à gaz (district),#413D3A,ardoise,#413D3A,ardoise
 NG_Cogeneration,NG cogeneration,COGEN,Cogénération,#413D3A,ardoise,#413D3A,ardoise
+NG_Cogeneration_district,District cogeneration,COGEN,Cogénération (district),#413D3A,ardoise,#413D3A,ardoise
 Oil,Oil,OIL,Mazout,#000000,dark,#8B4513,brown
 OIL_Boiler,Oil boiler,OB,Chaudière à mazout,#000000,dark,#8B4513,brown
+Gasoline,Oil,OIL,Essence voiture,#55552b,kaki,#55552b,kaki
 WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown,#A2CD5A,greenlight
 Wood,Wood network,Wood,Bois,#8B4513,brown,#556B2F,green
 ,,,,,,,
 Electricity,Electrical grid,Elec,Réseau électrique,#007480,canard,#00008B,darkblue
 Electrical_grid,Electricity (import),Elec in,Électricité (achat),#007480,canard,#00008B,darkblue
 Electrical_grid_feed_in,Electricity (export),Elec out,Électricité (vente),#4d9ea6,canard_light,#00008B,darkblue
-self_cons,Electricity (self-consumption),Elec SC,Électricité (auto-consommation),#ffd980,yellow_light,#EEAD0E,darkyellow
+Electrical_grid_Cogeneration,Electricity (cogen),Elec COGEN,Électricité (cogénération),#413D3A,ardoise,#413D3A,ardoise
+PV_SC,Electricity (self-consumption),Elec SC,Électricité (auto-consommation),#ffd980,yellow_light,#EEAD0E,darkyellow
 Electrical_appliances,Electrical appliances,EL,Électricité domestique,#007480,canard,#76EEC6,turquoise
 Electrical_consumption,Electrical consumption,EL,Électricité consommée,#007480,canard,#0000FF,royalblue
 Electrical_consumption_bp,Electrical consumption with storage,EL,Électricité consommée + stockage,#007480,canard,#0000FF,royalblue
@@ -30,10 +34,16 @@ HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon,#CD1076,pink
 HeatPump_Air,Heat pump air,HP air,"Pompe à chaleur, air",#FEA993,salmon,#CD1076,pink
 HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, DHN",#FEA993,salmon,#CD1076,pink
 HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",#FEA993,salmon,#CD1076,pink
+HeatPump_Geothermal_district,HP geothermal (district),District HP geo,"PAC géothermie (district)",#FEA993,salmon,#CD1076,pink
 HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1076,pink
 ,,,,,,,
-Heat,District heating network,DHN,Réseau de chaleur,#FF8C00,orange,#FF3030,red
+Heat,Heat from DHN,Heat DHN,Chaleur (CAD),#FF8C00,orange,#FF3030,red
 DHN_in,District heating network,DHN,Réseau de chaleur,#FF8C00,orange,#EEE685,yellowgrey
+DHN_out_district,District heating network,DHN,Réseau de chaleur,#FF8C00,orange,#EEE685,yellowgrey
+DHN_pipes,DHN connection,DHN,Connexion CAD,#FF8C00,orange,#EEE685,yellowgrey
+DHN_hex,Heat exchanger (in),HEX in,Échangeur de chaleur,#FF8C00,orange,#EEE685,yellowgrey
+DHN_hex_in,Heat exchanger (in),HEX in,Échangeur de chaleur (entrée),#FF8C00,orange,#EEE685,yellowgrey
+DHN_hex_out,Heat exchanger (out),HEX out,Échangeur de chaleur (sortie),#FF8C00,orange,#EEE685,yellowgrey
 Heat_losses,Heat losses,SH leak,Pertes chaleur,#FF8C00,orange,#CDC8B1,grey
 SH,Space heating,SH,Chauffage,#FF8C00,orange,#FF8C00,orange
 SH_heat,Space heating,SH,Chauffage,#FF8C00,orange,#FF3030,red
@@ -43,11 +53,14 @@ WaterTankSH,Water Tank SH,WT (SH),Ballon d'eau (chauffage),#FF8C00,orange,#FF7F2
 ,,,,,,,
 WaterTankDHW,Water Tank DHW,WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux,#B22222,bordeaux
 DHW,Domestic hot water,DHW,Eau chaude sanitaire,#B22222,bordeaux,#B22222,bordeaux
-DataHeat_DHW,Data centers,ICT,Centre de données,#B22222,bordeaux,#EE00EE,magenta
+DataHeat_DHW,Data centers,ICT,Centre de données,#ffcc99,skin,#EE00EE,magenta
+ict,Data centers,ICT,Vente de données,#ffcc99,skin,#EE00EE,magenta
 ,,,,,,,
 PV,PV panel,PV,Panneaux solaires PV,#ffd980,yellow_light,#EEAD0E,darkyellow
 PV_roof,PV roof,PV,PV toiture,#ffd980,yellow_light,#EEAD0E,darkyellow
 PV_facades,PV facade,PV,PV façade,#ffc94d,yellow_medium,#EEAD0E,darkyellow
+solar_value,Solar value,Solar,Électricité solaire,#4d9ea6,canard_light,#00008B,darkblue
+solar_premium,Solar premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light,#EEAD0E,darkyellow
 Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark,#EEAD0E,darkyellow
 Battery,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue

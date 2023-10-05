@@ -3,7 +3,7 @@ import pandas as pd
 from paths import *
 
 
-class district:
+class infrastructure:
 
     def __init__(self, qbuildings_data, units, grids):
 

@@ -30,7 +30,7 @@ class compact_optimization():
             self.facades_compact = qbuildings_data['facades_data']
         if method['use_pv_orientation']:
            self.roofs_compact = qbuildings_data['roofs_data']
-        self.district_compact = district
+        self.infrastructure_compact = district
         self.parameters_compact = parameters
         self.set_indexed_compact = set_indexed
         self.cluster_compact = cluster
@@ -138,44 +138,44 @@ class compact_optimization():
 
         # Energy conversion Units
         ampl.cd(path_to_units)
-        if 'ElectricalHeater' in self.district_compact.UnitTypes:
+        if 'ElectricalHeater' in self.infrastructure_compact.UnitTypes:
             ampl.read('electrical_heater.mod')
-        if 'NG_Boiler' in self.district_compact.UnitTypes:
+        if 'NG_Boiler' in self.infrastructure_compact.UnitTypes:
             ampl.read('ng_boiler.mod')
-        if 'OIL_Boiler' in self.district_compact.UnitTypes:
+        if 'OIL_Boiler' in self.infrastructure_compact.UnitTypes:
             ampl.read('oil_boiler.mod')
-        if 'WOOD_Stove' in self.district_compact.UnitTypes:
+        if 'WOOD_Stove' in self.infrastructure_compact.UnitTypes:
             ampl.read('wood_stove.mod')
-        if 'HeatPump' in self.district_compact.UnitTypes:
+        if 'HeatPump' in self.infrastructure_compact.UnitTypes:
             ampl.read('heatpump.mod')
-        if 'Air_Conditioner' in self.district_compact.UnitTypes:
+        if 'Air_Conditioner' in self.infrastructure_compact.UnitTypes:
             ampl.read('air_conditioner.mod')
-        if 'ThermalSolar' in self.district_compact.UnitTypes:
+        if 'ThermalSolar' in self.infrastructure_compact.UnitTypes:
             ampl.read('thermal_solar.mod')
-        if 'DataHeat' in self.district_compact.UnitTypes:
+        if 'DataHeat' in self.infrastructure_compact.UnitTypes:
             ampl.read('data_heat.mod')
-        if 'NG_Cogeneration' in self.district_compact.UnitTypes:
+        if 'NG_Cogeneration' in self.infrastructure_compact.UnitTypes:
             ampl.read('ng_cogeneration.mod')
-        if 'DHN_hex' in self.district_compact.UnitTypes:
+        if 'DHN_hex' in self.infrastructure_compact.UnitTypes:
             ampl.read('DHN_HEX.mod')
             ampl.read('DHN_pipes.mod')
-        if 'PV' in self.district_compact.UnitTypes:
+        if 'PV' in self.infrastructure_compact.UnitTypes:
             if self.method_compact['use_pv_orientation']:  # Choose the photovoltaics model if PV orientation - give hourly PV electricity profiles
                 ampl.read('pv_orientation.mod')
             else:
                 ampl.read('pv.mod')
 
         # district Units
-        if 'EV' in self.district_compact.UnitTypes:
+        if 'EV' in self.infrastructure_compact.UnitTypes:
             ampl.cd(path_to_district_units)
             ampl.read('evehicle.mod')
         # Storage Units
         ampl.cd(path_to_units_storage)
-        if 'WaterTankSH' in self.district_compact.UnitTypes:
+        if 'WaterTankSH' in self.infrastructure_compact.UnitTypes:
             ampl.read('heatstorage.mod')
-        if 'WaterTankDHW' in self.district_compact.UnitTypes:
+        if 'WaterTankDHW' in self.infrastructure_compact.UnitTypes:
             ampl.read('dhwstorage.mod')
-        if 'Battery' in self.district_compact.UnitTypes:
+        if 'Battery' in self.infrastructure_compact.UnitTypes:
             ampl.read('battery.mod')
         ampl.cd(path_to_ampl_model)
 
@@ -239,28 +239,28 @@ class compact_optimization():
         # -----------------------------------------------------------------------------------------------------#
 
         if self.method_compact['use_discrete_units']:
-            self.district_compact.set_discretize_unit_size()
+            self.infrastructure_compact.set_discretize_unit_size()
 
-        self.parameters_to_ampl['Units_flowrate'] = self.district_compact.Units_flowrate
-        self.parameters_to_ampl['Grids_flowrate'] = self.district_compact.Grids_flowrate
-        self.parameters_to_ampl['Grids_Parameters'] = self.district_compact.Grids_Parameters
-        self.parameters_to_ampl['Grids_Parameters_lca'] = self.district_compact.Grids_Parameters_lca
-        self.parameters_to_ampl['Units_Parameters'] = self.district_compact.Units_Parameters
-        self.parameters_to_ampl['Units_Parameters_lca'] = self.district_compact.Units_Parameters_lca
-        self.parameters_to_ampl['Streams_H'] = self.district_compact.Streams_H
+        self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_compact.Units_flowrate
+        self.parameters_to_ampl['Grids_flowrate'] = self.infrastructure_compact.Grids_flowrate
+        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_compact.Grids_Parameters
+        self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_compact.Grids_Parameters_lca
+        self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_compact.Units_Parameters
+        self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_compact.Units_Parameters_lca
+        self.parameters_to_ampl['Streams_H'] = self.infrastructure_compact.Streams_H
 
-        for key in self.district_compact.HP_parameters:
-            self.parameters_to_ampl[key] = self.district_compact.HP_parameters[key]
+        for key in self.infrastructure_compact.HP_parameters:
+            self.parameters_to_ampl[key] = self.infrastructure_compact.HP_parameters[key]
 
-        for s in self.district_compact.Set:
+        for s in self.infrastructure_compact.Set:
             for i, instance in ampl.getSet(str(s)):
                 # print('Set Values for ' + str(instance))
                 # i: 'Building1', instance: set SurfaceOfHouse['Building1'];
-                if isinstance(self.district_compact.Set[s], np.ndarray):
-                    instance.setValues(self.district_compact.Set[s])
-                elif isinstance(self.district_compact.Set[s], dict):
+                if isinstance(self.infrastructure_compact.Set[s], np.ndarray):
+                    instance.setValues(self.infrastructure_compact.Set[s])
+                elif isinstance(self.infrastructure_compact.Set[s], dict):
                     # i : ('Building1', 8280.0), instance: set ConfigOfSurface['Building1', 8280.0];
-                    instance.setValues(self.district_compact.Set[s][i])
+                    instance.setValues(self.infrastructure_compact.Set[s][i])
                 #    print(instance.getValues())
                 else:
                     raise ValueError('Type Error setting AMPLPY Set', s)
@@ -287,7 +287,7 @@ class compact_optimization():
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})
-            self.parameters_to_ampl['Gas_emission'] = self.district_compact.Grids_Parameters.drop('Electricity').drop(
+            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_compact.Grids_Parameters.drop('Electricity').drop(
                 columns=['Cost_demand_cst', 'Cost_supply_cst'])
 
     def set_gains_and_demands_profiles(self, ampl, File_ID):
@@ -300,8 +300,8 @@ class compact_optimization():
 
         # Set default EV plug out profile if EVs are allowed
         if "EV_plug_out" not in self.parameters_to_ampl:
-            if len(self.district_compact.UnitsOfDistrict) != 0:
-                if "EV_district" in self.district_compact.UnitsOfDistrict:
+            if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
+                if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
                     self.parameters_to_ampl["EV_plug_out"] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster_compact)
 
     def set_HP_parameters(self, ampl):
@@ -315,8 +315,8 @@ class compact_optimization():
             sources = self.parameters_compact['T_source'].keys()
 
         T_source = []
-        if 'HeatPump' in self.district_compact.UnitsOfType:
-            for unit in self.district_compact.UnitsOfType['HeatPump']:
+        if 'HeatPump' in self.infrastructure_compact.UnitsOfType:
+            for unit in self.infrastructure_compact.UnitsOfType['HeatPump']:
                 if any([i in unit for i in sources]):   # if T_source defined from script
                     source = list(itertools.compress(sources, [i in unit for i in sources]))[0]
                     T_source = np.concatenate([T_source, np.repeat(self.parameters_compact['T_source'][source], timesteps)])
@@ -349,8 +349,8 @@ class compact_optimization():
             sources = self.parameters_compact['T_source_cool'].keys()
 
         T_source_cool = np.array([])
-        if 'Air_Conditioner' in self.district_compact.UnitsOfType:
-            for unit in self.district_compact.UnitsOfType['Air_Conditioner']:
+        if 'Air_Conditioner' in self.infrastructure_compact.UnitsOfType:
+            for unit in self.infrastructure_compact.UnitsOfType['Air_Conditioner']:
                 # if T_source_cool defined from script
                 if any([i in unit for i in sources]):
                     source = list(itertools.compress(sources, [i in unit for i in sources]))[0]
@@ -387,8 +387,8 @@ class compact_optimization():
         index = [j for i in index for j in i]
         index = pd.MultiIndex.from_tuples(index, names=["Period", "Time"])
 
-        for bui in self.district_compact.houses:
-            for unit_data in self.district_compact.houses[bui]["units"]:
+        for bui in self.infrastructure_compact.houses:
+            for unit_data in self.infrastructure_compact.houses[bui]["units"]:
                 for i, T_level in enumerate(unit_data["StreamsOfUnit"]):
                     stream = unit_data["name"] + '_' + bui + '_' + T_level
                     df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
@@ -396,7 +396,7 @@ class compact_optimization():
                     df["Streams_Tin"] = unit_data["stream_Tin"][i]
                     df.set_index("Streams", append=True, inplace=True)
                     df_Streams_T = pd.concat([df_Streams_T, df])
-            for stream in self.district_compact.StreamsOfBuilding[bui]:
+            for stream in self.infrastructure_compact.StreamsOfBuilding[bui]:
                 df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
                 df["Streams_Tout"] = 40 # default value that is changed in data_stream.dat
                 df["Streams_Tin"] = 50  # default value that is changed in data_stream.dat
@@ -630,12 +630,12 @@ class compact_optimization():
         ampl.getConstraint('disallow_exchanges_1').drop()
         ampl.getConstraint('disallow_exchanges_2').drop()
 
-        if 'HeatPump' in  self.district_compact.UnitsOfType: # Check if HP DHN is used
-            if not any("DHN" in unit for unit in self.district_compact.UnitsOfType['HeatPump']):
+        if 'HeatPump' in  self.infrastructure_compact.UnitsOfType: # Check if HP DHN is used
+            if not any("DHN" in unit for unit in self.infrastructure_compact.UnitsOfType['HeatPump']):
                 ampl.getConstraint('DHN_heat').drop()
-        if 'Air_Conditioner' in self.district_compact.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.district_compact.units]:
+        if 'Air_Conditioner' in self.infrastructure_compact.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_compact.units]:
             ampl.getConstraint('AC_c3').drop()
-        if 'EV' in self.district_compact.UnitTypes:
+        if 'EV' in self.infrastructure_compact.UnitTypes:
             ampl.getConstraint('unidirectional_service').drop()
 
         if self.method_compact['use_pv_orientation']:
@@ -663,15 +663,15 @@ def initialize_default_methods(method):
     if 'use_pv_orientation' not in method:
         method['use_pv_orientation'] = False
 
-    if 'include_stochasticity' not in method:
+    if 'include_stochasticity' not in method:  # https://ipese-web.epfl.ch/lepour/lacorte_pds/index.html
         method['include_stochasticity'] = False
     if 'sd_stochasticity' not in method:
         method['sd_stochasticity'] = [0.1, 1]
 
-    if 'decentralized' not in method:
-        method['decentralized'] = False
-    if 'decomposed' not in method:
-        method['decomposed'] = False
+    if 'building-scale' not in method:
+        method['building-scale'] = False
+    if 'district-scale' not in method:
+        method['district-scale'] = False
     if 'parallel_computation' not in method:
         method['parallel_computation'] = True
     if 'switch_off_second_objective' not in method:
@@ -685,7 +685,7 @@ def initialize_default_methods(method):
     if 'use_dynamic_emission_profiles' not in method:
         method['use_dynamic_emission_profiles'] = False
     if 'read_electricity_profiles' not in method:
-        method['read_electricity_profiles'] = False
+        method['read_electricity_profiles'] = None
 
     if 'include_all_solutions' not in method:
         method['include_all_solutions'] = False
@@ -706,9 +706,9 @@ def initialize_default_methods(method):
     if 'use_Storage_Interperiod' not in method:
         method['use_Storage_Interperiod'] = False
 
-    if method['decentralized']:
+    if method['building-scale']:
         method['include_all_solutions'] = False # avoid interactions between optimization scenarios
-        method['decomposed'] = True  # method is using decomposition algorithm
+        method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
 
     return method
 

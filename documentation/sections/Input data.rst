@@ -1,17 +1,18 @@
 
 .. _app:bestd_data:
 
-Input Data
+Input data
 ++++++++++
 
 .. caution ::
-   UNDER CONSTRUCTION.
+   Work in progress
+
+.. caution ::
    **To FEDECOM partners** this page describes the input-data for the
    prospection design model. Pilots are required to share the information listed
    in Section :ref:`sec:data:building_info` for each buildings.
    Please, update the information in the shared document available at:
    'shared drive <https://docs.google.com/spreadsheets/d/1lK5Zz9cD4d12runQ_tiUMjtU2Dq7QNZ07eLt0lUs5aw/edit?usp=sharing>`_
-
    Tekniker will lead the collect.
 
 Input files overview
@@ -41,10 +42,10 @@ There are several input files in the REHO framework, each serving a specific pur
 
 In the following sections, we will describe each data file in detail to explain each parameter meaning and purpose.
 
+.. _sec:data:building_info:
+
 Building Information File
 =========================
-
-.. _sec:data:building_info:
 
 .. caution ::
    To the attention of FEDECOM partners: this section details the data that needs to be collected.
@@ -277,27 +278,27 @@ Scenario Files
 TO BE DONE
 
 Change grid price
-~~~~~~~~~~~~~~~~~
+-----------------
 
 Loading Default Prices
-^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~
 The default prices are loaded using the `initialize_grids()` function with the following code:
 
 .. code-block:: bash
 
-    grids = structure.initialize_grids()
+    grids = infrastructure.initialize_grids()
 
 The file `grids.csv` can be found in the `preprocessing/units` directory.
 
 Using Custom Prices
-^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~
 To use custom prices, you have two options:
 
 1. Provide another CSV file to the `initialize_grids()` function:
 
 .. code-block:: bash
 
-    grids = structure.initialize_grids(file="path/to/custom_grids.csv")
+    grids = infrastructure.initialize_grids(file="path/to/custom_grids.csv")
 
    Replace `"path/to/custom_grids.csv"` with the actual file path of your custom CSV file.
 
@@ -305,7 +306,7 @@ To use custom prices, you have two options:
 
 .. code-block:: bash
 
-    grids = structure.initialize_grids({
+    grids = infrastructure.initialize_grids({
         'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645},
         'Oil': {'Cost_supply_cst': 0.16}
     })

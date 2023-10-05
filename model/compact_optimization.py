@@ -302,7 +302,7 @@ class compact_optimization():
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster_compact)
+                    self.parameters_to_ampl["EV_plugged_out"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact)
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#

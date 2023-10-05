@@ -333,15 +333,17 @@ class district_decomposition:
         if self.method["actors_cost"]:
             ampl_MP.read('master_problem_actors.mod')
 
-        ampl_MP.cd(path_to_district_units)
-        if "EV_district" in self.infrastructure.UnitsOfDistrict:
-            ampl_MP.read('evehicle.mod')
-        if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
-            ampl_MP.read('ng_boiler_district.mod')
-        if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
-            ampl_MP.read('heatpump_district.mod')
-        if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
-            ampl_MP.read('ng_cogeneration_district.mod')
+        if len(self.infrastructure.UnitsOfDistrict) > 0:
+            ampl_MP.cd(path_to_district_units)
+            if "EV_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('evehicle.mod')
+                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
+            if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ng_boiler_district.mod')
+            if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('heatpump_district.mod')
+            if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ng_cogeneration_district.mod')
 
         ampl_MP.cd(path_to_units_storage)
         ampl_MP.read('battery.mod')
@@ -408,7 +410,7 @@ class district_decomposition:
         if 'EV_plugged_out' not in MP_parameters:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
-                    MP_parameters['EV_plugged_out'] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster)
+                    MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster)
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:

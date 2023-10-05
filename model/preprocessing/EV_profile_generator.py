@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def generate_EV_plug_out_profiles_district(cluster):
+def generate_EV_plugged_out_profiles_district(cluster):
     #TODO IMPLEMENTATION of flexible period duration
     File_ID = WD.get_cluster_file_ID(cluster)
 
@@ -31,8 +31,8 @@ def generate_EV_plug_out_profiles_district(cluster):
     profiles_weekday = [0.0, 0.0, 0.0, 0.0, 0.01, 0.02, 0.08, 0.2, 0.31, 0.35, 0.38, 0.39, 0.39, 0.38, 0.38, 0.36, 0.31, 0.24, 0.18, 0.13, 0.09, 0.05, 0.03, 0.01]
     profiles_weekend = [0.0, 0.0, 0.0, 0.0, 0.01, 0.02, 0.08, 0.2, 0.31, 0.35, 0.38, 0.39, 0.39, 0.38, 0.38, 0.36, 0.31, 0.24, 0.18, 0.13, 0.09, 0.05, 0.03, 0.01]
 
-    pluging_in_weekday = [0.017, 0.006, 0.004, 0.003, 0.004, 0.005, 0.01, 0.019, 0.03, 0.034, 0.036, 0.042, 0.043, 0.045, 0.047, 0.067, 0.088, 0.111, 0.109, 0.087, 0.069, 0.058, 0.043, 0.023]
-    pluging_in_weekend = [0.017, 0.006, 0.004, 0.003, 0.004, 0.005, 0.01, 0.019, 0.03, 0.034, 0.036, 0.042, 0.043, 0.045, 0.047, 0.067, 0.088, 0.111, 0.109, 0.087, 0.069, 0.058, 0.043, 0.023]
+    plugging_in_weekday = [0.017, 0.006, 0.004, 0.003, 0.004, 0.005, 0.01, 0.019, 0.03, 0.034, 0.036, 0.042, 0.043, 0.045, 0.047, 0.067, 0.088, 0.111, 0.109, 0.087, 0.069, 0.058, 0.043, 0.023]
+    plugging_in_weekend = [0.017, 0.006, 0.004, 0.003, 0.004, 0.005, 0.01, 0.019, 0.03, 0.034, 0.036, 0.042, 0.043, 0.045, 0.047, 0.067, 0.088, 0.111, 0.109, 0.087, 0.069, 0.058, 0.043, 0.023]
 
     EV_plugged_out = [] # all vehicules not connected
     EV_plugging_in = [] # vehicules connecting at time t
@@ -40,10 +40,10 @@ def generate_EV_plug_out_profiles_district(cluster):
     for j, day in enumerate(list(timestamp.Weekday)):
             if day == 0:
                 profile = profiles_weekend
-                profile_plug_in = pluging_in_weekend
+                profile_plug_in = plugging_in_weekend
             elif day == 1:
                 profile = profiles_weekday
-                profile_plug_in = pluging_in_weekday
+                profile_plug_in = plugging_in_weekday
                 #profile = np.tile(profiles_weekday, 365).tolist() # workaround -  whole year profile
             else:
                 raise ("day type not possible")
@@ -61,7 +61,7 @@ def generate_EV_plug_out_profiles_district(cluster):
 
 
 
-def generate_EV_plug_out_profiles(cluster, n_houses=31):
+def generate_EV_plugged_out_profiles(cluster, n_houses=31):
 
     File_ID = WD.get_cluster_file_ID(cluster)
 
@@ -113,7 +113,7 @@ def generate_EV_plug_out_profiles(cluster, n_houses=31):
 
     # iter over the houses of the district
     for i, house in enumerate(profiles_weekday):
-        EV_plug_out_house = np.zeros(len_time_array)
+        EV_plugged_out_house = np.zeros(len_time_array)
 
         # iter over the typical periods
         for j, day in enumerate(list(timestamp.Weekday)):
@@ -126,8 +126,8 @@ def generate_EV_plug_out_profiles(cluster, n_houses=31):
                 plug_out_duration = profile[house][key]
                 plug_out_start = key
                 IDs = list(range(plug_out_start-1+hours*j, plug_out_start-1+plug_out_duration+hours*j))
-                EV_plug_out_house[IDs] = 1
-            EV_plugged_out[i] = EV_plug_out_house
+                EV_plugged_out_house[IDs] = 1
+            EV_plugged_out[i] = EV_plugged_out_house
 
     EV_plugged_out = np.concatenate(list(EV_plugged_out.values()))
     plot_EV_occupancy_profile(EV_plugged_out, n_houses)

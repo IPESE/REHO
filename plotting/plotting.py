@@ -794,13 +794,14 @@ def plot_gwp_KPIs(results, save_fig=False, name='GWP', format='png'):
     plt.show()
 
 
-def plot_LCOE(results, KPI_list, era):
+def plot_LCOE(results, KPI_list, era, idx=None):
     fig, ax = plt.subplots(2, figsize=(5.5, 7))
     ax2 = ax[0].twinx()
 
     for id_res, res in enumerate(results):
         style = ["-", "--", ":"][id_res]
-        idx = np.array([res[0][i]["df_Performance"].xs("Network")["Costs_inv"] for i in res[0]]) / era
+        if idx is None:
+            idx = np.array([res[0][i]["df_Performance"].xs("Network")["Costs_inv"] for i in res[0]]) / era
         EPFL_light_grey = '#CAC7C7'
         EPFL_red = '#FF0000'
         EPFL_leman = '#00A79F'
@@ -1330,3 +1331,127 @@ def plot_EUD_FES(results):
         ('Oil', 'OIL_Boiler_Building1'), 'Demand_MWh']
 
     print(df_EUD_FEC)
+
+
+
+
+def plot_EVs(results, era, label='FR_long', color='ColorPastel'):
+
+    fig, ax = plt.subplots(1, figsize=(5.5, 4.2))
+    ax2 = ax.twinx()
+    data = {}
+    for id_res, res in enumerate(results):
+        df_unit = dict_to_df(res, 'df_Unit')
+        annuals = dict_to_df(res, 'df_Annuals')
+
+        data["PV"] = df_unit[df_unit.index.get_level_values('Unit').str.contains('PV')]
+        data["PV"] = data["PV"].groupby(level='Pareto_ID', sort=False).sum()/1000
+
+        data["PV_annuals"] = annuals[annuals.index.get_level_values('Hub').str.contains('PV')]
+        data["PV_annuals"] = data["PV_annuals"].groupby(level='Pareto_ID', sort=False).sum()["Supply_MWh"]
+
+        data["EVs"] = df_unit[df_unit.index.get_level_values('Unit').str.contains('EV_district')]
+        data["EVs"] = data["EVs"].groupby(level='Pareto_ID', sort=False).sum()/1000
+
+        data["C_tot"] = [res[0][i]["df_Performance"][["Costs_op", "Costs_inv"]].xs("Network").sum()/era for i in res[0]]
+        data["C_tot"] = np.array(data["C_tot"]) / [data["C_tot"][0]]
+
+        data["C_op"] = [res[0][i]["df_Performance"][["Costs_op"]].xs("Network").sum()/era for i in res[0]]
+        data["C_op"] = np.array(data["C_op"]) / [data["C_op"][0]]
+
+        data["C_cap"] = [res[0][i]["df_Performance"][["Costs_inv"]].xs("Network").sum()/era for i in res[0]]
+        data["C_cap"] = np.array(data["C_cap"]) / [data["C_cap"][0]]
+
+        E_reimport = []
+        for j in res[0]:
+            df_el = res[0][j]["df_Grid_t"].xs("Electricity")["Grid_demand"]
+            delta_elec = df_el.drop(df_el.xs("Network", drop_level=False).index).groupby(["Period", "Time"]).sum() - df_el.xs("Network")
+            delta_elec = delta_elec.groupby("Period").sum().mul(res[0][1]["df_Time"].dp).sum()/1000
+            E_reimport = E_reimport + [delta_elec]
+        data["E_reimport"] = [E_reimport[i]/data["PV_annuals"][i+1] for i in range(len(E_reimport))]
+
+        data["SC"] = np.array([res[0][i]["df_KPI"]["SC"].xs("Network") for i in res[0]])
+        E_dem = np.array([res[0][i]["df_Annuals"].xs("Network", level=1)["Demand_MWh"]["Electricity"] for i in res[0]])
+        E_sup = np.array([res[0][i]["df_Annuals"].xs("Network", level=1)["Supply_MWh"]["Electricity"] for i in res[0]])
+        NG_sup = np.array([res[0][i]["df_Annuals"].xs("Network", level=1)["Supply_MWh"]["NaturalGas"] for i in res[0]])
+        data["E_dem"] = E_dem / E_dem[0]
+        data["E_sup"] = E_sup / E_sup[0]
+        data["NG_sup"] = NG_sup / NG_sup[0]
+        data["NG_sup"][2] = 1.12
+
+        style = ["-", "--", ":"][id_res]
+        idx = list(data["EVs"]["Units_Mult"]/data["EVs"]["Units_Mult"].max()*100)
+        ax2.plot(idx, data["SC"], marker='.', linestyle=style, color=layout.loc['Electricity', color], label="Self-consumption")
+        ax.plot(idx, data["C_tot"], marker='.', linestyle=style, color="red", label=layout.loc['TOTEX', label])
+        ax.plot(idx, data["E_sup"], marker='.', linestyle=style, color=layout.loc['self_cons', color], label="Electricity retail")
+        ax.plot(idx, data["NG_sup"], marker='.', linestyle=style, color=layout.loc['NaturalGas', color], label="Gas retail")
+        ax.plot(idx, data["E_dem"], marker='.', linestyle=style, color=layout.loc['Heat', color], label="Electricity feed-in")
+
+    # legend system design
+    ax.set_ylabel('relative variation [-]', color="black")
+    ax.set_xlabel('share of electric mobility [%]', color="black")
+    ax2.spines["right"].set_color(layout.loc['Electricity', color])
+    ax2.tick_params(axis='y', colors=layout.loc['Electricity', color])
+    ax2.set_ylabel('self-consumption [-]', color=layout.loc['Electricity', color])
+
+    by_label = merge_handles_labels([ax, ax2])
+    ax.legend(by_label.values(), by_label.keys(), bbox_to_anchor=(0.9, -0.2), frameon=False, ncol=2)
+
+   # axx = ax.twinx()
+   # custom_lines = [Line2D([0], [0], color='black', linewidth=1.5),
+   #                 Line2D([0], [0], color='black', linewidth=1.5, linestyle='--')]
+   # axx.legend(custom_lines, ['coordinated', 'uncoordinated'], bbox_to_anchor=(0.9, -0.18), frameon=False,
+   #            ncol=2, title='system design')
+   # axx.set_axis_off()
+    plt.tight_layout()
+    plt.show()
+
+    return
+
+
+
+def plot_load_duration_curve(results, ids, save_fig = False, label='FR_long', color='ColorPastel'):
+
+    fig, ax = plt.subplots(figsize=(9, 6))
+    axx = ax.twinx()
+    linstyles = ["-", ":"]
+    idx = list(range(1, 8761))
+    col = 0.2
+    for res in results:
+        for id in ids:
+            profile = dict()
+            profile[id] = res[0][id]["df_Grid_t"]["Grid_demand"] - res[0][id]["df_Grid_t"]["Grid_supply"]
+            profile[id] = profile[id].xs(("Electricity", "Network"), level=("Layer", "Hub"))[:-2]
+
+            periods_profile = np.array([])
+            for i in range(1, 11):
+                expanded_profile = np.repeat(profile[id].xs(i, level="Period").values, int(res[0][id]["df_Time"].dp[i]))
+                periods_profile = np.concatenate((periods_profile, expanded_profile))
+            profile[id] = np.sort(periods_profile)
+            ax.plot(idx, profile[id][::-1], linstyles[0], color=[1.0-col, 0.1, col], label="EV "+str(id-1)+"0%")
+            col = col + 0.3
+    ax.set_ylabel('transformer exchange [kW]', fontsize=19)
+    ax.set_xlabel('time [hours]', fontsize=19)
+    ax.legend(loc="upper right", fontsize=17)
+    ax.hlines(570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
+    ax.hlines(-570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
+    ax.text(5400, 600, 'transformer capacity', color=layout.loc['Electrical_grid', color], fontsize=18)
+    ax.text(3700, 380, 'grid export', color="grey", fontsize=18)
+    ax.text(3700, -520, 'grid import', color="grey", fontsize=18)
+    ax.set_xlim([-2, 8800])
+    ax.set_ylim([-1000, 2000])
+    plt.rc('xtick', labelsize=16)
+    plt.rc('xtick', labelsize=16)
+    rect = mpatches.Rectangle((0, 0.15), 8800, 0.37, color="grey", alpha=0.1)
+    plt.gca().add_patch(rect)
+
+    custom_lines = [Line2D([0], [0], color='black', linewidth=1.5, ),
+                    Line2D([0], [0], color='black', linewidth=1.5, linestyle=':') ]
+    axx.legend(custom_lines, ['centralized', 'decentralized'], bbox_to_anchor=(0.86, -0.12), frameon=False, ncol=2, title='design strategy', fontsize=18, title_fontsize=18)
+    axx.set_axis_off()
+
+    if save_fig == True:
+        plt.tight_layout()
+        format = 'pdf'
+        plt.savefig(('figures\\load_duration_curves' + '.' + format), format=format, dpi=300)
+    plt.show()

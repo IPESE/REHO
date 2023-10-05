@@ -333,7 +333,7 @@ class district_decomposition:
         if self.method["actors_cost"]:
             ampl_MP.read('master_problem_actors.mod')
 
-        if len(self.district.UnitsOfDistrict) > 0:
+        if len(self.infrastructure.UnitsOfDistrict) > 0:
             ampl_MP.cd(path_to_district_units)
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
@@ -542,7 +542,7 @@ class district_decomposition:
         # Solve ampl_MP
         ampl_MP.solve()
 
-        df_Results_MP = WR.dataframes_results_MP(ampl_MP, binary, self.method, self.district, read_DHN=read_DHN)
+        df_Results_MP = WR.dataframes_results_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
         print(ampl_MP.getCurrentObjective().getValues().toPandas())
 
         df = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl_MP)

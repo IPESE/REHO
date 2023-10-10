@@ -40,6 +40,7 @@ set Period;				# Set of periods (days)
 set PeriodStandard;		# Set of standard periods (not extreme) 
 set PeriodExtrem := {Period diff PeriodStandard};
 set Lca_kpi;
+set HP_Tsupply default {35,45,55};																	#-
 
 #-TIME SETS
 param TimeStart default 1;

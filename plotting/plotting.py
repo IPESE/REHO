@@ -34,7 +34,6 @@ def dict_to_df(results, df):
          for Pareto_ID in results[Scn_ID].keys()}
 
     df_merged = pd.concat(t.values(), keys=t.keys(), names=['Scn_ID', 'Pareto_ID'], axis=0)
-    df_merged = df_merged.sort_index()
 
     return df_merged
 
@@ -49,7 +48,7 @@ def handle_zero_rows(df):
 
 
 def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, premium_version=False, additional_costs={}):
-    df_eco = df_eco.groupby(indexed_on).sum()
+    df_eco = df_eco.groupby(level=indexed_on, sort=False).sum()
     indexes = df_eco.index.tolist()
 
     data_capex = df_eco.xs('investment', level='Category', axis=1).transpose()

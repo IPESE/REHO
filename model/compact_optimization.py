@@ -302,7 +302,7 @@ class compact_optimization():
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact)
+                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact)
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -625,14 +625,17 @@ class compact_optimization():
                     print('EMOO constraint ', epsilon_constraint, ' was not found in ampl model and was thus ignored.')
 
         # Set specific constraints
-        ampl.getConstraint('enforce_PV_max').drop()
-        ampl.getConstraint('enforce_DHN').drop()
         ampl.getConstraint('disallow_exchanges_1').drop()
         ampl.getConstraint('disallow_exchanges_2').drop()
 
-        if 'HeatPump' in  self.infrastructure_compact.UnitsOfType: # Check if HP DHN is used
+        if 'PV' in self.infrastructure_compact.UnitsOfType: # Check if HP DHN is used
+            ampl.getConstraint('enforce_PV_max').drop()
+        if 'HeatPump' in self.infrastructure_compact.UnitsOfType: # Check if HP DHN is used
+            ampl.getConstraint('enforce_DHN').drop()
             if not any("DHN" in unit for unit in self.infrastructure_compact.UnitsOfType['HeatPump']):
                 ampl.getConstraint('DHN_heat').drop()
+        else:
+            ampl.getConstraint('TOTAL_design_c11').drop()
         if 'Air_Conditioner' in self.infrastructure_compact.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_compact.units]:
             ampl.getConstraint('AC_c3').drop()
         if 'EV' in self.infrastructure_compact.UnitTypes:

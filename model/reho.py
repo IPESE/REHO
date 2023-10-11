@@ -548,14 +548,14 @@ class reho(district_decomposition):
         self.scenario["Objective"] = "TOTEX_bui"
         self.set_indexed["ActorObjective"] = np.array([actor])
         if bounds != None:
-            sampler = qmc.LatinHypercube(d=3)
+            sampler = qmc.LatinHypercube(d=2)
             sample = sampler.random(n=n_sample)
             l_bound = [bounds[key][0] for key in bounds]
             u_bound = [bounds[key][1] for key in bounds]
-            samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio', 'epsilon'])
+            samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio'])
             self.samples = samples.round(4)
         else:
-            self.samples = pd.DataFrame([[None, None, None]]*n_sample, columns=['utility_portfolio', 'owner_portfolio', 'epsilon'])
+            self.samples = pd.DataFrame([[None, None]]*n_sample, columns=['utility_portfolio', 'owner_portfolio'])
 
         Scn_ID = self.scenario['name']
         self.pool = mp.Pool(mp.cpu_count())
@@ -579,8 +579,8 @@ class reho(district_decomposition):
     def run_actors_opti(self, samples, ids):
 
         if any([samples[col][0] for col in samples]): # if samples contain values
-            param = samples.iloc[ids] # TODO pass epsilon constraints in EMOO scenario
-            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_min': param['owner_portfolio'], 'EMOO_totex_lodger': param['epsilon']}
+            param = samples.iloc[ids]
+            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_min': param['owner_portfolio']}
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
         try:
             scn = self.scenario["name"]
@@ -590,9 +590,9 @@ class reho(district_decomposition):
         except:
             return None, None
 
-    def generate_configurations(self, n_sample=5, tariffs_ranges=None, path=None):
-        if tariffs_ranges == None:
-            tariffs_ranges = {'Electricity': {"Cost_demand_cst": [0.05, 0.20], "Cost_supply_cst": [0.15, 0.30]},
+    def generate_configurations(self, n_sample=5, tariffs_ranges=None, path=None, delta_feed_in=0.15):
+        if tariffs_ranges is None:
+            tariffs_ranges = {'Electricity': {"Cost_supply_cst": [0.15, 0.30]},
                               'NaturalGas': {"Cost_supply_cst": [0.1, 0.30]}}
         l_bounds = []
         u_bounds = []
@@ -607,8 +607,9 @@ class reho(district_decomposition):
         sample = sampler.random(n=n_sample)
         samples = pd.DataFrame(qmc.scale(sample, l_bounds, u_bounds), columns=names)
         samples = samples.round(3)
-        idx_removed = samples[samples["Electricity_Cost_supply_cst"] - samples["Electricity_Cost_demand_cst"] < 0].index
-        samples = samples.drop(idx_removed)
+        samples['Electricity_Cost_demand_cst'] = samples['Electricity_Cost_supply_cst'] - delta_feed_in
+
+        tariffs_ranges['Electricity']['Cost_demand_cst'] = [tariffs_ranges['Electricity']['Cost_supply_cst'][0] - delta_feed_in, tariffs_ranges['Electricity']['Cost_supply_cst'][1] - delta_feed_in]
 
         self.pool = mp.Pool(mp.cpu_count())
         for s in samples.index:
@@ -620,7 +621,7 @@ class reho(district_decomposition):
             Scn_ID = self.scenario['name']
             init_beta = [10, 5, 2, 1, 0.5, 0.2, 0.1]
 
-            for beta in init_beta: # execute SP for MP initialization
+            for beta in init_beta:  # execute SP for MP initialization
                 if self.method['parallel_computation']:
                     results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(SP_scenario_init, Scn_ID, s, h, None, beta)) for h in self.infrastructure.houses}
                     while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:

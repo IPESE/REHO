@@ -50,13 +50,13 @@ if __name__ == '__main__':
     reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Lodger")
     reho_model.scenario["name"] = "Owner"
     reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Owner")
-    reho_model.scenario["name"] = "District"
-    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="District")
+    reho_model.scenario["name"] = "Utility"
+    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Utility")
 
     # define samples
     bound_o = -np.array([reho_model.results[i][0].df_actors.loc["Owner"][0] for i in reho_model.results])
-    bound_d = -np.array([reho_model.results[i][0].df_actors.loc["District"][0] for i in reho_model.results])
-    bounds = {"District": [0, bound_d.max()/2], "Owner": [0, bound_o.max()/10], "Lodger": [2.0, 3.0]}
+    bound_d = -np.array([reho_model.results[i][0].df_actors.loc["Utility"][0] for i in reho_model.results])
+    bounds = {"Utility": [0, bound_d.max()/2], "Owner": [0, bound_o.max()/10], "Lodger": [2.0, 3.0]}
 
     # Run MOO actors
     reho_model.scenario["name"] = "MOO_actors"

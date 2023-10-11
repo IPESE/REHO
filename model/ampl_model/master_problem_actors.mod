@@ -1,4 +1,4 @@
-set Actors default {"Owner", "Lodger", "District"};
+set Actors default {"Owner", "Lodger", "Utility"};
 set ActorObjective;
 
 # energy tariffs
@@ -32,7 +32,7 @@ var objective_functions{a in Actors};
 
 
 /*---------------------------------------------------------------------------------------------------------------------------------------
-lodger actor constraints
+Lodger actor constraints
 ---------------------------------------------------------------------------------------------------------------------------------------*/
 var C_op_lod_dist{h in House};
 var C_op_lod_own{h in House};
@@ -44,11 +44,11 @@ subject to Costs_opex_lodger2{h in House}:
 C_op_lod_own[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} ( Cost_self_consumption[f,h] * PV_self_consummed[f,h,p,t] * dp[p] * dt[p] ); 
 
 # EMOO
-var C_op_lod_max{h in House} default 0;
-param EMOO_totex_lodger default 1.0;
+#var C_op_lod_max{h in House} default 0;
+#param EMOO_totex_lodger default 1.0;
 
-subject to Lodger1{h in House, f in FeasibleSolutions}:
-C_op_lod_max[h] <= sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} ( (Cost_supply_cst[l] * Grid_supply[l,f,h,p,t] + Cost_supply_cst["Electricity"] * PV_self_consummed[f,h,p,t]) * dp[p] * dt[p] ); 
+#subject to Lodger1{h in House, f in FeasibleSolutions}:
+#C_op_lod_max[h] <= sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} ( (Cost_supply_cst[l] * Grid_supply[l,f,h,p,t] + Cost_supply_cst["Electricity"] * PV_self_consummed[f,h,p,t]) * dp[p] * dt[p] ); 
 
 #subject to Lodger_epsilon:
 #sum{h in House} (C_op_lod_dist[h] + C_op_lod_own[h]) <= sum{h in House} C_op_lod_max[h] * EMOO_totex_lodger;
@@ -77,7 +77,7 @@ subject to Utility_epsilon:
 utility_portfolio >= utility_portfolio_min;
 
 subject to obj_fct2:
-objective_functions["District"] = - utility_portfolio; 
+objective_functions["Utility"] = - utility_portfolio;
 
 
 /*---------------------------------------------------------------------------------------------------------------------------------------

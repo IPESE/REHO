@@ -6,25 +6,26 @@ if __name__ =='__main__':
     # Set scenario
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
-    
+    scenario['EMOO'] = {}
+    scenario['specific'] = []
 
     # Set building parameters
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv('single_building.csv')
 
     # Set specific parameters
-    parameters = {'n_years': 25}
+    parameters = {}
 
     # Select clustering file
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
-    method = {}
+    method = {'building-scale': True}
 
     ################### SCENARIO 1 Chaudière mazout ###################
     scenario['name'] = 'Oil'
     scenario['exclude_units'] = ['ThermalSolar', 'HeatPump', 'ElectricalHeater', 'PV', 'DataHeat_DHW']
     scenario['enforce_units'] = []
-    grids = infrastructure.initialize_grids({'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645}, 'Oil': {'Cost_supply_cst': 0.1087}, 'Data': {}})
+    grids = infrastructure.initialize_grids({'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645}, 'Oil': {'Cost_supply_cst': 0.11}, 'Data': {}})
     units = infrastructure.initialize_units(scenario, grids)
 
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)

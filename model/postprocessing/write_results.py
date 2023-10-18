@@ -558,9 +558,9 @@ class dataframes_results_MP(object):
 
             self.df_actors = get_variable_in_pandas(df, 'objective_functions')
 
-            df1 = get_variable_in_pandas(df, 'C_op_lod_dist')
-            df2 = get_variable_in_pandas(df, 'C_op_lod_own')
-            df3 = get_variable_in_pandas(df, 'C_op_dist_own')
+            df1 = get_variable_in_pandas(df, 'C_op_renters_to_utility')
+            df2 = get_variable_in_pandas(df, 'C_op_renters_to_owners')
+            df3 = get_variable_in_pandas(df, 'C_op_utility_to_owners')
             df4 = get_variable_in_pandas(df, 'Costs_House_inv')
             df4.columns = ["owner_inv"]
             df5 = get_variable_in_pandas(df, 'owner_portfolio')

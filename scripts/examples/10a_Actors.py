@@ -46,25 +46,25 @@ if __name__ == '__main__':
     # reho_model.read_configurations()
 
     # find actors bounds
-    reho_model.scenario["name"] = "Lodger"
-    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Lodger")
-    reho_model.scenario["name"] = "Owner"
-    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Owner")
+    reho_model.scenario["name"] = "Renters"
+    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Renters")
+    reho_model.scenario["name"] = "Owners"
+    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Owners")
     reho_model.scenario["name"] = "Utility"
     reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Utility")
 
     # define samples
-    bound_o = -np.array([reho_model.results[i][0].df_actors.loc["Owner"][0] for i in reho_model.results])
+    bound_o = -np.array([reho_model.results[i][0].df_actors.loc["Owners"][0] for i in reho_model.results])
     bound_d = -np.array([reho_model.results[i][0].df_actors.loc["Utility"][0] for i in reho_model.results])
-    bounds = {"Utility": [0, bound_d.max()/2], "Owner": [0, bound_o.max()/10], "Lodger": [2.0, 3.0]}
+    bounds = {"Utility": [0, bound_d.max()/2], "Owners": [0, bound_o.max()/10], "Renters": [2.0, 3.0]}
 
     # Run MOO actors
     reho_model.scenario["name"] = "MOO_actors"
-    reho_model.generate_pareto_actors(n_sample=25, bounds=bounds, actor="Lodger")
+    reho_model.generate_pareto_actors(n_sample=25, bounds=bounds, actor="Renters")
 
     print(reho_model.samples, "\n")
-    print(reho_model.results["Lodger"][0].df_actors_tariff.xs("Electricity").mean(), "\n")
-    print(reho_model.results["Lodger"][0].df_actors)
+    print(reho_model.results["Renters"][0].df_actors_tariff.xs("Electricity").mean(), "\n")
+    print(reho_model.results["Renters"][0].df_actors)
 
     # Save results
     SR.save_results(reho_model, save=["pickle_all"], filename='actors_MOO')

@@ -75,7 +75,7 @@ class district_decomposition:
             self.DW_params = DW_params
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
-        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_lodger', 'TransformerCapacity',
+        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
                          "list_constraints_MP": []

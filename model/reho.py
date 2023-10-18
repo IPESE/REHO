@@ -541,7 +541,7 @@ class reho(district_decomposition):
             sys.exit(exitcode)
 
 
-    def generate_pareto_actors(self, n_sample=10, bounds=None, actor="Owner"):
+    def generate_pareto_actors(self, n_sample=10, bounds=None, actor="Owners"):
         self.method["actors_cost"] = True
         self.method["include_all_solutions"] = True
         self.method['building-scale'] = True
@@ -565,6 +565,7 @@ class reho(district_decomposition):
         for ids in self.samples.index:
             df_Results, df_Results_MP = results[ids].get()
             self.results.add_item(Scn_ID, ids, df_Results)
+            self.get_KPIs(Scn_ID, ids)
             self.results_MP[Scn_ID][ids] = df_Results_MP
 
         self.samples["objective"] = None
@@ -735,7 +736,7 @@ class reho(district_decomposition):
         df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
 
         if self.method["actors_cost"]:
-            df_actor = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']].df_District[['C_op_lod_dist', 'C_op_lod_own', 'C_op_dist_own', 'owner_inv', 'owner_portfolio']]
+            df_actor = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']].df_District[['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv', 'owner_portfolio']]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
             df_Results.df_actors_tariff = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']].df_actors_tariff
             df_Results.df_actors = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']].df_actors

@@ -288,7 +288,7 @@ def plot_roofs_difference(save_fig = False):
     custom_lines = [Line2D([0], [0], color='black', linewidth=1.5,),
                     Line2D([0], [0], color='black', linewidth=1.5, linestyle='--')
                     ]
-    axx.legend(custom_lines, ['centralized', 'decentralized'],
+    axx.legend(custom_lines, ['centralized', 'building-scale'],
               bbox_to_anchor=(1, -0.2), frameon=False, ncol = 1, title = 'optimization strategy')
     axx.set_axis_off()
 

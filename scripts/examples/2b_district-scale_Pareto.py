@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
+    reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
     # Set specific parameters
@@ -25,16 +25,16 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    method = {}
+    method = {'district-scale': True}
 
-    # Initialize available units and grids. You can specify the energy tariffs you want. Demand = feed-in and supply = retail
-    grids = structure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.14, "Cost_supply_cst": 0.26},
-                                        'NaturalGas': {"Cost_supply_cst": 0.18}})
-    units = structure.initialize_units(scenario, grids)
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster,
-                  scenario=scenario, method=method)
+    DW_params = {'max_iter': 2}
+    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
+                    cluster=cluster, scenario=scenario, method=method, DW_params=DW_params)
 
     reho_model.generate_pareto_curve()
 

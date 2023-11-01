@@ -8,13 +8,14 @@ Installation
 Installation
 ------------
 
-If you do not have access to an AMPL license, you must use a personal virtual machine (VM).
-Your VM is provided to you from our IT support.
+
 
 AMPL
 ~~~~
 
-AMPL is already installed on your VM. Plenty of text editors exist which feature AMPL.
+Running the model in AMPL requires the licences of AMPL and of at least one LP solver.
+
+Plenty of text editors exist which feature AMPL.
 We are using Sublime Text (https://www.sublimetext.com/) for syntax highlighting.
 To install the ampl package follow the steps:
 
@@ -30,28 +31,17 @@ which should already be installed on your VM. As IDE we highly recommend you to 
 There is a free professional license for students (click special offers and click for students and teachers).
 Please connect using (or creating) your PyCharm account to, it will be a great support for you.
 
-GitLab
-~~~~~~
-
-The work status and different versions of REHO are managed on GitLab. Before you start,
-give us your username and we grant you access to the repository. If you have not worked with git yet,
-create an account on GitLab and be sure git is installed on your machine (on your VM, it is the case).
-You can work with GitLab from your terminal/cmd - various cheat sheets (https://www.git-tower.com/blog/git-cheat-sheet/) help you.
-If you prefer using a tool, check out Sublime Merge (https://www.sublimemerge.com/).
 
 REHO repository
 ~~~~~~~~~~~~~~~
 
 Select a directory where you would like to have your files,
-open the terminal/cmd in this folder and clone the repository (https://gitlab.epfl.ch/ipese/urban-systems/reho) using the command:
+open the terminal/cmd in this folder and clone the repository (https://github.com/Renewable-Energy-Hub-Optimizer/REHO_model) using the command:
 
 .. code-block:: bash
    :caption: Cloning the REHO repository
 
-   git clone https://gitlab.epfl.ch/ipese/urban-systems/reho.git
-
-
-You are asked for a password, enter your GitLab password which should be your Gaspar credentials. If your credentials do not work, you have to refresh your password in gitlab. For that goes in preferences and password. Enter your gaspar password  without changing it and save. Try again cloning the reho repository.
+   git clone https://github.com/Renewable-Energy-Hub-Optimizer/REHO_model.git
 
 After it finished cloning, you can check if everything works. If everything is up to date, you can continue:
 
@@ -83,10 +73,9 @@ First run
    pip install -r requirements.txt
    pipwin install -r requirements_win.txt
 
-   # If geopandas failed to install
+   # if geopandas failed to install
    pip install geopandas
 
-   - If geopandas failed to install: `pip install geopandas`
 
 5. Finally run:
 
@@ -106,5 +95,8 @@ Run the model
 7. Choose the file 2a_Centralized_TOTEX.py and run the script. If your installation is correct, you should receive the final message “Process finished with exit code 0”. Sometimes, when running the model for the first time, you need to explicitly tell PyCharm to connect to the AMPL server by typing ampl in the PyCharm Terminal tab.
 
 
-Exercices
+Exercises
 =========
+
+.. caution ::
+   TO DO

@@ -9,31 +9,25 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
 
-    # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
-    qbuildings_data = reader.read_db(3658, nb_buildings=1)
+    qbuildings_data = reader.read_csv('multiple_buildings.csv', nb_buildings=2)
 
-    # Set specific parameters
     parameters = {}
 
-    # Select clustering file
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
-    # Choose energy system structure options
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    # by default a district scale design is performed with a compact optimization. Watch out the maximum number of buildings is around 10 due to computational costs
+    #method = {"read_electricity_profiles": 'aggregated_240.csv'}
     method = {}
 
-    # Initialize available units and grids
-    grids = structure.initialize_grids()
-    units = structure.initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
     reho_model.single_optimization()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='2a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='3d')

@@ -60,7 +60,7 @@ class reho(district_decomposition):
         else:
             self.nPareto = self.scenario['nPareto']  # intermediate points
             self.total_Pareto = self.nPareto * 2 + 2  # total pareto points: both objectives plus boundaries
-        if self.method["decentralized"] and 'EV' not in self.district.UnitTypes:
+        if self.method['building-scale'] and 'EV' not in self.infrastructure.UnitTypes:
             self.scenario['specific'] = self.scenario['specific'] + ["disallow_exchanges_1", "disallow_exchanges_2"]
 
         # output attributes
@@ -81,7 +81,7 @@ class reho(district_decomposition):
         return scenario
 
     def return_epsilon_init(self, C_max, C_min, pareto_max, pareto, objective):
-        if self.method['decentralized']:
+        if self.method['building-scale']:
             if objective == self.scenario["Objective"][0]:
                 epsilon_init = (C_max - C_min) / (pareto_max + 1) * (pareto - 1) + C_min
             elif objective == self.scenario["Objective"][1]:
@@ -97,7 +97,7 @@ class reho(district_decomposition):
 
     def __annualized_investment(self, ampl, surfaces, Scn_ID, Pareto_ID):
 
-        if self.method["decomposed"] or self.method['decentralized']:
+        if self.method['district-scale'] or self.method['building-scale']:
             df_inv = self.results[Scn_ID][Pareto_ID].df_Performance
             district = (df_inv.Costs_inv[-1] + df_inv.Costs_rep[-1]) / self.ERA
             buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
@@ -114,7 +114,7 @@ class reho(district_decomposition):
 
 
     def __opex_per_house(self, ampl, surfaces, Scn_ID, Pareto_ID):
-        if self.method["decomposed"] or self.method["decentralized"]:
+        if self.method['district-scale'] or self.method['building-scale']:
             df_op = self.results[Scn_ID][Pareto_ID].df_Performance
             district = df_op.Costs_op[-1] / self.ERA
             building = df_op.Costs_op[:-1].div(surfaces.ERA)
@@ -168,13 +168,13 @@ class reho(district_decomposition):
         objective1 = self.scenario["Objective"][0]
         scenario['Objective'] = objective1
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method)
             ampl, exitcode = REHO.solve_model()
 
         scenario = {'Objective': objective1}
@@ -200,13 +200,13 @@ class reho(district_decomposition):
         else:
             Pareto_ID = self.nPareto + 2
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method)
             ampl, exitcode = REHO.solve_model()
 
         scenario = {'Objective': objective2}
@@ -255,14 +255,14 @@ class reho(district_decomposition):
             print('---------------> ', self.scenario["Objective"][0], ' LIMIT: ', obj1_eps_lim)
 
             # results computation
-            if self.method['decomposed']:
+            if self.method['district-scale']:
                 ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
             else:
                 if self.method['use_facades'] or self.method['use_pv_orientation']:
-                    REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+                    REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                                 self.cluster, scenario, self.method, self.qbuildings_data)
                 else:
-                    REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+                    REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                                 self.cluster, scenario, self.method)
                 ampl, exitcode = REHO.solve_model()
 
@@ -299,15 +299,15 @@ class reho(district_decomposition):
                 self.epsilon_constraints['EMOO_obj2'] = np.append(self.epsilon_constraints['EMOO_obj2'], obj2_eps_lim)
                 print('---------------> ', self.scenario["Objective"][1], ' LIMIT: ', obj2_eps_lim)
                 # results computation
-                if self.method['decomposed']:
+                if self.method['district-scale']:
                     ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
                 else:
                     if self.method['use_facades'] or self.method['use_pv_orientation']:
-                        REHO = compact_optimization(self.district, self.buildings_data, self.parameters,
+                        REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters,
                                                     self.set_indexed, self.cluster,
                                                     scenario, self.method, self.qbuildings_data)
                     else:
-                        REHO = compact_optimization(self.district, self.buildings_data, self.parameters,
+                        REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters,
                                                     self.set_indexed,
                                                     self.cluster,
                                                     scenario, self.method)
@@ -328,7 +328,7 @@ class reho(district_decomposition):
 
         df = pd.DataFrame()
         for i in self.results[Scn_ID].keys():
-            if self.scenario["Objective"][0] in self.district.lca_kpis:
+            if self.scenario["Objective"][0] in self.infrastructure.lca_kpis:
                 df2 = pd.DataFrame([self.results[Scn_ID][i].df_lca_Performance[self.scenario["Objective"][0]].xs("Network")], index=[i])
             else:
                 df2 = pd.DataFrame([self.results[Scn_ID][i].df_Performance['Costs_op'].xs("Network")], index=[i])
@@ -346,7 +346,7 @@ class reho(district_decomposition):
         self.results[Scn_ID] = new_order_results
         self.ampl_lib[Scn_ID] = new_order_ampl
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             self.sort_decomp_result(Scn_ID, df['index'].values)
 
 
@@ -364,11 +364,11 @@ class reho(district_decomposition):
 
             # REHOExecution, returns ampl library containing the whole model
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster,
                                             scenario, self.method, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster,
                                             scenario, self.method)
             ampl = REHO.build_model_without_solving()
@@ -396,7 +396,7 @@ class reho(district_decomposition):
 
     def fix_utilities(self, Pareto_ID, Scn_ID, cluster, df_Unit=None, scenario=None):
 
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             if 'FeasibleSolution' in df_Unit.index.names:
                 df_unit = df_Unit.reset_index(level=['FeasibleSolution','Hub'], drop=True)
             else:
@@ -427,22 +427,22 @@ class reho(district_decomposition):
         # -----------------------------------------------------------------------------------------------------#
         # REHOExecution, returns ampl library containing the whole model
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+            REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                         self.cluster, scenario_fix_uti, self.method, self.qbuildings_data)
         else:
-            REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+            REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                         self.cluster, scenario_fix_uti, self.method)
         ampl = REHO.build_model_without_solving()
 
         for i, value in ampl.getVariable('Units_Mult').instances():
             # ## To avoid  infeasibilities caused by  numerical issues - increase unitsize, if not HP or already Fmax -Be care ful  with integer Mult
-            if i in self.district.UnitsOfType['HeatPump']:
+            if i in self.infrastructure.UnitsOfType['HeatPump']:
                 ampl.getVariable('Units_Mult').get(str(i)).fix(df_unit.Units_Mult.loc[i])
-            elif i in self.district.UnitsOfType['PV']:
+            elif i in self.infrastructure.UnitsOfType['PV']:
                 ampl.getVariable('Units_Mult').get(str(i)).fix(0.999*df_unit.Units_Mult.loc[i])
-            elif i in self.district.UnitsOfType['WaterTankDHW']:
+            elif i in self.infrastructure.UnitsOfType['WaterTankDHW']:
                 ampl.getVariable('Units_Mult').get(str(i)).fix(0.999*df_unit.Units_Mult.loc[i])
-            elif df_unit.Units_Mult.loc[i] == self.district.Units_Parameters.loc[i].Units_Fmax:
+            elif df_unit.Units_Mult.loc[i] == self.infrastructure.Units_Parameters.loc[i].Units_Fmax:
                 ampl.getVariable('Units_Mult').get(str(i)).fix(df_unit.Units_Mult.loc[i])
             else:
                 ampl.getVariable('Units_Mult').get(str(i)).fix(1.00001 * df_unit.Units_Mult.loc[i])
@@ -502,21 +502,21 @@ class reho(district_decomposition):
 
     def single_optimization(self, Pareto_ID=0, Third_ID=None):
         Scn_ID = self.scenario['name']
-        if self.method['decomposed']:
+        if self.method['district-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster, self.scenario, self.method, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.district, self.buildings_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster, self.scenario, self.method)
             ampl = REHO.build_model_without_solving()
 
             if self.method['fix_units']:
                 for unit in self.fix_units_list:
-                    for h in self.district.House:
+                    for h in self.infrastructure.House:
                         if unit == 'PV':
                             ampl.getVariable('Units_Mult').get('PV_' + h).fix(self.df_fix_Units.Units_Mult.loc['PV_' + h] * 0.999)
                             ampl.getVariable('Units_Use').get('PV_' + h).fix(float(self.df_fix_Units.Units_Use.loc['PV_' + h]))
@@ -543,7 +543,7 @@ class reho(district_decomposition):
     def generate_pareto_actors(self, n_sample=10, bounds=None, actor="Owner"):
         self.method["actors_cost"] = True
         self.method["include_all_solutions"] = True
-        self.method["decentralized"] = True
+        self.method['building-scale'] = True
         self.scenario["Objective"] = "TOTEX_bui"
         self.set_indexed["ActorObjective"] = np.array([actor])
         if bounds != None:
@@ -613,7 +613,7 @@ class reho(district_decomposition):
         for s in samples.index:
             for layer in tariffs_ranges:
                 for param in tariffs_ranges[layer]:
-                    self.district.grids[layer][param] = samples.loc[s, layer + "_" + param]
+                    self.infrastructure.grids[layer][param] = samples.loc[s, layer + "_" + param]
 
             scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
             Scn_ID = self.scenario['name']
@@ -621,10 +621,10 @@ class reho(district_decomposition):
 
             for beta in init_beta: # execute SP for MP initialization
                 if self.method['parallel_computation']:
-                    results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(SP_scenario_init, Scn_ID, s, h, None, beta)) for h in self.district.houses}
+                    results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(SP_scenario_init, Scn_ID, s, h, None, beta)) for h in self.infrastructure.houses}
                     while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
                         time.sleep(1)
-                    for h in self.district.houses:
+                    for h in self.infrastructure.houses:
                         (df_Results, attr) = results[h].get()
                         self.add_Result_SP(Scn_ID, s, self.iter, h, df_Results, attr)
                 self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
@@ -655,8 +655,8 @@ class reho(district_decomposition):
 
         self.pool = mp.Pool(mp.cpu_count())
         self.iter = 0  # new scenario has to start at iter = 0
-        method = self.method['decentralized']
-        self.method['decentralized'] = True
+        method = self.method['building-scale']
+        self.method['building-scale'] = True
         scenario = self.scenario.copy()
         scenario["specific"] = scenario["specific"] + ["enforce_DHN"]
         scenario_MP, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
@@ -672,15 +672,15 @@ class reho(district_decomposition):
         dhn_inv = self.results_MP[0][0][0].df_District.loc["Network", "DHN_inv"]
         tau = self.results_SP[0][0][0][0]["Building1"].df_Performance["ANN_factor"][0]
         dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
-        for bui in self.district.houses.keys():
-            self.district.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui]*1.001, dhn_invh]
+        for bui in self.infrastructure.houses.keys():
+            self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui]*1.001, dhn_invh]
 
         self.pool.close()
-        self.method['decentralized'] = method
+        self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
     def get_results_attributes(self, ampl, Scn_ID, ParetoID, scenario):
-        if self.method["decomposed"] or self.method['decentralized']:
+        if self.method['district-scale'] or self.method['building-scale']:
             df_Results = self.get_df_results_from_MP_and_SPs(Scn_ID, ParetoID)
         else:
             df_Results = WR.dataframes_results(ampl, scenario, self.method, self.buildings_data)
@@ -690,10 +690,10 @@ class reho(district_decomposition):
 
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
-        df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.district, self.buildings_data, self.cluster)
+        df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster)
         self.results[Scn_ID][Pareto_ID].df_KPI = df_KPI
         self.results[Scn_ID][Pareto_ID].df_economics = df_eco
-        if self.method["decentralized"]:
+        if self.method['building-scale']:
             self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 
 
@@ -776,18 +776,18 @@ class reho(district_decomposition):
         df = df.sort_index(level='Layer')
         df = df.drop('Network', level='Hub')
 
-        df_network = pd.DataFrame(self.district.grids.keys(), columns=["Layer"]) # build a df template to work on it
+        df_network = pd.DataFrame(self.infrastructure.grids.keys(), columns=["Layer"]) # build a df template to work on it
         df_network["Hub"] = "Network"
         df_network = df_network.set_index(["Layer", "Hub"])
         df_network[df.columns] = float("nan")
 
-        for key in self.district.grids.keys():
+        for key in self.infrastructure.grids.keys():
             data = df_Grid_t.xs((key, "Network"), level=("Layer", "Hub"))[["Grid_demand", "Grid_supply"]]
             data = data.mul(df_Time.dp, level='Period', axis=0)
             df_network.loc[key, ['Demand_MWh', 'Supply_MWh']] = data.sum().values / 1000
 
-        for i, unit in enumerate(self.district.UnitsOfDistrict):
-            for key in self.district.district_units[i]["UnitOfLayer"]:
+        for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
+            for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
                 data = df_Unit_t.xs((key, unit), level=('Layer','Unit')).mul(df_Time.dp, level='Period', axis=0).sum()/1000
                 df_network.loc[(key, unit), :] = float('nan')
                 df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[['Units_demand', 'Units_supply']].values

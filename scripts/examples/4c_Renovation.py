@@ -34,7 +34,7 @@ if __name__ == '__main__':
     scenario['name'] = 'totex'
 
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse-old')
+    reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(3658, nb_buildings=15)
 
     #qbuildings_data, renovated_bui = renovate_buildings(qbuildings_data)
@@ -46,12 +46,12 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
-    method = {'decentralized': True}
+    method = {'building-scale': True}
 
-    grids = structure.initialize_grids()
-    units = structure.initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
     reho_model.single_optimization()
 
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='10a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='4c')

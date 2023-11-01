@@ -35,6 +35,9 @@ path_to_configuration = os.path.join(path_to_actors_results, "configurations")
 # buildings
 path_to_buildings = os.path.join(path_to_data, 'buildings')
 
+# electricity
+path_to_electricity = os.path.join(path_to_data, 'electricity')
+
 # emissions
 path_to_emissions = os.path.join(path_to_data, 'emissions')
 path_to_emissions_matrix = os.path.join(path_to_emissions, 'electricity_matrix_2019_reduced.csv')

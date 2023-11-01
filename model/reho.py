@@ -637,8 +637,8 @@ class reho(district_decomposition):
             if not os.path.isdir('results'):
                 raise
 
-            file_name = 'config_' + str(len(self.buildings_data)) + '_' + str(self.buildings_data["Building1"]["transformer"]) + '.pickle'
-            path = os.path.join('results/configurations', file_name)
+        file_name = 'config_' + str(len(self.buildings_data)) + '_' + str(self.buildings_data["Building1"]["transformer"]) + '.pickle'
+        path = os.path.join('results/configurations', file_name)
         f = open(path, 'wb')
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], f)
 

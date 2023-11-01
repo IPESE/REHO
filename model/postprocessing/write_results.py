@@ -528,7 +528,9 @@ class dataframes_results_MP(object):
                 df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
                 df5 = get_parameter_in_pandas(ampl, 'EV_displacement', multi_index=True)
                 df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-                df_Unit_t = pd.concat([df_Unit_t, df4, df5], axis=1)
+                df6 = get_parameter_in_pandas(ampl, 'EV_V2V', multi_index=True)
+                df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
+                df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6], axis=1)
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
         self.df_Unit_t = df_Unit_t.sort_index()
 

@@ -132,7 +132,9 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
     PV_kWyr = MWh_PV
     PV = df_unit[df_unit.index.get_level_values('Unit').str.contains('PV')]
     PV = PV.groupby('Pareto_ID').sum()
-    PV_CHF = PV.Costs_Unit_inv
+    BAT = df_unit[df_unit.index.get_level_values('Unit').str.contains('Battery')]
+    BAT = BAT.groupby('Pareto_ID').sum()
+    PV_CHF = PV.Costs_Unit_inv + BAT.Costs_Unit_inv
 
     PV_CHF_kWyr = PV_CHF.div(PV_kWyr)
     PV_CHF_kWyr = PV_CHF_kWyr.fillna(0)
@@ -270,24 +272,18 @@ def return_district_result_object_dataframe(dict_results, result_dataframe):
 
     return df_district_results
 
-def plot_rainbow_CH(Pareto_list, extrapolation=None, bounds=None, resolution=100, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv"):
-
-    if extrapolation is None:
-        extrapolation = {17335: 54.5, 277: 428.55, 10559: 281.57, 14824: 98.57, 17316: 207.82}
-    extrapolation = pd.DataFrame.from_dict(extrapolation, orient="Index")  # ERA CH districts mio m2
-    extrapolation = extrapolation / extrapolation.sum()
+def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None, bounds=None, resolution=100, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv"):
 
     if bounds is None:
-        bounds = {"feed_in": [0.0, 0.15], "retail": [0.05, 0.25]}
+        bounds = {"feed_in": [0.0, 0.18], "retail": [0.0, 0.30]}
 
-    PV_area = {}
     df_plot_last = {}
     df_plot_inv_induced = {}
 
     # get data
-    for n, pareto in enumerate(Pareto_list):
+    for n, tr_id in enumerate(Pareto_list):
+        pareto = Pareto_list[tr_id]
         print("district:", n, " processed")
-        PV_area[n] = return_district_result_object_dataframe(pareto, 'df_PV_Surface').groupby("Pareto_ID").sum().max()[0]
         df_plot_last[n], feed_in_prices, No_feed_in, df_plot_inv_induced[n] = plot_economical_feedin_price(bounds, resolution, pareto)
 
         # get last economic retail tariffs
@@ -308,9 +304,12 @@ def plot_rainbow_CH(Pareto_list, extrapolation=None, bounds=None, resolution=100
 
     # aggregate data and extrapolate to CH
     df_plot_last_CH = df_plot_last[0] * 0
-
-    for n in PV_area:
-        df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / PV_area[n] * extrapolation[0].loc[n] * 140  # 140 km2 roof area usable (EnergyScope)
+    for n, tr_id in enumerate(Pareto_list):
+        if CH_roof_area != None:
+            ratio = list(surface_CH.values()) / np.sum(list(surface_CH.values()))
+            df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / surface_district[tr_id] * ratio[n] * CH_roof_area
+        else:
+            df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / surface_district[tr_id] * surface_CH[tr_id]
 
     df_plot_last_CH = sp.ndimage.filters.gaussian_filter(df_plot_last_CH, std_filter, mode='nearest')
     df_plot_last_CH = pd.DataFrame(df_plot_last_CH)
@@ -322,7 +321,7 @@ def plot_rainbow_CH(Pareto_list, extrapolation=None, bounds=None, resolution=100
     max_value = df_plot_last_CH.max().max()
 
     for col in df_plot_last_CH:
-        df_plot_last_CH[col].mask(df_plot_last_CH[col] < 0.3, np.nan, inplace=True)
+        df_plot_last_CH[col].mask(df_plot_last_CH[col] < 0.03, np.nan, inplace=True)
         df_plot_last_CH[col].mask(df_plot_last_CH[col] > max_value - 0.1, np.nan, inplace=True)
 
     plot_rainbow(df_plot_last_CH, feed_in_prices, No_feed_in, df_plot_inv_induced, bounds, save_fig=True, plot_type=plot_type)

@@ -20,3 +20,4 @@ pipwin~=0.5.2
 rpy2~=3.1.0
 scikit-learn
 scikit-learn-extra
+mpl_axes_aligner

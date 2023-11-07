@@ -158,7 +158,7 @@ class district_decomposition:
             SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
             SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
 
-        for scenario_cst in SP_scenario['specific']:
+        for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
                 SP_scenario['specific'].remove(scenario_cst)
                 SP_scenario_init['specific'].remove(scenario_cst)

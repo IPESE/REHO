@@ -9,10 +9,11 @@ from PIL import Image
 import plotly
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-#from mpl_axes_aligner import align
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 from matplotlib.legend_handler import HandlerTuple
+from mpl_axes_aligner import align
+
 # ---------------------------------------------------------------------------------------------
 # Definition of colors and labels
 cm = dict({'ardoise': '#413D3A', 'perle': '#CAC7C7', 'rouge': '#FF0000', 'groseille': '#B51F1F',
@@ -602,7 +603,8 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
                       save_fig=False, name_fig='pareto_units', format_fig='png', opex_line=False, title=None):
 
     fig, ax = plt.subplots()
-    fig.set_size_inches(10, 5)
+    fig.set_size_inches(10, 6)
+    ax2 = ax.twinx()
 
     if not isinstance(results, list):
         results = [results]
@@ -615,11 +617,13 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
 
         df_unit = dict_to_df(res, 'df_Unit')
         df_performance = dict_to_df(res, 'df_Performance')
+        df_KPI = dict_to_df(res, 'df_KPI')
+        SS = df_KPI.xs("Network", level=2)["SS"]
 
         df_performance = df_performance.xs((scenario, 'Network'), level=('Scn_ID', 'Hub'))
-        df_performance["CAPEX"] = df_performance["Costs_inv"] + df_performance["Costs_rep"]
+        df_performance["CAPEX"] = df_performance["Costs_inv"]# + df_performance["Costs_rep"]
         df_performance["OPEX"] = df_performance["Costs_op"] + df_performance["Costs_grid_connection"]
-        df_performance["TOTEX"] = df_performance["CAPEX"] + df_performance["OPEX"]
+        df_performance["TOTEX"] = df_performance["Costs_inv"] + df_performance["OPEX"]
         df_performance["GWP"] = df_performance["GWP_op"] + df_performance["GWP_constr"]
         df_performance = df_performance.sort_values(by=objectives[0])
 
@@ -667,32 +671,31 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
 
         # Plotting
         ax.bar((idx + shift * width), BO[units_stack], label=layout.loc['Boiler', label], width=width,
-            color=layout.loc['Boiler', color],
+            color="#000000",
             edgecolor='black', hatch=hatch[id_res])
-        ax.bar((idx + shift * width), HP[units_stack], bottom=BO[units_stack], label=layout.loc['HeatPump_Air', label],
-            width=width,
-            color=layout.loc['HeatPump_Air', color],
-            edgecolor='black', hatch=hatch[id_res])
-        ax.bar((idx + shift * width), EH[units_stack], bottom=HP[units_stack] + BO[units_stack],
-            label=layout.loc['ElectricalHeater', label], width=width, color=layout.loc['ElectricalHeater', color],
+        ax.bar((idx + shift * width), HP[units_stack]+EH[units_stack],
+            bottom=BO[units_stack], label=layout.loc['HeatPump_Air', label],
+            width=width, color='#FF0000',
             edgecolor='black', hatch=hatch[id_res])
         ax.bar((idx + shift * width), PV[units_stack],
             bottom=EH[units_stack] + HP[units_stack] + BO[units_stack],
-            label=layout.loc['PV', label], width=width, color=layout.loc['PV', color],
-            edgecolor='black', hatch=hatch[id_res])
-        ax.bar((idx + shift * width), HS[units_stack],
-            bottom=PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
-            label=layout.loc['WaterTankSH', label], width=width, color=layout.loc['WaterTankSH', color],
+            label=layout.loc['PV', label], width=width, color="orange",
             edgecolor='black', hatch=hatch[id_res])
         ax.bar((idx + shift * width), BAT[units_stack],
-            bottom=HS[units_stack] + PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
-            label=layout.loc['Battery', label], width=width, color=layout.loc['Battery', color],
+            bottom=PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
+            label=layout.loc['Battery', label], width=width, color='#ffd980',
             edgecolor='black', hatch=hatch[id_res])
+        ax.bar((idx + shift * width), HS[units_stack],
+            bottom=PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack] + BAT[units_stack],
+            label=layout.loc['WaterTankSH', label], width=width, color="yellow",
+            edgecolor='black', hatch=hatch[id_res])
+
+        units = ["Boiler", "Heatpump", "PV", "Battery", "Water Tank"]
+        colors = ["#000000", '#FF0000', "orange", '#ffd980', "yellow"]
 
         if not opex_line:
             ax.bar((idx + 0.5 * width), df_performance[grid_stack] / era, label="Resources", width=width,
-                color=cm['salmon'],
-                edgecolor='black')
+                color=cm['salmon'], edgecolor='black')
             if objectives[1] == "OPEX":
                 ax.bar((idx + 0.5 * width), df_performance.Costs_grid_connection / era,
                     bottom=df_performance.Costs_op.clip(lower=0) / era,
@@ -700,8 +703,9 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
         else:
             ax.plot(idx, df_performance[grid_stack] / era, label="Resources", color=cm['salmon'], linestyle=linestyle[id_res])
             ax.plot(idx, (df_performance[grid_stack]+df_performance.Costs_inv) / era, label="TOTEX", color="red", linestyle=linestyle[id_res])
-    ax.axhline(0, color='black', linewidth=0.8)
+            ax2.plot(idx, SS, label="Self-sufficiency", color=layout.loc['Electricity', color], linestyle=linestyle[id_res])
 
+    ax.axhline(0, color='black', linewidth=0.8)
     ax.set_xticks(idx)
     ax.set_xticklabels(round((df_performance.Costs_inv) / era, 1).values)
 
@@ -720,11 +724,19 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
     elif objectives[1] == "GWP":
         obj_y = "GWP [kgkgCO2/m$^2$yr]"
 
-    plt.xlabel(obj_x)
-    plt.ylabel(obj_y)
-
-    by_label = merge_handles_labels([plt.gca()])
-    plt.legend(by_label.values(), by_label.keys(), ncol=2, loc="upper left")
+    ax2.set_ylabel('Self-sufficiency [kWh/kWh]', color=layout.loc['Electricity', color], fontsize=16)
+    ax2.spines["right"].set_color(layout.loc['Electricity', color])
+    ax2.tick_params(axis='y', colors=layout.loc['Electricity', color], labelsize=12)
+    ax.tick_params(axis='y', labelsize=12)
+    ax.tick_params(axis='x', labelsize=12)
+    ax.set_xlabel(obj_x, fontsize=16)
+    ax.set_ylabel(obj_y, fontsize=16)
+    ax2.set_ylim([-0.01, 0.9])
+    max_axis = df_performance["Costs_inv"].max()/era
+    ax.set_ylim([0.0, max_axis+2])
+    align.yaxes(ax, 0, ax2, 0, 0.12)
+    by_label = merge_handles_labels([ax2, ax])
+    plt.legend(by_label.values(), by_label.keys(), ncol=2, loc="upper left", fontsize="12")
 
     if nb_pareto > 1:
         hatch_pareto = ['', r'\\\\', r'...']
@@ -736,12 +748,12 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
             circ = circ + [(mpatches.Patch(facecolor='white',  edgecolor='black', hatch=hatch_pareto[i]),
                             Line2D([0], [0], color="black", linestyle=linestyle[i]))]
         ax1.legend(circ, label_pareto, loc='lower left', frameon=False, ncol=nb_pareto,
-                   handler_map={tuple: HandlerTuple(ndivide=None)}, handlelength=5)
+                   handler_map={tuple: HandlerTuple(ndivide=None)}, handlelength=5, fontsize="12")
 
+    plt.tight_layout()
     if save_fig:
-        plt.tight_layout()
-        plt.savefig((name_fig + '_' + scenario + '.' + format_fig), format=format_fig, dpi=300)
-
+        save_name = name_fig + '_' + str(scenario) + '.' + format_fig
+        plt.savefig((os.path.join('figures', save_name)), format=format_fig, dpi=300)
     plt.show()
 
 def merge_handles_labels(ax):
@@ -1335,7 +1347,7 @@ def plot_EUD_FES(results):
 
 
 
-def plot_EVs(results, era, label='FR_long', color='ColorPastel'):
+def plot_EVs(results, era, label='FR_long', color='ColorPastel', save_fig=False, save_name=None):
 
     fig, ax = plt.subplots(1, figsize=(5.5, 4.2))
     ax2 = ax.twinx()
@@ -1377,7 +1389,6 @@ def plot_EVs(results, era, label='FR_long', color='ColorPastel'):
         data["E_dem"] = E_dem / E_dem[0]
         data["E_sup"] = E_sup / E_sup[0]
         data["NG_sup"] = NG_sup / NG_sup[0]
-        data["NG_sup"][2] = 1.12
 
         style = ["-", "--", ":"][id_res]
         idx = list(data["EVs"]["Units_Mult"]/data["EVs"]["Units_Mult"].max()*100)
@@ -1404,13 +1415,19 @@ def plot_EVs(results, era, label='FR_long', color='ColorPastel'):
    #            ncol=2, title='system design')
    # axx.set_axis_off()
     plt.tight_layout()
-    plt.show()
-
+    if save_fig == True:
+        plt.tight_layout()
+        format = 'pdf'
+        if save_name == None:
+            save_name = "EV_costs_KPIs"
+        plt.savefig((os.path.join('figures', save_name + '.' + format)), format=format, dpi=300, bbox_inches='tight')
+    else:
+        plt.show()
     return
 
 
 
-def plot_load_duration_curve(results, ids, save_fig = False, label='FR_long', color='ColorPastel'):
+def plot_load_duration_curve(results, ids, save_fig = False, color='ColorPastel', save_name=None):
 
     fig, ax = plt.subplots(figsize=(9, 6))
     axx = ax.twinx()
@@ -1433,13 +1450,14 @@ def plot_load_duration_curve(results, ids, save_fig = False, label='FR_long', co
     ax.set_ylabel('transformer exchange [kW]', fontsize=19)
     ax.set_xlabel('time [hours]', fontsize=19)
     ax.legend(loc="upper right", fontsize=17)
-    ax.hlines(570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
-    ax.hlines(-570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
+    ax.hlines(400, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
+    ax.hlines(-400, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
     ax.text(5400, 600, 'transformer capacity', color=layout.loc['Electrical_grid', color], fontsize=18)
     ax.text(3700, 380, 'grid export', color="grey", fontsize=18)
     ax.text(3700, -520, 'grid import', color="grey", fontsize=18)
     ax.set_xlim([-2, 8800])
-    ax.set_ylim([-1000, 2000])
+    upper_lim = np.max([np.max(profile[i]) for i in profile] + [1500.0])
+    ax.set_ylim([-1000, upper_lim])
     plt.rc('xtick', labelsize=16)
     plt.rc('xtick', labelsize=16)
     rect = mpatches.Rectangle((0, 0.15), 8800, 0.37, color="grey", alpha=0.1)
@@ -1453,5 +1471,8 @@ def plot_load_duration_curve(results, ids, save_fig = False, label='FR_long', co
     if save_fig == True:
         plt.tight_layout()
         format = 'pdf'
-        plt.savefig(('figures\\load_duration_curves' + '.' + format), format=format, dpi=300)
-    plt.show()
+        if save_name == None:
+            save_name = "load_duration_curves"
+        plt.savefig((os.path.join('figures', save_name + '.' + format)), format=format, dpi=300, bbox_inches='tight')
+    else:
+        plt.show()

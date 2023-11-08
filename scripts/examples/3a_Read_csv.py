@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv('multiple_buildings.csv', nb_buildings=2) # you can as well define your district from a csv file instead of reading the database
+    qbuildings_data = reader.read_csv(buildings_filename='multiple_buildings.csv', nb_buildings=2) # you can as well define your district from a csv file instead of reading the database
 
     # Set specific parameters
     parameters = {}

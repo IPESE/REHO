@@ -304,6 +304,9 @@ pip-selfcheck.json
 
 ##### Change only the lines below
 
+# Documentation
+documentation/_build
+
 # Data
 data/buildings/*
 !data/QBuildings/data/single_building.csv

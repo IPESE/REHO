@@ -12,9 +12,9 @@ if __name__ == '__main__':
     scenario['name'] = 'totex'              # any name is possible here
 
     # Set building parameters
-    reader = QBuildingsReader()             # load python class
+    reader = QBuildingsReader()             # load QBuildingsReader class
     reader.establish_connection('Suisse')   # connect to QBuildings database
-    qbuildings_data = reader.read_db(3658, nb_buildings=2)      # read data
+    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)      # read data
 
     # Set specific parameters
     parameters = {}                         # remain empty for now
@@ -25,8 +25,8 @@ if __name__ == '__main__':
     # Select the desired number of typical days
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
-    # Choose superinfrastructure. Units are defined in the function return_building_units in infrastructure.py. Units characteristics are in preprocessing/units/building_units.csv
-    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']      # specify some units we want toe exclude
+    # Choose infrastructure. Units are defined in the function return_building_units in infrastructure.py. Units characteristics are in preprocessing/units/building_units.csv
+    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']      # specify some units we want to exclude
     scenario['enforce_units'] = []
 
     # select some methods as defined in compact_optimization.py (function initialize_default_methods).

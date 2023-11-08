@@ -1,2 +1,3 @@
-Sphinx>=2.1
+sphinx
 sphinxcontrib-bibtex
+piccolo_theme

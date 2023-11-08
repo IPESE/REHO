@@ -125,7 +125,7 @@ def remove_building_from_index(df):
     return df.set_index(index_modified)
 
 
-def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long', filename=None,
+def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long', add_annotation=True, filename=None,
                      export_format='html', auto_open=False):
     """
         :param results: dictionary from REHO results pickle
@@ -175,23 +175,24 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
     neg_opex = opex - pos_opex
     text_placeholder = 0.04 * max(max(capex - neg_opex), max(capex + pos_opex), max(pos_opex - neg_opex))
 
-    for i in range(len(indexes)):
-        fig.add_annotation(x=x2[i], y=-text_placeholder,
-                           text=opex_text[i], font=dict(size=10),
-                           textangle=0, align='center', valign='top',
-                           showarrow=False)
-        fig.add_annotation(x=x1[i], y=-text_placeholder,
-                           text=capex_text[i], font=dict(size=9),
-                           textangle=0, align='center', valign='top',
-                           showarrow=False
-                           )
-        fig.add_annotation(x=xtick[i], y=max(capex[i], pos_opex[i], capex[i] + opex[i]) + max(capex + opex) * 0.04,
-                           text="<b>" + change_data.loc['total', lang] + "</b><br>" + str(capex[i] + opex[i]) +
-                                change_data.loc['unites', lang],
-                           font=dict(size=9, color=cm['darkblue']),
-                           textangle=0, align='center', valign='top',
-                           showarrow=False
-                           )
+    if add_annotation:
+        for i in range(len(indexes)):
+            fig.add_annotation(x=x2[i], y=-text_placeholder,
+                               text=opex_text[i], font=dict(size=10),
+                               textangle=0, align='center', valign='top',
+                               showarrow=False)
+            fig.add_annotation(x=x1[i], y=-text_placeholder,
+                               text=capex_text[i], font=dict(size=9),
+                               textangle=0, align='center', valign='top',
+                               showarrow=False
+                               )
+            fig.add_annotation(x=xtick[i], y=max(capex[i], pos_opex[i], capex[i] + opex[i]) + max(capex + opex) * 0.04,
+                               text="<b>" + change_data.loc['total', lang] + "</b><br>" + str(capex[i] + opex[i]) +
+                                    change_data.loc['unites', lang],
+                               font=dict(size=9, color=cm['darkblue']),
+                               textangle=0, align='center', valign='top',
+                               showarrow=False
+                               )
     for line, tech in data_capex.iterrows():
         if tech.loc[indexes].sum() > 0:
             fig.add_trace(
@@ -246,6 +247,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
         if 'html' == export_format:
             fig.write_html(filename + '.' + export_format)
         if 'png' == export_format:
+            fig.write_image(filename + '.' + export_format)
+        if 'pdf' == export_format:
             fig.write_image(filename + '.' + export_format)
     if auto_open:
         fig.show()

@@ -58,4 +58,4 @@ total_irradiation_csv = os.path.join(path_to_skydome, 'total_irradiation_time.cs
 
 # weather
 path_to_clustering_results = os.path.join(path_to_data, 'weather', 'clustering_results')
-path_to_weather = os.path.join(path_to_data, 'weather', 'hour')
+path_to_weather = os.path.join(path_to_data, 'weather')

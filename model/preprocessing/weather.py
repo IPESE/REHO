@@ -502,7 +502,8 @@ def plot_LDC(cl, location, save_fig):
 if __name__ == '__main__':
     cm = plt.cm.get_cmap('Spectral_r')
 
-    Location = ['Bern-Liebefeld', 'Geneve-Cointrin', 'La_Chaux-de-Fonds', 'Moleson', 'Zermatt', 'Zuerich-SMA'][4]
+    # Location = ['Bern-Liebefeld', 'Geneve-Cointrin', 'La_Chaux-de-Fonds', 'Moleson', 'Zermatt', 'Zuerich-SMA'][4]
+    Location = 'Pully'
     Attributes = ['Text', 'Irr']
     Iter = [10]
 

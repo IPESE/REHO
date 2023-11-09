@@ -333,16 +333,16 @@ class district_decomposition:
         if self.method["actors_cost"]:
             ampl_MP.read('master_problem_actors.mod')
 
-        if len(self.district.UnitsOfDistrict) > 0:
+        if len(self.infrastructure.UnitsOfDistrict) > 0:
             ampl_MP.cd(path_to_district_units)
-            if "EV_district" in self.district.UnitsOfDistrict:
+            if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
-            if "NG_Boiler_district" in self.district.UnitsOfDistrict:
+            if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_boiler_district.mod')
-            if "HeatPump_Geothermal_district" in self.district.UnitsOfDistrict:
+            if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('heatpump_district.mod')
-            if "NG_Cogeneration_district" in self.district.UnitsOfDistrict:
+            if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
 
         ampl_MP.cd(path_to_units_storage)
@@ -408,8 +408,8 @@ class district_decomposition:
         MP_parameters['Area_tot'] = self.ERA
 
         if 'EV_plug_out' not in MP_parameters:
-            if len(self.district.UnitsOfDistrict) != 0:
-                if 'EV_district' in self.district.UnitsOfDistrict:
+            if len(self.infrastructure.UnitsOfDistrict) != 0:
+                if 'EV_district' in self.infrastructure.UnitsOfDistrict:
                     MP_parameters['EV_pluged_out'], MP_parameters['EV_pluging_in'] = EV_gen.generate_EV_plug_out_profiles_district(self.cluster)
 
         if read_DHN:
@@ -542,7 +542,7 @@ class district_decomposition:
         # Solve ampl_MP
         ampl_MP.solve()
 
-        df_Results_MP = WR.dataframes_results_MP(ampl_MP, binary, self.method, self.district, read_DHN=read_DHN)
+        df_Results_MP = WR.dataframes_results_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
         print(ampl_MP.getCurrentObjective().getValues().toPandas())
 
         df = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl_MP)

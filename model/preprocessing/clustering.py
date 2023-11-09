@@ -1,17 +1,8 @@
 import pandas as pd
 import numpy as np
 import scipy.spatial
-import os
-import platform
-if "R_HOME" not in os.environ:
-    if platform.system() == 'Darwin':
-        os.environ["R_HOME"] = '/Library/Frameworks/R.framework/Resources'
-    else:
-        os.environ["R_HOME"] = r"C:\Program Files\R\R-4.1.3"
-from rpy2.robjects.packages import importr
-import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
-pandas2ri.activate()
+from sklearn_extra.cluster import KMedoids
+from sklearn.metrics import pairwise_distances
 
 class ClusterClass:
 
@@ -79,25 +70,27 @@ class ClusterClass:
         self.attr_org = np.hstack(self.attr_org)
         self.attr_nor = np.hstack(self.attr_nor)
 
-
-    def __run_KMedoids(self, matrix, c):
+    def __run_KMedoids(self, matrix, n_clusters):
 
         if len(matrix) == 1: #check for trivial solution
             df_res = pd.DataFrame([1], columns= ['1'])
 
         else:
-            # loading neccessary R packages
-            base, kmed, WeightedCluster, usedist = importr('base'), importr('kmed'), importr('WeightedCluster'), importr('usedist')
 
-            r_M = ro.conversion.py2rpy(matrix)
-            dist_a = kmed.distNumeric(r_M, r_M, method='se')  # get distance matrix
+            print('Applying algorithm for', n_clusters, 'clusters')
 
-            ncluster = c
-            print('Applying algorithm for', ncluster, 'clusters')
-            res = WeightedCluster.wcKMedoids(dist_a, ncluster, npass=200, method='PAMonce')  # execute clustering
+            dist_a = pairwise_distances(matrix, metric='sqeuclidean')
+            kmedoids = KMedoids(n_clusters=n_clusters, method='pam', random_state=42)
+            kmedoids.fit(dist_a)
+
+            cluster_assignments = kmedoids.labels_
+            medoid_indices = kmedoids.medoid_indices_
+
+            label_to_medoid = dict(zip(np.unique(cluster_assignments), medoid_indices))
+            mapped_cluster_assignments = np.vectorize(label_to_medoid.get)(cluster_assignments)
 
             df_res = pd.DataFrame()
-            df_res[str(c)] = res.rx2('clustering')
+            df_res[str(n_clusters)] = mapped_cluster_assignments
 
         return df_res
 
@@ -197,7 +190,7 @@ class ClusterClass:
             # - Assess clustered year
             attr_clu, data_clu = self.__do_attr_clu(sol)
             #data_clu annual dataframe, build with clustered periods to reach 8760 rows
-            # attr_clu matrix, same size than attr_org but with clustered attributes
+            # attr_clu matrix, same size as attr_org but with clustered attributes
             # - Assess KPIs
             pi = pd.DataFrame(index=pd.Index(["LDC", "MAE", "RMSD", "MAPE"], name="kpi"), columns=pd.Index(self.data_org.columns, name="dimension"))
             # - LDC error

@@ -9,14 +9,11 @@ amplpy==0.8.5
 matplotlib==3.6.1
 openpyxl~=3.0
 pyshp==2.3.1
-git+https://github.com/building-energy/epw.git@master
 scipy==1.9.2
-seaborn
 plotly==5.10
 kaleido~=0.2.1
 xlsxwriter~=3.0.3
 wheel~=0.37
 pipwin~=0.5.2
-rpy2==3.4.5
 scikit-learn
 scikit-learn-extra

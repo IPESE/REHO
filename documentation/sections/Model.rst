@@ -76,8 +76,8 @@ Building model
    TODO:
    Detail what is accounted in the file 'model.mod'
 
-District model:
----------------
+District model
+--------------
 
 .. caution::
 

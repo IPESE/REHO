@@ -1,8 +1,5 @@
 # -------------------------------------------------------------------------------------------------------------------------
-# Renewable Energy Hub Optimizer (REHO) is an open-source energy model suitable for the optimization of energy systems at building-scale or district-scale.
-# It considers simultaneously the optimal design as well as optimal scheduling of capacities.
-# It allows to investigate the deployment of energy conversion and energy storage capacities to ensure the energy balance of a specified territory,
-# through multi-objective optimization and KPIs parametric studies. It is based on an hourly resolution.
+# Renewable Energy Hub Optimizer (REHO)
 #
 # Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
 #

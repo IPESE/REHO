@@ -43,10 +43,11 @@ Contents
 
    sections/Overview
    sections/Releases
-   sections/Model
    sections/Getting started
+   sections/Model
    sections/Input data
    sections/Bibliography
+
 
 .. Indices and tables
    ==================

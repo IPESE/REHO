@@ -1,4 +1,3 @@
-import epw
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -46,32 +45,6 @@ def get_cluster_file_ID(cluster):
         write_dat_files(attributes, cluster['Location'])
 
     return File_ID
-
-def read_epw_file(location):
-    a = epw.epw()
-    if location == 'Geneva':
-
-        a.read('CHE_Geneva.067000_IWEC.epw')
-    elif location == 'Geneva_outlier':
-        a.read('CHE_Geneva.067000_IWEC.epw')
-    else:
-        raise ('unkown location')
-
-    df = a.dataframe
-
-    df1 = df[['Year', 'Month', 'Day', 'Hour', 'Minute', 'Text', 'Irr']]
-
-    df1[['Text', 'Irr']].to_csv('annual_weather.txt')
-
-
-    df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday.txt'), index_col=[0], header=None)
-    df1['Weekday'] = df2
-
-    df_emission = pd.read_csv(path_to_emissions_matrix, index_col=[0, 1, 2])
-    df_emission.columns = np.arange(1, 8761)
-    df1['Emissions'] = df_emission.xs(['CH', 'IPCC 2013 climate change', 'GWP100a']).values
-
-    return df1
 
 
 def read_hourly_dat(location):
@@ -502,11 +475,11 @@ def plot_LDC(cl, location, save_fig):
 if __name__ == '__main__':
     cm = plt.cm.get_cmap('Spectral_r')
 
-    Location = ['Bern-Liebefeld', 'Geneve-Cointrin', 'La_Chaux-de-Fonds', 'Moleson', 'Zermatt', 'Zuerich-SMA'][4]
+    # Location = ['Bern-Liebefeld', 'Geneve-Cointrin', 'La_Chaux-de-Fonds', 'Moleson', 'Zermatt', 'Zuerich-SMA'][4]
+    Location = 'Pully'
     Attributes = ['Text', 'Irr']
     Iter = [10]
 
-    # df1 = read_epw_file(location)  # load data
     df = read_hourly_dat(Location)
     df = df[Attributes]
 

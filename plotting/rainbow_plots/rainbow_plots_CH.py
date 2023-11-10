@@ -135,6 +135,7 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
     BAT = df_unit[df_unit.index.get_level_values('Unit').str.contains('Battery')]
     BAT = BAT.groupby('Pareto_ID').sum()
     PV_CHF = PV.Costs_Unit_inv + BAT.Costs_Unit_inv
+    PV_CHF[PV_CHF < 0] = np.float64(0)
 
     PV_CHF_kWyr = PV_CHF.div(PV_kWyr)
     PV_CHF_kWyr = PV_CHF_kWyr.fillna(0)
@@ -183,8 +184,8 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
                     f2 = interp1d(PV_kWyr.loc[max_index:], PV_CHF_kWyr.loc[max_index:])
                     inv_induced = f2(last_economic_point.mean())
             else:
-                last_economic_point = np.nan
-                inv_induced = np.nan
+                last_economic_point = -1.0
+                inv_induced = -1.0
             # MIN POINT WHERE it corosses the first time
             if (Revenues.loc[:max_index] < 0).any():
                 if (Revenues.loc[:max_index] < 0).all():
@@ -222,7 +223,7 @@ def plot_rainbow(df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced, 
         elif plot_type == "invest_demand_feed_in":
             cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_inv_induced[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin=bounds["feed_in"][0], vmax=bounds["feed_in"][1])
 
-    ax.annotate(' all PV investments \n economic feasible', (0.1, 0.22), zorder=10)
+    ax.annotate(' all PV investments \n economic feasible', (0.08, 0.22), zorder=10)
     cbar = fig.colorbar(cs)
 
     if plot_type == "demand_feed_in_E_gen_pv":
@@ -275,7 +276,7 @@ def return_district_result_object_dataframe(dict_results, result_dataframe):
 def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None, bounds=None, resolution=100, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv"):
 
     if bounds is None:
-        bounds = {"feed_in": [0.0, 0.18], "retail": [0.0, 0.30]}
+        bounds = {"feed_in": [0.0, 0.15], "retail": [0.0, 0.30]}
 
     df_plot_last = {}
     df_plot_inv_induced = {}
@@ -289,8 +290,13 @@ def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None
         # get last economic retail tariffs
         last_id = []
         for idx, col in enumerate(df_plot_last[n]):
-            if df_plot_last[n][col].sum() != 0:
-                last_id = np.concatenate([last_id, [df_plot_last[n][col][df_plot_last[n][col] > 0].index[-1]]])
+            if any(df_plot_last[n][col].notnull()):
+                df_not_nan = df_plot_last[n][col][df_plot_last[n][col].notnull()]
+                if any(df_plot_last[n][col] > 0):
+                    df_not_nan = df_not_nan[df_not_nan > 0]
+                    last_id = np.concatenate([last_id, [df_not_nan.index[-1]]])
+                else:
+                    last_id = np.concatenate([last_id, [df_not_nan.index[0]]])
             else:
                 last_id = np.concatenate([last_id, [np.nan]])
         last_id = pd.DataFrame(last_id)
@@ -310,6 +316,10 @@ def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None
             df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / surface_district[tr_id] * ratio[n] * CH_roof_area
         else:
             df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / surface_district[tr_id] * surface_CH[tr_id]
+
+    for col in df_plot_last_CH:
+        df_plot_last_CH[col][df_plot_last_CH[col] < 0] = 0.0
+        df_plot_last_CH = df_plot_last_CH.astype({col: "float"})
 
     df_plot_last_CH = sp.ndimage.filters.gaussian_filter(df_plot_last_CH, std_filter, mode='nearest')
     df_plot_last_CH = pd.DataFrame(df_plot_last_CH)

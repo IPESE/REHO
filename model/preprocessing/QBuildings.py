@@ -72,11 +72,16 @@ class QBuildingsReader:
 
         return
 
-    def read_csv(self, buildings_filename, nb_buildings=None, roofs_filename=None, facades_filename=None):
+    def read_csv(self, buildings_filename, nb_buildings=None, roofs_filename=None, facades_filename=None, district=None):
 
         self.data['buildings'] = file_reader(os.path.join(path_to_buildings, buildings_filename))
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
+
+        if district is not None:
+            # Filter the buildings based on the specified district
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['NOMSECTEUR'] == district]
+
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
         buildings = self.select_buildings_data(nb_buildings, None)
@@ -237,15 +242,26 @@ def translate_buildings_to_REHO(df_buildings):
         #################################################
 
         # Data for EUD profiles
+        'id_building': 'id_building',
+        'egid': 'egid',
         'id_class': 'id_class',
+        'class': 'class',
         'ratio': 'ratio',
         'status': 'status',
+        'period': 'period',
+        'capita_cap': 'n_p',
+        'NOMSECTEUR': 'NOMSECTEUR',
 
         # Area
         'area_era_m2': 'ERA',
         'area_roof_solar_m2': 'SolarRoofArea',
         'area_facade_m2': 'area_facade_m2',
         'height_m': 'height_m',  # only for use facades
+        'count_floor': 'count_floor',
+
+        # Heating source
+        'source_heating': 'source_heating',
+        'source_hotwater': 'source_hotwater',
 
         # Thermal envelope
         'thermal_transmittance_signature_kW_m2_K': 'U_h',
@@ -269,17 +285,16 @@ def translate_buildings_to_REHO(df_buildings):
         'geometry': 'geometry',
         'transformer': 'transformer',
 
-        # Additional information
-        'id_building': 'id_building',
-        'egid': 'egid',
-        'period': 'period',
-        'capita_cap': 'n_p',
 
         # Annual energy
         'energy_heating_signature_kWh_y': 'energy_heating_signature_kWh_y',
         'energy_cooling_signature_kWh_y': 'energy_cooling_signature_kWh_y',
         'energy_hotwater_signature_kWh_y': 'energy_hotwater_signature_kWh_y',
         'energy_el_kWh_y': 'energy_el_kWh_y',
+
+        # Annual roof and facade irradiance
+        'roof_annual_irr_kWh_y': 'roof_annual_irr_kWh_y',
+        'facade_annual_irr_kWh_y': 'facade_annual_irr_kWh_y'
     }
 
     # TODO: correct heat source dictionary

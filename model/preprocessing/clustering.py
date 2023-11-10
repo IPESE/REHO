@@ -79,9 +79,10 @@ class ClusterClass:
 
             print('Applying algorithm for', n_clusters, 'clusters')
 
-            dist_a = pairwise_distances(matrix, metric='sqeuclidean')
-            kmedoids = KMedoids(n_clusters=n_clusters, method='pam', random_state=42)
-            kmedoids.fit(dist_a)
+            #dist_a = pairwise_distances(matrix, metric='euclidean')
+            kmedoids = KMedoids(n_clusters=n_clusters, method='alternate', metric='euclidean')
+            #kmedoids.fit(dist_a)
+            kmedoids.fit(matrix)
 
             cluster_assignments = kmedoids.labels_
             medoid_indices = kmedoids.medoid_indices_

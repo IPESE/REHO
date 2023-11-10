@@ -34,7 +34,7 @@ HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon,#CD1076,pink
 HeatPump_Air,Heat pump air,HP air,"Pompe à chaleur, air",#FEA993,salmon,#CD1076,pink
 HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, DHN",#FEA993,salmon,#CD1076,pink
 HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",#FEA993,salmon,#CD1076,pink
-HeatPump_Geothermal_district,HP geothermal (district),District HP geo,"PAC géothermie (district)",#FEA993,salmon,#CD1076,pink
+HeatPump_Geothermal_district,HP geothermal (district),District HP geo,PAC géothermie (district),#FEA993,salmon,#CD1076,pink
 HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1076,pink
 ,,,,,,,
 Heat,Heat from DHN,Heat DHN,Chaleur (CAD),#FF8C00,orange,#FF3030,red
@@ -72,3 +72,5 @@ Isolation,Refurbishment,REF,Rénovation,#69B58A,green,#9AC0CD,bluegrey
 Isolation_roof,Refurbishment roof,REF1,Isolation toiture,#a9d6bc,green_light,#9AC0CD,bluegrey
 Isolation_facade,Refurbishment facade,REF2,Isolation façade,#87c5a1,green_medium,#9AC0CD,bluegrey
 Isolation_full,Refurbishment full,REF3,Isolation complète,#53ac7a,green_dark,#9AC0CD,bluegrey
+,,,,,,,
+House_Q_heating,Heating demand,Heat dem,Demande de chauffage,#FEA993,salmon,#CD1076,pink

@@ -6,8 +6,8 @@ if __name__ == '__main__':
 
     # Set scenario
     scenario = dict()
-    scenario['Objective'] = 'TOTEX'
-    scenario['name'] = 'totex'
+    scenario['Objective'] = 'OPEX'
+    scenario['name'] = 'opex'
 
     # Set building parameters. We can consider the roofs orientations and add PV on facades.
     reader = QBuildingsReader(load_facades=True, load_roofs=True)       # specify to import as well buildings' roofs and facades data
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
     scenario['enforce_units'] = []
 
-    method = {'use_pv_orientation': True, 'use_facades': False, 'building-scale': False}     # select PV orientation and/or facades methods
+    method = {'use_pv_orientation': True, 'use_facades': True, 'building-scale': False}     # select PV orientation and/or facades methods
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
@@ -35,4 +35,4 @@ if __name__ == '__main__':
     reho_model.single_optimization()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='5a')
+    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='5a_facades')

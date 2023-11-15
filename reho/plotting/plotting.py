@@ -1,12 +1,9 @@
-import math
 import re
-from paths import *
+from reho.paths import *
 from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
 import os
-from PIL import Image
-import plotly
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 #from mpl_axes_aligner import align

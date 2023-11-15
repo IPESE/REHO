@@ -16,7 +16,7 @@ if "AMPL_PATH" not in os.environ:
 path_to_reho = os.path.dirname(__file__)
 path_to_data = os.path.join(path_to_reho, 'data')
 path_to_model = os.path.join(path_to_reho, 'model')
-path_to_scripts = os.path.join(path_to_reho, 'scripts')
+path_to_scripts = os.path.join(path_to_reho, '../scripts')
 path_to_plotting = os.path.join(path_to_reho, 'plotting')
 
 # AMPL model

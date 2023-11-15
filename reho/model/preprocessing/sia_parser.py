@@ -1,5 +1,5 @@
 import pandas as pd
-from paths import *
+from reho.paths import *
 import numpy as np
 
 

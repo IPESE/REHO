@@ -21,11 +21,11 @@
 # See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
 
 
-from model.postprocessing.KPIs import *
-from model.postprocessing.postcompute_decentralized_districts import *
-from model.district_decomposition import *
-import model.postprocessing.write_results as WR
-import model.postprocessing.save_results as SR
+from reho.model.postprocessing.KPIs import *
+from reho.model.postprocessing.postcompute_decentralized_districts import *
+from reho.model.district_decomposition import *
+import reho.model.postprocessing.write_results as WR
+import reho.model.postprocessing.save_results as SR
 from scipy.stats import qmc
 
 

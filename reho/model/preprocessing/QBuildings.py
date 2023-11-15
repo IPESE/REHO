@@ -1,22 +1,17 @@
-import warnings
-from pathlib import Path
 import configparser
-from pyparsing import ParseException
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
 import geopandas as gpd
 import re
 import csv
-from paths import *
-import model.preprocessing.skydome_input_parser as skd
+from reho.paths import *
+import reho.model.preprocessing.skydome_input_parser as skd
 import pandas as pd
 import numpy as np
 import math
 from csv import Sniffer
 from pandas import read_csv, read_table, read_excel
 import sys
-from geoalchemy2 import Geometry
-import psycopg2 as psy
 
 
 class QBuildingsReader:

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import math
 from datetime import timedelta
-from paths import *
+from reho.paths import *
 import itertools as it
 import matplotlib.pyplot as plt
 

@@ -2,7 +2,7 @@ import re
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from plotting.plotting import layout
+from reho.plotting.plotting import layout
 
 def update_label(source_name, target_name, df_label):
     """

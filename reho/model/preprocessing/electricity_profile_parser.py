@@ -1,5 +1,5 @@
 import pandas as pd
-from paths import *
+from reho.paths import *
 from datetime import timedelta
 import numpy as np
 import datetime

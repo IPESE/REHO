@@ -1,5 +1,5 @@
 import pandas as pd
-from plotting import plotting, sankey
+from reho.plotting import sankey, plotting
 
 pareto = pd.read_pickle('results/1b.pickle')
 

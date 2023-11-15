@@ -1,6 +1,6 @@
 import pandas as pd
 import pickle
-from paths import *
+from reho.paths import *
 
 def save_reho(reho, filename='results', erase_file=True):
     """

@@ -1,9 +1,7 @@
-from model.reho import *
-from pathlib import Path
-from model.preprocessing.QBuildings import *
-from model.postprocessing.postcompute_decentralized_districts import *
-from model.preprocessing.QBuildings import QBuildingsReader
-import pickle
+from reho.model.reho import *
+from reho.model.preprocessing.QBuildings import *
+from reho.model.postprocessing.postcompute_decentralized_districts import *
+from reho.model.preprocessing.QBuildings import QBuildingsReader
 
 current_folder = Path(__file__).resolve().parent
 folder = current_folder / 'results'

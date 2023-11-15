@@ -1,7 +1,6 @@
-from model.preprocessing.sia_parser import *
-import model.preprocessing.skydome_input_parser as skd
-from model.preprocessing.QBuildings import *
-import warnings
+from reho.model.preprocessing.sia_parser import *
+from reho.model.preprocessing.QBuildings import *
+
 
 def profile_reference_temperature(parameters_to_ampl, cluster):  # TODO: time dependent indoor temperature f.e. lower at night
 

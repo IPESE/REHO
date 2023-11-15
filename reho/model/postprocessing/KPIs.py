@@ -1,8 +1,7 @@
-from paths import *
 import pandas as pd
 import numpy as np
-import model.preprocessing.emission_matrix_parser as emission
-import model.preprocessing.weather as WD
+import reho.model.preprocessing.emission_matrix_parser as emission
+import reho.model.preprocessing.weather as WD
 
 
 def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network, df_profiles, df_external, df_Time):

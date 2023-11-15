@@ -1,4 +1,4 @@
-from paths import *
+from reho.paths import *
 import pandas as pd
 import numpy as np
 import datetime

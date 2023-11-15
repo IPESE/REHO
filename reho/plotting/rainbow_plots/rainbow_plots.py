@@ -1,26 +1,9 @@
-import model.postprocessing.save_results as SR
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d
 import math
 import pickle
-import scipy as sp
-
-pd.set_option('display.max_rows', 700)
-pd.set_option('display.max_columns', 700)
-pd.set_option('display.width', 1000)
-
-cm = plt.cm.get_cmap('Spectral')
-EPFL_light_grey = '#CAC7C7'
-EPFL_red = '#FF0000'
-EPFL_leman = '#00A79F'
-EPFL_canard = '#007480'
-Salmon = '#FEA993'
-
-colors_dict = {0: 'black', 1: EPFL_red, 2: EPFL_light_grey, 3: Salmon, 4: EPFL_leman, 5: EPFL_canard}
-plt.rcParams.update({'font.size': 10})
-
 
 def linerize_equal_steps (x, y):
     x.name = 'x'
@@ -61,7 +44,7 @@ def split_orientation(az):
 
     return  orientation
 
-def get_roof_max(df_nbr, hs_A):
+def get_roof_max( df_nbr):
 
     df_n = df_nbr.groupby(['Pareto_ID', 'Surface', 'Azimuth', 'Tilt']).sum()
     roofs = df_n[df_n.index.get_level_values(level='Tilt') != 90]
@@ -100,14 +83,8 @@ def get_roof_max(df_nbr, hs_A):
     return total_surface_m2, roofs_max_m2
 
 
-def plot_economical_feedin_price(bounds, resolution, Pareto):
+def plot_economical_feedin_price(df_KPI, df_unit, total_surface_m2, bounds, roof_max_m2, SS, CN, plot_type, resolution, save_fig):
 
-    df_unit = return_district_result_object_dataframe(Pareto, 'df_Unit')
-    df_KPI = return_district_result_object_dataframe(Pareto, 'df_KPI')
-    hs_A = return_district_result_object_dataframe(Pareto, 'df_Buildings')["ERA"].xs(1, level=1).sum()
-
-    df_nbr = return_district_result_object_dataframe(Pareto, 'df_PV_orientation')  # df_PVA_module_nbr, df_PV_orientation
-    total_surface_m2, roof_max_m2 = get_roof_max(df_nbr, hs_A)
     # some data processing
     MWh_PV = {}
     for i in Pareto[0]:
@@ -129,7 +106,7 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
     MWh_exp = MWh_PV - MWh_SC
     MWh_exp = MWh_exp.fillna(0)
 
-    PV_kWyr = MWh_PV
+    PV_kWyr = MWh_PV * 1000 / 8760
     PV = df_unit[df_unit.index.get_level_values('Unit').str.contains('PV')]
     PV = PV.groupby('Pareto_ID').sum()
     PV_CHF = PV.Costs_Unit_inv
@@ -203,54 +180,128 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
     df_plot_first = df_plot_first.set_index(feed_in_prices)
     df_plot_last = df_plot_last.set_index(feed_in_prices)
     df_plot_inv_induced = df_plot_inv_induced.set_index(feed_in_prices)
-    return df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced
 
-def plot_rainbow(df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced, bounds, save_fig, plot_type):
     # plotting
     fig, ax = plt.subplots()
     for demand_price in df_plot_last.columns:
         if plot_type == "demand_feed_in_E_gen_pv":
-            if all(pd.isnull(df_plot_last[demand_price].values)):
-                c_list = ["white"] * No_feed_in
-            else:
-                c_list = df_plot_last[demand_price].values
-            cs = ax.scatter(feed_in_prices, np.repeat(demand_price, No_feed_in), c=c_list, s=5, cmap=cm, vmin = df_plot_last.min().min(), vmax = df_plot_last.max().max() )
+            cs = ax.scatter(feed_in_prices, np.repeat(demand_price, No_feed_in), c=df_plot_last[demand_price].values, s=5, cmap=cm, vmin = df_plot_last.min().min(), vmax = df_plot_last.max().max() )
         elif plot_type == "E_gen_pv_demand_feed_in":
-            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_last[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin=bounds["feed_in"][0], vmax=bounds["feed_in"][1])
+            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_last[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin = min_feed, vmax = max_feed)
         elif plot_type == "invest_demand_feed_in":
-            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_inv_induced[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin=bounds["feed_in"][0], vmax=bounds["feed_in"][1])
+            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_inv_induced[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin=min_feed, vmax=max_feed)
 
-    ax.annotate(' all PV investments \n economic feasible', (0.1, 0.22), zorder=10)
+    ax.annotate(' all PV investments \n economic', (0.1, 0.22), zorder=10)
     cbar = fig.colorbar(cs)
 
     if plot_type == "demand_feed_in_E_gen_pv":
-        ax.set_xlim(bounds["feed_in"][0], bounds["feed_in"][1])
-        ax.set_ylim(bounds["retail"][0], bounds["retail"][1])
-        ax.set_xlabel('feed-in tariff  [CHF/kWh]', fontsize=14)
-        ax.set_ylabel('retail tariff [CHF/kWh]', fontsize=14)
-        cbar.ax.set_ylabel('PV electricity generated [TWh/yr]', fontsize=14)
+        ax.set_xlim(min_feed, max_feed)
+        ax.set_ylim(min_demand, max_demand)
+        ax.set_xlabel('feed-in price  [CHF/kWh]')
+        ax.set_ylabel('demand price [CHF/kWh]')
+        cbar.ax.set_ylabel('$E ^{gen}_{PV}$ in last economic point [kWyr/yr]')
 
     elif plot_type == "E_gen_pv_demand_feed_in":
-        ax.set_xlim(bounds["retail"][0], bounds["retail"][1])
+        ax.set_xlim(min_demand, max_demand)
         ax.set_ylim(df_plot_last.min().min(), df_plot_last.max().max())
-        ax.set_xlabel('retail tariff [CHF/kWh]')
-        ax.set_ylabel('PV electricity generated [TWh/yr]')
-        cbar.ax.set_ylabel('feed-in tariff  [CHF/kWh]')
+        ax.set_xlabel('demand price [CHF/kWh]')
+        ax.set_ylabel('$E ^{gen}_{PV}$ in last economic point [kWyr/yr]')
+        cbar.ax.set_ylabel('feed-in price  [CHF/kWh]')
 
     elif plot_type == "invest_demand_feed_in":
-        ax.set_xlim(bounds["retail"][0], bounds["retail"][1])
+        ax.set_xlim(min_demand, max_demand)
         ax.set_ylim(df_plot_inv_induced.min().min(),  df_plot_inv_induced.max().max())
-        ax.set_xlabel('retail tariff [CHF/kWh]')
+        ax.set_xlabel('demand price [CHF/kWh]')
         ax.set_ylabel('investment [CHF/yr]')
-        cbar.ax.set_ylabel('feed-in tariff  [CHF/kWh]')
+        cbar.ax.set_ylabel('feed-in price  [CHF/kWh]')
 
     #ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, ncol=2)
 
     if save_fig == True:
         plt.tight_layout()
         format = 'png'
-        plt.savefig(('PV_rainbow_CH' + '.' + format), format=format, dpi=300)
-    plt.show()
+        plt.savefig(('Tarifs_lasteconomic' + '.' + format), format=format, dpi=300)
+    else:
+        plt.show()
+    return
+
+
+def plot_cinv_kWh(df_KPI,df_unit, total_surface_m2, roof_max_m2, save_fig):
+    MWh_PV = pd.DataFrame([Pareto[0][i]["df_Annuals"].xs("Electricity")["Supply_MWh"][-n_house:].sum() for i in Pareto[0]])[0]
+    PV_kWyr = MWh_PV*1000/8760
+    PV = df_unit [df_unit.index.get_level_values('Unit').str.contains('PV')]
+    PV = PV.groupby('Pareto_ID').sum()
+
+    PV_CHF = PV.Costs_Unit_inv
+    PV_kWyr.index = PV_CHF.index
+    PV_CHF_kWyr = PV_CHF/ PV_kWyr
+    df_K = df_KPI.xs((0, 'Network'), level=('Scn_ID', 'Hub'))
+
+    SC = df_K.SC
+    MWh_SC = MWh_PV.mul(SC)
+    MWh_exp = MWh_PV- MWh_SC
+    MWh_exp = MWh_exp.fillna(0)
+
+    AR_CHF_KWyr = (MWh_exp*0.08*1000 + MWh_SC*0.20*1000)/ PV_kWyr
+    AR_0_feed = (MWh_exp*0.0 *1000 + MWh_SC*0.25*1000)/ PV_kWyr
+    AR_10_feed = (MWh_exp* 0.08 * 1000 + MWh_SC * 0.15 * 1000) / PV_kWyr
+
+    df_plot = pd.DataFrame()
+    df_plot['AR'] = linerize_equal_steps(total_surface_m2,AR_CHF_KWyr).y
+    df_plot['PV_CHF'] = linerize_equal_steps(total_surface_m2, PV_CHF_kWyr).y
+    df_plot['AR_0_feed']= linerize_equal_steps(total_surface_m2,AR_0_feed ).y
+    df_plot['AR_10_feed']= linerize_equal_steps(total_surface_m2,AR_10_feed ).y
+
+    # plotting
+    fig, ax = plt.subplots(figsize=(6, 4.8))
+    ax.plot(df_plot.index, df_plot.PV_CHF, color=colors_dict[3], label='PV investment')
+    ax.plot(df_plot.index, df_plot.AR, color=colors_dict[4], label='Annual Revenues (AR)')
+    ax.plot(df_plot.index, df_plot.AR_0_feed,color=colors_dict[4],linestyle=':', label='AR- Tariffs 0ct/25ct')
+    ax.plot(df_plot.index, df_plot.AR_10_feed,color=colors_dict[4],linestyle='--',  label='AR- Tariffs 8ct/15ct')
+
+    ax.scatter(0.88, 925, color='grey', zorder= 10) #cogen
+    ax.annotate('A', (0.87, 970), fontsize=14)
+
+    ax.scatter(0.7, 850, color='grey', zorder=10)  # cogen
+    ax.annotate('B', (0.7, 760), fontsize=14)
+
+    ax.axvline(roof_max_m2, linestyle='--', color='grey', alpha=0.6)
+    ax.text(roof_max_m2 + 0.02, 1400 , r'available roof area', color='grey')
+
+    ax.set_xlabel('PV panels [m$_{PV}^2$/m$_{ERA}^2$]')
+    ax.set_ylabel('CHF per  $E ^{gen}_{PV}$ [ CHF/ (kWyr/yr)]')
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, ncol=2)
+    if save_fig == True:
+        plt.tight_layout()
+        format = 'pdf'
+        plt.savefig(('AR_Inv_PVlab_profiles_cogen_only' + '.' + format), format=format, dpi=300)
+    else:
+        plt.show()
+
+    fig, ax = plt.subplots(figsize=(6, 4.8))
+    ax.plot(df_plot.index, df_plot.AR- df_plot.PV_CHF, color=colors_dict[4], label='Annual benefits- current Tarrifs (8ct/20ct)')
+    ax.plot(df_plot.index, df_plot.AR_0_feed- df_plot.PV_CHF, color=colors_dict[4], linestyle=':', label='Annual benefits- Tariffs 0ct/25ct')
+    ax.plot(df_plot.index, df_plot.AR_10_feed- df_plot.PV_CHF, color=colors_dict[4], linestyle='--', label='Annual benefits- Tariffs 8ct/15ct')
+
+    ax.scatter(0.975,0, color='grey', zorder= 10)
+    ax.annotate('A', (0.975, 20), fontsize=14)
+
+    ax.scatter(0.745, 0, color='grey', zorder=10)
+    ax.annotate('B', (0.745, 20), fontsize=14)
+
+    ax.axvline(roof_max_m2, linestyle='--', color='grey', alpha=0.6)
+    ax.text(roof_max_m2 + 0.02, 600, r'available roof area', color='grey')
+
+    ax.axhline(0, color='black')
+    ax.set_xlabel('PV panels [m$_{PV}^2$/m$_{ERA}^2$]')
+    ax.set_ylabel('CHF per  $E ^{gen}_{PV}$ [ CHF/ (kWyr/yr)]')
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, ncol=1)
+    if save_fig == True:
+        plt.tight_layout()
+        format = 'pdf'
+        plt.savefig(('benefits_PVlab_boiler' + '.' + format), format=format, dpi=300)
+    else:
+        plt.show()
     return
 
 
@@ -270,72 +321,57 @@ def return_district_result_object_dataframe(dict_results, result_dataframe):
 
     return df_district_results
 
-def plot_rainbow_CH(Pareto_list, extrapolation=None, bounds=None, resolution=100, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv"):
-
-    if extrapolation is None:
-        extrapolation = {17335: 54.5, 277: 428.55, 10559: 281.57, 14824: 98.57, 17316: 207.82}
-    extrapolation = pd.DataFrame.from_dict(extrapolation, orient="Index")  # ERA CH districts mio m2
-    extrapolation = extrapolation / extrapolation.sum()
-
-    if bounds is None:
-        bounds = {"feed_in": [0.0, 0.15], "retail": [0.05, 0.25]}
-
-    PV_area = {}
-    df_plot_last = {}
-    df_plot_inv_induced = {}
-
-    # get data
-    for n, pareto in enumerate(Pareto_list):
-        print("district:", n, " processed")
-        PV_area[n] = return_district_result_object_dataframe(pareto, 'df_PV_Surface').groupby("Pareto_ID").sum().max()[0]
-        df_plot_last[n], feed_in_prices, No_feed_in, df_plot_inv_induced[n] = plot_economical_feedin_price(bounds, resolution, pareto)
-
-        # get last economic retail tariffs
-        last_id = []
-        for idx, col in enumerate(df_plot_last[n]):
-            if df_plot_last[n][col].sum() != 0:
-                last_id = np.concatenate([last_id, [df_plot_last[n][col][df_plot_last[n][col] > 0].index[-1]]])
-            else:
-                last_id = np.concatenate([last_id, [np.nan]])
-        last_id = pd.DataFrame(last_id)
-        last_id[0] = last_id[0].interpolate()
-
-
-        for idx, col in enumerate(df_plot_last[n]):
-            df_plot_last[n][col] = df_plot_last[n][col].replace(np.nan, 0)
-            index_max_PV = df_plot_last[n][col].loc[last_id.loc[idx][0]:].index[1:]
-            df_plot_last[n][col].loc[index_max_PV] = df_plot_last[n].max().max()
-
-    # aggregate data and extrapolate to CH
-    df_plot_last_CH = df_plot_last[0] * 0
-
-    for n in PV_area:
-        df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / PV_area[n] * extrapolation[0].loc[n] * 140  # 140 km2 roof area usable (EnergyScope)
-
-    df_plot_last_CH = sp.ndimage.filters.gaussian_filter(df_plot_last_CH, std_filter, mode='nearest')
-    df_plot_last_CH = pd.DataFrame(df_plot_last_CH)
-    df_plot_last_CH.columns = np.linspace(bounds["retail"][0], bounds["retail"][1], No_feed_in)
-    df_plot_last_CH.index = np.linspace(bounds["feed_in"][0], bounds["feed_in"][1], No_feed_in)
-
-
-    # create bounds
-    max_value = df_plot_last_CH.max().max()
-
-    for col in df_plot_last_CH:
-        df_plot_last_CH[col].mask(df_plot_last_CH[col] < 0.3, np.nan, inplace=True)
-        df_plot_last_CH[col].mask(df_plot_last_CH[col] > max_value - 0.1, np.nan, inplace=True)
-
-    plot_rainbow(df_plot_last_CH, feed_in_prices, No_feed_in, df_plot_inv_induced, bounds, save_fig=True, plot_type=plot_type)
-
-
-
 if __name__ == '__main__':
     pd.set_option('display.max_rows', 700)
     pd.set_option('display.max_columns', 700)
     pd.set_option('display.width', 1000)
+cm = plt.cm.get_cmap('Spectral')
 
-    plot_type = ["demand_feed_in_E_gen_pv", "E_gen_pv_demand_feed_in", "invest_demand_feed_in"][0]
-    resolution = 150
-    bounds = {"feed_in": [0.0, 0.18], "retail": [0.05, 0.30]}
+EPFL_light_grey=  '#CAC7C7'
+EPFL_red=  '#FF0000'
+EPFL_leman = '#00A79F'
+EPFL_canard = '#007480'
+Salmon =  '#FEA993'
+
+colors_dict = {0:'black', 1: EPFL_red, 2: EPFL_light_grey, 3: Salmon, 4: EPFL_leman, 5: EPFL_canard}
+
+n = [277, 10559, 14824, 17316, 17335][0]
+picklename = 'Pareto_DWD' + str(n) + '.pickle'
+with open('../../shared_executables_REHO/plotting/ECOS paper/2023/results/' + picklename, 'rb') as f:
+    Pareto = pickle.load(f)
+Pareto = Pareto[n].results
+
+df_u = return_district_result_object_dataframe(Pareto, 'df_Unit')
+df_g = return_district_result_object_dataframe(Pareto, 'df_Grid_t')
+
+#df_irr = UF.return_district_result_object_dataframe(Pareto, 'df_PV_Surface_profiles')
+df_t = return_district_result_object_dataframe(Pareto, 'df_Time')
+df_t = df_t.groupby(level=['Period']).mean()
+
+df_KPI = return_district_result_object_dataframe(Pareto, 'df_KPI')
+hs_A = return_district_result_object_dataframe(Pareto, 'df_Buildings')["ERA"].xs(1, level=1).sum()
+
+df_nbr = return_district_result_object_dataframe(Pareto, 'df_PV_orientation') # df_PVA_module_nbr, df_PV_orientation
+total_surface_m2, roof_max_m2 = get_roof_max(df_nbr)
+
+n_house = len(return_district_result_object_dataframe(Pareto, 'df_Buildings')["ERA"].xs(1, level=1))
+plt.rcParams.update({'font.size': 10})
+
+m2_SS = 0.39
+m2_carbon_neutral = 0.40
+plot_type = ["demand_feed_in_E_gen_pv", "E_gen_pv_demand_feed_in", "invest_demand_feed_in"][0]
+resolution = 50
+bounds = {"feed_in": [0.0, 0.15], "retail": [0.05, 0.25]}
+#plot_cinv_kWh(df_KPI, df_u, total_surface_m2, roof_max_m2,save_fig= False)
+plot_economical_feedin_price(df_KPI, df_u,  total_surface_m2, bounds, roof_max_m2, m2_SS, m2_carbon_neutral, plot_type, resolution, save_fig= False)
 
 
+
+
+
+#df_m2 = plot_surfacetype(df_nbr, df_u, hs_A.values[0], save_fig=False)
+#plot_gen_elec(df_Parameter, total_surface_m2,save_fig=True)
+#plot_orientation(df_nbr, hs_A.values[0], df_u, save_fig=False)
+#plot_roofs_difference(save_fig=False)
+#plot_horizontal_roofs(df_nbr, df_u, hs_A.values[0], save_fig=False)
+#max_grid_exchange(df_g)

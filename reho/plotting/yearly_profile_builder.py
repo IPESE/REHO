@@ -1,10 +1,9 @@
 
 import pandas as pd
 import numpy as np
-import os
-from paths import *
+from reho.paths import *
 from matplotlib import pyplot as plt
-import pickle
+
 
 def yearly_profile(df_cluster, df):
 

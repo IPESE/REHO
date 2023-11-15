@@ -1,15 +1,12 @@
-from model.preprocessing.data_generation import *
-import model.infrastructure as infrastructure
-from model.compact_optimization import *
-import model.postprocessing.write_results as WR
+import reho.model.infrastructure as infrastructure
+from reho.model.compact_optimization import *
+import reho.model.postprocessing.write_results as WR
 from itertools import groupby
 import warnings
 import time
 import gc
-import model.preprocessing.electricity_profile_parser as el_parser
-import pickle
-from os.path import exists
-import multiprocessing as mp
+import reho.model.preprocessing.electricity_profile_parser as el_parser
+
 
 class district_decomposition:
 

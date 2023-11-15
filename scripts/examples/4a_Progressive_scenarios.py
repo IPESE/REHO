@@ -1,5 +1,5 @@
-from model.reho import *
-from model.preprocessing.QBuildings import QBuildingsReader
+from reho.model.reho import *
+from reho.model.preprocessing.QBuildings import QBuildingsReader
 
 if __name__ =='__main__':
 

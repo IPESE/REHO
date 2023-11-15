@@ -1,9 +1,8 @@
 
-from paths import *
-import model.preprocessing.weather as WD
+from reho.paths import *
+import reho.model.preprocessing.weather as WD
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
 
 
 def generate_EV_plugged_out_profiles_district(cluster):

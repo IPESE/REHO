@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
-from paths import *
-from model.preprocessing.clustering import ClusterClass
+from reho.paths import *
+from reho.model.preprocessing.clustering import ClusterClass
 
 def get_cluster_file_ID(cluster):
     # get correct file ID for weather file

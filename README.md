@@ -1,11 +1,16 @@
 # REHO
-Renewable Energy Hub Optimizer (REHO) is an open-source energy model suitable for the optimization of energy systems at building-scale or district-scale.
-It considers simultaneously the optimal design as well as optimal scheduling of capacities.
-It allows to investigate the deployment of energy conversion and energy storage capacities to ensure the energy balance of a specified territory,
-through multi-objective optimization and KPIs parametric studies. It is based on an hourly resolution.
+Renewable Energy Hub Optimizer (REHO) is a decision support tool for sustainable urban energy system planning.
 
-## Install
-To run REHO, both AMPL and Python 3 needs to be installed. Further details can be found in the documentation : https://reho.readthedocs.io/en/main/.
+It is developed by EPFL (Switzerland), within the Industrial Process and Energy Systems Engineering (IPESE) group.
+
+REHO simultaneously addresses the optimal design and operation of capacities, catering to multi-objective considerations
+across economic, environmental, and efficiency criteria. Its MILP framework, multi-objective optimization, multi-scale adaptability,
+consideration of diverse end-use demands, and multi-energy integration drive informed decision-making for renewable energy deployment in urban areas.
+
+**Version 1.0 of the model.**
+
+## Installation
+To run REHO, both AMPL and Python 3 needs to be installed. Further details can be found in the documentation.
 
 ## Licence
 Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
@@ -22,10 +27,13 @@ limitations under the License.
 
 Description and complete License: see LICENSE file.
  
-## Authors
-Dorsan Lepour <dorsan.lepour@epfl.ch>  
-Cédric Terrier <cedric.terrier@epfl.ch>  
-Luise Middelhauve <luise.middelhauve@epfl.ch>  
+## Documentation
+A complete and comprehensive documentation is available at: https://reho.readthedocs.io/en/main/
 
-Version 1.0 of the model.  
-See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
+## Suggestions and contributions
+All suggestions or implementation must be tracked with dedicated issues and reported at the project repository: https://github.com/Renewable-Energy-Hub-Optimizer/REHO
+
+## Authors
+Dorsan Lepour <dorsan.lepour@epfl.ch>
+Cédric Terrier <cedric.terrier@epfl.ch>  
+Joseph Loustau <joseph.loustau@epfl.ch>

@@ -1,7 +1,5 @@
-import pandas as pd
-
-from model.reho import *
-from model.preprocessing.QBuildings import QBuildingsReader
+from reho.model.reho import *
+from reho.model.preprocessing.QBuildings import QBuildingsReader
 
 def renovate_buildings(qbuildings_data):
 

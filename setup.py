@@ -5,14 +5,11 @@
 
 from setuptools import setup, find_packages
 
-with open('requirements.txt') as f:
-    requirements = f.read().splitlines()
-
 setup(
     name='REHO',
     version='1.0',
     packages=find_packages(),  # Automatically discover and include all packages
-    install_requires=requirements,
+    install_requires=['amplpy==0.8.5', 'pandas==1.5.0', 'openpyxl~=3.0', 'numpy==1.23.4', 'scipy==1.9.2', 'scikit-learn', 'scikit-learn-extra', 'sqlalchemy==1.4.42', 'psycopg2==2.9.4', 'geopandas==0.13.2', 'wheel~=0.37', 'pipwin~=0.5.2', 'matplotlib==3.6.1', 'plotly==5.10', 'kaleido~=0.2.1'],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt'],
       },
@@ -26,7 +23,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
-        'License :: Apache LICENSE-2.0',
+        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3.10',
     ],
     keywords='MILP, decision support, sustainable energy systems, district optimization',

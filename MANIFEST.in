@@ -1,0 +1,4 @@
+include README.md
+recursive-include reho/data *
+recursive-include reho/model *
+recursive-include reho/plotting *

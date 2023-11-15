@@ -49,35 +49,12 @@ def get_cluster_file_ID(cluster):
 
 def read_hourly_dat(location):
 
-    if location == 'Zurich':
-
-        filename = os.path.join(path_to_weather, 'Zurich_data_cleaned.csv')
-
-        if not os.path.exists(filename):
-            df = pd.read_csv('zurich_2019.csv')
-            df_loc= df[df['Standort'] == 'Zch_Stampfenbachstrasse']
-            df_irr = df_loc[df_loc['Parameter'] == 'StrGlo']
-            df_T = df_loc[df_loc['Parameter'] == 'T']
-
-            df1 = pd.DataFrame([df_irr.Wert.values, df_T.Wert.values],  index=['Irr', 'Text'])
-            df1 = df1.T
-            df1[['Text', 'Irr']].to_csv('annual_weather.txt')
-            df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday.txt'), index_col=[0], header=None)
-            df1['Weekday'] = df2
-
-            df_emission = pd.read_csv(path_to_emissions_matrix, index_col=[0, 1, 2])
-            df_emission.columns = np.arange(1, 8761)
-            df1['Emissions'] = df_emission.xs(['CH', 'IPCC 2013 climate change', 'GWP100a']).values
-            df1.to_csv(filename)
-        else:
-            df1 = pd.read_csv(filename)
-    else:
-        df1 = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
-        df1 = pd.DataFrame(df1).transpose()
-        df1 = df1.drop([5,6,7,8], axis=1)
-        df1.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']
-        df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday.txt'), index_col=[0], header=None)
-        df1['Weekday'] = df2
+    df1 = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
+    df1 = pd.DataFrame(df1).transpose()
+    df1 = df1.drop([5,6,7,8], axis=1)
+    df1.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']
+    df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday.txt'), index_col=[0], header=None)
+    df1['Weekday'] = df2
 
     return df1
 

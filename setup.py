@@ -1,6 +1,6 @@
 # All rights reserved. ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, Switzerland,
 # IPESE Laboratory, Copyright 2023
-# This work can be distributed under the CC BY-NC-SA 4.0 License.
+# This work can be distributed under the Apache Software License.
 # See the LICENSE file for more details.
 
 from setuptools import setup, find_packages
@@ -11,10 +11,10 @@ def read_file(file_path):
 
 setup(
     name='REHO',
-    version='1.0.4',
+    version='1.0.5',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=['amplpy==0.8.5', 'pandas==1.5.0', 'openpyxl~=3.0', 'numpy==1.23.4', 'scipy==1.9.2', 'scikit-learn', 'scikit-learn-extra', 'sqlalchemy==1.4.42', 'psycopg2==2.9.4', 'geopandas==0.13.2', 'wheel~=0.37', 'pipwin~=0.5.2', 'matplotlib==3.6.1', 'plotly==5.10', 'kaleido~=0.2.1'],
+    install_requires=['amplpy>=0.8.5,<0.11.0', 'pandas>=1.5.3,<2.0.0', 'openpyxl>=3.1.2,<4.0.0', 'numpy>=1.23.4,<2.0.0', 'scipy>=1.9.2,<2.0.0', 'scikit-learn>=1.2.2,<2.0.0', 'scikit-learn-extra>=0.3.0', 'sqlalchemy>=1.4.42,<2.0.0', 'psycopg2>=2.9.4,<3.0.0', 'psycopg2-binary>=2.9.9,<3.0.0', 'geopandas>=0.12.2,<1.0.0', 'matplotlib>=3.6.1,<4.0.0', 'plotly>=5.10,<6.0.0', 'kaleido>=0.2.1,<1.0.0'],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod'],
       },

@@ -103,7 +103,5 @@ def save_results(reho, save=('pickle'), filename='results' , erase_file=True, fi
                             df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros
                         df.to_excel(writer, sheet_name=df_name)
                         worksheet = writer.sheets[df_name]  # pull worksheet object
-                        for idx, col in enumerate(df):  # loop through all columns
-                            worksheet.set_column(idx, idx, len(str(df[col].name)) + 1)  # set column width
                 writer.close()
                 print('results are saved in ' + result_file_path)

@@ -89,7 +89,10 @@ def generate_output_data(cl, attributes):
         df_mod['time.hh'] = np.arange(1, cl.modulo + 1)
         data_cls_mod = df_mod
     data_cls = data_cls.append(data_cls_mod, ignore_index=True)
-    data_cls.to_csv(os.path.join(path_to_clustering_results, 'temp/values-cluster.csv'), index=False)
+    temp_results_path = os.path.join(path_to_clustering_results, 'temp')
+    if not os.path.exists(temp_results_path):
+        os.makedirs(temp_results_path)
+    data_cls.to_csv(os.path.join(temp_results_path, 'values-cluster.csv'), index=False)
     # - construct : model data
     # - ** inter-period
     data_idy = pd.DataFrame(

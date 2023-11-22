@@ -1,16 +1,24 @@
 # REHO
 Renewable Energy Hub Optimizer (REHO) is a decision support tool for sustainable urban energy system planning.
-
-It is developed by EPFL (Switzerland), within the Industrial Process and Energy Systems Engineering (IPESE) group.
-
 REHO simultaneously addresses the optimal design and operation of capacities, catering to multi-objective considerations
-across economic, environmental, and efficiency criteria. Its MILP framework, multi-objective optimization, multi-scale adaptability,
-consideration of diverse end-use demands, and multi-energy integration drive informed decision-making for renewable energy deployment in urban areas.
+across economic, environmental, and efficiency criteria.
 
-**Version 1.0 of the model.**
+Key features:
+* MILP Framework
+* Multi-Objective Optimization
+* Multi-Scale Capabilities
+* Multi-Service Consideration
+* Multi-Energy Integration
+* Open-Source and Open-Data
 
-## Installation
-To run REHO, both AMPL and Python 3 needs to be installed. Further details can be found in the documentation.
+For more information about the model foundations and features, please refer to the [REHO documentation](https://reho.readthedocs.io/en/main/).
+
+## Authors
+REHO is developed by EPFL (Switzerland), within the Industrial Process and Energy Systems Engineering (IPESE) group.
+
+Dorsan Lepour <dorsan.lepour@epfl.ch>  
+Cédric Terrier <cedric.terrier@epfl.ch>  
+Joseph Loustau <joseph.loustau@epfl.ch>
 
 ## Licence
 Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
@@ -26,14 +34,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 Description and complete License: see LICENSE file.
- 
-## Documentation
-A complete and comprehensive documentation is available at: https://reho.readthedocs.io/en/main/
+
+## Installation
+1. Clone repository available at https://github.com/Renewable-Energy-Hub-Optimizer/REHO
+2. Create `venv` in the repository and install required libraries with
+```
+pip install -r requirements.txt
+```
+3. Please refer to "Getting started" section of the documentation for step-by-step guidelines.
 
 ## Suggestions and contributions
-All suggestions or implementation must be tracked with dedicated issues and reported at the project repository: https://github.com/Renewable-Energy-Hub-Optimizer/REHO
-
-## Authors
-Dorsan Lepour <dorsan.lepour@epfl.ch>
-Cédric Terrier <cedric.terrier@epfl.ch>  
-Joseph Loustau <joseph.loustau@epfl.ch>
+All suggestions or implementation must be tracked with dedicated issues and reported in the project repository.

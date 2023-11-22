@@ -1,3 +1,4 @@
+import os
 import reho.model.infrastructure as infrastructure
 from reho.model.compact_optimization import *
 import reho.model.postprocessing.write_results as WR
@@ -14,7 +15,7 @@ import multiprocessing as mp
 class district_decomposition:
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
-                 cluster=None, method=None, DW_params=None):
+                 cluster=None, method=None, solver=None, DW_params=None):
         """
         Description
         -----------
@@ -32,9 +33,13 @@ class district_decomposition:
         set_indexed :dictionary,  The indexes used in the model
         cluster : dictionary,  Define location district, number of periods and number of timesteps
         method : dictionary, The different method to run the optimization (decomposed, PV orientations, parallel computation,...)
+        solver: string, chosen solver for AMPL (gurobi, cplex, highs, cbc...)
         DW_params : dictionary, hyperparameters of the decomposition and other useful information
 
         """
+        # ampl solver
+        self.solver = solver
+
         # methods
         self.method = initialize_default_methods(method)
 
@@ -257,9 +262,9 @@ class district_decomposition:
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -312,7 +317,12 @@ class district_decomposition:
         """
 
         ### Create the ampl Master Problem (MP)
-        ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+        if os.getenv('USE_AMPL_MODULES', False):
+            from amplpy import modules
+            modules.load()
+            ampl_MP = AMPL()
+        else:
+            ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('show_stats', 2)
@@ -322,8 +332,14 @@ class district_decomposition:
         ampl_MP.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl_MP.setOption('presolve_fixeps', 1e-9)
         ampl_MP.setOption('show_stats', 1)
-        ampl_MP.setOption('solver', 'gurobi')
-        #ampl_MP.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=120';")
+
+        # -SOLVER OPTIONS
+        ampl_MP.setOption('solver', self.solver)
+        if self.solver == "gurobi":
+            ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5';")
+        if self.solver == "cplex":
+            ampl_MP.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=120';")
+
         ampl_MP.eval('option show_boundtol 0;')
         ampl_MP.eval('option abs_boundtol 1e-10;')
 
@@ -481,15 +497,15 @@ class district_decomposition:
         # ---------------------------------------------------------------------------------------------------------------
 
         for s in MP_set_indexed:
-            for i, instance in ampl_MP.getSet(str(s)):
-                if isinstance(MP_set_indexed[s], np.ndarray):
-                    instance.setValues(MP_set_indexed[s])
-                elif isinstance(MP_set_indexed[s], dict):
+            if isinstance(MP_set_indexed[s], np.ndarray):
+                ampl_MP.getSet(str(s)).setValues(MP_set_indexed[s])
+            elif isinstance(MP_set_indexed[s], dict):
+                for i, instance in ampl_MP.getSet(str(s)):
                     instance.setValues(MP_set_indexed[s][i])
-                elif isinstance(MP_set_indexed[s], pd.DataFrame):
-                    ampl_MP.setData(MP_set_indexed[s])
-                else:
-                    raise ValueError('Type Error setting AMPLPY Set', s)
+            elif isinstance(MP_set_indexed[s], pd.DataFrame):
+                ampl_MP.setData(MP_set_indexed[s])
+            else:
+                raise ValueError('Type Error setting AMPLPY Set', s)
 
         # select district units in exclude and enforce units
         exclude_units = [s for s in scenario['exclude_units'] if any(xs in s for xs in ['district'])]
@@ -516,7 +532,10 @@ class district_decomposition:
                 Para.setValues([MP_parameters[i]])
 
             elif isinstance(MP_parameters[i], pd.DataFrame):
-                ampl_MP.setData(MP_parameters[i])
+                if not MP_parameters[i].empty:
+                    ampl_MP.setData(MP_parameters[i])
+                else:
+                    print("DataFrame", i,"is empty.")
 
             elif isinstance(MP_parameters[i], pd.Series):
                 MP_parameters[i].name = i
@@ -632,9 +651,9 @@ class district_decomposition:
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver)
 
         ampl = REHO.build_model_without_solving()
 

@@ -28,7 +28,7 @@ if __name__ =='__main__':
     grids = infrastructure.initialize_grids({'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645}, 'Oil': {'Cost_supply_cst': 0.11}, 'Data': {}})
     units = infrastructure.initialize_units(scenario, grids)
 
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
+    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho_model.single_optimization()
 
     ################### SCENARIO 2 HP + PV ###################

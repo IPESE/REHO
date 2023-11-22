@@ -1,3 +1,4 @@
+import os
 from amplpy import AMPL, Environment
 import itertools as itertools
 import reho.model.preprocessing.data_generation as DGF
@@ -8,8 +9,8 @@ import reho.model.preprocessing.EV_profile_generator as EV_gen
 from reho.model.preprocessing.QBuildings import *
 
 
-class compact_optimization():
-    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, qbuildings_data=None):
+class compact_optimization:
+    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
         """
         :param district: Instance of class district, Contains relevant structure in district such as Units or grids
         :param buildings_data: Dictionary containing relevant Building data
@@ -18,6 +19,8 @@ class compact_optimization():
         :param cluster: Dictionary containing information about clustering
         :param scenario: Dictionary, containing the objective function, EMOO constraints, additional constraints
         :param method: Dictionary, containing different options for methodology choices
+        :param solver: String, chosen solver for AMPL (gurobi, cplex, highs, cbc...)
+        :param qbuildings_data: Dictionary, containing input data for the buildings
 
         :return:
         """
@@ -36,6 +39,7 @@ class compact_optimization():
             scenario['enforce_units'] = []
         self.scenario_compact = scenario
         self.method_compact = method
+        self.solver = solver
         self.parameters_to_ampl = dict()
 
         # print('Execute for building:', self.buildings_data_compact)
@@ -108,13 +112,16 @@ class compact_optimization():
 
 
     def init_ampl_model(self):
-
-        ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
+        if os.getenv('USE_AMPL_MODULES', False):
+            from amplpy import modules
+            modules.load()
+            ampl = AMPL()
+        else:
+            ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
         # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS
         ampl.setOption('solution_round', 11)
-        # ampl.setOption('rel_boundtol', 1e-30)
 
         ampl.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
@@ -122,9 +129,11 @@ class compact_optimization():
         ampl.setOption('show_stats', 0)
 
         # -SOLVER OPTIONS
-        ampl.setOption('solver', 'gurobi')
-        ampl.eval("option gurobi_options 'NodeFileStart=0.5';")
-        #ampl.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=3000';")
+        ampl.setOption('solver', self.solver)
+        if self.solver == "gurobi":
+            ampl.eval("option gurobi_options 'NodeFileStart=0.5';")
+        if self.solver == "cplex":
+            ampl.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=3000';")
 
         # -----------------------------------------------------------------------------------------------------#
         #  MODEL FILES
@@ -249,17 +258,13 @@ class compact_optimization():
             self.parameters_to_ampl[key] = self.infrastructure_compact.HP_parameters[key]
 
         for s in self.infrastructure_compact.Set:
-            for i, instance in ampl.getSet(str(s)):
-                # print('Set Values for ' + str(instance))
-                # i: 'Building1', instance: set SurfaceOfHouse['Building1'];
-                if isinstance(self.infrastructure_compact.Set[s], np.ndarray):
-                    instance.setValues(self.infrastructure_compact.Set[s])
-                elif isinstance(self.infrastructure_compact.Set[s], dict):
-                    # i : ('Building1', 8280.0), instance: set ConfigOfSurface['Building1', 8280.0];
+            if isinstance(self.infrastructure_compact.Set[s], np.ndarray):
+                ampl.getSet(str(s)).setValues(self.infrastructure_compact.Set[s])
+            elif isinstance(self.infrastructure_compact.Set[s], dict):
+                for i, instance in ampl.getSet(str(s)):
                     instance.setValues(self.infrastructure_compact.Set[s][i])
-                #    print(instance.getValues())
-                else:
-                    raise ValueError('Type Error setting AMPLPY Set', s)
+            else:
+                raise ValueError('Type Error setting AMPLPY Set', s)
 
         all_units = [unit for unit, value in ampl.getVariable('Units_Use').instances()]
         for i in all_units:

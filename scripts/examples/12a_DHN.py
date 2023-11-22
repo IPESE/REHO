@@ -63,7 +63,7 @@ def execute_DW_with_increasing_BUI():
     parameters = {"T_DHN_supply_cst": np.repeat(20.0, nb_buildings), "T_DHN_return_cst": np.repeat(15.0, nb_buildings)}
 
     # run opti
-    reho_model = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, parameters=parameters)
+    reho_model = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, parameters=parameters, solver="gurobi")
 
     reho_model.get_DHN_costs()  # run one optimization forcing DHN to find costs DHN connection per house
 

@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
     # Generate configuration
     reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
-                    cluster=cluster, scenario=scenario, method=method)
+                    cluster=cluster, scenario=scenario, method=method, solver="gurobi")
 
     tariffs_ranges = {'Electricity': {"Cost_demand_cst": [0.05, 0.20], "Cost_supply_cst": [0.15, 0.30]},
                       'NaturalGas': {"Cost_supply_cst": [0.1, 0.30]}}

@@ -53,7 +53,7 @@ def execute_DW_with_increasing_BUI():
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T'], 'Periods': 10, 'PeriodDuration': 24}
 
     # run opti
-    reho_model = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario)
+    reho_model = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, solver="gurobi")
     reho_model.single_optimization()
 
     # get results

@@ -32,9 +32,9 @@ from scipy.stats import qmc
 class reho(district_decomposition):
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
-                 cluster=None, method=None, scenario=None, DW_params=None):
+                 cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
 
-        super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, DW_params)
+        super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
 
         # input attributes
@@ -170,9 +170,9 @@ class reho(district_decomposition):
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver)
             ampl, exitcode = REHO.solve_model()
 
         scenario = {'Objective': objective1}
@@ -202,9 +202,9 @@ class reho(district_decomposition):
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.qbuildings_data)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver)
             ampl, exitcode = REHO.solve_model()
 
         scenario = {'Objective': objective2}
@@ -258,10 +258,10 @@ class reho(district_decomposition):
             else:
                 if self.method['use_facades'] or self.method['use_pv_orientation']:
                     REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                                self.cluster, scenario, self.method, self.qbuildings_data)
+                                                self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
                 else:
                     REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                                self.cluster, scenario, self.method)
+                                                self.cluster, scenario, self.method, self.solver)
                 ampl, exitcode = REHO.solve_model()
 
             df_Results = self.get_results_attributes(ampl, Scn_ID, nParetoIT, scenario)
@@ -303,12 +303,12 @@ class reho(district_decomposition):
                     if self.method['use_facades'] or self.method['use_pv_orientation']:
                         REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters,
                                                     self.set_indexed, self.cluster,
-                                                    scenario, self.method, self.qbuildings_data)
+                                                    scenario, self.method, self.solver, self.qbuildings_data)
                     else:
                         REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters,
                                                     self.set_indexed,
                                                     self.cluster,
-                                                    scenario, self.method)
+                                                    scenario, self.method, self.solver)
                     ampl, exitcode = REHO.solve_model()
 
                 df_Results = self.get_results_attributes(ampl, Scn_ID, nParetoIT, scenario)
@@ -364,11 +364,11 @@ class reho(district_decomposition):
             if self.method['use_facades'] or self.method['use_pv_orientation']:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster,
-                                            scenario, self.method, self.qbuildings_data)
+                                            scenario, self.method, self.solver, self.qbuildings_data)
             else:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster,
-                                            scenario, self.method)
+                                            scenario, self.method, self.solver)
             ampl = REHO.build_model_without_solving()
 
             for i, value in ampl.getVariable('Units_Mult').instances():
@@ -426,10 +426,10 @@ class reho(district_decomposition):
         # REHOExecution, returns ampl library containing the whole model
         if self.method['use_facades'] or self.method['use_pv_orientation']:
             REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                        self.cluster, scenario_fix_uti, self.method, self.qbuildings_data)
+                                        self.cluster, scenario_fix_uti, self.method, self.solver, self.qbuildings_data)
         else:
             REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                        self.cluster, scenario_fix_uti, self.method)
+                                        self.cluster, scenario_fix_uti, self.method, self.solver)
         ampl = REHO.build_model_without_solving()
 
         for i, value in ampl.getVariable('Units_Mult').instances():
@@ -506,10 +506,10 @@ class reho(district_decomposition):
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                            self.cluster, self.scenario, self.method, self.qbuildings_data)
+                                            self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
             else:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                            self.cluster, self.scenario, self.method)
+                                            self.cluster, self.scenario, self.method, self.solver)
             ampl = REHO.build_model_without_solving()
 
             if self.method['fix_units']:

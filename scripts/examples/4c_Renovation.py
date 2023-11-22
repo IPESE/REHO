@@ -49,7 +49,7 @@ if __name__ == '__main__':
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
+    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho_model.single_optimization()
 
     SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='4c')

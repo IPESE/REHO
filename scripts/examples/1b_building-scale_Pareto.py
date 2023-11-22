@@ -32,7 +32,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
+    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho_model.generate_pareto_curve()  # instead of single_optimization() we run a multi-objective optimization
 
     # Save results

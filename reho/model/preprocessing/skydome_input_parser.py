@@ -271,7 +271,8 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typ
     period_duration = typical_frequency.pop('PeriodDuration')
 
     for number, key in enumerate(typical_frequency.keys()):
-        end = key + timedelta(hours=period_duration[number+1]-1)
+        hours_component = int(period_duration[number + 1])
+        end = key + timedelta(hours=hours_component - 1)
         irr_day = -1 * df_irr_panel_t.loc[key: end]
         df_period = np.append(df_period, irr_day.values)
 

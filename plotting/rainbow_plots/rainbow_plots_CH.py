@@ -273,7 +273,7 @@ def return_district_result_object_dataframe(dict_results, result_dataframe):
 
     return df_district_results
 
-def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None, bounds=None, resolution=100, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv"):
+def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None, bounds=None, resolution=100, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv", filter=0):
 
     if bounds is None:
         bounds = {"feed_in": [0.0, 0.15], "retail": [0.0, 0.30]}
@@ -318,7 +318,7 @@ def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None
             df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / surface_district[tr_id] * surface_CH[tr_id]
 
     for col in df_plot_last_CH:
-        df_plot_last_CH[col][df_plot_last_CH[col] < 0] = 0.0
+        df_plot_last_CH[col][df_plot_last_CH[col] < filter] = 0.0
         df_plot_last_CH = df_plot_last_CH.astype({col: "float"})
 
     df_plot_last_CH = sp.ndimage.filters.gaussian_filter(df_plot_last_CH, std_filter, mode='nearest')

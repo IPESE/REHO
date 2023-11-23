@@ -96,10 +96,10 @@ EV_E_stored_plug_in[u,p,t] >= EV_limit_di*EV_capacity*n_vehicles*Units_Use[u]* (
 	
 	
 subject to EV_c5c{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-EV_E_stored_plug_out[u,p,t] <= (EV_limit_ch*EV_capacity*Units_Use[u] + EV_displacement_init[p]) * n_vehicles * EV_pluged_out[p,t];											#kWh
+EV_E_stored_plug_out[u,p,t] <= (EV_limit_ch*EV_capacity + EV_displacement_init[p])*Units_Use[u] * n_vehicles * EV_pluged_out[p,t];											#kWh
 
 subject to EV_c6c{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-EV_E_stored_plug_out[u,p,t] >= (EV_limit_di*EV_capacity*Units_Use[u] + EV_displacement_init[p]) * n_vehicles * EV_pluged_out[p,t];										#kWh
+EV_E_stored_plug_out[u,p,t] >= (EV_limit_di*EV_capacity + EV_displacement_init[p])*Units_Use[u] * n_vehicles * EV_pluged_out[p,t];										#kWh
 																			#-
 	
 subject to EV_c7a{u in UnitsOfType['EV']}:

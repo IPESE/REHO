@@ -615,9 +615,9 @@ class district_decomposition:
 
         parameters_SP = {}
         parameters_SP['Cost_supply_network'] = pi
-        parameters_SP['Cost_demand_network'] = pi * 0.999
+        parameters_SP['Cost_demand_network'] = pi * (1-1e-9)
         parameters_SP['Cost_supply'] = pi_h
-        parameters_SP['Cost_demand'] = pi_h * 0.999
+        parameters_SP['Cost_demand'] = pi_h * (1-1e-9)
         parameters_SP['GWP_supply'] = pi_GWP
         # set emissions of feed in to 0 -> changed in  postcompute
         parameters_SP['GWP_demand'] = pi_GWP.mul(0)

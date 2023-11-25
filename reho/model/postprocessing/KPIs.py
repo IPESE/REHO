@@ -396,16 +396,16 @@ def build_df_profiles_house(df_Results, infrastructure):
     df_PV = units_power_profiles_per_building(df_Results, infrastructure, 'PV')
     df_BAT = units_power_profiles_per_building(df_Results, infrastructure, 'Battery')
 
-    df_grid_profile = df_Results.df_Grid_t.xs(('Electricity'), level=('Layer'))
+    df_grid_profile = df_Results["df_Grid_t"].xs(('Electricity'), level=('Layer'))
 
     df_profiles_house = df_grid_profile.drop('Network', level='Hub')
     df_profiles_house['PV'] = df_PV['Units_supply']
     df_profiles_house['PVC'] = df_PV['Units_curtailment']
     df_profiles_house['BA_in'] = df_BAT['Units_demand']
     df_profiles_house['BA_out'] = df_BAT['Units_supply']
-    df_profiles_house['House_Q_heating'] = df_Results.df_Buildings_t['House_Q_heating']
-    df_profiles_house['T_in'] = df_Results.df_Buildings_t['T_in']
-    df_profiles_house['Q_DHW'] = df_Results.df_Buildings_t['House_Q_DHW']
+    df_profiles_house['House_Q_heating'] = df_Results["df_Buildings_t"]['House_Q_heating']
+    df_profiles_house['T_in'] = df_Results["df_Buildings_t"]['T_in']
+    df_profiles_house['Q_DHW'] = df_Results["df_Buildings_t"]['House_Q_DHW']
 
     if 'NG_Cogeneration' in infrastructure.UnitTypes:
         df_NG_Cogeneration = units_power_profiles_per_building(df_Results, infrastructure, 'NG_Cogeneration')
@@ -447,7 +447,7 @@ def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
                               'House_Q_heating': 'MWh_Qsh', 'Q_DHW': 'MWh_Qdhw', 'SC': 'MWh_SC', 'PV_SC': 'MWh_PV_SC'}, inplace=True)
 
     # get Annual values from ampl results
-    df_power = df_Results.df_Annuals.xs('Electricity', level=0)
+    df_power = df_Results["df_Annuals"].xs('Electricity', level=0)
     df_Building_el = df_power.loc[df_annual.index]  # index: all houses
     df_annual['MWh_el_domestic'] = df_Building_el['Demand_MWh']
 
@@ -457,7 +457,7 @@ def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
             df_annual_network['MWh_el_exp'] = df_power.xs('Network')['Demand_MWh']
             df_annual_network['MWh_el_imp'] = df_power.xs('Network')['Supply_MWh']
         else:
-            df_resource = df_Results.df_Annuals.xs(resource, level=0)
+            df_resource = df_Results["df_Annuals"].xs(resource, level=0)
             df_annual_network['MWh_' + resource] = df_resource.xs('Network')['Supply_MWh']
             df_resource_houses = split_units_to_buildings(infrastructure, df_resource, 'Demand_MWh')
             df_annual['MWh_' + resource] = df_resource_houses
@@ -467,29 +467,29 @@ def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
     df_annual_network['MWh_resources'] = sum([df_annual_network['MWh_' + x] for x in resource_list])
 
 
-    df_Building_performance = df_Results.df_Performance.loc[df_annual.index]
+    df_Building_performance = df_Results["df_Performance"].loc[df_annual.index]
     df_annual['Costs_House_op'] = df_Building_performance['Costs_op']
     df_annual['Costs_House_inv'] = df_Building_performance['Costs_inv']
     df_annual['Costs_House_rep'] = df_Building_performance['Costs_rep']
 
     for key in ['Costs_op', 'Costs_inv', 'Costs_rep']:
-        df_annual_network[key] = df_Results.df_Performance.iloc[0][key]
+        df_annual_network[key] = df_Results["df_Performance"].iloc[0][key]
 
     return df_annual, df_annual_network
 
 
 def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster):
     df_profiles = build_df_profiles_house(df_Results, infrastructure)
-    df_profiles_network = df_Results.df_Grid_t.xs('Network', level='Hub').copy()
+    df_profiles_network = df_Results["df_Grid_t"].xs('Network', level='Hub').copy()
 
-    df_Time = df_Results.df_Time
+    df_Time = df_Results["df_Time"]
     df_Time.dp.iloc[-1] = 0  # exclude extreme periods
     df_Time.dp.iloc[-2] = 0
 
     # ------------------------------------------------------------------------------------------------------
     # Construct Economics dataframe
     # ------------------------------------------------------------------------------------------------------
-    df_economics = build_df_economics(df_Results, df_profiles)
+    df_Economics = build_df_Economics(df_Results, df_profiles)
     df_annual, df_annual_network = build_df_annual(df_Results, df_profiles, infrastructure, df_Time)
 
     # ------------------------------------------------------------------------------------------------------
@@ -507,14 +507,14 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster):
     # ------------------------------------------------------------------------------------------------------
     # Costs
     # ------------------------------------------------------------------------------------------------------
-    df_cost = df_Results.df_Performance[['Costs_op', 'Costs_inv', 'Costs_rep', 'Costs_ft']]
+    df_cost = df_Results["df_Performance"][['Costs_op', 'Costs_inv', 'Costs_rep', 'Costs_ft']]
     df_cost = df_cost.rename(columns={'Costs_op': 'opex_m2', 'Costs_inv': 'capex_m2', 'Costs_rep': 'cost_rep_m2', 'Costs_ft': 'cost_ft_m2'})
     df_KPI = pd.concat([df_KPI, df_cost.div(df_hsA.ERA, axis=0)], axis=1)  # [CHF/m2/yr]
 
     df_AR = postcompute_annual_revenues(df_profiles, df_profiles_network, df_Time)
     df_KPI = pd.concat([df_KPI, df_AR.div(df_hsA.ERA, axis=0)], axis=1)
 
-    df_LCoE = postcompute_levelized_cost_electricity(df_Results.df_Unit, df_annual, df_profiles, df_Time, infrastructure)
+    df_LCoE = postcompute_levelized_cost_electricity(df_Results["df_Unit"], df_annual, df_profiles, df_Time, infrastructure)
     df_KPI['LCoE1'] = df_LCoE.LCoE1
     df_KPI['LCoE2'] = df_LCoE.LCoE2
 
@@ -527,14 +527,14 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster):
     df_PVP = postcompute_pv_penetration_curtail(df_annual, df_annual_network)
     df_KPI = pd.concat([df_KPI, df_PVP], axis=1)  # PVP [-] PVC [MWh]
 
-    df_GM = postcompute_Grid_param(df_Results.df_Grid_t)
+    df_GM = postcompute_Grid_param(df_Results["df_Grid_t"])
     df_KPI = pd.concat([df_KPI, df_GM], axis=1)  # GMd GMs GUd GUs
 
     # ------------------------------------------------------------------------------------------------------
     # GWP
     # ------------------------------------------------------------------------------------------------------
-    df_KPI['gwp_op_m2'] = df_Results.df_Performance['GWP_op'].div(df_hsA.ERA)
-    df_KPI['gwp_constr_m2'] = df_Results.df_Performance['GWP_constr'].div(df_hsA.ERA)
+    df_KPI['gwp_op_m2'] = df_Results["df_Performance"]['GWP_op'].div(df_hsA.ERA)
+    df_KPI['gwp_constr_m2'] = df_Results["df_Performance"]['GWP_constr'].div(df_hsA.ERA)
     df_KPI['gwp_tot_m2'] = df_KPI['gwp_op_m2'] + df_KPI['gwp_constr_m2']  # [kgCO2-eq/m2/yr]
 
     df_G_RES = postcompute_average_emission(df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time, cluster, infrastructure)
@@ -545,16 +545,16 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster):
     # ------------------------------------------------------------------------------------------------------
     # Technical KPIs
     # ------------------------------------------------------------------------------------------------------
-    df_eta = postcompute_efficiency(df_Results.df_Unit, buildings_data, df_annual, df_annual_network, df_profiles, df_Results.df_External, df_Time)
+    df_eta = postcompute_efficiency(df_Results["df_Unit"], buildings_data, df_annual, df_annual_network, df_profiles, df_Results["df_External"], df_Time)
     df_KPI = pd.concat([df_KPI, df_eta], axis=1)  # eta_I    eta_II   eta_Ipv  eta_IIpv
 
     if 'HeatPump' in infrastructure.UnitsOfType:  # Check if HP DHN is used
-        df_COP = postcompute_annual_COP(df_Results.df_Annuals, infrastructure)
+        df_COP = postcompute_annual_COP(df_Results["df_Annuals"], infrastructure)
         df_KPI = pd.concat([df_KPI, df_COP], axis=1)
 
     df_KPI.index.names = ['Hub']
 
-    return df_KPI, df_economics
+    return df_KPI, df_Economics
 
 
 def split_units_to_buildings(infrastructure, df, aim):
@@ -574,7 +574,7 @@ def units_power_profiles_per_building(df_Results, infrastructure, unittype):
     for house in infrastructure.House:
         for unit in infrastructure.UnitsOfType[unittype]:
             if unit in infrastructure.UnitsOfHouse[house]:
-                df_profile = df_Results.df_Unit_t.xs(('Electricity', unit), level=('Layer', 'Unit'))
+                df_profile = df_Results["df_Unit_t"].xs(('Electricity', unit), level=('Layer', 'Unit'))
                 df_profile = pd.concat([df_profile], keys=[(house, unit)], names=['Hub', 'Unit'])
                 df = pd.concat([df, df_profile])
     df = df.groupby(level=['Hub', 'Period', 'Time']).sum()
@@ -608,12 +608,12 @@ def remove_building_from_index(df):
     return df.set_index(index_modified)
 
 
-def build_df_economics(dict_Results, df_profiles):
+def build_df_Economics(df_Results, df_profiles):
     
-    period_duration = dict_Results.df_Time.dp
-    df_unit_t = remove_building_from_index(dict_Results.df_Unit_t)
-    df_unit = remove_building_from_index(dict_Results.df_Unit)
-    df_grid_t = dict_Results.df_Grid_t
+    period_duration = df_Results["df_Time"].dp
+    df_unit_t = remove_building_from_index(df_Results["df_Unit_t"])
+    df_unit = remove_building_from_index(df_Results["df_Unit"])
+    df_grid_t = df_Results["df_Grid_t"]
 
     col_to_calc = ['PV', 'PVC', 'BA_out', 'onsite_el', 'PV_SC', 'SC']
     # Avoided from profiles

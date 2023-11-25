@@ -33,10 +33,10 @@ if __name__ == '__main__':
 
     # Run optimization
     DW_params = {'max_iter': 2}
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
                     cluster=cluster, scenario=scenario, method=method, DW_params=DW_params)
 
-    reho_model.generate_pareto_curve()
+    reho.generate_pareto_curve()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='2b')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='2b')

@@ -33,9 +33,9 @@ if __name__ == '__main__':
 
     # Run optimization
     DW_params = {'max_iter': 2}
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
                     cluster=cluster, scenario=scenario, method=method, DW_params=DW_params)
-    reho_model.single_optimization()
+    reho.single_optimization()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='2a')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='2a')

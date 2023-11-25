@@ -137,7 +137,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
         :return:
     """
 
-    df_eco = dict_to_df(results, 'df_economics')
+    df_eco = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
     change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites']
@@ -266,7 +266,7 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
         :return:
     """
 
-    df_eco = dict_to_df(results, 'df_economics')
+    df_eco = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
     change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1',

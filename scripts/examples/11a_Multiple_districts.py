@@ -56,17 +56,15 @@ def execute_DW_with_increasing_BUI():
         cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T'], 'Periods': 10, 'PeriodDuration': 24}
 
         # run opti
-        reho_model = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, solver="gurobi")
-        reho_model.single_optimization()
+        reho = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, solver="gurobi")
+        reho.single_optimization()
 
-        # get results
-        reho_model.remove_all_ampl_lib()
-        dict_results[transfo_id] = reho_model
+        dict_results[transfo_id] = reho
 
     print(dict_results)
-    print(dict_results[1415].results["multi_districts"][0].df_Performance)
+    print(dict_results[1415].results["multi_districts"][0]["df_Performance"])
 
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='11a')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='11a')
     return
 
 

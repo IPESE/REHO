@@ -31,16 +31,16 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids=grids)
 
     # Run optimization
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
-    reho_model.single_optimization()
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho.single_optimization()
 
     # Run new optimization with the capacity of PV and electrical heater being fixed by the sizes of the first optimization
-    reho_model.df_fix_Units = reho_model.results['totex'][0].df_Unit                    # load data on the capacity of units
-    reho_model.fix_units_list = ['PV', 'ElectricalHeater_DHW', 'ElectricalHeater_SH']   # select the ones being fixed
-    reho_model.scenario['Objective'] = 'CAPEX'
-    reho_model.scenario['name'] = 'fixed'
-    reho_model.method['fix_units'] = True                                               # select the method fixing the unit sizes
-    reho_model.single_optimization()
+    reho.df_fix_Units = reho.results['totex'][0]["df_Unit"]                    # load data on the capacity of units
+    reho.fix_units_list = ['PV', 'ElectricalHeater_DHW', 'ElectricalHeater_SH']   # select the ones being fixed
+    reho.scenario['Objective'] = 'CAPEX'
+    reho.scenario['name'] = 'fixed'
+    reho.method['fix_units'] = True                                               # select the method fixing the unit sizes
+    reho.single_optimization()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='3c')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3c')

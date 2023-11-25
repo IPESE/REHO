@@ -1,53 +1,8 @@
 import pandas as pd
 import numpy as np
 
+def get_df_Results_from_compact(ampl, scenario, method, buildings_data, filter=True):
 
-class encapsulation(dict):
-    def __getitem__(self, item):
-        try:
-            return dict.__getitem__(self, item)
-        except KeyError:
-            value = self[item] = type(self)()
-            return value
-
-    def add_item(self, Scn_ID, Pareto_ID, item, Third_ID=None):
-        if Third_ID is None:
-            self[Scn_ID][Pareto_ID] = item
-        else:
-            self[Scn_ID][Pareto_ID][Third_ID] = item
-
-class dataframes_results(object):
-    """
-    This class contains results of the optimization stored as pandas dataframes
-    """
-
-    def __init__(self, ampl, scenario, method, buildings_data):
-
-        df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
-        df.columns = ["Varname", "Value"]
-        self.df_Performance = self.set_df_performance(df, ampl, scenario)
-        self.df_Annuals = self.set_df_annuals(df, ampl)
-        self.df_Buildings = self.set_df_buildings_data(buildings_data, df, ampl)
-        self.df_Unit, self.df_Unit_t = self.set_df_unit(df, ampl)
-        self.df_Grid_t = self.set_df_grid(df, ampl)
-        self.df_Buildings_t = self.set_df_building(df, ampl)
-        self.df_Time, self.df_External, self.df_Index = self.set_dfs_other(df, ampl)
-        if method['save_stream_t']:
-            self.df_Stream_t = self.set_df_stream(df, ampl)
-        if method['save_lca']:
-            self.df_lca_Units, self.df_lca_Performance, self.df_lca_operation = self.set_dfs_lca(df, ampl)
-        if method['use_pv_orientation'] or method['use_facades']:
-            self.df_PV_Surface, self.df_PV_orientation = self.set_dfs_pv(df, ampl)
-        if method["extract_parameters"]:
-            parameters_record = {}
-            for p, ampl_obj in ampl.getParameters():
-                try:
-                    parameters_record[p] = ampl.getData(p).toPandas()
-                except:
-                    print(p)
-            self.parameters_record = parameters_record
-
-    @staticmethod
     def set_df_performance(df, ampl, scenario):
         df1 = get_variable_in_pandas(df, 'Costs_House_op')  # without the comfort penalty costs
         df1 = df1.rename(columns={'Costs_House_op': 'Costs_op'})
@@ -105,7 +60,6 @@ class dataframes_results(object):
 
         return df_Performance.sort_index()
 
-    @staticmethod
     def set_df_annuals(df, ampl):
         # Annuals
         df1 = get_variable_in_pandas(df, 'AnnualNetwork_demand')
@@ -145,8 +99,7 @@ class dataframes_results(object):
 
         return df_Annuals
 
-    @staticmethod
-    def set_df_buildings_data(buildings_data, df, ampl):
+    def set_df_buildings(buildings_data, df, ampl):
         # Building
         df_Buildings = pd.DataFrame.from_dict(buildings_data, orient='index')
         df_Buildings.index.names = ['Hub']
@@ -156,7 +109,6 @@ class dataframes_results(object):
 
         return df_Buildings.sort_index()
 
-    @staticmethod
     def set_df_unit(df, ampl):
         # Unit
         tau = ampl.getParameter('tau').getValues().toList()
@@ -190,7 +142,6 @@ class dataframes_results(object):
 
         return df_Unit, df_Unit_t
 
-    @staticmethod
     def set_df_grid(df, ampl):
         # Grid_t
         df1 = get_variable_in_pandas(df, 'Grid_demand')
@@ -228,8 +179,7 @@ class dataframes_results(object):
 
         return df_Grid_t.sort_index()
 
-    @staticmethod
-    def set_df_building(df, ampl):
+    def set_df_buildings_t(df, ampl):
         # Building_t
         df1 = get_parameter_in_pandas(ampl, 'Domestic_electricity', multi_index=True)
 
@@ -252,8 +202,7 @@ class dataframes_results(object):
 
         return df_Buildings_t.sort_index()
 
-    @staticmethod
-    def set_df_stream(df, ampl):
+    def set_df_stream_t(df, ampl):
 
         df_Q = get_variable_in_pandas(df, 'Streams_Q')
         df_Q.index.set_names(['Service', 'Stream', 'Period', 'Time'], inplace=True)
@@ -296,8 +245,6 @@ class dataframes_results(object):
 
         return df_Stream_t.sort_index()
 
-
-    @staticmethod
     def set_dfs_lca(df, ampl):
 
         LCA_units = get_variable_in_pandas(df, 'lca_units')
@@ -316,7 +263,6 @@ class dataframes_results(object):
 
         return LCA_units, LCA_tot, LCA_op
 
-    @staticmethod
     def set_dfs_pv(df, ampl):
 
         # PV_Surface
@@ -325,7 +271,7 @@ class dataframes_results(object):
         df_PV_Surface.rename(columns={'HouseSurfaceArea': 'Area'})
         df_PV_Surface = df_PV_Surface.sort_index()
 
-        # df_PV_orientation
+        # ["df_PV_orientation"]
         df_PVA_module_nbr = get_variable_in_pandas(df, 'PVA_module_nbr')
         df_PVA_module_nbr = df_PVA_module_nbr.droplevel(4)
         df_PVA_module_nbr.index.names = ['Hub', 'Surface', 'Azimuth', 'Tilt']
@@ -351,12 +297,10 @@ class dataframes_results(object):
         # df_PV_Surface_loss = get_variable_in_pandas(df, "PV_electricity_without_loss")
         # df_PV_Surface_profiles = pd.concat([df_PV_Surface_profiles, df_PV_Surface_loss], axis=1)
         # df_PV_Surface_profiles.index.names = ['Hub','Unit','Surface', 'Azimuth','Tilt', 'Period', 'Time']
-        # self.df_PV_Surface_profiles = df_PV_Surface_profiles.sort_index()
+        # df_Results["df_PV_Surface"]_profiles = df_PV_Surface_profiles.sort_index()
 
-        return df_PV_Surface, df_PV_orientation
+        return df_PV_Surface, ["df_PV_orientation"]
 
-
-    @staticmethod
     def set_dfs_other(df, ampl):
         # Time
         df1 = get_parameter_in_pandas(ampl, 'dp', multi_index=False)
@@ -380,195 +324,224 @@ class dataframes_results(object):
 
         return df_Time, df_External, df_Index
 
+    df_Results = dict()
+    df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
+    df.columns = ["Varname", "Value"]
+    df_Results["df_Performance"] = set_df_performance(df, ampl, scenario)
+    df_Results["df_Annuals"] = set_df_annuals(df, ampl)
+    df_Results["df_Buildings"] = set_df_buildings(buildings_data, df, ampl)
+    df_Results["df_Unit"], df_Results["df_Unit_t"] = set_df_unit(df, ampl)
+    df_Results["df_Grid_t"] = set_df_grid(df, ampl)
+    df_Results["df_Buildings_t"] = set_df_buildings_t(df, ampl)
+    df_Results["df_Time"], df_Results["df_External"], df_Results["df_Index"] = set_dfs_other(df, ampl)
+    if method['save_stream_t']:
+        df_Results["df_Stream_t"] = set_df_stream_t(df, ampl)
+    if method['save_lca']:
+        df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(df, ampl)
+    if method['use_pv_orientation'] or method['use_facades']:
+        df_Results["df_PV_Surface"], df_Results["df_PV_orientation"] = set_dfs_pv(df, ampl)
+    if method["extract_parameters"]:
+        parameters_record = {}
+        for p, ampl_obj in ampl.getParameters():
+            try:
+                parameters_record[p] = ampl.getData(p).toPandas()
+            except:
+                print(p)
 
-class dataframes_results_MP(object):
-    """
-    This class contains results of the Master problem of the decomposition
-    """
+    if filter:
+        for df_name, df in df_Results.items():
+            df = df.fillna(0)  # replace all NaN with zeros
+            df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros
 
-    def __init__(self, ampl, binary=False, method={}, district=None, read_DHN=False):
-
-        df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
-        df.columns = ["Varname", "Value"]
-
-        # Dantzig Wolfe algorithm
-        df1 = get_variable_in_pandas(df, 'lambda')
-        df_DW = pd.concat([df1], axis=1)
-        df_DW.index.names = ['FeasibleSolution', 'Hub']
-        self.df_DW = df_DW.sort_index()
-
-        # Building_t
-        df1 = get_parameter_in_pandas(ampl, 'Grid_supply', multi_index=True)
-        df2 = get_parameter_in_pandas(ampl, 'Grid_demand', multi_index=True)
-        df_Buildings_t = pd.concat([df1, df2], axis=1)
-        if read_DHN:
-            df3 = get_parameter_in_pandas(ampl, 'flowrate_out', multi_index=True)
-            df3 = pd.concat({'Heat': df3})
-            df4 = get_parameter_in_pandas(ampl, 'flowrate_in', multi_index=True)
-            df4 = pd.concat({'Heat': df4})
-            df_Buildings_t = pd.concat([df_Buildings_t, df3, df4], axis=1)
-        df_Buildings_t.index.names = ['Layer', 'FeasibleSolution', 'Hub', 'Period', 'Time']
-        self.df_Buildings_t = df_Buildings_t.sort_index()
-
-        # Building
-        df1 = get_parameter_in_pandas(ampl, 'Costs_inv_rep_SPs', multi_index=True)
-        df2 = get_parameter_in_pandas(ampl, 'Costs_ft_SPs', multi_index=True)
-        df_Buildings = pd.concat([df1, df2], axis=1)
-        df_Buildings.index.names = ['FeasibleSolution', 'Hub']
-        self.df_Buildings = df_Buildings.sort_index()
-
-        # District
-        df1 = get_variable_in_pandas(df, 'Costs_House_op')
-        df2 = get_variable_in_pandas(df, 'Costs_House_inv')
-        df3 = get_variable_in_pandas(df, 'Costs_House_cft')
-        df4 = df1.values + df2
-        df4.columns = ["Costs_House_tot"]
-        df5 = get_variable_in_pandas(df, 'GWP_House_op')
-        df6 = get_variable_in_pandas(df, 'GWP_House_constr')
-        df_House = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
-        df_House.columns = ["Costs_op", "Costs_inv", "Costs_cft", "Costs_tot", "GWP_op", "GWP_constr"]
-        if read_DHN:
-            df7 = get_variable_in_pandas(df, 'diameter_max')
-            df8 = get_variable_in_pandas(df, 'DHN_inv_house')
-            df8.columns = ["DHN_inv"]
-            df9 = get_variable_in_pandas(df, 'flowrate_max')
-            df_House = pd.concat([df_House, df7, df8, df9], axis=1)
+    return df_Results
 
 
-        df1 = get_variable_in_pandas(df, 'Costs_op')
-        df2 = get_variable_in_pandas(df, 'Costs_inv')  # with comfort costs
-        df3 = get_variable_in_pandas(df, 'Costs_cft')  # with comfort costs
-        df4 = get_variable_in_pandas(df, 'Costs_tot')  # with comfort costs
-        df5 = get_variable_in_pandas(df, 'GWP_op')
-        df6 = get_variable_in_pandas(df, 'GWP_constr')
-        df_District = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
-        if read_DHN:
-            df7 = np.sqrt(np.sum(df_House[["diameter_max"]]**2)).to_frame().transpose()
-            df8 = get_variable_in_pandas(df, 'DHN_inv')
-            df_District = pd.concat([df_District, df7, df8], axis=1)
-        df_District = df_District.set_index(pd.Index(["Network"]))
-        df_District = pd.concat([df_House, df_District], axis=0)
-        df_District.index.names = ['Hub']
-        self.df_District = df_District.sort_index()
+def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DHN=False):
 
-        # df_beta
-        df1 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_CAPEX_constraint', False)
-        df1.columns = ['CAPEX']
-        df2 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_OPEX_constraint', False)
-        df2.columns = ['OPEX']
-        df3 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_GWP_constraint', False)
-        df3.columns = ['GWP']
-        df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_TOTEX_constraint', False)
-        df4.columns = ['TOTEX']
-        df_beta = pd.concat([df1, df2, df3, df4], axis=1).stack().droplevel(0)
-        df_beta = pd.DataFrame(df_beta, columns=['beta'])
-        df5 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_lca_constraint', False)
-        df5.columns = ['beta']
-        self.df_beta = pd.concat([df_beta, df5])
+    df_Results = dict()
+    df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
+    df.columns = ["Varname", "Value"]
 
-        # District_t
-        df1 = get_parameter_in_pandas(ampl, 'Cost_demand_network', multi_index=True)
-        df2 = get_parameter_in_pandas(ampl, 'Cost_supply_network', multi_index=True)
-        df3 = get_parameter_in_pandas(ampl, 'GWP_demand', multi_index=True)
-        df4 = get_parameter_in_pandas(ampl, 'GWP_supply', multi_index=True)
-        df5 = get_variable_in_pandas(df, 'Network_supply')
-        df6 = get_variable_in_pandas(df, 'Network_demand')
+    # Dantzig Wolfe algorithm
+    df1 = get_variable_in_pandas(df, 'lambda')
+    df_DW = pd.concat([df1], axis=1)
+    df_DW.index.names = ['FeasibleSolution', 'Hub']
+    df_Results["df_DW"] = df_DW.sort_index()
 
-        if binary:
-            df_District_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1).sort_index()
-        else:
-            df_District_t = pd.concat([df5, df6], axis=1)
-        df_District_t.index.names = ['Layer', 'Period', 'Time']
-        self.df_District_t = df_District_t.sort_index()
+    # Building_t
+    df1 = get_parameter_in_pandas(ampl, 'Grid_supply', multi_index=True)
+    df2 = get_parameter_in_pandas(ampl, 'Grid_demand', multi_index=True)
+    df_Buildings_t = pd.concat([df1, df2], axis=1)
+    if read_DHN:
+        df3 = get_parameter_in_pandas(ampl, 'flowrate_out', multi_index=True)
+        df3 = pd.concat({'Heat': df3})
+        df4 = get_parameter_in_pandas(ampl, 'flowrate_in', multi_index=True)
+        df4 = pd.concat({'Heat': df4})
+        df_Buildings_t = pd.concat([df_Buildings_t, df3, df4], axis=1)
+    df_Buildings_t.index.names = ['Layer', 'FeasibleSolution', 'Hub', 'Period', 'Time']
+    df_Results["df_Buildings_t"] = df_Buildings_t.sort_index()
 
-        # df_Dual
-        df1 = get_ampl_dual_values_in_pandas(ampl, 'convexity_1', False)
-        df1.columns = ['mu']
-        df_Dual = pd.concat([df1], axis=1)
-        df_Dual.index.names = ['Hub']
-        self.df_Dual = df_Dual.sort_index()
+    # Building
+    df1 = get_parameter_in_pandas(ampl, 'Costs_inv_rep_SPs', multi_index=True)
+    df2 = get_parameter_in_pandas(ampl, 'Costs_ft_SPs', multi_index=True)
+    df_Buildings = pd.concat([df1, df2], axis=1)
+    df_Buildings.index.names = ['FeasibleSolution', 'Hub']
+    df_Results["df_Buildings"] = df_Buildings.sort_index()
 
-        # df_Dual_t
-        df1 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst', True)
-        df1.columns = ['pi']
-        df2 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_GWP', True)
-        df2.columns = ['pi_GWP']
-        df3 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_lca', True).stack().unstack(0).droplevel(3)
-        df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_grid_constraint', False)
-        df4.columns = ['gamma_supply']
-        df_Dual_t = pd.concat([df1, df2, df3, df4], axis=1)
-        df_Dual_t.index.names = ['Layer', 'Period', 'Time']
-        self.df_Dual_t = df_Dual_t.sort_index()
+    # District
+    df1 = get_variable_in_pandas(df, 'Costs_House_op')
+    df2 = get_variable_in_pandas(df, 'Costs_House_inv')
+    df3 = get_variable_in_pandas(df, 'Costs_House_cft')
+    df4 = df1.values + df2
+    df4.columns = ["Costs_House_tot"]
+    df5 = get_variable_in_pandas(df, 'GWP_House_op')
+    df6 = get_variable_in_pandas(df, 'GWP_House_constr')
+    df_House = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
+    df_House.columns = ["Costs_op", "Costs_inv", "Costs_cft", "Costs_tot", "GWP_op", "GWP_constr"]
+    if read_DHN:
+        df7 = get_variable_in_pandas(df, 'diameter_max')
+        df8 = get_variable_in_pandas(df, 'DHN_inv_house')
+        df8.columns = ["DHN_inv"]
+        df9 = get_variable_in_pandas(df, 'flowrate_max')
+        df_House = pd.concat([df_House, df7, df8, df9], axis=1)
 
-        # Unit
-        tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
-        df1 = get_variable_in_pandas(df, 'Units_Use')
-        df2 = get_variable_in_pandas(df, 'Units_Mult')
-        df3 = tau[0] * get_variable_in_pandas(df, 'Costs_Unit_inv')
-        df4 = get_variable_in_pandas(df, 'GWP_Unit_constr')  # per year! For total- multiply with lifetime
-        df5 = get_parameter_in_pandas(ampl, 'lifetime', multi_index=False)
-        df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
-        if read_DHN:
-            df_DHN = pd.DataFrame([[1, 1, get_variable_in_pandas(df, 'DHN_inv')["DHN_inv"][0], 0, 0]], index=["DHN"], columns=df_Unit.columns)
-            df_Unit = pd.concat([df_Unit, df_DHN], axis=0)
-        df_Unit.index.names = ['Unit']
-        self.df_Unit = df_Unit.sort_index()
-        print(self.df_Unit)
 
-        # Unit_t
-        df1 = get_variable_in_pandas(df, 'Units_demand')
-        df2 = get_variable_in_pandas(df, 'Units_supply')
-        df3 = get_variable_in_pandas(df, 'BAT_E_stored')
-        df3 = pd.concat([df3], keys=['Electricity'], names=['Layer'])
-        df_Unit_t = pd.concat([df1, df2, df3], axis=1)
+    df1 = get_variable_in_pandas(df, 'Costs_op')
+    df2 = get_variable_in_pandas(df, 'Costs_inv')  # with comfort costs
+    df3 = get_variable_in_pandas(df, 'Costs_cft')  # with comfort costs
+    df4 = get_variable_in_pandas(df, 'Costs_tot')  # with comfort costs
+    df5 = get_variable_in_pandas(df, 'GWP_op')
+    df6 = get_variable_in_pandas(df, 'GWP_constr')
+    df_District = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
+    if read_DHN:
+        df7 = np.sqrt(np.sum(df_House[["diameter_max"]]**2)).to_frame().transpose()
+        df8 = get_variable_in_pandas(df, 'DHN_inv')
+        df_District = pd.concat([df_District, df7, df8], axis=1)
+    df_District = df_District.set_index(pd.Index(["Network"]))
+    df_District = pd.concat([df_House, df_District], axis=0)
+    df_District.index.names = ['Hub']
+    df_Results["df_District"] = df_District.sort_index()
 
-        if len(district.UnitsOfDistrict) > 0:
-            if "EV_district" in district.UnitsOfDistrict:
-                df4 = get_variable_in_pandas(df, 'EV_E_stored')
-                df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
-                df5 = get_parameter_in_pandas(ampl, 'EV_displacement', multi_index=True)
-                df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-                df_Unit_t = pd.concat([df_Unit_t, df4, df5], axis=1)
-        df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
-        self.df_Unit_t = df_Unit_t.sort_index()
+    # df_beta
+    df1 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_CAPEX_constraint', False)
+    df1.columns = ['CAPEX']
+    df2 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_OPEX_constraint', False)
+    df2.columns = ['OPEX']
+    df3 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_GWP_constraint', False)
+    df3.columns = ['GWP']
+    df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_TOTEX_constraint', False)
+    df4.columns = ['TOTEX']
+    df_beta = pd.concat([df1, df2, df3, df4], axis=1).stack().droplevel(0)
+    df_beta = pd.DataFrame(df_beta, columns=['beta'])
+    df5 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_lca_constraint', False)
+    df5.columns = ['beta']
+    df_Results["df_beta"] = pd.concat([df_beta, df5])
 
-        # df_lca
-        LCA_units = get_variable_in_pandas(df, 'lca_units')
-        LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
-        self.df_lca_Units = LCA_units
+    # District_t
+    df1 = get_parameter_in_pandas(ampl, 'Cost_demand_network', multi_index=True)
+    df2 = get_parameter_in_pandas(ampl, 'Cost_supply_network', multi_index=True)
+    df3 = get_parameter_in_pandas(ampl, 'GWP_demand', multi_index=True)
+    df4 = get_parameter_in_pandas(ampl, 'GWP_supply', multi_index=True)
+    df5 = get_variable_in_pandas(df, 'Network_supply')
+    df6 = get_variable_in_pandas(df, 'Network_demand')
 
-        LCA_tot = get_variable_in_pandas(df, 'lca_tot')
-        LCA_tot = LCA_tot.stack().unstack(level=0)
-        LCA_tot.index = ["Network"]
-        LCA_tot_house = get_variable_in_pandas(df, 'lca_tot_house')
-        LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
-        self.df_lca_Performance = pd.concat([LCA_tot_house, LCA_tot], axis=0)
-        self.df_lca_Performance.index.names = ['Hub']
+    if binary:
+        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1).sort_index()
+    else:
+        df_District_t = pd.concat([df5, df6], axis=1)
+    df_District_t.index.names = ['Layer', 'Period', 'Time']
+    df_Results["df_District_t"] = df_District_t.sort_index()
 
-        LCA_op = get_variable_in_pandas(df, 'lca_op')
-        LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
-        self.df_lca_operation = LCA_op
+    # df_Dual
+    df1 = get_ampl_dual_values_in_pandas(ampl, 'convexity_1', False)
+    df1.columns = ['mu']
+    df_Dual = pd.concat([df1], axis=1)
+    df_Dual.index.names = ['Hub']
+    df_Results["df_Dual"] = df_Dual.sort_index()
 
-        if method["actors_cost"]:
-            df1 = get_variable_in_pandas(df, 'Cost_demand_district').groupby(level=(0,2)).sum()
-            df2 = get_variable_in_pandas(df, 'Cost_supply_district').groupby(level=(0,2)).sum()
-            df3 = get_variable_in_pandas(df, 'Cost_self_consumption').groupby(level=1).sum()
-            df3 = pd.concat({'Electricity': df3})
-            self.df_actors_tariff = pd.concat([df1, df2, df3], axis=1)
+    # df_Dual_t
+    df1 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst', True)
+    df1.columns = ['pi']
+    df2 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_GWP', True)
+    df2.columns = ['pi_GWP']
+    df3 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_lca', True).stack().unstack(0).droplevel(3)
+    df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_grid_constraint', False)
+    df4.columns = ['gamma_supply']
+    df_Dual_t = pd.concat([df1, df2, df3, df4], axis=1)
+    df_Dual_t.index.names = ['Layer', 'Period', 'Time']
+    df_Results["df_Dual_t"] = df_Dual_t.sort_index()
 
-            self.df_actors = get_variable_in_pandas(df, 'objective_functions')
+    # Unit
+    tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
+    df1 = get_variable_in_pandas(df, 'Units_Use')
+    df2 = get_variable_in_pandas(df, 'Units_Mult')
+    df3 = tau[0] * get_variable_in_pandas(df, 'Costs_Unit_inv')
+    df4 = get_variable_in_pandas(df, 'GWP_Unit_constr')  # per year! For total- multiply with lifetime
+    df5 = get_parameter_in_pandas(ampl, 'lifetime', multi_index=False)
+    df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
+    if read_DHN:
+        df_DHN = pd.DataFrame([[1, 1, get_variable_in_pandas(df, 'DHN_inv')["DHN_inv"][0], 0, 0]], index=["DHN"], columns=df_Unit.columns)
+        df_Unit = pd.concat([df_Unit, df_DHN], axis=0)
+    df_Unit.index.names = ['Unit']
+    df_Results["df_Unit"] = df_Unit.sort_index()
+    print(df_Results["df_Unit"])
 
-            df1 = get_variable_in_pandas(df, 'C_op_renters_to_utility')
-            df2 = get_variable_in_pandas(df, 'C_op_renters_to_owners')
-            df3 = get_variable_in_pandas(df, 'C_op_utility_to_owners')
-            df4 = get_variable_in_pandas(df, 'Costs_House_inv')
-            df4.columns = ["owner_inv"]
-            df5 = get_variable_in_pandas(df, 'owner_portfolio')
-            df_actors = pd.concat([df1, df2, df3, df4, df5], axis=1)
-            df_6 = df_actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
-            df_actors = pd.concat([df_actors, df_6], axis=0)
-            self.df_District = pd.concat([self.df_District, df_actors], axis=1)
-            self.df_District.loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
+    # Unit_t
+    df1 = get_variable_in_pandas(df, 'Units_demand')
+    df2 = get_variable_in_pandas(df, 'Units_supply')
+    df3 = get_variable_in_pandas(df, 'BAT_E_stored')
+    df3 = pd.concat([df3], keys=['Electricity'], names=['Layer'])
+    df_Unit_t = pd.concat([df1, df2, df3], axis=1)
+
+    if len(district.UnitsOfDistrict) > 0:
+        if "EV_district" in district.UnitsOfDistrict:
+            df4 = get_variable_in_pandas(df, 'EV_E_stored')
+            df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
+            df5 = get_parameter_in_pandas(ampl, 'EV_displacement', multi_index=True)
+            df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
+            df_Unit_t = pd.concat([df_Unit_t, df4, df5], axis=1)
+    df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
+    df_Results["df_Unit_t"] = df_Unit_t.sort_index()
+
+    # df_lca
+    LCA_units = get_variable_in_pandas(df, 'lca_units')
+    LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
+    df_Results["df_lca_Units"] = LCA_units
+
+    LCA_tot = get_variable_in_pandas(df, 'lca_tot')
+    LCA_tot = LCA_tot.stack().unstack(level=0)
+    LCA_tot.index = ["Network"]
+    LCA_tot_house = get_variable_in_pandas(df, 'lca_tot_house')
+    LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
+    df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
+    df_Results["df_lca_Performance"].index.names = ['Hub']
+
+    LCA_op = get_variable_in_pandas(df, 'lca_op')
+    LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
+    df_Results["df_lca_operation"] = LCA_op
+
+    if method["actors_cost"]:
+        df1 = get_variable_in_pandas(df, 'Cost_demand_district').groupby(level=(0,2)).sum()
+        df2 = get_variable_in_pandas(df, 'Cost_supply_district').groupby(level=(0,2)).sum()
+        df3 = get_variable_in_pandas(df, 'Cost_self_consumption').groupby(level=1).sum()
+        df3 = pd.concat({'Electricity': df3})
+        df_Results["df_Actors_tariff"] = pd.concat([df1, df2, df3], axis=1)
+
+        df_Results["df_Actors"] = get_variable_in_pandas(df, 'objective_functions')
+
+        df1 = get_variable_in_pandas(df, 'C_op_renters_to_utility')
+        df2 = get_variable_in_pandas(df, 'C_op_renters_to_owners')
+        df3 = get_variable_in_pandas(df, 'C_op_utility_to_owners')
+        df4 = get_variable_in_pandas(df, 'Costs_House_inv')
+        df4.columns = ["owner_inv"]
+        df5 = get_variable_in_pandas(df, 'owner_portfolio')
+        df_Actors = pd.concat([df1, df2, df3, df4, df5], axis=1)
+        df_6 = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
+        df_Actors = pd.concat([df_Actors, df_6], axis=0)
+        df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)
+        df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
+
+    return df_Results
 
 def get_parameter_in_pandas(ampl, ampl_name, multi_index):
     # AMPl data in AMPLPY Dataframe

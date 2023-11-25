@@ -9,11 +9,11 @@ REHO repository
 ---------------
 
 Select a directory where you would like to have your files,
-open the terminal/cmd in this folder and clone the `REHO_model repository <https://github.com/Renewable-Energy-Hub-Optimizer/REHO_model>`_ using the command:
+open the terminal/cmd in this folder and clone the `REHO repository <https://github.com/Renewable-Energy-Hub-Optimizer/REHO>`_ using the command:
 
 .. code-block:: bash
 
-   git clone https://github.com/Renewable-Energy-Hub-Optimizer/REHO_model.git
+   git clone https://github.com/Renewable-Energy-Hub-Optimizer/reho.git
 
 
 Important: As soon as everything is cloned, please check out your own branch (from branch master).

@@ -104,14 +104,14 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
     df_KPI = return_district_result_object_dataframe(Pareto, 'df_KPI')
     hs_A = return_district_result_object_dataframe(Pareto, 'df_Buildings')["ERA"].xs(1, level=1).sum()
 
-    df_nbr = return_district_result_object_dataframe(Pareto, 'df_PV_orientation')  # df_PVA_module_nbr, df_PV_orientation
+    df_nbr = return_district_result_object_dataframe(Pareto, '["df_PV_orientation"]')  # df_PVA_module_nbr, ["df_PV_orientation"]
     total_surface_m2, roof_max_m2 = get_roof_max(df_nbr, hs_A)
     # some data processing
     MWh_PV = {}
     for i in Pareto[0]:
         if "df_Annuals" in dir(Pareto[0][1]):
-            id = ["PV" in id for id in Pareto[0][i].df_Annuals.xs("Electricity")["Supply_MWh"].index]
-            MWh_PV[i] = Pareto[0][i].df_Annuals.xs("Electricity")["Supply_MWh"][id].sum()
+            id = ["PV" in id for id in Pareto[0][i]["df_Annuals"].xs("Electricity")["Supply_MWh"].index]
+            MWh_PV[i] = Pareto[0][i]["df_Annuals"].xs("Electricity")["Supply_MWh"][id].sum()
         else:
             id = ["PV" in id for id in Pareto[0][i]["df_Annuals"].xs("Electricity")["Supply_MWh"].index]
             MWh_PV[i] = Pareto[0][i]["df_Annuals"].xs("Electricity")["Supply_MWh"][id].sum()

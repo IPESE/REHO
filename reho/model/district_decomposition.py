@@ -105,8 +105,8 @@ class district_decomposition:
         self.number_SP_solutions = pd.DataFrame()  # records number of solutions per iteration circle
         self.number_MP_solutions = pd.DataFrame()  # records number of solutions per iteration circle
 
-        self.results_SP = WR.encapsulation()
-        self.results_MP = WR.encapsulation()
+        self.results_SP = dict()
+        self.results_MP = dict()
 
         self.solver_attributes_SP = pd.DataFrame()
         self.solver_attributes_MP = pd.DataFrame()
@@ -210,12 +210,12 @@ class district_decomposition:
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation
                 for h in self.infrastructure.houses:
                     (df_Results, attr) = results[h].get()
-                    self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
             else:
                 for id, h in enumerate(self.infrastructure.houses):
                     df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
-                    self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
             self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
         return
@@ -279,14 +279,14 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.dataframes_results(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
         gc.collect()  # free memory
         if exitcode != 0:
             # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
-            if exitcode != 'solved?' or df_Results.df_Performance['Costs_op'][0] + df_Results.df_Performance['Costs_inv'][0] == 0:
+            if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
                 raise Exception('Sub problem did not converge')
 
         return df_Results, attr
@@ -561,11 +561,11 @@ class district_decomposition:
         # Solve ampl_MP
         ampl_MP.solve()
 
-        df_Results_MP = WR.dataframes_results_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
+        df_Results_MP = WR.get_df_Results_from_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
         print(ampl_MP.getCurrentObjective().getValues().toPandas())
 
         df = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl_MP)
-        self.add_Result_MP(Scn_ID, Pareto_ID, self.iter, df_Results_MP, df)
+        self.add_df_Results_MP(Scn_ID, Pareto_ID, self.iter, df_Results_MP, df)
         exitcode = exitcode_from_ampl(ampl_MP)
 
         del ampl_MP
@@ -594,11 +594,11 @@ class district_decomposition:
             # for now the memory which needs to be writable & shared is not parallel -> results have to be stored outside calculation
             for h in self.infrastructure.houses:
                 (df_Results, attr) = results[h].get()
-                self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
         else:
             for h in self.infrastructure.houses:
                 df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
-                self.add_Result_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
         self.feasible_solutions += 1  # after each 'round' of SP execution-> increase
 
@@ -669,7 +669,7 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.dataframes_results(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
@@ -677,7 +677,7 @@ class district_decomposition:
 
         if exitcode != 0:
             # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
-            if exitcode != 'solved?' or df_Results.df_Performance['Costs_op'][0] + df_Results.df_Performance['Costs_inv'][0] == 0:
+            if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
                 raise Exception('Sub problem did not converge')
 
         return df_Results, attr
@@ -727,7 +727,7 @@ class district_decomposition:
         Cinv = pd.DataFrame(dtype='float')
 
         for h in last_SP_results:
-            df_Grid_t = pd.concat([last_SP_results[h].df_Grid_t], keys=[(self.iter, self.feasible_solutions - 1, h)], names=['Iter', 'FeasibleSolution', 'house'])
+            df_Grid_t = pd.concat([last_SP_results[h]["df_Grid_t"]], keys=[(self.iter, self.feasible_solutions - 1, h)], names=['Iter', 'FeasibleSolution', 'house'])
             df_Grid_t = df_Grid_t.xs('Network', level='Hub')
             pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi')
             pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_GWP')
@@ -743,10 +743,10 @@ class district_decomposition:
             Cop = pd.concat([Cop, Cop_h])
 
             # Investment impact
-            df = last_SP_results[h].df_Performance.iloc[0]
+            df = last_SP_results[h]["df_Performance"].iloc[0]
             Cinv_h = pd.Series(df.Costs_rep + df.Costs_inv, index=["TOTEX"])
             Cinv_h_GWP = pd.Series(df.GWP_constr, index=["GWP"])
-            Cinv_h_lca = last_SP_results[h].df_lca_Units.sum()
+            Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
             Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
             Cinv_h.index = Cop_h.index
             Cinv = pd.concat([Cinv, Cinv_h])
@@ -765,7 +765,7 @@ class district_decomposition:
                 warnings.warn('beta value = 0')
             beta_penalty = sum(beta * obj_fct)
 
-            Costs_ft = last_SP_results[h].df_Performance.iloc[0].Costs_ft
+            Costs_ft = last_SP_results[h]["df_Performance"].iloc[0].Costs_ft
             reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu
             reduced_cost.at[h, 'Reduced_cost'] = reduced_cost_h
 
@@ -819,7 +819,7 @@ class district_decomposition:
 
         # select the result chosen by the MP
         last_results = self.results_MP[Scn_ID][Pareto_ID][self.iter]
-        lambdas = last_results.df_DW['lambda']
+        lambdas = last_results["df_DW"]['lambda']
         MP_selection = lambdas[lambdas >= 0.999].index
 
         # get selected Units
@@ -835,7 +835,7 @@ class district_decomposition:
 
         # append central district units
         if len(self.infrastructure.district_units) > 0:
-            df_U_District = pd.concat([last_results.df_Unit], keys=[(self.iter, 'District')], names=['FeasibleSolution', 'house'])
+            df_U_District = pd.concat([last_results["df_Unit"]], keys=[(self.iter, 'District')], names=['FeasibleSolution', 'house'])
             df_Unit = pd.concat([df_Unit, df_U_District])
         df_Unit = df_Unit.set_index(df_Unit.index.rename('Hub', level='house'))
         return df_Unit
@@ -866,7 +866,7 @@ class district_decomposition:
 
         # Annual sum
         ids = self.number_SP_solutions.iloc[0]
-        df_Time = self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][ids['FeasibleSolution']][ids['House']].df_Time
+        df_Time = self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][ids['FeasibleSolution']][ids['House']]["df_Time"]
         dp = df_Time.dp
         dp.iloc[-1] = 0  # exclude typical periods
         dp.iloc[-2] = 0
@@ -1046,17 +1046,21 @@ class district_decomposition:
         if not self.method['building-scale']:
             self.reduced_costs = self.reduced_costs.sort_values(['Pareto_ID', 'Iter'])
 
-    def reset_Results(self):
-        # result attributes
-        self.results_SP = WR.encapsulation()
-        self.results_MP = WR.encapsulation()
-        self.solver_attributes_SP = pd.DataFrame()
-        self.solver_attributes_MP = pd.DataFrame()
 
-    def add_Result_SP(self, Scn_ID, Pareto_ID, iter, house, result, attr):
+    def add_df_Results_SP(self, Scn_ID, Pareto_ID, iter, house, df_Results, attr):
 
-        self.results_SP[Scn_ID][Pareto_ID][iter][self.feasible_solutions][house] = result
+        if Scn_ID not in self.results_SP:
+            self.results_SP[Scn_ID] = {}
+        if Pareto_ID not in self.results_SP[Scn_ID]:
+            self.results_SP[Scn_ID][Pareto_ID] = {}
+        if iter not in self.results_SP[Scn_ID][Pareto_ID]:
+            self.results_SP[Scn_ID][Pareto_ID][iter] = {}
+        if self.feasible_solutions not in self.results_SP[Scn_ID][Pareto_ID][iter]:
+            self.results_SP[Scn_ID][Pareto_ID][iter][self.feasible_solutions] = {}
+        if house not in self.results_SP[Scn_ID][Pareto_ID][iter][self.feasible_solutions]:
+            self.results_SP[Scn_ID][Pareto_ID][iter][self.feasible_solutions][house] = {}
 
+        self.results_SP[Scn_ID][Pareto_ID][iter][self.feasible_solutions][house] = df_Results
         attr = pd.concat([attr], keys=[(house, iter, self.feasible_solutions)], names=['House', 'Iter', 'FeasibleSolution'])
         self.solver_attributes_SP = pd.concat([self.solver_attributes_SP, attr])
 
@@ -1068,15 +1072,22 @@ class district_decomposition:
         self.number_SP_solutions.iloc[-1, self.number_SP_solutions.columns.get_loc('MP_solution')] = number_iter_global
 
 
-    def add_Result_MP(self, Scn_ID, Pareto_ID, iter, result, attr):
+    def add_df_Results_MP(self, Scn_ID, Pareto_ID, iter, df_Results, attr):
 
-        self.results_MP[Scn_ID][Pareto_ID][iter] = result
+        if Scn_ID not in self.results_MP:
+            self.results_MP[Scn_ID] = {}
+        if Pareto_ID not in self.results_MP[Scn_ID]:
+            self.results_MP[Scn_ID][Pareto_ID] = {}
+        if iter not in self.results_MP[Scn_ID][Pareto_ID]:
+            self.results_MP[Scn_ID][Pareto_ID][iter] = {}
+
+        self.results_MP[Scn_ID][Pareto_ID][iter] = df_Results
         attr = pd.concat([attr], keys=[iter], names=['Iter'])
         self.solver_attributes_MP = pd.concat([self.solver_attributes_MP, attr])
         col = self.number_SP_solutions.columns.difference(["House"])
-        self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean()
+        self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean(numeric_only=True)
 
-    def __split_parameter_sets_per_building(self, h, parameters_SP = dict({})):
+    def __split_parameter_sets_per_building(self, h, parameters_SP=dict({})):
         """
         Description
         -----------
@@ -1118,18 +1129,18 @@ class district_decomposition:
 
         return buildings_data_SP, parameters_SP, infrastructure_SP
 
-    def return_combined_SP_results(self, dict_results, result_dataframe):
+    def return_combined_SP_results(self, df_Results, df_name):
 
-        t = {(i, j, k, l, m): getattr(dict_results[i][j][k][l][m], result_dataframe)
-             for i in dict_results.keys()
-             for j in dict_results[i].keys()
-             for k in dict_results[i][j].keys()
-             for l in dict_results[i][j][k].keys()
-             for m in dict_results[i][j][k][l].keys()
+        t = {(i, j, k, l, m): df_Results[i][j][k][l][m][df_name]
+             for i in df_Results.keys()
+             for j in df_Results[i].keys()
+             for k in df_Results[i][j].keys()
+             for l in df_Results[i][j][k].keys()
+             for m in df_Results[i][j][k][l].keys()
              }
 
         df_district_results = pd.concat(t.values(), keys=t.keys(), names=['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'], axis=0)
         df_district_results = df_district_results.sort_index()
-        # TODO maybe drop building level as it is in the result_dataframe
+        # TODO maybe drop building level
 
         return df_district_results

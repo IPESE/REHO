@@ -35,36 +35,36 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     # Generate configuration
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
                     cluster=cluster, scenario=scenario, method=method, solver="gurobi")
 
     tariffs_ranges = {'Electricity': {"Cost_demand_cst": [0.05, 0.20], "Cost_supply_cst": [0.15, 0.30]},
                       'NaturalGas': {"Cost_supply_cst": [0.1, 0.30]}}
 
-    reho_model.generate_configurations(n_sample=1, tariffs_ranges=tariffs_ranges)
+    reho.generate_configurations(n_sample=1, tariffs_ranges=tariffs_ranges)
     # if already have generated configuration, simply import them
-    # reho_model.read_configurations()
+    # reho.read_configurations()
 
     # find actors bounds
-    reho_model.scenario["name"] = "Renters"
-    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Renters")
-    reho_model.scenario["name"] = "Owners"
-    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Owners")
-    reho_model.scenario["name"] = "Utility"
-    reho_model.generate_pareto_actors(n_sample=1, bounds=None, actor="Utility")
+    reho.scenario["name"] = "Renters"
+    reho.generate_pareto_actors(n_sample=1, bounds=None, actor="Renters")
+    reho.scenario["name"] = "Owners"
+    reho.generate_pareto_actors(n_sample=1, bounds=None, actor="Owners")
+    reho.scenario["name"] = "Utility"
+    reho.generate_pareto_actors(n_sample=1, bounds=None, actor="Utility")
 
     # define samples
-    bound_o = -np.array([reho_model.results[i][0].df_actors.loc["Owners"][0] for i in reho_model.results])
-    bound_d = -np.array([reho_model.results[i][0].df_actors.loc["Utility"][0] for i in reho_model.results])
+    bound_o = -np.array([reho.results[i][0]["df_Actors"].loc["Owners"][0] for i in reho.results])
+    bound_d = -np.array([reho.results[i][0]["df_Actors"].loc["Utility"][0] for i in reho.results])
     bounds = {"Utility": [0, bound_d.max()/2], "Owners": [0, bound_o.max()/10], "Renters": [2.0, 3.0]}
 
     # Run MOO actors
-    reho_model.scenario["name"] = "MOO_actors"
-    reho_model.generate_pareto_actors(n_sample=25, bounds=bounds, actor="Renters")
+    reho.scenario["name"] = "MOO_actors"
+    reho.generate_pareto_actors(n_sample=25, bounds=bounds, actor="Renters")
 
-    print(reho_model.samples, "\n")
-    print(reho_model.results["Renters"][0].df_actors_tariff.xs("Electricity").mean(), "\n")
-    print(reho_model.results["Renters"][0].df_actors)
+    print(reho.samples, "\n")
+    print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
+    print(reho.results["Renters"][0]["df_Actors"])
 
     # Save results
-    SR.save_results(reho_model, save=["pickle_all"], filename='actors_MOO')
+    SR.save_results(reho, save=["save_all"], filename='actors_MOO')

@@ -6,20 +6,20 @@ def correct_network_values(reho, scn_id=0, pareto_id=0):
     This function is only useful to find KPIs from the district perspective with a building scale optimization.
     It takes results from the reho object and correct df_KPI, df_Annuals and df_Performance
     """
-    df_grid = reho.results[scn_id][pareto_id].df_Grid_t.xs(("Electricity", "Network"), level=("Layer", "Hub"))
+    df_grid = reho.results[scn_id][pareto_id]["df_Grid_t"].xs(("Electricity", "Network"), level=("Layer", "Hub"))
     df_export, df_import = get_transformer_import_exports(df_grid)
     nb_periods = reho.cluster["Periods"]
 
-    df = reho.results[scn_id][pareto_id].df_Grid_t.sort_index()
+    df = reho.results[scn_id][pareto_id]["df_Grid_t"].sort_index()
     df.loc[("Electricity", "Network"), 'Grid_demand'] = df_export['Grid_profile'].values
     df.loc[("Electricity", "Network"), 'Grid_supply'] = df_import['Grid_profile'].values
-    reho.results[scn_id][pareto_id].df_Grid_t = df
+    reho.results[scn_id][pareto_id]["df_Grid_t"] = df
 
-    df_grid = reho.results[scn_id][pareto_id].df_Grid_t
-    df_time = reho.results[scn_id][pareto_id].df_Time
+    df_grid = reho.results[scn_id][pareto_id]["df_Grid_t"]
+    df_time = reho.results[scn_id][pareto_id]["df_Time"]
     surface = reho.ERA
-    df_unit_t = reho.results[scn_id][pareto_id].df_Unit_t
-    df_KPI = reho.results[scn_id][pareto_id].df_KPI
+    df_unit_t = reho.results[scn_id][pareto_id]["df_Unit_t"]
+    df_KPI = reho.results[scn_id][pareto_id]["df_KPIs"]
 
     OPEX_m2 = return_correct_OPEX(df_grid,  df_time, surface)
     SS_SC = correct_SS_SC(df_grid, df_unit_t, df_time, nb_periods)
@@ -129,7 +129,7 @@ def return_BUI_GWPop(df_grid, surface, df_time, df_KPI):
 
 
 def correct_data_in_reho(results, OPEX_m2, SS_SC, GWP, GM_GU, surface):
-    df_KPI = results.df_KPI
+    df_KPI = results["df_KPIs"]
     df_KPI.at["Network", "SS"] = SS_SC["SS"]
     df_KPI.at["Network", "SC"] = SS_SC["SC"]
     df_KPI.at["Network", "PVP"] = SS_SC["PVP"]
@@ -145,13 +145,13 @@ def correct_data_in_reho(results, OPEX_m2, SS_SC, GWP, GM_GU, surface):
     df_KPI.at["Network", "GUs"] = GM_GU["GUs"]
     df_KPI.at["Network", "GMd"] = GM_GU["GMd"]
     df_KPI.at["Network", "GMs"] = GM_GU["GMs"]
-    results.df_KPI = df_KPI
+    results["df_KPIs"] = df_KPI
 
-    df_perf = results.df_Performance
+    df_perf = results["df_Performance"]
     df_perf.at["Network", "Costs_op"] = OPEX_m2["opex_m2"] * surface
     df_perf.at["Network", "GWP_op"] = GWP["gwp_op_m2"] * surface
 
-    results.df_Annuals.at[("Electricity", "Network"), "Demand_MWh"] = SS_SC["MWh_exp"]
-    results.df_Annuals.at[("Electricity", "Network"), "Supply_MWh"] = SS_SC["MWh_imp_el"]
+    results["df_Annuals"].at[("Electricity", "Network"), "Demand_MWh"] = SS_SC["MWh_exp"]
+    results["df_Annuals"].at[("Electricity", "Network"), "Supply_MWh"] = SS_SC["MWh_imp_el"]
 
     return results

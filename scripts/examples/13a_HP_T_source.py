@@ -61,13 +61,10 @@ def execute_DW_with_increasing_BUI():
     parameters = {"T_source": np.repeat({"Geothermal": 17.0}, nb_buildings)}
 
     # run opti
-    reho_model = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, parameters=parameters, solver="gurobi")
-    reho_model.single_optimization()
+    reho = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, parameters=parameters, solver="gurobi")
+    reho.single_optimization()
 
-    # get results
-    reho_model.remove_all_ampl_lib()
-
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='13a')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='13a')
     return
 
 

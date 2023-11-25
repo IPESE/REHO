@@ -63,16 +63,15 @@ def execute_DW_with_increasing_BUI():
     parameters = {"T_DHN_supply_cst": np.repeat(20.0, nb_buildings), "T_DHN_return_cst": np.repeat(15.0, nb_buildings)}
 
     # run opti
-    reho_model = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, parameters=parameters, solver="gurobi")
+    reho = reho(buildings_data, units=units, grids=grids, cluster=cluster, method=Method, scenario=Scenario, parameters=parameters, solver="gurobi")
 
-    reho_model.get_DHN_costs()  # run one optimization forcing DHN to find costs DHN connection per house
+    reho.get_DHN_costs()  # run one optimization forcing DHN to find costs DHN connection per house
 
-    reho_model.single_optimization()   # run optimization with DHN costs
+    reho.single_optimization()   # run optimization with DHN costs
 
-    # get results
-    reho_model.remove_all_ampl_lib()
 
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='12a')
+
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='12a')
     return
 
 

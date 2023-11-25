@@ -1,7 +1,6 @@
 from reho.model.reho import *
 from reho.model.preprocessing.QBuildings import QBuildingsReader
 
-
 if __name__ == '__main__':
 
     # Set scenario
@@ -37,8 +36,8 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
-    reho_model.single_optimization()
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho.single_optimization()
 
     # Save results
-    SR.save_results(reho_model, save=['xlsx', 'pickle'], filename='1a')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='1a')

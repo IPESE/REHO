@@ -11,13 +11,14 @@ def read_file(file_path):
 
 setup(
     name='REHO',
-    version='1.0.8',
+    version='1.0.9',
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',
-                      'ampl_module_base==20230622',
-                      'ampl_module_highs==20230621',
+                      'ampl_module_base',
+                      'ampl_module_highs',
                       'pandas>=1.5.3,<2.0.0', 'openpyxl>=3.1.2,<4.0.0', 'numpy>=1.23.4,<2.0.0', 'scipy>=1.9.2,<2.0.0', 'scikit-learn>=1.2.2,<2.0.0', 'scikit-learn-extra>=0.3.0', 'sqlalchemy>=1.4.42,<2.0.0', 'psycopg2>=2.9.4,<3.0.0', 'psycopg2-binary>=2.9.9,<3.0.0', 'geopandas>=0.12.2,<1.0.0', 'matplotlib>=3.6.1,<4.0.0', 'plotly>=5.10,<6.0.0', 'kaleido>=0.2.1,<1.0.0'],
+    dependency_links=['https://pypi.ampl.com'],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod'],
       },

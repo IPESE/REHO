@@ -44,8 +44,9 @@ def handle_zero_rows(df):
     return df.loc[~is_zero_row]
 
 
-def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, premium_version=False, additional_costs={}):
-    df_eco = df_eco.groupby(level=indexed_on, sort=False).sum()
+def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, scaling_factor=1, include_avoided=False, premium_version=False, additional_costs={}):
+    df_eco = df_eco.xs('Network', level='Hub', axis=0)
+    df_eco = df_eco.groupby(level=indexed_on, sort=False).sum()*scaling_factor
     indexes = df_eco.index.tolist()
 
     data_capex = df_eco.xs('investment', level='Category', axis=1).transpose()
@@ -123,17 +124,17 @@ def remove_building_from_index(df):
 
 
 def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long', add_annotation=True, filename=None,
-                     export_format='html', auto_open=False):
+                     export_format='html', scaling_factor=1, return_df=False):
     """
-        :param results: dictionary from REHO results pickle
+        :param results: dictionary from REHO results
         :param plot: choose among 'costs' and 'gwp'
-        :param label: indicates the labels to use and so the language. Pick among 'FR_long', 'FR_short',
-         'EN_long', 'EN_short'
+        :param label: indicates the labels to use and so the language. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'
         :param indexed_on: whether the results should be grouped on Scn_ID or Pareto_ID
-        :param filename: name of the plot
+        :param add_annotation: adds the numerical values along the bar plots
+        :param filename: name of the file to be saved
         :param export_format: can be either html, png or plotly_plot
-        :param auto_open: if export_format is html, to open it automatically in your browser
-        param scaling_factor: scaling factor for the plot if a linear assumption is made
+        :param scaling_factor: scaling factor for the plot if a linear assumption is made
+        :param return_df: a dataframe can be returned for further post-processing or reporting purposes
         :return:
     """
 
@@ -153,7 +154,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
                              'kgCO2']
         df_eco = df_eco.xs('impact', level='Perf_type')
 
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, True)
+    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=True, scaling_factor=scaling_factor)
 
     data_opex = data_opex.drop("avoided", level='type')
 
@@ -183,7 +184,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
                                textangle=0, align='center', valign='top',
                                showarrow=False
                                )
-            fig.add_annotation(x=xtick[i], y=max(capex[i], pos_opex[i], capex[i] + opex[i]) + max(capex + opex) * 0.04,
+            fig.add_annotation(x=xtick[i], y=max(capex[i], pos_opex[i], capex[i] + opex[i]) + text_placeholder,
                                text="<b>" + change_data.loc['total', lang] + "</b><br>" + str(capex[i] + opex[i]) +
                                     change_data.loc['unites', lang],
                                font=dict(size=9, color=cm['darkblue']),
@@ -247,24 +248,14 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
             fig.write_image(filename + '.' + export_format)
         if 'pdf' == export_format:
             fig.write_image(filename + '.' + export_format)
-    if auto_open:
-        fig.show()
-    return fig
+
+    if return_df:
+        return fig, pd.concat([data_capex, data_opex])
+    else:
+        return fig
 
 def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', filename=None,
-                            export_format='html', auto_open=False, premium_version=True, additional_costs={}):
-    """
-        :param results: dictionary from REHO results pickle
-        :param plot: choose among 'costs' and 'gwp'
-        :param label: indicates the labels to use and so the language. Pick among 'FR_long', 'FR_short',
-         'EN_long', 'EN_short'
-        :param indexed_on: whether the results should be grouped on Scn_ID or Pareto_ID
-        :param filename: name of the plot
-        :param export_format: can be either html, png or plotly_plot
-        :param auto_open: if export_format is html, to open it automatically in your browser
-        param scaling_factor: scaling factor for the plot if a linear assumption is made
-        :return:
-    """
+                            export_format='html', premium_version=True, additional_costs={}, scaling_factor=1, return_df=False):
 
     df_eco = dict_to_df(results, 'df_Economics')
 
@@ -285,7 +276,7 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
                              'kgCO2', 'Grid', 'Constr']
         df_eco = df_eco.xs('impact', level='Perf_type')
 
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, include_avoided=False, premium_version=premium_version, additional_costs=additional_costs)
+    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, scaling_factor=scaling_factor, include_avoided=False, premium_version=premium_version, additional_costs=additional_costs)
 
     costs = pd.concat([data_capex, data_opex.xs('costs', level='type')],
                       keys=['investment', 'operation'], names=['Category'])
@@ -403,13 +394,14 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
             fig.write_html(filename + '.' + export_format)
         if 'png' == export_format:
             fig.write_image(filename + '.' + export_format)
-    if auto_open:
-        fig.show()
-    return fig
+
+    if return_df:
+        return fig, pd.concat([costs, revenues])
+    else:
+        return fig
 
 
-
-def plot_pareto(results, label='FR_long', color='ColorPastel', auto_open=False):
+def plot_pareto(results, label='FR_long', color='ColorPastel', return_df=False):
 
     df_performance = dict_to_df(results, 'df_Performance').loc[
         (slice(None), slice(None), 'Network'),
@@ -485,9 +477,12 @@ def plot_pareto(results, label='FR_long', color='ColorPastel', auto_open=False):
         )
     )
 
-    if auto_open:
-        fig.show()
-    return fig
+    if return_df:
+        df = df_performance[['CAPEX', 'OPEX', 'TOTEX', 'GWP']].round(2)
+        df["Scenario"] = np.arange(1, len(df) + 1)
+        return fig, df[["Scenario", 'CAPEX', 'OPEX', 'TOTEX', 'GWP']]
+    else:
+        return fig
 
 def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style='plotly', annotation="TOTEX",
                 annot_offset=0, legend=True, save_fig=False, name_fig='pareto', format_fig='png'):
@@ -545,7 +540,7 @@ def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style
             plt.tight_layout()
             plt.savefig((name_fig + '.' + format_fig), format=format_fig, dpi=300)
 
-        plt.show()
+        return plt
 
     else:
 
@@ -727,7 +722,7 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', co
         plt.tight_layout()
         plt.savefig((name_fig + '_' + scenario + '.' + format_fig), format=format_fig, dpi=300)
 
-    plt.show()
+    return plt
 
 def merge_handles_labels(ax):
     handles = []
@@ -776,7 +771,7 @@ def plot_gwp_KPIs(results, save_fig=False, name='GWP', format='png'):
         plt.tight_layout()
         plt.savefig((name + '.' + format), format=format, dpi=300)
 
-    plt.show()
+    return plt
 
 
 def plot_LCOE(results, KPI_list, era, idx=None):
@@ -833,9 +828,8 @@ def plot_LCOE(results, KPI_list, era, idx=None):
                title='system design')
     axx.set_axis_off()
     plt.tight_layout()
-    plt.show()
 
-    return
+    return plt
 
 
 def plot_unit_size(results, units_to_plot):
@@ -857,11 +851,11 @@ def plot_unit_size(results, units_to_plot):
     plt.xlabel('Scenario [-]')
     plt.ylabel('Unit size [ref size]')
 
-    plt.show()
+    return plt
 
 
 def plot_profiles(df, units_to_plot, style='plotly', label='FR_long', color='ColorPastel', resolution='weekly',
-                  save_fig=False, name='plot_profiles', format='png', plot_curtailment=False):
+                  save_fig=False, name='plot_profiles', format='png', plot_curtailment=False, return_df=False):
     if resolution == 'monthly':
         items_average = 730
     elif resolution == 'weekly':
@@ -963,7 +957,7 @@ def plot_profiles(df, units_to_plot, style='plotly', label='FR_long', color='Col
             plt.tight_layout()
             plt.savefig((name + '.' + format), format=format, dpi=300)
 
-        plt.show()
+        return plt
 
     else:
         fig = go.Figure()
@@ -1030,11 +1024,14 @@ def plot_profiles(df, units_to_plot, style='plotly', label='FR_long', color='Col
             )
         )
 
-        fig.show()
+        if return_df:
+            return fig, pd.DataFrame()
+        else:
+            return fig
 
 
 def plot_resources(results, label='FR_long', color='ColorPastel',
-                   save_path="", filename=None, export_format='html', auto_open=False):
+                   save_path="", filename=None, export_format='html'):
 
     scenarios = list(results.keys())
     df_annuals = dict_to_df(results, 'df_Annuals')
@@ -1072,20 +1069,16 @@ def plot_resources(results, label='FR_long', color='ColorPastel',
             fig.to_html(filename)
         elif export_format == 'png':
             fig.to_image(filename)
-    if auto_open:
-        fig.show()
+
+    return fig
 
 
 def monthly_heat_balance(df_results):
     """
         return data to plot a monthly heat balance of the df_results
         TODO : check if multi-building is okay
-
-        Author : Florent
-
         Parameters:
             df_results (df): dataframe of a scenario
-
         Returns:
             df series of House_Q_heating, -House_Q_cooling, House_Q_convection, HeatGains, SolarGains
     """
@@ -1143,17 +1136,8 @@ def monthly_heat_balance(df_results):
     return House_Q_heating, -House_Q_cooling, House_Q_convection, HeatGains, SolarGains
 
 
-def sunburst_eud(results, label='FR_long', save_path="", filename=None, export_format='html', auto_open=False):
-    """
-    :param results: dictionary from REHO results pickle
-    :param label: indicates the labels to use and so the language. Pick among 'FR_long', 'FR_short',
-     'EN_long', 'EN_short'
-    :param save_path: directory to which the plot is to be saved
-    :param filename: name of the plot
-    :param export_format: can be either html or png
-    :param auto_open: if export_format is html, to open it automatically in your browser
-    :return: p, a plot that can be show
-    """
+def sunburst_eud(results, label='FR_long', save_path="", filename=None, export_format='html', scaling_factor=1, return_df=False):
+
     def add_class(row):
         ratio = [float(s) for s in str(row['ratio']).split("/")]
         class_ = row['id_class'].split("/")
@@ -1206,7 +1190,7 @@ def sunburst_eud(results, label='FR_long', save_path="", filename=None, export_f
                                                             '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
                                                             '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}']]
 
-        values_sun = [round(val, 2) for val in values_sun]
+        values_sun = [round(val*scaling_factor, 2) for val in values_sun]
         fig = go.Figure(go.Sunburst(
                           labels=child_name,
                           parents=parents_name,
@@ -1228,8 +1212,14 @@ def sunburst_eud(results, label='FR_long', save_path="", filename=None, export_f
                 fig.write_html(filename + export_format)
             return print("Sunburt printed at " + filename + export_format)
 
-        if auto_open:
-            return fig
+    if return_df:
+        df = pd.DataFrame()
+        df["Energy Use"] = child_name
+        df["Building Type"] = parents_name
+        df["Energy Demand"] = values_sun
+        return fig, df
+    else:
+        return fig
 
 
 
@@ -1389,9 +1379,8 @@ def plot_EVs(results, era, label='FR_long', color='ColorPastel'):
    #            ncol=2, title='system design')
    # axx.set_axis_off()
     plt.tight_layout()
-    plt.show()
 
-    return
+    return plt
 
 
 
@@ -1435,8 +1424,9 @@ def plot_load_duration_curve(results, ids, save_fig = False, label='FR_long', co
     axx.legend(custom_lines, ['centralized', 'decentralized'], bbox_to_anchor=(0.86, -0.12), frameon=False, ncol=2, title='design strategy', fontsize=18, title_fontsize=18)
     axx.set_axis_off()
 
-    if save_fig == True:
+    if save_fig:
         plt.tight_layout()
         format = 'pdf'
         plt.savefig(('figures\\load_duration_curves' + '.' + format), format=format, dpi=300)
-    plt.show()
+
+    return plt

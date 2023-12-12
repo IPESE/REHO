@@ -80,7 +80,7 @@ Buildings information
 Each building needs to be characterised to estimate its energy demand, its renewable potential, and its sector coupling potential.
 Such information about the buildings involved in the analysis can be provided to REHO in two ways:
 
-1. By connecting to the `QBuildings database <https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/index.html>`_ ;
+1. By connecting to the `QBuildings database <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ ;
 2. Or by reading CSV files.
 
 QBuildings

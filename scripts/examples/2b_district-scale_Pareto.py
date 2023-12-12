@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # Run optimization
     DW_params = {'max_iter': 2}
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters,
-                    cluster=cluster, scenario=scenario, method=method, DW_params=DW_params)
+                    cluster=cluster, scenario=scenario, method=method, DW_params=DW_params, solver="gurobi")
 
     reho.generate_pareto_curve()
 

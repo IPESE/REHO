@@ -52,7 +52,7 @@ Building stock database
 -----------------------
 
 Each building to be optimized needs to be characterized to estimate its energy demand, its renewable potential, and its sector coupling potential.
-REHO embeds a coupling with `QBuildings <https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/index.html>`_,
+REHO embeds a coupling with `QBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_,
 a GIS database characterizing the entire Swiss building stock from an energy point of view (end-use demand, buildings morphology, endogenous resources).
 This database is built by gathering different public databases and combining with norms and standard energy requirements
 as defined by the Société suisse des Ingénieurs et des Architectes (SIA).
@@ -66,7 +66,7 @@ Typical days
 
 The task of optimally designing and scheduling energy systems with a high share of renewable energies is complex and computationally demanding.
 REHO includes machine learning techniques to cluster yearly input data to typical periods.
-The model operates in the conventional way with typical periods of 24 hours, but can be freely adapted to a finer or coarser ganularity as required.
+The model operates in the conventional way with typical periods of 24 hours, but can be freely adapted to a finer or coarser granularity as required.
 
 
 Energy communities

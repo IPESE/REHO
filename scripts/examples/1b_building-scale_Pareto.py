@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # Set scenario
     scenario = dict()
     scenario['Objective'] = ['OPEX', 'CAPEX']   # for multi-objective optimization we need two objectives
-    scenario['nPareto'] = 1     # the number of points we want per objective (number of optimizations = nPareto * 2 + 2)
+    scenario['nPareto'] = 2     # the number of points we want per objective (number of optimizations = nPareto * 2 + 2)
     scenario['name'] = 'pareto'
 
     # Set building parameters

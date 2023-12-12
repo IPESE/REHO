@@ -81,7 +81,7 @@ def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, ch
 
     return df_label, df_stv, fact*source_to_dest+adjustment
 
-def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, units='MWh', display_label_value=True):
+def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, units='MWh', display_label_value=True, scaling_factor=1):
     # Hypothèses :
     # 1. DHW demand taken as the supply of the watertank DHW
     # 2. no flow: electrical storage system to grid feed in, all to 'feed in electrical grid ' is from PV
@@ -109,7 +109,7 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
 
 
     # Select only not null lines in df_annuals
-    df_annuals = df_results['df_Annuals']
+    df_annuals = scaling_factor*df_results['df_Annuals']
     df_annuals = df_annuals.replace(0, np.nan)
     df_annuals = df_annuals.loc[df_annuals['Demand_MWh'].notnull() | df_annuals['Supply_MWh'].notnull()]
     df_annuals = df_annuals.replace(np.nan, 0).reset_index()
@@ -265,5 +265,4 @@ def plot_sankey(source, target, value, label_, color_):
           value = value
       ))])
 
-    fig.update_layout(title_text="Sankey Diagram", font_size=10)
-    fig.show()
+    return fig

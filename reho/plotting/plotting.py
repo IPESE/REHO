@@ -1,15 +1,16 @@
 import re
-from reho.paths import *
-from matplotlib import pyplot as plt
 import pandas as pd
 import numpy as np
-import os
+from reho.paths import *
+from reho.plotting import sankey
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-#from mpl_axes_aligner import align
+from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 from matplotlib.legend_handler import HandlerTuple
+
+
 # ---------------------------------------------------------------------------------------------
 # Definition of colors and labels
 cm = dict({'ardoise': '#413D3A', 'perle': '#CAC7C7', 'rouge': '#FF0000', 'groseille': '#B51F1F',
@@ -123,10 +124,10 @@ def remove_building_from_index(df):
     return df.set_index(index_modified)
 
 
-def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long', add_annotation=True, filename=None,
+def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, filename=None,
                      export_format='html', scaling_factor=1, return_df=False):
     """
-        :param results: dictionary from REHO results
+        :param results: dictionary of REHO results
         :param plot: choose among 'costs' and 'gwp'
         :param label: indicates the labels to use and so the language. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'
         :param indexed_on: whether the results should be grouped on Scn_ID or Pareto_ID
@@ -254,7 +255,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='FR_long'
     else:
         return fig
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', filename=None,
+def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', filename=None,
                             export_format='html', premium_version=True, additional_costs={}, scaling_factor=1, return_df=False):
 
     df_eco = dict_to_df(results, 'df_Economics')
@@ -400,8 +401,40 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='FR_long', fil
     else:
         return fig
 
+def plot_sankey(df_Results, label='EN_long', color='ColorPastel', scaling_factor=1, return_df=False):
 
-def plot_pareto(results, label='FR_long', color='ColorPastel', return_df=False):
+    source, target, value, label_, color_ = sankey.df_sankey(df_Results, label=label, color=color, precision=2,
+                                                             units='MWh', display_label_value=True,
+                                                             scaling_factor=scaling_factor)
+    
+    fig = go.Figure(data=[go.Sankey(
+        orientation = "h",
+        valueformat = ".2f",
+        valuesuffix = " MWh",
+        node = dict(
+          pad = 15,
+          thickness = 20,
+          line = dict(color = "black", width = 0.5),
+          label = label_,
+          color = color_,
+        ),
+        link = dict(
+          source = source,
+          target = target,
+          value = value
+      ))])
+
+    if return_df:
+        df = pd.DataFrame()
+        df["source"] = [label_[int(s)].split("\n")[0] for s in source]
+        df["target"] = [label_[int(t)].split("\n")[0] for t in target]
+        df["Energy [MWh/yr]"] = value
+        return fig, df
+    else:
+        return fig
+
+
+def plot_pareto(results, label='EN_long', color='ColorPastel', return_df=False):
 
     df_performance = dict_to_df(results, 'df_Performance').loc[
         (slice(None), slice(None), 'Network'),
@@ -578,7 +611,7 @@ def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style
         return fig
 
 
-def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='FR_long', color='ColorPastel',
+def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', color='ColorPastel',
                       save_fig=False, name_fig='pareto_units', format_fig='png', opex_line=False, title=None):
 
     fig, ax = plt.subplots()
@@ -854,7 +887,7 @@ def plot_unit_size(results, units_to_plot):
     return plt
 
 
-def plot_profiles(df, units_to_plot, style='plotly', label='FR_long', color='ColorPastel', resolution='weekly',
+def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='ColorPastel', resolution='weekly',
                   save_fig=False, name='plot_profiles', format='png', plot_curtailment=False, return_df=False):
     if resolution == 'monthly':
         items_average = 730
@@ -1030,7 +1063,7 @@ def plot_profiles(df, units_to_plot, style='plotly', label='FR_long', color='Col
             return fig
 
 
-def plot_resources(results, label='FR_long', color='ColorPastel',
+def plot_resources(results, label='EN_long', color='ColorPastel',
                    save_path="", filename=None, export_format='html'):
 
     scenarios = list(results.keys())
@@ -1136,7 +1169,7 @@ def monthly_heat_balance(df_results):
     return House_Q_heating, -House_Q_cooling, House_Q_convection, HeatGains, SolarGains
 
 
-def sunburst_eud(results, label='FR_long', save_path="", filename=None, export_format='html', scaling_factor=1, return_df=False):
+def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_format='html', scaling_factor=1, return_df=False):
 
     def add_class(row):
         ratio = [float(s) for s in str(row['ratio']).split("/")]
@@ -1310,7 +1343,7 @@ def plot_EUD_FES(results):
 
 
 
-def plot_EVs(results, era, label='FR_long', color='ColorPastel'):
+def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
 
     fig, ax = plt.subplots(1, figsize=(5.5, 4.2))
     ax2 = ax.twinx()
@@ -1384,7 +1417,7 @@ def plot_EVs(results, era, label='FR_long', color='ColorPastel'):
 
 
 
-def plot_load_duration_curve(results, ids, save_fig = False, label='FR_long', color='ColorPastel'):
+def plot_load_duration_curve(results, ids, save_fig = False, label='EN_long', color='ColorPastel'):
 
     fig, ax = plt.subplots(figsize=(9, 6))
     axx = ax.twinx()

@@ -1,36 +1,32 @@
 from reho.model.reho import *
-from reho.model.preprocessing.QBuildings import QBuildingsReader
 
 
 if __name__ == '__main__':
+
+    # Set building parameters
+    # you can as well define your district from a csv file instead of reading the database
+    reader = QBuildingsReader()
+    qbuildings_data = reader.read_csv(buildings_filename='multiple_buildings.csv', nb_buildings=2)
+
+    # Select weather data
+    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
-
-    # Set building parameters
-    reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='multiple_buildings.csv', nb_buildings=2) # you can as well define your district from a csv file instead of reading the database
-
-    # Set specific parameters
-    parameters = {}
-
-    # Select clustering file
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-
-    # Choose energy system structure options
-    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
+    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
-
-    method = {'building-scale': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
+    # Set method options
+    method = {'building-scale': True}
+
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

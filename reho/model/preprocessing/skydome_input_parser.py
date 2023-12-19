@@ -97,13 +97,13 @@ def irradiation_to_df(ampl,irradiation_csv, File_ID):
 
     for p in df.index:
         date1 = df.xs(p).Date
-        end = PeriodDuration.xs(p+1).TimeEnd #ampl starts at 1
+        end = PeriodDuration.xs(p+1).TimeEnd  # ampl starts at 1
 
-        date2 = date1 + timedelta(hours=end-1)
-        df_period =     df_IRR.loc[date1:date2]
+        date2 = date1 + timedelta(hours=int(end)-1)
+        df_period = df_IRR.loc[date1:date2]
 
-        for t in np.arange(1, int(end)+1): #ampl starts at 1
-            list_timesteps.append((p +1 , t)) #create ample index
+        for t in np.arange(1, int(end)+1):  # ampl starts at 1
+            list_timesteps.append((p +1, t))  # create ample index
 
         df_p = pd.concat([df_p, df_period])
 

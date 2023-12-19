@@ -1,9 +1,7 @@
 from reho.model.reho import *
-from reho.model.preprocessing.QBuildings import *
 
 
 if __name__ == '__main__':
-
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
@@ -20,18 +18,19 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    # you can add more resources layers than simply electricity and gas
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.10, "Cost_supply_cst": 0.26},
+                                             'Wood': {},
+                                             'Oil': {},
+                                             'NaturalGas': {'NaturalGas': {"Cost_demand_cst": 0.06, "Cost_supply_cst": 0.20}}})
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options
-    # add stochasticity in the demand profiles given by the SIA standards, tunable with:
-    # - standard deviation on the peak demand
-    # - standard deviation on the time-shift
-    method = {'building-scale': True, 'include_stochasticity': True, 'sd_stochasticity': [0.1, 2]}
+    method = {'building-scale': True}
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3b')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3e')

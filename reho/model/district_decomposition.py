@@ -983,7 +983,7 @@ class district_decomposition:
         elif dual_variable in ['mu']:
             attribute = 'df_Dual'
 
-        df = getattr(self.results_MP[Scn_ID][Pareto_ID][iter], attribute)
+        df = self.results_MP[Scn_ID][Pareto_ID][iter][attribute]
         if dual_variable == 'mu':
             dual_value = df[dual_variable][House]  # dual variable from previous iteration
         elif dual_variable == 'pi_lca':

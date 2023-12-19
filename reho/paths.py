@@ -2,15 +2,14 @@ import os
 import platform
 from pathlib import Path
 
-#from dotenv import load_dotenv
-#load_dotenv()
-#AMPL_PATH = os.getenv('AMPL_PATH')
+from dotenv import load_dotenv
+load_dotenv()
 
-if "AMPL_PATH" not in os.environ:
-    if platform.system() == 'Darwin':
-        os.environ["AMPL_PATH"] = "/Users/lepour/Applications/ampl"
-    else:
-        os.environ["AMPL_PATH"] = "C:/AMPL"
+# if "AMPL_PATH" not in os.environ:
+#     if platform.system() == 'Darwin':
+#         os.environ["AMPL_PATH"] = "/Users/lepour/Applications/ampl"
+#     else:
+#         os.environ["AMPL_PATH"] = "C:/AMPL"
 
 
 path_to_reho = os.path.dirname(__file__)

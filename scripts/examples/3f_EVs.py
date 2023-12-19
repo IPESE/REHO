@@ -1,5 +1,4 @@
 from reho.model.reho import *
-from reho.model.preprocessing.QBuildings import *
 
 
 if __name__ == '__main__':
@@ -17,21 +16,21 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
-    scenario['enforce_units'] = []
+    scenario['enforce_units'] = ['EV_district']
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids, district_units=True)
 
     # Set method options
-    # add stochasticity in the demand profiles given by the SIA standards, tunable with:
-    # - standard deviation on the peak demand
-    # - standard deviation on the time-shift
-    method = {'building-scale': True, 'include_stochasticity': True, 'sd_stochasticity': [0.1, 2]}
+    method = {'building-scale': True}
+
+    # Set specific parameters
+    parameters = {'n_vehicles': 6}
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3b')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3f')

@@ -1,8 +1,10 @@
 import re
 import pandas as pd
 import numpy as np
-import plotly.graph_objects as go
-from reho.plotting.plotting import layout
+from reho.paths import *
+
+# Colors and labels for units and layers
+layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Name').dropna(how='all')
 
 def update_label(source_name, target_name, df_label):
     """
@@ -246,23 +248,3 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     color = list(df_label.color)
 
     return source, target, value, label, color
-
-def plot_sankey(source, target, value, label_, color_):
-    fig = go.Figure(data=[go.Sankey(
-        orientation = "h",
-        valueformat = ".2f",
-        valuesuffix = " MWh",
-        node = dict(
-          pad = 15,
-          thickness = 20,
-          line = dict(color = "black", width = 0.5),
-          label = label_,
-          color = color_,
-        ),
-        link = dict(
-          source = source,
-          target = target,
-          value = value
-      ))])
-
-    return fig

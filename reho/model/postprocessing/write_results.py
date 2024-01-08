@@ -299,7 +299,7 @@ def get_df_Results_from_compact(ampl, scenario, method, buildings_data, filter=T
         # df_PV_Surface_profiles.index.names = ['Hub','Unit','Surface', 'Azimuth','Tilt', 'Period', 'Time']
         # df_Results["df_PV_Surface"]_profiles = df_PV_Surface_profiles.sort_index()
 
-        return df_PV_Surface, ["df_PV_orientation"]
+        return df_PV_Surface, df_PV_orientation
 
     def set_dfs_other(df, ampl):
         # Time

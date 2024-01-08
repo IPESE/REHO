@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import math
 from csv import Sniffer
+from pathlib import Path
 from pandas import read_csv, read_table, read_excel
 import sys
 

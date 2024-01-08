@@ -86,7 +86,7 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, scaling_factor=1, includ
     if 'gasoline' in additional_costs:
         data_opex.loc[('costs', 'Gasoline'), :] = [additional_costs['gasoline'], additional_costs['gasoline'], 0, 0, 0]
 
-    if 'gasoline' in additional_costs:
+    if 'ict' in additional_costs:
         data_opex.loc[('costs', 'ict'), :] = [additional_costs['ict'], additional_costs['ict'], additional_costs['ict'], 0, 0]
 
     if neg:

@@ -522,17 +522,16 @@ class compact_optimization:
 
         # set new indexed sets
         for s in self.set_indexed_compact:
-            for i, instance in ampl.getSet(str(s)):
-                # print('Set Values for ' + str(instance) )
-                # i: 'Building1', instance: set SurfaceOfHouse['Building1'];
-                if isinstance(self.set_indexed_compact[s], np.ndarray):
-                    instance.setValues(self.set_indexed_compact[s])
-                elif isinstance(self.set_indexed_compact[s], dict):
-                    # i : ('Building1', 8280.0), instance: set ConfigOfSurface['Building1', 8280.0];
-                    instance.setValues(self.set_indexed_compact[s][i])
-                    # print(instance.getValues())
-                else:
-                    raise ValueError('Type Error setting AMPLPY Set', s)
+            if isinstance(self.set_indexed_compact[s], np.ndarray):
+                ampl.getSet(str(s)).setValues(self.set_indexed_compact[s])
+            elif isinstance(self.set_indexed_compact[s], dict):
+                for i, instance in ampl.getSet(str(s)):
+                    try:
+                        instance.setValues(self.set_indexed_compact[s][i])
+                    except ValueError:
+                        instance.setValues([self.set_indexed_compact[s][i]])
+            else:
+                raise ValueError('Type Error setting AMPLPY Set', s)
 
         # set new input Parameter
         for i in self.parameters_to_ampl:

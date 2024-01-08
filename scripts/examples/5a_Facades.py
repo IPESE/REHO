@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     # Set method options
     # select PV orientation and/or facades methods
-    method = {'use_pv_orientation': True, 'use_facades': False, 'building-scale': True}
+    method = {'use_pv_orientation': True, 'use_facades': True, 'building-scale': True}
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

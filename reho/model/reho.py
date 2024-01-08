@@ -16,7 +16,7 @@
 # Description and complete License: see LICENSE file.
 # -------------------------------------------------------------------------------------------------------------------------
 #
-# Version 1.0 of the model.
+# Version 1.0
 # See documentation : https://reho.readthedocs.io/en/main/
 # See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
 

@@ -338,7 +338,7 @@ colors_dict = {0:'black', 1: EPFL_red, 2: EPFL_light_grey, 3: Salmon, 4: EPFL_le
 
 n = [277, 10559, 14824, 17316, 17335][0]
 picklename = 'Pareto_DWD' + str(n) + '.pickle'
-with open('../../shared_executables_REHO/plotting/ECOS paper/2023/results/' + picklename, 'rb') as f:
+with open('../../shared_executables_REHO/plotting/ECOS paper/y_2023/results/' + picklename, 'rb') as f:
     Pareto = pickle.load(f)
 Pareto = Pareto[n].results
 

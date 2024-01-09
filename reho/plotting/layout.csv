@@ -13,7 +13,7 @@ NG_Cogeneration,NG cogeneration,COGEN,Cogénération,#413D3A,ardoise,#413D3A,ard
 NG_Cogeneration_district,District cogeneration,COGEN,Cogénération (district),#413D3A,ardoise,#413D3A,ardoise
 Oil,Oil,OIL,Mazout,#000000,dark,#8B4513,brown
 OIL_Boiler,Oil boiler,OB,Chaudière à mazout,#000000,dark,#8B4513,brown
-Gasoline,Oil,OIL,Essence voiture,#55552b,kaki,#55552b,kaki
+Gasoline,Gasoline,GAS,Essence,#55552b,kaki,#55552b,kaki
 WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown,#A2CD5A,greenlight
 Wood,Wood network,Wood,Bois,#8B4513,brown,#556B2F,green
 ,,,,,,,
@@ -68,7 +68,7 @@ EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC
 Air_Conditioner,Air conditioner,AC,Climatiseur,#00008B,darkblue,#9AC0CD,bluegrey
 Cooling,Fossil-fuel boiler,BO,Chaudière fossile,#00008B,darkblue,#9AC0CD,bluegrey
 ,,,,,,,
-Isolation,Refurbishment,REF,Rénovation,#69B58A,green,#9AC0CD,bluegrey
-Isolation_roof,Refurbishment roof,REF1,Isolation toiture,#a9d6bc,green_light,#9AC0CD,bluegrey
-Isolation_facade,Refurbishment facade,REF2,Isolation façade,#87c5a1,green_medium,#9AC0CD,bluegrey
-Isolation_full,Refurbishment full,REF3,Isolation complète,#53ac7a,green_dark,#9AC0CD,bluegrey
+Isolation,Thermal insulation,INS,Isolation,#69B58A,green,#9AC0CD,bluegrey
+Isolation_roof,Roof insulation,INS1,Isolation toiture,#a9d6bc,green_light,#9AC0CD,bluegrey
+Isolation_facade,Facade insulation,INS2,Isolation façade,#87c5a1,green_medium,#9AC0CD,bluegrey
+Isolation_full,Complete insulation,INS3,Isolation complète,#53ac7a,green_dark,#9AC0CD,bluegrey

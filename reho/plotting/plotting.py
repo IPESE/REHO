@@ -45,7 +45,7 @@ def handle_zero_rows(df):
     return df.loc[~is_zero_row]
 
 
-def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, scaling_factor=1, include_avoided=False, premium_version=False, additional_costs={}):
+def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, premium_version=False, additional_costs={}, scaling_factor=1):
     df_eco = df_eco.xs('Network', level='Hub', axis=0)
     df_eco = df_eco.groupby(level=indexed_on, sort=False).sum()*scaling_factor
     indexes = df_eco.index.tolist()
@@ -53,9 +53,8 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, scaling_factor=1, includ
     data_capex = df_eco.xs('investment', level='Category', axis=1).transpose()
     data_capex.index.names = ['Unit']
 
-    # TODO: clean isolation cost
     if 'isolation' in additional_costs:
-        data_capex.loc[('Isolation'), :] = [0, 0, 0, 0, additional_costs['isolation']]
+        data_capex.loc[('Isolation'), :] = additional_costs['isolation']
 
     data_capex = data_capex.reset_index().merge(layout, left_on="Unit", right_on='Name').set_index("Unit").fillna(0)
 
@@ -82,12 +81,11 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, scaling_factor=1, includ
 
     data_opex = data_opex.drop("PV", level='Layer')
 
-    # TODO: clean additional costs
-    if 'gasoline' in additional_costs:
-        data_opex.loc[('costs', 'Gasoline'), :] = [additional_costs['gasoline'], additional_costs['gasoline'], 0, 0, 0]
+    if 'mobility' in additional_costs:
+        data_opex.loc[('costs', 'Gasoline'), :] = additional_costs['mobility']
 
     if 'ict' in additional_costs:
-        data_opex.loc[('costs', 'ict'), :] = [additional_costs['ict'], additional_costs['ict'], additional_costs['ict'], 0, 0]
+        data_opex.loc[('costs', 'ict'), :] = additional_costs['ict']
 
     if neg:
         indices = data_opex.index.get_level_values(0)
@@ -124,7 +122,7 @@ def remove_building_from_index(df):
     return df.set_index(index_modified)
 
 
-def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, filename=None,
+def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False, additional_costs={}, filename=None,
                      export_format='html', scaling_factor=1, return_df=False):
     """
         :param results: dictionary of REHO results
@@ -132,12 +130,17 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         :param label: indicates the labels to use and so the language. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'
         :param indexed_on: whether the results should be grouped on Scn_ID or Pareto_ID
         :param add_annotation: adds the numerical values along the bar plots
+        :param additional_costs dict of additional costs to include (choose between 'isolation', 'mobility' and 'ict') and scaling values
         :param filename: name of the file to be saved
         :param export_format: can be either html, png or plotly_plot
         :param scaling_factor: scaling factor for the plot if a linear assumption is made
         :param return_df: a dataframe can be returned for further post-processing or reporting purposes
         :return:
     """
+
+    sc = list(results.keys())[0]
+    id = list(results[sc].keys())[0]
+    era = results[sc][id]['df_Buildings'].ERA
 
     df_eco = dict_to_df(results, 'df_Economics')
 
@@ -149,13 +152,16 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         change_data['EN'] = ['Costs_Unit_inv', 'price', 'CAPEX', 'OPEX', 'Costs [CHF/y]', 'Costs', 'TOTEX', 'CHF']
         df_eco = df_eco.xs('costs', level='Perf_type')
     elif plot == 'gwp':
-        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Réseau', 'GWP [kgCO2/an]', 'Émissions', 'Total',
-                             'kgCO2']
-        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Grid', 'GWP [kgCO2/y]', 'Emissions', 'Total',
-                             'kgCO2']
+        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Réseau', 'GWP [kgCO2/an]', 'Émissions', 'Total', 'kgCO2']
+        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Grid', 'GWP [kgCO2/y]', 'Emissions', 'Total', 'kgCO2']
         df_eco = df_eco.xs('impact', level='Perf_type')
 
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=True, scaling_factor=scaling_factor)
+    if per_m2:
+        df_eco = df_eco / era.sum()
+        change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
+        change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+
+    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=True, additional_costs=additional_costs, scaling_factor=scaling_factor)
 
     data_opex = data_opex.drop("avoided", level='type')
 
@@ -255,29 +261,33 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     else:
         return fig
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', filename=None,
-                            export_format='html', premium_version=True, additional_costs={}, scaling_factor=1, return_df=False):
+def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', include_avoided=False, premium_version=True, per_m2=False, additional_costs={},
+                filename=None, export_format='html', scaling_factor=1, return_df=False):
+    sc = list(results.keys())[0]
+    id = list(results[sc].keys())[0]
+    era = results[sc][id]['df_Buildings'].ERA
 
     df_eco = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
-    change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1',
-                         'leg_2']
+    change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1', 'leg_2']
     lang = re.split('_', label)[0]
     if plot == 'costs':
-        change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/m2/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX',
-                             'CAPEX']
-        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/m2/y]', 'Costs', 'TOTEX', 'CHF', 'OPEX',
-                             'CAPEX']
+        change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX', 'CAPEX']
+        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/m2/y]', 'Costs', 'TOTEX', 'CHF', 'OPEX', 'CAPEX']
         df_eco = df_eco.xs('costs', level='Perf_type')
     elif plot == 'gwp':
-        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Evitées', 'GWP [kgCO2/an]', 'Émissions', 'Total',
-                             'kgCO2', 'Réseau', 'Constr']
-        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Avoided', 'GWP [kgCO2/y]', 'Emissions', 'Total',
-                             'kgCO2', 'Grid', 'Constr']
+        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Evitées', 'GWP [kgCO2/an]', 'Émissions', 'Total', 'kgCO2', 'Réseau', 'Constr']
+        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Avoided', 'GWP [kgCO2/y]', 'Emissions', 'Total', 'kgCO2', 'Grid', 'Constr']
         df_eco = df_eco.xs('impact', level='Perf_type')
 
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, scaling_factor=scaling_factor, include_avoided=False, premium_version=premium_version, additional_costs=additional_costs)
+    if per_m2:
+        df_eco = df_eco / era.sum()
+        change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
+        change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+
+    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, include_avoided=include_avoided,
+                                                 premium_version=premium_version, additional_costs=additional_costs, scaling_factor=scaling_factor)
 
     costs = pd.concat([data_capex, data_opex.xs('costs', level='type')],
                       keys=['investment', 'operation'], names=['Category'])

@@ -1,4 +1,6 @@
 import configparser
+import os.path
+
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
 import geopandas as gpd
@@ -69,8 +71,7 @@ class QBuildingsReader:
         return
 
     def read_csv(self, buildings_filename, nb_buildings=None, roofs_filename=None, facades_filename=None):
-
-        self.data['buildings'] = file_reader(os.path.join(path_to_buildings, buildings_filename))
+        self.data['buildings'] = file_reader(path_handler(buildings_filename))
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
         if nb_buildings is None:
@@ -554,6 +555,23 @@ def return_shadows_id_building(id_building, df_district):
     df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow'})
 
     return df_beta_dome
+
+
+def path_handler(path_given):
+    """To handle the paths, absolute or not"""
+    if path_given == 'single_building' or path_given == 'multiple_buildings':
+        return os.path.join(path_to_buildings, path_given + '.csv')
+
+    if os.path.isabs(path_given):
+        if os.path.isfile(path_given):
+            return path_given
+        else:
+            print('The absolute path that was given is not a valid file.')
+    else:
+        if os.path.isfile(os.path.realpath(path_given)):
+            return os.path.realpath(path_given)
+        else:
+            print('The relative path that was given is not a valid file.')
 
 
 def file_reader(file, index_col=None):

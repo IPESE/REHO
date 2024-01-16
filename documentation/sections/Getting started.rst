@@ -113,7 +113,7 @@ The buildings information can also be provided through a CSV file, with the call
 .. code-block:: bash
 
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='multiple_buildings.csv', nb_buildings=2)
+    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=2)
 
 The CSV file must be located in the :code:`data/buildings/` folder.
 

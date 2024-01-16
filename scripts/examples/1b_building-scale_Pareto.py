@@ -32,7 +32,7 @@ if __name__ == '__main__':
     reho.generate_pareto_curve()  # multi-objective optimization
 
     # Save results
-    SR.save_results(reho, save=['pickle'], filename='1b')
+    reho.save_results(format=['pickle'], filename='1b')
 
     # Performance plot : costs and gwp
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long').show()

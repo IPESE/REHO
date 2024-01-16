@@ -261,7 +261,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     else:
         return fig
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', include_avoided=False, premium_version=True, per_m2=False, additional_costs={},
+def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', include_avoided=False, premium_version=False, per_m2=False, additional_costs={},
                 filename=None, export_format='html', scaling_factor=1, return_df=False):
     sc = list(results.keys())[0]
     id = list(results[sc].keys())[0]

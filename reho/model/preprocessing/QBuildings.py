@@ -1,4 +1,6 @@
 import configparser
+import os.path
+
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
 import geopandas as gpd
@@ -69,8 +71,7 @@ class QBuildingsReader:
         return
 
     def read_csv(self, buildings_filename, nb_buildings=None, roofs_filename=None, facades_filename=None):
-
-        self.data['buildings'] = file_reader(os.path.join(path_to_buildings, buildings_filename))
+        self.data['buildings'] = file_reader(path_handler(buildings_filename))
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
         if nb_buildings is None:
@@ -79,14 +80,16 @@ class QBuildingsReader:
         # buildings = add_geometry(buildings)
         qbuildings = {'buildings_data': buildings}
         if self.load_facades:
-            self.data['facades'] = file_reader(os.path.join(path_to_buildings, facades_filename))
+            self.data['facades'] = file_reader(path_handler(facades_filename))
             selected_facades = self.select_roofs_or_facades_data(roof=False)
             self.data['facades'] = self.data['facades'][self.data['facades'].index.isin(selected_facades)]
             self.data['facades'] = add_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'])
+
         if self.load_roofs:
-            self.data['roofs'] = file_reader(os.path.join(path_to_buildings, roofs_filename))
+            self.data['roofs'] = file_reader(path_handler(roofs_filename))
             selected_roofs = self.select_roofs_or_facades_data(roof=True)
             self.data['roofs'] = self.data['roofs'][self.data['roofs'].index.isin(selected_roofs)]
             self.data['roofs'] = add_geometry(self.data['roofs'])
@@ -95,14 +98,12 @@ class QBuildingsReader:
 
         return qbuildings
 
-    def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False, to_csv_REHO=False,
-                return_location=False):
+    def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False, return_location=False):
         """
         :param transformer: ID of the transformer on which we want to optimize
         :param nb_buildings: Number of buildings to select
         :param egid: To specify a list of buildings to optimize with their egid
         :param to_csv: To export the data into csv
-        :param to_csv_REHO: To export the data into csv but translated for REHO
         :param return_location: To obtain the corresponding meteo cluster
         """
 
@@ -117,6 +118,7 @@ class QBuildingsReader:
             meteo_cluster = translate_meteo_to_period_cluster(self.data['transformers']['meteo'][0])
         else:
             meteo_cluster = None
+
         # Select buildings
         sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]) \
             .where(self.tables[self.db_schema + '.' + 'buildings'].columns.transformer == transformer)
@@ -127,16 +129,21 @@ class QBuildingsReader:
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
-
         if to_csv:
-            csv_file = os.path.join(path_to_buildings,
-                                    self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '.csv')
-            self.data['buildings'].to_csv(csv_file, index=False)
+            self.data['buildings'].to_csv('buildings.csv', index=False)
 
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
-        # self.district = self.data['buildings']
         buildings = self.select_buildings_data(nb_buildings, egid)
+        if to_csv:
+            csv_columns = list(buildings[list(buildings.keys())[0]].keys())
+            with open('reho_input.csv', 'w') as csvfile:
+                writer = csv.DictWriter(csvfile, csv_columns)
+                writer.writeheader()
+                for building in buildings:
+                    writer.writerow(buildings[building])
+
         qbuildings = {'buildings_data': buildings}
+
         if self.load_facades:
             # TODO: Correct the roofs and facades selection with the id filtered by select_buildings_data
             self.data['facades'] = gpd.GeoDataFrame()
@@ -146,8 +153,12 @@ class QBuildingsReader:
                 self.data['facades'] = pd.concat(
                     (self.data['facades'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
                                                             con=self.db_engine, geom_col='geometry').fillna(np.nan)))
+            if to_csv:
+                self.data['facades'].to_csv('facades.csv', index=False)
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
+
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
@@ -156,22 +167,14 @@ class QBuildingsReader:
                 self.data['roofs'] = pd.concat(
                     (self.data['roofs'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
                                                           con=self.db_engine, geom_col='geometry').fillna(np.nan)))
+            if to_csv:
+                self.data['roofs'].to_csv('roofs.csv', index=False)
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
 
-        if to_csv_REHO:
-            csv_file = os.path.join(path_to_buildings,
-                                    self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '_REHO.csv')
-            csv_columns = list(buildings[list(buildings.keys())[0]].keys())
-            with open(csv_file, 'w') as csvfile:
-                writer = csv.DictWriter(csvfile, csv_columns)
-                writer.writeheader()
-                for building in buildings:
-                    writer.writerow(buildings[building])
-
-        # TODO return meteo_cluster
         if qbuildings["buildings_data"] == {}:
             raise print("Empty building data")
+
         return qbuildings
 
     def select_buildings_data(self, nb_buildings, egid=None):
@@ -224,7 +227,6 @@ class QBuildingsReader:
 
 
 def translate_buildings_to_REHO(df_buildings):
-
     new_buildings_data = gpd.GeoDataFrame()
     dict_QBuildings_REHO = {
 
@@ -352,7 +354,6 @@ def translate_buildings_to_REHO(df_buildings):
 
 
 def translate_facades_to_REHO(df_facades, df_buildings):
-
     new_facades_data = gpd.GeoDataFrame()
     dict_facades = {'azimuth': 'AZIMUTH',
                     'id_facade': 'Facades_ID',
@@ -505,19 +506,18 @@ def neighbourhood_angles(buildings, facades):
 
         df_angles = pd.concat((df_angles, df_BUI))
 
-    # filename = os.path.join(path_to_buildings, 'angles.csv')
-    # df_angles.to_csv(filename)
-    # df_angles.index = int(df_angles.index)
+    df_angles.to_csv('angles.csv')
+
     return df_angles
 
 
 def return_shadows_district(buildings, facades):
-    df_district = pd.DataFrame()
-    filename = os.path.join(path_to_buildings, 'angles.csv')
-    # if not os.path.exists(filename):
-    df_angles = neighbourhood_angles(buildings, facades)
-    # else:
-    #   df_angles = pd.read_csv(filename)
+    df_shadows = pd.DataFrame()
+
+    if os.path.exists('angles.csv'):
+        df_angles = pd.read_csv('angles.csv')
+    else:
+        df_angles = neighbourhood_angles(buildings, facades)
 
     for b in buildings:
         id_building = int(buildings[b]['id_building'])
@@ -529,19 +529,19 @@ def return_shadows_district(buildings, facades):
             print('NO DATA AVAILABLE FOR id_building ' + str(id_building))
             df_id_building = pd.DataFrame(index=[id_building],
                                           columns=['tanb', 'beta', 'azimuth', 'id_building'])  # pass NaN instead
-        df_district = pd.concat((df_district, df_id_building))
+        df_shadows = pd.concat((df_shadows, df_id_building))
 
-    out_put = os.path.join(path_to_buildings, 'district_shadows.csv')
-    df_district.to_csv(out_put)
+    df_shadows["id_building"] = df_shadows["id_building"].astype(str)
+    df_shadows.to_csv('shadows.csv')
 
-    return df_district
+    return df_shadows
 
 
 def return_shadows_id_building(id_building, df_district):
     id_building = int(id_building)
-    filepath = os.path.join(path_to_buildings, 'district_shadows.csv')
-    if os.path.isfile(filepath):
-        df = file_reader(filepath, index_col=0)
+
+    if os.path.isfile('shadows.csv'):
+        df = file_reader('shadows.csv', index_col=0)
     else:
         df = df_district
     df = df.xs(id_building)
@@ -554,6 +554,24 @@ def return_shadows_id_building(id_building, df_district):
     df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow'})
 
     return df_beta_dome
+
+
+def path_handler(path_given):
+    """To handle the path to csv file, absolute path or not"""
+
+    if path_given == 'buildings_example.csv' or path_given == 'roofs_example.csv' or path_given == 'facades_example.csv':
+        return os.path.join(path_to_qbuildings, path_given)
+
+    if os.path.isabs(path_given):
+        if os.path.isfile(path_given):
+            return path_given
+        else:
+            print('The absolute path that was given is not a valid file.')
+    else:
+        if os.path.isfile(os.path.realpath(path_given)):
+            return os.path.realpath(path_given)
+        else:
+            print('The relative path that was given is not a valid file.')
 
 
 def file_reader(file, index_col=None):
@@ -571,7 +589,7 @@ def file_reader(file, index_col=None):
         else:
             return read_table(file)
     except:
-        print('It seems there is a problem while reading the file...\n')
+        print('It seems there is a problem when reading the file...\n')
         print("%s" % sys.exc_info()[1])
 
 
@@ -581,18 +599,15 @@ def add_geometry(df):
     """
     try:
         geom = gpd.GeoSeries.from_wkb(df['geometry'])
-    except TypeError:
+    except KeyError:
+        print("No geometry in the dataframe")
+        return df
+    except:
         try:
             geom = gpd.GeoSeries.from_wkt(df['geometry'])
         except TypeError:
             print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings\n"
                   "I wonder what you are trying to do here...")
             return df
-    except KeyError:
-        print("No geometry in the dataframe")
-        return df
-    except:
-        print("Incompatible geometry")
-        return df
 
     return gpd.GeoDataFrame(df, geometry=geom)

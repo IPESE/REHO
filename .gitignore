@@ -308,9 +308,6 @@ pip-selfcheck.json
 documentation/_build
 
 # Data
-reho/data/buildings/*
-!reho/data/QBuildings/data/single_building.csv
-!reho/data/QBuildings/data/multiple_buildings.csv
 
 reho/data/electricity/*
 !reho/data/electricity/typical_profiles.csv
@@ -318,10 +315,6 @@ reho/data/electricity/*
 
 reho/data/emissions/*
 !reho/data/emissions/electricity_matrix_2019_reduced.csv
-
-reho/data/QBuildings/*
-!reho/data/QBuildings/db/Suisse.ini
-!reho/data/QBuildings/db/Geneva.ini
 
 reho/data/weather/clustering_results/*
 !reho/data/weather/clustering_results/frequency_Geneva_10_24_T_I_W.dat

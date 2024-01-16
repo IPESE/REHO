@@ -1,5 +1,4 @@
 import os
-import platform
 from dotenv import load_dotenv
 
 
@@ -21,8 +20,6 @@ path_to_units_storage = os.path.join(path_to_ampl_model, 'units', 'storage')
 path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'h2_units')
 
 # data
-# buildings
-path_to_buildings = os.path.join(path_to_data, 'buildings')
 
 # electricity
 path_to_electricity = os.path.join(path_to_data, 'electricity')

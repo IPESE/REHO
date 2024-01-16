@@ -1,12 +1,13 @@
 from reho.model.reho import *
+from reho.model.preprocessing import electricity_prices
 
 
 if __name__ == '__main__':
 
     # Set building parameters
-    # you can as well define your district from a csv file instead of reading the database
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=2)
+    reader.establish_connection('Suisse')
+    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -19,7 +20,11 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    # you can use prices coming from public databases
+    prices = electricity_prices.get_prices_from_elcom(canton=reader, category='H4')
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
+                                             'NaturalGas': {"Cost_supply_cst": 0.15},
+                                             })
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options
@@ -30,4 +35,4 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='3a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='3h')

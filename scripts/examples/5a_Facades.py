@@ -1,5 +1,4 @@
 from reho.model.reho import *
-from reho.model.preprocessing.QBuildings import QBuildingsReader
 
 
 if __name__ == '__main__':
@@ -33,4 +32,4 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='5a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='5a')

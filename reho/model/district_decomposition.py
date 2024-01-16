@@ -1,4 +1,3 @@
-import os
 import reho.model.infrastructure as infrastructure
 from reho.model.compact_optimization import *
 import reho.model.postprocessing.write_results as WR
@@ -7,9 +6,7 @@ import warnings
 import time
 import gc
 import reho.model.preprocessing.electricity_profile_parser as el_parser
-import pickle
-from os.path import exists
-import multiprocessing as mp
+import pandas as pd
 
 
 class district_decomposition:
@@ -279,7 +276,7 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
@@ -380,7 +377,7 @@ class district_decomposition:
         df_Performance = df_Performance.drop(index='Network', level='Hub').groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'Hub']).head(1).droplevel('Hub')  # select current Scn_ID and Pareto_ID
         df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 6)
 
-        # prepare df to have the same index than the AMPL model
+        # prepare df to have the same index as AMPL model
         if not self.method['include_all_solutions']:
             df_Performance = df_Performance.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID'))
             df_Grid_t = df_Grid_t.xs((Scn_ID, Pareto_ID, 'Network'), level=('Scn_ID', 'Pareto_ID', 'Hub'))
@@ -397,11 +394,12 @@ class district_decomposition:
         MP_parameters['Costs_ft_SPs'] = pd.DataFrame(np.round(df_Performance.Costs_ft, 6)).set_axis(['Costs_ft_SPs'], axis=1)
         MP_parameters['GWP_house_constr_SPs'] = pd.DataFrame(df_Performance.GWP_constr).set_axis(['GWP_house_constr_SPs'], axis=1)
 
-        df_lca_Units = self.return_combined_SP_results(self.results_SP, 'df_lca_Units')
-        df_lca_Units = df_lca_Units.groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'house']).sum()
-        MP_parameters['lca_house_units_SPs'] = df_lca_Units.droplevel(["Scn_ID", "Pareto_ID"]).stack().swaplevel(1, 2)
-        if not self.method['include_all_solutions']:
-            MP_parameters['lca_house_units_SPs'] = MP_parameters['lca_house_units_SPs'].xs(self.feasible_solutions - 1, level="FeasibleSolution", drop_level=False)
+        if self.method['save_lca']:
+            df_lca_Units = self.return_combined_SP_results(self.results_SP, 'df_lca_Units')
+            df_lca_Units = df_lca_Units.groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'house']).sum()
+            MP_parameters['lca_house_units_SPs'] = df_lca_Units.droplevel(["Scn_ID", "Pareto_ID"]).stack().swaplevel(1, 2)
+            if not self.method['include_all_solutions']:
+                MP_parameters['lca_house_units_SPs'] = MP_parameters['lca_house_units_SPs'].xs(self.feasible_solutions - 1, level="FeasibleSolution", drop_level=False)
 
         MP_parameters['Grids_Parameters'] = self.infrastructure.Grids_Parameters
         MP_parameters['Grids_Parameters_lca'] = self.infrastructure.Grids_Parameters_lca
@@ -669,7 +667,7 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
@@ -746,8 +744,11 @@ class district_decomposition:
             df = last_SP_results[h]["df_Performance"].iloc[0]
             Cinv_h = pd.Series(df.Costs_rep + df.Costs_inv, index=["TOTEX"])
             Cinv_h_GWP = pd.Series(df.GWP_constr, index=["GWP"])
-            Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
-            Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
+            if self.method['save_lca']:
+                Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
+                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
+            else:
+                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP])).transpose()
             Cinv_h.index = Cop_h.index
             Cinv = pd.concat([Cinv, Cinv_h])
 

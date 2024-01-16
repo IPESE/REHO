@@ -76,7 +76,7 @@ The building has a centralised heating and cooling system.
 .. caution::
    Describe the example (a building with 3 units inside: a service and 2 dwellings + give characteristics (status, ...)
 
-.. TODO: Add units in table see https://ipese-web.epfl.ch/lepour/qbuildings_guidelines/repository.html#resulting-tables-and-their-main-fields-1
+.. TODO: Add units in table (cf https://ipese-web.epfl.ch/lepour/qbuildings/index.html)
 
 .. table:: List of data from buildings
    :name: tab:reho_data_in_buildings
@@ -262,64 +262,3 @@ The supply and return temperatures for cooling are captured by *temperature_cool
 Similarly, the parameters *temperature_heating_supply_C* and *temperature_heating_return_C* represent the corresponding temperatures for the heating system.
 The target temperature to be reached inside the building is defined by the parameter *temperature_interior_C*.
 Understanding these parameters will assist in understanding the heating and cooling characteristics of the building and areas where there may be room for improvement.
-
-Scenario Files
-==============
-
-.. caution ::
-   TO BE POPULATED BY UCLouvain
-   TO BE CHECKED BY DORSAN
-
-   Here, we detail the content of files in wrapper-amplpy/run/examples/results/.
-   E.G. '7a_Read_csv.py'.
-   This section should have the exhaustive list of parameters that can be defined in this file.
-
-
-TO BE DONE
-
-Change grid price
------------------
-
-Loading Default Prices
-~~~~~~~~~~~~~~~~~~~~~~
-The default prices are loaded using the `initialize_grids()` function with the following code:
-
-.. code-block:: bash
-
-    grids = infrastructure.initialize_grids()
-
-The file `grids.csv` can be found in the `preprocessing/units` directory.
-
-Using Custom Prices
-~~~~~~~~~~~~~~~~~~~
-To use custom prices, you have two options:
-
-1. Provide another CSV file to the `initialize_grids()` function:
-
-.. code-block:: bash
-
-    grids = infrastructure.initialize_grids(file="path/to/custom_grids.csv")
-
-   Replace `"path/to/custom_grids.csv"` with the actual file path of your custom CSV file.
-
-2. Use the `Cost_supply_cst` and `Cost_demand_cst` parameters in the `initialize_grids()` function. Here's an example:
-
-.. code-block:: bash
-
-    grids = infrastructure.initialize_grids({
-        'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645},
-        'Oil': {'Cost_supply_cst': 0.16}
-    })
-
-   In this example, the custom prices for electricity and oil are specified. Adjust the values as per your requirements.
-
-Note that you can choose either option to customize the prices according to your needs.
-
-
-Model Input Files
-=================
-
-.. caution ::
-   TO BE POPULATED BY UCLouvain
-
-The pre-processing of REHO gives a list of inputs for the model. The following will detail it (to be done).

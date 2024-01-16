@@ -304,29 +304,40 @@ pip-selfcheck.json
 
 ##### Change only the lines below
 
+# Documentation
+documentation/_build
+
 # Data
-data/QBuildings/*
-!data/QBuildings/db/Suisse.ini
-!data/QBuildings/db/Geneva.ini
+reho/data/buildings/*
+!reho/data/QBuildings/data/single_building.csv
+!reho/data/QBuildings/data/multiple_buildings.csv
 
-data/buildings/*
-!data/QBuildings/data/single_building.csv
-!data/QBuildings/data/multiple_buildings.csv
+reho/data/electricity/*
+!reho/data/electricity/typical_profiles.csv
+!reho/data/electricity/annual_profiles.csv
 
-data/weather/clustering_results/*
-!data/weather/clustering_results/frequency_Geneva_10_24_T_I_W.dat
-!data/weather/clustering_results/GHI_Geneva_10_24_T_I_W.dat
-!data/weather/clustering_results/index_Geneva_10_24_T_I_W.dat
-!data/weather/clustering_results/T_Geneva_10_24_T_I_W.dat
-!data/weather/clustering_results/timestamp_Geneva_10_24_T_I_W.dat
-!data/weather/clustering_results/westfacades_irr_Geneva_10_24_T_I_W.txtscripts
-data/weather/hour/*
-!data/weather/hour/Geneva-hour.dat
+reho/data/emissions/*
+!reho/data/emissions/electricity_matrix_2019_reduced.csv
 
-data/emissions/*
-!data/emissions/electricity_matrix_2019_reduced.csv
+reho/data/QBuildings/*
+!reho/data/QBuildings/db/Suisse.ini
+!reho/data/QBuildings/db/Geneva.ini
 
-plotting/shared_executables_REHO
+reho/data/weather/clustering_results/*
+!reho/data/weather/clustering_results/frequency_Geneva_10_24_T_I_W.dat
+!reho/data/weather/clustering_results/GHI_Geneva_10_24_T_I_W.dat
+!reho/data/weather/clustering_results/index_Geneva_10_24_T_I_W.dat
+!reho/data/weather/clustering_results/T_Geneva_10_24_T_I_W.dat
+!reho/data/weather/clustering_results/timestamp_Geneva_10_24_T_I_W.dat
+!reho/data/weather/clustering_results/westfacades_irr_Geneva_10_24_T_I_W.txtscripts
+reho/data/weather/hour/*
+!reho/data/weather/hour/Geneva-hour.dat
+!reho/data/weather/hour/Disentis-hour.dat
+!reho/data/weather/hour/Lugano-hour.dat
+!reho/data/weather/hour/Luzern-hour.dat
+!reho/data/weather/hour/Piotta-hour.dat
+!reho/data/weather/hour/Zuerich-Kloten-hour.dat
+
 # Scripts
 scripts/*
 !scripts/examples/

@@ -20,13 +20,14 @@
 # See documentation : https://reho.readthedocs.io/en/main/
 # See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
 
-
+import multiprocessing as mp
+from scipy.stats import qmc
+from reho.model.district_decomposition import *
 from reho.model.postprocessing.KPIs import *
 from reho.model.postprocessing.postcompute_decentralized_districts import *
-from reho.model.district_decomposition import *
 import reho.model.postprocessing.write_results as WR
 import reho.model.postprocessing.save_results as SR
-from scipy.stats import qmc
+import pickle
 
 
 class reho(district_decomposition):
@@ -64,8 +65,6 @@ class reho(district_decomposition):
 
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
-        if platform.system() != 'Darwin':
-            os.system('cmd /c ' + os.environ["AMPL_PATH"] + "/ampl_lic restart")  # restart ampl license to avoid crashes
 
     def add_constraints_from_self_scenario(self):
         scenario = {}
@@ -619,8 +618,8 @@ class reho(district_decomposition):
             if not os.path.isdir('results'):
                 raise
 
-            file_name = 'config_' + str(len(self.buildings_data)) + '_' + str(self.buildings_data["Building1"]["transformer"]) + '.pickle'
-            path = os.path.join('results/configurations', file_name)
+        file_name = 'config_' + str(len(self.buildings_data)) + '_' + str(self.buildings_data["Building1"]["transformer"]) + '.pickle'
+        path = os.path.join('results/configurations', file_name)
         f = open(path, 'wb')
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], f)
 
@@ -650,10 +649,11 @@ class reho(district_decomposition):
             delta_enthalpy = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"]).mean() * 4.18
         else:
             delta_enthalpy = 179.5
-        name = self.scenario["name"]
+        
+        f = self.feasible_solutions - 1
         heat_flow = self.results_MP[0][0][0]["df_District"]["flowrate_max"] * delta_enthalpy
         dhn_inv = self.results_MP[0][0][0]["df_District"].loc["Network", "DHN_inv"]
-        tau = self.results_SP[name][0][0][0]["Building1"]["df_Performance"]["ANN_factor"][0]
+        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"][0]
         dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
         for bui in self.infrastructure.houses.keys():
             self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui]*1.001, dhn_invh]
@@ -822,12 +822,12 @@ class reho(district_decomposition):
         df_Results["df_External"] = df_External
         df_Results["df_Index"] = df_Index
 
-        # df_lca
-        df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
-        df_lca_Units = df_lca_Units.droplevel(level=["Scn_ID", "Pareto_ID", "Iter", "FeasibleSolution", "house"])
-        df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
-        df_Results["df_lca_Performance"] = last_results["df_lca_Performance"]
-        df_Results["df_lca_operation"] = last_results["df_lca_operation"]
+        if self.method["save_lca"]:
+            df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
+            df_lca_Units = df_lca_Units.droplevel(level=["Scn_ID", "Pareto_ID", "Iter", "FeasibleSolution", "house"])
+            df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
+            df_Results["df_lca_Performance"] = last_results["df_lca_Performance"]
+            df_Results["df_lca_operation"] = last_results["df_lca_operation"]
 
         return df_Results
 

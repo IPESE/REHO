@@ -1,7 +1,9 @@
 from reho.model.reho import *
+from reho.model.preprocessing import electricity_prices
 
 
 if __name__ == '__main__':
+
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
@@ -18,11 +20,10 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    # you can add more resources layers besides electricity and natural gas, and adapt their prices or keep the default values from data/parameters/grids.csv
-    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
+    # you can use prices coming from public databases
+    prices = electricity_prices.get_prices_from_elcom(canton=reader, category='H4')
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
-                                             'Wood': {},
-                                             'Oil': {},
                                              })
     units = infrastructure.initialize_units(scenario, grids)
 
@@ -34,4 +35,4 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3e')
+    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3h')

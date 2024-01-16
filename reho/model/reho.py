@@ -20,14 +20,16 @@
 # See documentation : https://reho.readthedocs.io/en/main/
 # See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
 
+import multiprocessing as mp
+import pickle
 
-from reho.model.postprocessing.KPIs import *
-from reho.model.postprocessing.postcompute_decentralized_districts import *
-from reho.model.district_decomposition import *
-import reho.model.postprocessing.write_results as WR
-import reho.model.postprocessing.save_results as SR
 from scipy.stats import qmc
 
+from reho.model.district_decomposition import *
+from reho.model.postprocessing.KPIs import *
+from reho.model.postprocessing.postcompute_decentralized_districts import *
+
+from reho.paths import *
 
 class reho(district_decomposition):
 
@@ -64,8 +66,6 @@ class reho(district_decomposition):
 
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
-        if platform.system() != 'Darwin':
-            os.system('cmd /c ' + os.environ["AMPL_PATH"] + "/ampl_lic restart")  # restart ampl license to avoid crashes
 
     def add_constraints_from_self_scenario(self):
         scenario = {}
@@ -619,8 +619,8 @@ class reho(district_decomposition):
             if not os.path.isdir('results'):
                 raise
 
-            file_name = 'config_' + str(len(self.buildings_data)) + '_' + str(self.buildings_data["Building1"]["transformer"]) + '.pickle'
-            path = os.path.join('results/configurations', file_name)
+        file_name = 'config_' + str(len(self.buildings_data)) + '_' + str(self.buildings_data["Building1"]["transformer"]) + '.pickle'
+        path = os.path.join('results/configurations', file_name)
         f = open(path, 'wb')
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], f)
 
@@ -650,10 +650,11 @@ class reho(district_decomposition):
             delta_enthalpy = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"]).mean() * 4.18
         else:
             delta_enthalpy = 179.5
-        name = self.scenario["name"]
+        
+        f = self.feasible_solutions - 1
         heat_flow = self.results_MP[0][0][0]["df_District"]["flowrate_max"] * delta_enthalpy
         dhn_inv = self.results_MP[0][0][0]["df_District"].loc["Network", "DHN_inv"]
-        tau = self.results_SP[name][0][0][0]["Building1"]["df_Performance"]["ANN_factor"][0]
+        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"][0]
         dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
         for bui in self.infrastructure.houses.keys():
             self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui]*1.001, dhn_invh]
@@ -666,7 +667,7 @@ class reho(district_decomposition):
         if self.method['building-scale'] or self.method['district-scale']:
             df_Results = self.get_df_Results_from_MP_and_SPs(Scn_ID, Pareto_ID)
         else:
-            df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+            df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
             # self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         if Scn_ID not in self.results:
@@ -822,12 +823,12 @@ class reho(district_decomposition):
         df_Results["df_External"] = df_External
         df_Results["df_Index"] = df_Index
 
-        # df_lca
-        df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
-        df_lca_Units = df_lca_Units.droplevel(level=["Scn_ID", "Pareto_ID", "Iter", "FeasibleSolution", "house"])
-        df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
-        df_Results["df_lca_Performance"] = last_results["df_lca_Performance"]
-        df_Results["df_lca_operation"] = last_results["df_lca_operation"]
+        if self.method["save_lca"]:
+            df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
+            df_lca_Units = df_lca_Units.droplevel(level=["Scn_ID", "Pareto_ID", "Iter", "FeasibleSolution", "house"])
+            df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
+            df_Results["df_lca_Performance"] = last_results["df_lca_Performance"]
+            df_Results["df_lca_operation"] = last_results["df_lca_operation"]
 
         return df_Results
 
@@ -852,3 +853,52 @@ class reho(district_decomposition):
         if self.method['building-scale']:
             self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 
+    def save_results(self, format=('pickle'), filename='results', erase_file=True, filter=True):
+        """
+        Save the results in the desired format: pickle file or Excel sheet
+        """
+        try:
+            os.makedirs('results')
+        except OSError:
+            if not os.path.isdir('results'):
+                raise
+
+        if 'save_all' in format:
+            results = self  # save the whole reho object
+        else:
+            results = self.results  # save only reho results
+
+        if 'pickle' in format:
+            result_file_name = str(filename) + '.pickle'
+            counter = 0
+            while os.path.isfile('results/' + result_file_name) and not erase_file:
+                counter += 1
+                result_file_name = str(filename) + '_' + str(counter) + '.pickle'
+
+            result_file_path = 'results/' + result_file_name
+            f = open(result_file_path, 'wb')
+            pickle.dump(results, f)
+            f.close()
+            print('Results are saved in ' + result_file_path)
+
+        if 'xlsx' in format:
+
+            for Scn_ID in list(results.keys()):
+                for Pareto_ID in list(results[Scn_ID].keys()):
+
+                    if Pareto_ID == 0:
+                        result_file_path = 'results/' + str(filename) + '_' + str(Scn_ID) + '.xlsx'
+                    else:
+                        result_file_path = 'results/' + str(filename) + '_' + str(Scn_ID) + str(Pareto_ID) + '.xlsx'
+
+                    writer = pd.ExcelWriter(result_file_path)
+
+                    for df_name, df in results[Scn_ID][Pareto_ID].items():
+                        if df is not None:
+                            df = df.fillna(0)  # replace all NaN with zeros
+                            if filter:
+                                df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros
+                            df.to_excel(writer, sheet_name=df_name)
+
+                    writer.close()
+                    print('Results are saved in ' + result_file_path)

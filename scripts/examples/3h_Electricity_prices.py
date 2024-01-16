@@ -1,4 +1,5 @@
 from reho.model.reho import *
+from reho.model.preprocessing import electricity_prices
 
 
 if __name__ == '__main__':
@@ -19,16 +20,19 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    # you can use prices coming from public databases
+    prices = electricity_prices.get_prices_from_elcom(canton=reader, category='H4')
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
+                                             'NaturalGas': {"Cost_supply_cst": 0.15},
+                                             })
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options
-    method = {'district-scale': True}
-    DW_params = {'max_iter': 2}
+    method = {'building-scale': True}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params=DW_params, solver="gurobi")
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='2a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='3h')

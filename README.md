@@ -21,7 +21,7 @@ Cédric Terrier <cedric.terrier@epfl.ch>
 Joseph Loustau <joseph.loustau@epfl.ch>
 
 ## Licence
-Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
+Copyright (C) <2021-2024> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
 
 Licensed under the Apache License, Version0 (the "License");
 you may not use this file except in compliance with the License.

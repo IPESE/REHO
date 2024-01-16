@@ -34,8 +34,6 @@ if __name__ == '__main__':
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
-    reho.single_optimization()
-
     reho.get_DHN_costs()  # run one optimization forcing DHN to find costs DHN connection per house
     reho.single_optimization()  # run optimization with DHN costs
 

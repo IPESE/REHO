@@ -27,6 +27,7 @@ class compact_optimization:
         self.buildings_data_compact = buildings_data
         if method['use_facades']:
             self.facades_compact = qbuildings_data['facades_data']
+            self.shadows_compact = qbuildings_data['shadows_data']
         if method['use_pv_orientation']:
            self.roofs_compact = qbuildings_data['roofs_data']
         self.infrastructure_compact = district
@@ -482,13 +483,12 @@ class compact_optimization:
         df_limit_angle = pd.DataFrame()
 
         if self.method_compact['use_facades']:
-            shadow_district = return_shadows_district(self.buildings_data_compact, self.facades_compact)
             for b in self.buildings_data_compact:
-                df_facades = self.facades_compact[self.facades_compact['id_building']
-                                                        == self.buildings_data_compact[b]['id_building']]
+                df_facades = self.facades_compact[self.facades_compact['id_building'] == self.buildings_data_compact[b]['id_building']]
+                df_shadows = self.shadows_compact[self.shadows_compact['id_building'] == self.buildings_data_compact[b]['id_building']]
                 facades = df_facades['Facades_ID']
                 np_facades = np.append(np_facades, facades)
-                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], shadow_district)
+                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows)
                 df_shadow = pd.concat([df_shadow], keys=[b], names=['House'])
                 df_limit_angle = pd.concat([df_limit_angle, df_shadow])
                 for fc in facades:

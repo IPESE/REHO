@@ -85,6 +85,8 @@ class QBuildingsReader:
             self.data['facades'] = add_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
+            qbuildings['shadows_data'] = return_shadows_district(self.data['buildings'], self.data['facades'])
+
         if self.load_roofs:
             self.data['roofs'] = file_reader(os.path.join(path_to_buildings, roofs_filename))
             selected_roofs = self.select_roofs_or_facades_data(roof=True)
@@ -148,6 +150,7 @@ class QBuildingsReader:
                                                             con=self.db_engine, geom_col='geometry').fillna(np.nan)))
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
@@ -531,6 +534,7 @@ def return_shadows_district(buildings, facades):
                                           columns=['tanb', 'beta', 'azimuth', 'id_building'])  # pass NaN instead
         df_district = pd.concat((df_district, df_id_building))
 
+    df_district["id_building"] = df_district["id_building"].astype(str)
     out_put = os.path.join(path_to_buildings, 'district_shadows.csv')
     df_district.to_csv(out_put)
 

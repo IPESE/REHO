@@ -476,7 +476,7 @@ def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DH
     df1 = get_variable_in_pandas(df, 'Units_Use')
     df2 = get_variable_in_pandas(df, 'Units_Mult')
     df3 = tau[0] * get_variable_in_pandas(df, 'Costs_Unit_inv')
-    df4 = get_variable_in_pandas(df, 'GWP_Unit_constr')  # per year! For total- multiply with lifetime
+    df4 = get_variable_in_pandas(df, 'GWP_Unit_constr')  # per year! For total - multiply with lifetime
     df5 = get_parameter_in_pandas(ampl, 'lifetime', multi_index=False)
     df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
     if read_DHN:
@@ -501,7 +501,13 @@ def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DH
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
             df_Unit_t = pd.concat([df_Unit_t, df4, df5], axis=1)
     df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
-    df_Results["df_Unit_t"] = df_Unit_t.sort_index()
+
+    units_districts = district.UnitsOfDistrict
+    district_l_u = []
+    for l, units in district.UnitsOfLayer.items():
+        [district_l_u.append((l, unit)) for unit in units if unit in units_districts]
+    df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
+    df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
 
     # df_lca
     LCA_units = get_variable_in_pandas(df, 'lca_units')

@@ -276,7 +276,7 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
@@ -667,7 +667,7 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
@@ -744,8 +744,11 @@ class district_decomposition:
             df = last_SP_results[h]["df_Performance"].iloc[0]
             Cinv_h = pd.Series(df.Costs_rep + df.Costs_inv, index=["TOTEX"])
             Cinv_h_GWP = pd.Series(df.GWP_constr, index=["GWP"])
-            Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
-            Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
+            if self.method['save_lca']:
+                Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
+                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
+            else:
+                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP])).transpose()
             Cinv_h.index = Cop_h.index
             Cinv = pd.concat([Cinv, Cinv_h])
 

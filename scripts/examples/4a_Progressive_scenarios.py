@@ -75,4 +75,4 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['pickle'], filename='4a')
+    reho.save_results(format=['pickle'], filename='4a')

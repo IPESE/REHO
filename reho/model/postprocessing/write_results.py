@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def get_df_Results_from_compact(ampl, scenario, method, buildings_data, filter=True):
+def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
     def set_df_performance(df, ampl, scenario):
         df1 = get_variable_in_pandas(df, 'Costs_House_op')  # without the comfort penalty costs
@@ -356,7 +356,7 @@ def get_df_Results_from_compact(ampl, scenario, method, buildings_data, filter=T
     return df_Results
 
 
-def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DHN=False):
+def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False):
 
     df_Results = dict()
     df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()

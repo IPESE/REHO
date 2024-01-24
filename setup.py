@@ -1,5 +1,5 @@
 # All rights reserved. ECOLE POLYTECHNIQUE FEDERALE DE LAUSANNE, Switzerland,
-# IPESE Laboratory, Copyright 2023
+# IPESE Laboratory, Copyright 2021
 # This work can be distributed under the Apache Software License.
 # See the LICENSE file for more details.
 
@@ -14,7 +14,7 @@ def read_file(file_path):
 setup(
 
     name='REHO',
-    version='1.0.10',
+    version='1.0.0',
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',
@@ -37,7 +37,7 @@ setup(
                       'requests>=2.0.0,<3.0.0',
                       ],
     package_data={
-          '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod'],
+          '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod', '*.ini'],
       },
     author='Dorsan Lepour',
     author_email='dorsan.lepour@epfl.ch',

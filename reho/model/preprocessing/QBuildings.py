@@ -132,8 +132,7 @@ class QBuildingsReader:
             nb_buildings = self.data['buildings'].shape[0]
 
         if to_csv:
-            csv_file = os.path.join(path_to_buildings,
-                                    self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '.csv')
+            csv_file = os.path.join(self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '.csv')
             self.data['buildings'].to_csv(csv_file, index=False)
 
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
@@ -149,6 +148,11 @@ class QBuildingsReader:
                 self.data['facades'] = pd.concat(
                     (self.data['facades'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
                                                             con=self.db_engine, geom_col='geometry').fillna(np.nan)))
+
+            if to_csv:
+                csv_file = os.path.join(self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '_facades.csv')
+                self.data['facades'].to_csv(csv_file, index=False)
+
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
             qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
@@ -164,8 +168,7 @@ class QBuildingsReader:
             qbuildings['roofs_data'] = self.data['roofs']
 
         if to_csv_REHO:
-            csv_file = os.path.join(path_to_buildings,
-                                    self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '_REHO.csv')
+            csv_file = os.path.join(self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '_REHO.csv')
             csv_columns = list(buildings[list(buildings.keys())[0]].keys())
             with open(csv_file, 'w') as csvfile:
                 writer = csv.DictWriter(csvfile, csv_columns)
@@ -173,9 +176,9 @@ class QBuildingsReader:
                 for building in buildings:
                     writer.writerow(buildings[building])
 
-        # TODO return meteo_cluster
         if qbuildings["buildings_data"] == {}:
             raise print("Empty building data")
+
         return qbuildings
 
     def select_buildings_data(self, nb_buildings, egid=None):

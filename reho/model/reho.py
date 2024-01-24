@@ -21,14 +21,15 @@
 # See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
 
 import multiprocessing as mp
+import pickle
+
 from scipy.stats import qmc
+
 from reho.model.district_decomposition import *
 from reho.model.postprocessing.KPIs import *
 from reho.model.postprocessing.postcompute_decentralized_districts import *
-import reho.model.postprocessing.write_results as WR
-import reho.model.postprocessing.save_results as SR
-import pickle
 
+from reho.paths import *
 
 class reho(district_decomposition):
 
@@ -666,7 +667,7 @@ class reho(district_decomposition):
         if self.method['building-scale'] or self.method['district-scale']:
             df_Results = self.get_df_Results_from_MP_and_SPs(Scn_ID, Pareto_ID)
         else:
-            df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+            df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
             # self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         if Scn_ID not in self.results:
@@ -852,3 +853,52 @@ class reho(district_decomposition):
         if self.method['building-scale']:
             self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 
+    def save_results(self, format=('pickle'), filename='results', erase_file=True, filter=True):
+        """
+        Save the results in the desired format: pickle file or Excel sheet
+        """
+        try:
+            os.makedirs('results')
+        except OSError:
+            if not os.path.isdir('results'):
+                raise
+
+        if 'save_all' in format:
+            results = self  # save the whole reho object
+        else:
+            results = self.results  # save only reho results
+
+        if 'pickle' in format:
+            result_file_name = str(filename) + '.pickle'
+            counter = 0
+            while os.path.isfile('results/' + result_file_name) and not erase_file:
+                counter += 1
+                result_file_name = str(filename) + '_' + str(counter) + '.pickle'
+
+            result_file_path = 'results/' + result_file_name
+            f = open(result_file_path, 'wb')
+            pickle.dump(results, f)
+            f.close()
+            print('Results are saved in ' + result_file_path)
+
+        if 'xlsx' in format:
+
+            for Scn_ID in list(results.keys()):
+                for Pareto_ID in list(results[Scn_ID].keys()):
+
+                    if Pareto_ID == 0:
+                        result_file_path = 'results/' + str(filename) + '_' + str(Scn_ID) + '.xlsx'
+                    else:
+                        result_file_path = 'results/' + str(filename) + '_' + str(Scn_ID) + str(Pareto_ID) + '.xlsx'
+
+                    writer = pd.ExcelWriter(result_file_path)
+
+                    for df_name, df in results[Scn_ID][Pareto_ID].items():
+                        if df is not None:
+                            df = df.fillna(0)  # replace all NaN with zeros
+                            if filter:
+                                df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros
+                            df.to_excel(writer, sheet_name=df_name)
+
+                    writer.close()
+                    print('Results are saved in ' + result_file_path)

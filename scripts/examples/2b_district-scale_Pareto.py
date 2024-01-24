@@ -32,4 +32,4 @@ if __name__ == '__main__':
     reho.generate_pareto_curve()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='2b')
+    reho.save_results(format=['xlsx', 'pickle'], filename='2b')

@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'REHO'
-copyright = '2023, IPESE, EPFL'
+copyright = '2021, IPESE, EPFL'
 author = 'D. Lepour'
 
 # The full version, including alpha/beta/rc tags

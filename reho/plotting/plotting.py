@@ -1189,11 +1189,13 @@ def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_f
             data_to_plot[value].update(data_to_plot[value] + serie * row[key])
 
     correspondance_dict = {'ERA': 'area_per_class',
-                           'energy_heating_signature_kWh_y': 'sh_per_class',
-                           'energy_hotwater_signature_kWh_y': 'dhw_per_class',
-                           'energy_el_kWh_y': 'elec_per_class'}
+                           'SH': 'sh_per_class',
+                           'DHW': 'dhw_per_class',
+                           'Electricity': 'elec_per_class'}
     classes = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII']
     df_buildings = dict_to_df(results, 'df_Buildings')
+    df_annuals = dict_to_df(results, 'df_Annuals').reset_index().pivot(index=['Scn_ID', 'Pareto_ID', 'Hub'], columns='Layer', values='Demand_MWh')
+    df_buildings = df_buildings.reset_index().merge(df_annuals, on=['Scn_ID', 'Pareto_ID', 'Hub']).set_index(['Scn_ID', 'Pareto_ID', 'Hub'])
     data_to_plot = pd.DataFrame(0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class',
                                                            'elec_per_class'])
     class_names = pd.read_csv(os.path.join(path_to_plotting, 'sia380_1.csv'), index_col='id_class', sep=";")
@@ -1206,54 +1208,55 @@ def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_f
         hover_text = 'End Use Demand'
         liaison = ' of '
 
-    scenarios = results.keys()
-    for scn in scenarios:
-        df_buildings.loc[(scn, list(results[scn].keys()))[0]].apply(add_class, axis=1)
-        child_name = []
-        parents_name = []
-        text_template = []
-        hover_template = []
-        values_sun = []
-        for i in range(len(classes)):
-            [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "Elec"]]
-            [parents_name.append(element) for element in
-             ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],
-              data_to_plot.iloc[i]['class_' + label]]]
-            [values_sun.append(element) for element in [
-                data_to_plot.iloc[i]['sh_per_class'] + data_to_plot.iloc[i]['dhw_per_class'] +
-                data_to_plot.iloc[i]['elec_per_class'],
-                data_to_plot.iloc[i]['sh_per_class'], data_to_plot.iloc[i]['dhw_per_class'],
-                data_to_plot.iloc[i]['elec_per_class']]]
-            [text_template.append(element) for element in ['%{label}<br>%{percentParent:.2%}',
-                                                           '%{label}<br>%{percentParent:.2%}',
-                                                           '%{label}<br>%{percentParent:.2%}',
-                                                           '%{label}<br>%{percentParent:.2%}']]
-            [hover_template.append(element) for element in ['<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentParent:.2%}' + liaison + '%{parent}',
-                                                            '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
-                                                            '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
-                                                            '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}']]
+    scenarios = list(results.keys())
+    paretos = list(results[scenarios[0]].keys())
 
-        values_sun = [round(val*scaling_factor, 2) for val in values_sun]
-        fig = go.Figure(go.Sunburst(
-                          labels=child_name,
-                          parents=parents_name,
-                          values=values_sun,
-                          branchvalues='total',
-                          name=hover_text,
-                          hovertemplate=hover_template,
-                          texttemplate=text_template,
-                          ))
+    df_buildings.loc[(scenarios[0], paretos[0])].apply(add_class, axis=1)
+    child_name = []
+    parents_name = []
+    text_template = []
+    hover_template = []
+    values_sun = []
+    for i in range(len(classes)):
+        [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "Elec"]]
+        [parents_name.append(element) for element in
+         ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],
+          data_to_plot.iloc[i]['class_' + label]]]
+        [values_sun.append(element) for element in [
+            data_to_plot.iloc[i]['sh_per_class'] + data_to_plot.iloc[i]['dhw_per_class'] +
+            data_to_plot.iloc[i]['elec_per_class'],
+            data_to_plot.iloc[i]['sh_per_class'], data_to_plot.iloc[i]['dhw_per_class'],
+            data_to_plot.iloc[i]['elec_per_class']]]
+        [text_template.append(element) for element in ['%{label}<br>%{percentParent:.2%}',
+                                                       '%{label}<br>%{percentParent:.2%}',
+                                                       '%{label}<br>%{percentParent:.2%}',
+                                                       '%{label}<br>%{percentParent:.2%}']]
+        [hover_template.append(element) for element in ['<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentParent:.2%}' + liaison + '%{parent}',
+                                                        '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
+                                                        '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
+                                                        '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} kWh<br>%{percentRoot:.2%}' + liaison + '%{root}']]
 
-        fig.update_layout(
-            sunburstcolorway=["#413D3A", "#CAC7C7", "#B51F1F", "#007480", "#00A79F", "#FEA993"],
-            extendsunburstcolors=True)
-        if filename is not None:
-            filename = os.path.join(save_path, str(scn) + "_" + filename + '_sunburst.')
-            if export_format == 'png':
-                fig.write_image(filename + export_format)
-            elif export_format == 'html':
-                fig.write_html(filename + export_format)
-            return print("Sunburt printed at " + filename + export_format)
+    values_sun = [round(val*scaling_factor, 2) for val in values_sun]
+    fig = go.Figure(go.Sunburst(
+                      labels=child_name,
+                      parents=parents_name,
+                      values=values_sun,
+                      branchvalues='total',
+                      name=hover_text,
+                      hovertemplate=hover_template,
+                      texttemplate=text_template,
+                      ))
+
+    fig.update_layout(
+        sunburstcolorway=["#413D3A", "#CAC7C7", "#B51F1F", "#007480", "#00A79F", "#FEA993"],
+        extendsunburstcolors=True)
+    if filename is not None:
+        filename = os.path.join(save_path, str(scn) + "_" + filename + '_sunburst.')
+        if export_format == 'png':
+            fig.write_image(filename + export_format)
+        elif export_format == 'html':
+            fig.write_html(filename + export_format)
+        return print("Sunburt printed at " + filename + export_format)
 
     if return_df:
         df = pd.DataFrame()

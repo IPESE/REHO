@@ -510,21 +510,22 @@ def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DH
     df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
 
     # df_lca
-    LCA_units = get_variable_in_pandas(df, 'lca_units')
-    LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
-    df_Results["df_lca_Units"] = LCA_units
+    if method["save_lca"]:
+        LCA_units = get_variable_in_pandas(df, 'lca_units')
+        LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
+        df_Results["df_lca_Units"] = LCA_units
 
-    LCA_tot = get_variable_in_pandas(df, 'lca_tot')
-    LCA_tot = LCA_tot.stack().unstack(level=0)
-    LCA_tot.index = ["Network"]
-    LCA_tot_house = get_variable_in_pandas(df, 'lca_tot_house')
-    LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
-    df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
-    df_Results["df_lca_Performance"].index.names = ['Hub']
+        LCA_tot = get_variable_in_pandas(df, 'lca_tot')
+        LCA_tot = LCA_tot.stack().unstack(level=0)
+        LCA_tot.index = ["Network"]
+        LCA_tot_house = get_variable_in_pandas(df, 'lca_tot_house')
+        LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
+        df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
+        df_Results["df_lca_Performance"].index.names = ['Hub']
 
-    LCA_op = get_variable_in_pandas(df, 'lca_op')
-    LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
-    df_Results["df_lca_operation"] = LCA_op
+        LCA_op = get_variable_in_pandas(df, 'lca_op')
+        LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
+        df_Results["df_lca_operation"] = LCA_op
 
     if method["actors_cost"]:
         df1 = get_variable_in_pandas(df, 'Cost_demand_district').groupby(level=(0,2)).sum()

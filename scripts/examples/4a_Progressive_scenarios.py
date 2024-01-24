@@ -27,7 +27,7 @@ if __name__ == '__main__':
     scenario['name'] = 'Oil'
     scenario['exclude_units'] = ['ThermalSolar', 'HeatPump', 'ElectricalHeater', 'PV', 'DataHeat_DHW']
     scenario['enforce_units'] = []
-    grids = infrastructure.initialize_grids({'Electricity': {'Cost_supply_cst': 0.279, 'Cost_demand_cst': 0.1645}, 'Oil': {'Cost_supply_cst': 0.11}, 'Data': {}})
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Data': {}})
     units = infrastructure.initialize_units(scenario, grids)
 
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
-    # SCENARIO 5 PV + HP + renovation #
+    # SCENARIO 5 PV + HP + isolation #
     scenario['name'] = 'Isolation'
     reho.buildings_data['Building1']['U_h'] = 0.5 * qbuildings_data['buildings_data']['Building1']['U_h']
 

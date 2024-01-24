@@ -33,7 +33,9 @@ setup(
                       'matplotlib>=3.6.1,<4.0.0',
                       'plotly>=5.10,<6.0.0',
                       'kaleido>=0.2.1,<1.0.0',
-                      'python-dotenv>=1.0'],
+                      'python-dotenv>=1.0',
+                      'requests>=2.0.0,<3.0.0',
+                      ],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod'],
       },

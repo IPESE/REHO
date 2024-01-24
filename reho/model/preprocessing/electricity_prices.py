@@ -303,6 +303,9 @@ def get_prices_from_elcom(year=2024, canton=None, category=None, tva=None, expor
         canton = str(cantons[mask].first_valid_index())
         canton_query = '<' + canton_link + str(canton) + '>'
         bonus_columns = ""
+    elif isinstance(canton, int):
+        canton_query = '<' + canton_link + str(canton) + '>'
+        bonus_columns = ""
     else:
         canton_query = "?Canton"
         bonus_columns = "?Canton"

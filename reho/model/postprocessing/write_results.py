@@ -97,6 +97,11 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Annuals = pd.concat([df12, df3456, df789], sort=False)
         df_Annuals.index.names = ['Layer', 'Hub']
 
+        # Correct DHW
+        hubs = [s for s in df_Annuals.index.levels[1] if s.startswith("Building")]
+        for h in hubs:
+            df_Annuals.loc[('DHW', h), 'Demand_MWh'] = df_Annuals.loc[('DHW', 'WaterTankDHW_' + h), 'Supply_MWh']
+
         return df_Annuals
 
     def set_df_buildings(buildings_data, df, ampl):

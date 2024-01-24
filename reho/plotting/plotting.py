@@ -1189,11 +1189,13 @@ def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_f
             data_to_plot[value].update(data_to_plot[value] + serie * row[key])
 
     correspondance_dict = {'ERA': 'area_per_class',
-                           'energy_heating_signature_kWh_y': 'sh_per_class',
-                           'energy_hotwater_signature_kWh_y': 'dhw_per_class',
-                           'energy_el_kWh_y': 'elec_per_class'}
+                           'SH': 'sh_per_class',
+                           'DHW': 'dhw_per_class',
+                           'Electricity': 'elec_per_class'}
     classes = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII']
     df_buildings = dict_to_df(results, 'df_Buildings')
+    df_annuals = dict_to_df(results, 'df_Annuals').reset_index().pivot(index='Hub', columns='Layer', values='Demand_MWh')
+    df_buildings = df_buildings.reset_index().merge(df_annuals, on='Hub').set_index(['Scn_ID', 'Pareto_ID', 'Hub'])
     data_to_plot = pd.DataFrame(0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class',
                                                            'elec_per_class'])
     class_names = pd.read_csv(os.path.join(path_to_plotting, 'sia380_1.csv'), index_col='id_class', sep=";")

@@ -5,12 +5,8 @@ Input data
 ++++++++++
 
 .. caution ::
-   Work in progress
+   [To be removed]
 
-.. caution ::
-   **To FEDECOM partners** this page describes the input-data for the
-   prospection design model. Pilots are required to share the information listed
-   in Section :ref:`sec:data:building_info` for each buildings.
    Please, update the information in the shared document available at:
    'shared drive <https://docs.google.com/spreadsheets/d/1lK5Zz9cD4d12runQ_tiUMjtU2Dq7QNZ07eLt0lUs5aw/edit?usp=sharing>`_
    Tekniker will lead the collect.
@@ -18,10 +14,6 @@ Input data
 Input files overview
 ====================
 
-The REHO framework requires several input informations at different stage. Please see Section :ref:`label_sec_overview`
-for an overview of the framework and Section :ref:`sec_model` for the detailed formulation of the model.
-
-Figure XX illustrates how input data are used in the framework.
 There are several input files in the REHO framework, each serving a specific purpose:
 
 1. **Building Information File**:

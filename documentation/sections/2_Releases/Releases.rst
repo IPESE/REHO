@@ -4,7 +4,13 @@ Releases
 How to cite
 ===========
 
-.. caution ::
+.. caution::
+   TO DO
+
+Related publications
+=====================
+
+.. caution::
    TO DO
 
 License
@@ -18,15 +24,19 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-Codes versions
+Code versions
 ==============
 
-.. caution ::
-   TO DO
+REHO is available as an open-source and collaborative Python library.
 
+It is deployed as a PyPI package (https://pypi.org/project/REHO/) and can be installed with:
 
-Model publications
-==================
+.. code-block:: bash
 
-.. caution ::
-   TO DO
+   pip install REHO
+
+The developer version can be accessed from its GitHub repository (https://github.com/IPESE/REHO) and installed with:
+
+.. code-block:: bash
+
+   git clone https://github.com/IPESE/REHO.git

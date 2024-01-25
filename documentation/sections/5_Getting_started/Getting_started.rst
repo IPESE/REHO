@@ -1,9 +1,15 @@
 Getting started
-+++++++++++++++
-
+++++++++++++++++
 
 Installation
 ============
+
+REHO package
+------------
+
+.. code-block:: bash
+
+   pip install --extra-index-url https://pypi.ampl.com REHO
 
 REHO repository
 ---------------
@@ -15,13 +21,11 @@ open the terminal/cmd in this folder and clone the `REHO repository <https://git
 
    git clone https://github.com/IPESE/REHO.git
 
+Python
+------
 
-Important: As soon as everything is cloned, please check out your own branch (from branch master).
-Go back to the terminal and run:
-
-.. code-block:: bash
-
-   git checkout -b your_branch_name
+You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
+As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_, offering a free full-featured license for students.
 
 AMPL
 ----
@@ -34,14 +38,17 @@ As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solv
 Plenty of text editors exist which feature AMPL. We recommend using `Sublime Text <https://www.sublimetext.com/>`_, which
 provides the `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_.
 
-Python
-------
 
-You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
-As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_, offering a free full-featured license for students.
 
-First run of the model
+Setup environment
 ----------------------
+
+Important: As soon as everything is cloned, please check out your own branch (from branch master).
+Go back to the terminal and run:
+
+.. code-block:: bash
+
+   git checkout -b your_branch_name
 
 1. Open PyCharm, open a project and browse to the folder of the repository REHO. Do not accept the automatic virtual environment creation.
 2. Go to File > Settings > Project: REHO to set up your Project Interpreter, click on the gear symbol and choose to add.
@@ -49,7 +56,6 @@ First run of the model
 4. Install required Python packages. Open the Terminal tab (View > Tool Windows > Terminal) and type the command one by one:
 
 .. code-block:: bash
-   :caption: Installing Python packages
 
    pip install -r requirements.txt
    pipwin install -r requirements_win.txt
@@ -67,15 +73,53 @@ Sometimes, when running the model for the first time, you need to explicitly tel
 6. Create a new folder for your future work with REHO. Right click on the folder scripts in and create a New > Directory. You will use this folder to write and save your first scripts.
 
 
-Run the model
-=============
+Running REHO
+============
 
-This section only provides a brief overview of REHO's capabilities, based on the few examples available in :code:`scripts/examples`.
-These latter should allow you to get started with the tool and conduct your first optimizations.
-For an exhaustive list of all input data parameters, please refer to :doc:`/sections/Input data` section.
+This section only provides a brief overview of REHO's capabilities, based on a basic script example.
+This latter should allow you to get started with the tool and conduct your first optimizations.
 
-Buildings information
----------------------
+.. code-block:: python
+
+    from reho.model.reho import *
+    from reho.plotting import plotting
+
+    # Set building parameters
+    reader = QBuildingsReader()
+    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=3)
+
+    # Select weather data
+    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+
+    # Set scenario
+    scenario = dict()
+    scenario['Objective'] = 'TOTEX'
+    scenario['EMOO'] = {}
+    scenario['specific'] = []
+    scenario['name'] = 'totex'
+    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+    scenario['enforce_units'] = []
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
+
+    # Set method options
+    method = {'building-scale': True}
+
+    # Run optimization
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho.single_optimization()
+
+    # Save results
+    reho.save_results(format=['pickle'], filename='totex')
+
+    # Plot energy flows
+    plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel').show()
+
+
+Set building parameters
+---------------------------
 
 Each building needs to be characterised to estimate its energy demand, its renewable potential, and its sector coupling potential.
 Such information about the buildings involved in the analysis can be provided to REHO in two ways:
@@ -84,7 +128,7 @@ Such information about the buildings involved in the analysis can be provided to
 2. Or by reading CSV files.
 
 QBuildings
-~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 QBuildings is a GIS database for the characterization of the Swiss building stock from an energy point of view (end-use demand, buildings morphology, endogenous resources).
 It is built by gathering different public databases and combining them with SIA norms.
@@ -92,7 +136,7 @@ It was initiated and developed by EPFL (Switzerland), within the Industrial Proc
 
 REHO can connect to QBuildings and read the data it contains with the following code:
 
-.. code-block:: bash
+.. code-block:: python
 
     reader = QBuildingsReader()             # load QBuildingsReader class
     reader.establish_connection('Suisse')   # connect to QBuildings database
@@ -106,50 +150,47 @@ The two files implied in the process are:
 *NB: Note that you need to be connected to EPFL network or VPN to access the database*
 
 CSV files
-~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 The buildings information can also be provided through a CSV file, with the call:
 
-.. code-block:: bash
+.. code-block:: python
 
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=2)
 
 The CSV file must be located in the :code:`data/buildings/` folder.
 
-Optimization scope
-------------------
 
-The value of REHO is to offer optimization of a specified territory at building-scale or district-scale.
+Select weather data
+-----------------------
 
-Building-scale
-~~~~~~~~~~~~~~
+Yearly weather data has to be clustered to typical days. The :code:`cluster` dictionary contains the weather information:
 
-`1a_building-scale_totex.py` shows how to conduct a building-scale optimization, by setting:
+.. code-block:: python
 
-.. code-block:: bash
+    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
-    method = {'building-scale': True}
+Where:
 
-District-scale
-~~~~~~~~~~~~~~
+- 'Location' can be chosen among the files available in :code:`data/weather/hour`
+- 'Attributes' indicates the features among which the clustering is applied (I refers to Irradiance, T to Temperature, and W to Weekday)
+- 'Periods' relates to desired number of typical days
+- 'PeriodDuration' the typical period duration (24h is the default choice, corresponding to a typical day)
 
-`2a_district-scale_totex.py` shows how to conduct a district-scale optimization, by setting:
+Set scenario
+-----------------------
 
-.. code-block:: bash
-
-    method = {'district-scale': True}
-
-Multi-objective optimization
-----------------------------
+Objective function
+~~~~~~~~~~~~~~~~~~~
 
 REHO offers single or multi-objective optimization. The objective function can be specified in the :code:`scenario` dictionary:
 
-.. code-block:: bash
+.. code-block:: python
 
     scenario['Objective'] = 'TOTEX'     # select an objective function as defined in ampl_model/scenario.mod
 
-.. code-block:: bash
+.. code-block:: python
 
     scenario['Objective'] = ['OPEX', 'CAPEX']   # for multi-objective optimization two objectives need to be specified
 
@@ -160,7 +201,7 @@ Epsilon constraints
 
 The key :code:`EMOO` allows to add an epsilon constraint on some objective:
 
-.. code-block:: bash
+.. code-block:: python
 
     scenario['EMOO'] = {EMOO_opex: 16}     # select an epsilon constraint as defined in ampl_model/scenario.mod
 
@@ -173,10 +214,9 @@ Specific constraints
 
 In :code:`scenario` the key :code:`specific` allows to provide a list of specific constraints that can be activated:
 
-.. code-block:: bash
+.. code-block:: python
 
     scenario['specific'] = ["enforce_PV_max"]      # enforce the entire roof surface to be covered with PV panels
-
 
 Pareto curves
 ~~~~~~~~~~~~~
@@ -184,44 +224,16 @@ Pareto curves
 :code:`1b_building-scale_Pareto.py` and :code:`2b_district-scale_Pareto.py` show how to obtain an OPEX-CAPEX Pareto front,
 at building-scale or district-scale respectively.
 
-.. code-block:: bash
+.. code-block:: python
 
     scenario['nPareto'] = 2
 
 The parameter :code:`nPareto` indicates the number of intermediate points for each objective.
 The total number of optimizations will be :code:``2 + 2 * nPareto`` (2 extreme points plus 2 times a discretized interval of :code:`nPareto` points.
 
-Methods
--------
 
-You can use different methodology options in REHO, specified in the :code:`method` dictionary:
-
-.. code-block:: bash
-
-    method = {'use_pv_orientation': True, 'use_facades': False, 'district-scale': True}
-
-This example will enable PV orientation and PV on facades.
-The methods available are listed in :code:`compact_optimization.initialize_default_methods`.
-
-Weather
--------
-
-Yearly weather data has to be clustered to typical days. The :code:`cluster` dictionary contains the weather information:
-
-.. code-block:: bash
-
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-
-Where:
-
-- 'Location' can be chosen among the files available in :code:`data/weather/hour`
-- 'Attributes' indicates the features among which the clustering is applied (I refers to Irradiance, T to Temperature, and W to Weekday)
-- 'Periods' relates to desired number of typical days
-- 'PeriodDuration' the typical period duration (24h is the default choice, corresponding to a typical day)
-
-
-Infrastructure
---------------
+Initialize available units and grids
+-------------------------------------------
 
 Initializing the energy system structure is done with the :code:`infrastructure` class.
 
@@ -230,7 +242,7 @@ Grids
 
 Grids are initialized with:
 
-.. code-block:: bash
+.. code-block:: python
 
     grids = infrastructure.initialize_grids(file="grids.csv")
 
@@ -241,7 +253,7 @@ To use custom prices, there are two options:
 
 1. Provide another CSV file to the :code:`initialize_grids()` function:
 
-.. code-block:: bash
+.. code-block:: python
 
     grids = infrastructure.initialize_grids(file="custom_grids.csv")
 
@@ -249,7 +261,7 @@ Where :code:`"custom_grids.csv"` has to be located in :code:`preprocessing/param
 
 2. Use the :code:`Cost_supply_cst` and :code:`Cost_demand_cst` parameters in the :code:`initialize_grids()` function:
 
-.. code-block:: bash
+.. code-block:: python
 
     grids = infrastructure.initialize_grids({
         'Electricity': {'Cost_supply_cst': 0.30, 'Cost_demand_cst': 0.18},
@@ -264,7 +276,7 @@ Units
 
 Units are initialized with:
 
-.. code-block:: bash
+.. code-block:: python
 
     scenario['exclude_units'] = ['Battery', 'HeatPump_Geothermal']
     scenario['enforce_units'] = ['HeatPump_Air']
@@ -279,11 +291,81 @@ Where:
 
 District units can be enabled with the boolean argument :code:`district_units`:
 
-.. code-block:: bash
+.. code-block:: python
 
     units = infrastructure.initialize_units(scenario, grids, building_data, district_data="district_units.csv", district_units=True)
 
 Here "district_units.csv" contains the default parameters for district-size units.
 
+Set method options
+-----------------------
+
+You can use different methodology options in REHO, specified in the :code:`method` dictionary.
+The methods available are listed in :code:`compact_optimization.initialize_default_methods`.
+
+Optimization scope
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The value of REHO is to offer optimization of a specified territory at building-scale or district-scale.
 
 
+Conduct a building-scale optimization, by setting:
+
+.. code-block:: python
+
+    method = {'building-scale': True}
+
+
+Conduct a district-scale optimization, by setting:
+
+.. code-block:: python
+
+    method = {'district-scale': True}
+
+
+PV orientation and PV on facades
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This line of code will enable PV orientation and PV on facades:
+
+.. code-block:: python
+
+    method = {'use_pv_orientation': True, 'use_facades': False, 'district-scale': True}
+
+
+
+
+Run optimization
+-----------------------
+
+Once `reho` instance has been properly initialized as :code:`reho(qbuildings_data, units, grids, cluster, scenario, method, solver)`, optimization can be conducted.
+
+.. code-block:: python
+
+    reho.single_optimization()
+
+.. code-block:: python
+
+    reho.generate_pareto_curve()
+
+
+Save results
+-----------------------
+
+Results are saved in a `reho.results` dictionary and indexed on `Scn_ID` and `Pareto_ID`.
+If you want to access a value, you can check here which attribute you have to call in the `df_Results` dataframe.
+
+Assuming that you already have loaded your output file and you would like to know the size of the units which are installed,
+a look into the main AMPL file `model.mod` reveals that the variable you need is called `Units_Mult`.
+You can then search for the variable in the result class in Python and realize that it is located in the dataframe called `df_Unit`.
+
+Plot energy flows
+-----------------------
+
+Plotting directly with `reho.results`
+
+.. code-block:: python
+
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long').show()
+    plotting.plot_performance(reho.results, plot='gwp', indexed_on='Scn_ID', label='EN_long').show()
+    plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel').show()

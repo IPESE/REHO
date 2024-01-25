@@ -41,7 +41,7 @@ Description and complete License: see LICENSE file.
 ```
 pip install -r requirements.txt
 ```
-3. Please refer to "Getting started" section of the documentation for step-by-step guidelines.
+3. Please refer to "User guide" section of the documentation for step-by-step guidelines.
 
 ## Suggestions and contributions
 All suggestions or implementation must be tracked with dedicated issues and reported in the project repository.

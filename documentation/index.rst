@@ -20,7 +20,7 @@ Downloading REHO
 =======================
 
 The public version of REHO can be downloaded in the Releases section or from its github repository:
-https://github.com/Renewable-Energy-Hub-Optimizer/REHO
+https://github.com/IPESE/REHO
 
 Main contributors
 =================

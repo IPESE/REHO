@@ -46,7 +46,7 @@ setup(
     description='Renewable Energy Hub Optimizer (REHO) - A Comprehensive Decision Support Tool for Sustainable Energy System Planning',
     long_description=read_file('README.md'),
     long_description_content_type='text/markdown',
-    url='https://github.com/Renewable-Energy-Hub-Optimizer/REHO',
+    url='https://github.com/IPESE/REHO',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -56,7 +56,7 @@ setup(
     keywords='MILP, decision support, sustainable energy systems, district optimization',
     project_urls={
         'Documentation': 'https://reho.readthedocs.io/en/main/',
-        'Repository': 'https://github.com/Renewable-Energy-Hub-Optimizer/REHO',
+        'Repository': 'https://github.com/IPESE/REHO',
         'Download': 'https://pypi.org/project/REHO',
     },
 )

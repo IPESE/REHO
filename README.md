@@ -36,7 +36,7 @@ limitations under the License.
 Description and complete License: see LICENSE file.
 
 ## Installation
-1. Clone repository available at https://github.com/Renewable-Energy-Hub-Optimizer/REHO
+1. Clone repository available at https://github.com/IPESE/REHO
 2. Create `venv` in the repository and install required libraries with
 ```
 pip install -r requirements.txt

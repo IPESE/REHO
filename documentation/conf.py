@@ -81,4 +81,16 @@ numtab = True  # Add table numbering
 # def setup(app):
 #     app.add_css_file('css/custom.css')
 
-
+# ------------ Autodoc ------------------------------------
+autodoc_mock_imports = ['pandas',
+                        'openpyxl',
+                        'numpy',
+                        'scikit-learn',
+                        'scikit-learn-extra',
+                        'psycopg2',
+                        'requests',
+                        'sqlalchemy',
+                        'scipy',
+                        'matplotlib',
+                        'plotly',
+                        'geopandas']

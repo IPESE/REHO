@@ -149,7 +149,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     :type indexed_on: str
     :param add_annotation: Adds the numerical values along the bar plots.
     :type add_annotation: bool
-    :param per_m2: (Unused parameter?)
+    :param per_m2: Set to True to obtain the results divided by the total ERA.
     :type per_m2: bool
     :param additional_costs: Dictionary of additional costs to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
     :type additional_costs: dict
@@ -1594,9 +1594,44 @@ def monthly_average_balance(results, to_plot):
     return month_values
 
 
-def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename=None,
-                      export_format='html',
-                      auto_open=False):
+def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename=None, export_format='html'):
+    """
+    Generate a monthly bar plot showing the mean energy produced per hour
+    and the installed power for a specific unit.
+
+    :param results: Dictionary containing REHO results.
+    :type results: dict
+
+    :param to_plot: Dictionary specifying the unit to plot and scenario/pareto id from which it should be found.
+    :type to_plot: dict
+
+    :param label: Indicates the language to use for the plot. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+    :type label: str
+
+    :param save_path: Path where the plot should be saved.
+    :type save_path: str
+
+    :param filename: Name of the file to be saved.
+    :type filename: str
+
+    :param export_format: Format for exporting the plot ('html' or 'png', default: 'html').
+    :type export_format: str
+
+    :return: The generated plotly.graph_objs.Figure.
+
+    :example:
+
+     In a fossil scenario, plot the use of gas boiler throughout the year::
+
+        from reho.plotting.plotting import unit_monthly_plot
+
+        reho_results = pd.read_pickle('results/progressive_scenario.pickle')
+        to_plot = {'Unit': 'NG_Boiler', 'Scn_ID': 'fossil', 'Pareto_ID': False}
+        fig = unit_monthly_plot(reho_results, to_plot, label='FR_long',
+                                save_path="plots", filename="", export_format='png')
+        fig.show()
+
+    """
     design = layout.loc[to_plot['Unit']]
     # Filter the right results dictionary from the REHO results dictionary
     if 'Scn_ID' not in to_plot.keys() or not to_plot['Scn_ID']:
@@ -1671,7 +1706,5 @@ def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename
             fig.write_image(filename + export_format)
         elif export_format == 'html':
             fig.write_html(filename + export_format)
-    if auto_open:
-        fig.show()
 
     return fig

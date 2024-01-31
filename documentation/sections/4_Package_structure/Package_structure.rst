@@ -106,6 +106,9 @@ Characterizes all the sets and parameters which are connected to buildings, unit
 
 Performs the single or multi-objective optimization
 
+.. automodule:: reho.model.reho
+   :members: save_results
+
 - `save_results`: saves the results in a specified format (.csv, .pickle).
 
 
@@ -114,16 +117,17 @@ Performs the single or multi-objective optimization
 
 Directory for plotting and visualization code.
 
-- `layout.csv`
-- `plotting.py`
+- `layout.csv`: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
+- `plotting.py` :
+.. automodule:: reho.plotting.plotting
+   :members: plot_actors, plot_performance, plot_sankey, sunburst_eud, unit_monthly_plot
 - **rainbow_plots/**
-- `sankey.py`
-- `sia380_1.csv`
+- `sankey.py`: builds the dataframe to use to plot a *sankey diagram* from a **reho_results**.
+- `sia380_1.csv`: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
 - `yearly_profile_builder.py`
 
-.. automodule:: reho.plotting.plotting
-   :members:
-   :exclude-members: monthly_heat_balance
+
+
 
 
 

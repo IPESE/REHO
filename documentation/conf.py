@@ -56,6 +56,7 @@ html_theme = 'pydata_sphinx_theme'
 html_sidebars = {
   "**": []
 }
+html_logo = 'images/ipese-square.png'
 html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
   'header_links_before_dropdown': 6,
@@ -64,7 +65,7 @@ html_theme_options = {
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
                   "icon": "_static/ipese-square.png",
-                  "type": "local",}],
+                  "type": "url"}],
   "logo": {"image_light": 'sections/1_Overview/images/logo_reho.png',
            "image_dark": "images/logo_reho_light.png",
            "alt_text": "REHO documentation - Home"}

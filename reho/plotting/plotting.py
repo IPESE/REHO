@@ -9,15 +9,16 @@ from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 from matplotlib.legend_handler import HandlerTuple
-
+import locale, calendar
 
 # ---------------------------------------------------------------------------------------------
 # Definition of colors and labels
 cm = dict({'ardoise': '#413D3A', 'perle': '#CAC7C7', 'rouge': '#FF0000', 'groseille': '#B51F1F',
-                    'canard': '#007480', 'leman': '#00A79F', 'salmon': '#FEA993', 'green': '#69B58A', 'yellow': '#FFB100', 'darkblue': '#1246B5', 'lightblue': '#8bacf4','perle_light': '#dad8d8',
-                          'canard_light': '#4d9ea6', 'leman_light': '#4dc2bc', 'salmon_light': '#fec3b4',
-                          'groseille_light': "#ff6666", 'darkyellow': '#A57300', 'dark': '#000000',
-                          'yellow_light': '#FECC93'})
+           'canard': '#007480', 'leman': '#00A79F', 'salmon': '#FEA993', 'green': '#69B58A', 'yellow': '#FFB100',
+           'darkblue': '#1246B5', 'lightblue': '#8bacf4', 'perle_light': '#dad8d8',
+           'canard_light': '#4d9ea6', 'leman_light': '#4dc2bc', 'salmon_light': '#fec3b4',
+           'groseille_light': "#ff6666", 'darkyellow': '#A57300', 'dark': '#000000',
+           'yellow_light': '#FECC93'})
 
 # Colors and labels for units and layers
 layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Name').dropna(how='all')
@@ -26,7 +27,6 @@ layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Na
 # ---------------------------------------------------------------------------------------------
 
 def dict_to_df(results, df):
-
     t = {(Scn_ID, Pareto_ID): results[Scn_ID][Pareto_ID][df]
          for Scn_ID in results.keys()
          for Pareto_ID in results[Scn_ID].keys()}
@@ -34,6 +34,7 @@ def dict_to_df(results, df):
     df_merged = pd.concat(t.values(), keys=t.keys(), names=['Scn_ID', 'Pareto_ID'], axis=0)
 
     return df_merged
+
 
 def moving_average(data, n):
     return np.convolve(data, np.ones(n), 'valid') / n
@@ -45,9 +46,13 @@ def handle_zero_rows(df):
     return df.loc[~is_zero_row]
 
 
-def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, premium_version=False, additional_costs={}, scaling_factor=1):
+def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, premium_version=False,
+                additional_costs={}, scaling_factor=1):
+    """
+    This function prepares the dataframes that will be needed for the plot_performance and plot_actors
+    """
     df_eco = df_eco.xs('Network', level='Hub', axis=0)
-    df_eco = df_eco.groupby(level=indexed_on, sort=False).sum()*scaling_factor
+    df_eco = df_eco.groupby(level=indexed_on, sort=False).sum() * scaling_factor
     indexes = df_eco.index.tolist()
 
     data_capex = df_eco.xs('investment', level='Category', axis=1).transpose()
@@ -70,12 +75,14 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, p
     data_opex.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
 
     if include_avoided:
-        data_opex.loc[('costs', 'Electrical_grid'), :] = data_opex.loc[('costs', 'Electrical_grid')] + data_opex.loc[('avoided', 'PV')]
+        data_opex.loc[('costs', 'Electrical_grid'), :] = data_opex.loc[('costs', 'Electrical_grid')] + data_opex.loc[
+            ('avoided', 'PV')]
 
     if premium_version:
         data_opex.loc[('avoided', 'solar_premium'), :] = data_opex.loc[('avoided', 'PV_SC')] * (0.279 - 0.1645) / 0.279
         data_opex.loc[('revenues', 'solar_value'), :] = data_opex.loc[('revenues', 'Electrical_grid_feed_in')] + \
-                                                     data_opex.loc[('avoided', 'PV_SC')] - data_opex.loc[('avoided', 'solar_premium')]
+                                                        data_opex.loc[('avoided', 'PV_SC')] - data_opex.loc[
+                                                            ('avoided', 'solar_premium')]
         data_opex = data_opex.drop("PV_SC", level='Layer')
         data_opex = data_opex.drop("Electrical_grid_feed_in", level='Layer')
 
@@ -98,6 +105,10 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, p
 
 
 def remove_building_from_index(df):
+    """
+    Removes the Building_[123] appended to the name of the units in the index
+    """
+
     def filter_building_str(str):
         str_split = str.split("_")
         if len(str_split) > 2:
@@ -122,20 +133,37 @@ def remove_building_from_index(df):
     return df.set_index(index_modified)
 
 
-def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False, additional_costs={}, filename=None,
+def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False,
+                     additional_costs={}, filename=None,
                      export_format='html', scaling_factor=1, return_df=False):
     """
-        :param results: dictionary of REHO results
-        :param plot: choose among 'costs' and 'gwp'
-        :param label: indicates the labels to use and so the language. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'
-        :param indexed_on: whether the results should be grouped on Scn_ID or Pareto_ID
-        :param add_annotation: adds the numerical values along the bar plots
-        :param additional_costs dict of additional costs to include (choose between 'isolation', 'mobility' and 'ict') and scaling values
-        :param filename: name of the file to be saved
-        :param export_format: can be either html, png or plotly_plot
-        :param scaling_factor: scaling factor for the plot if a linear assumption is made
-        :param return_df: a dataframe can be returned for further post-processing or reporting purposes
-        :return:
+    Plot performance based on REHO results.
+
+    :param results: Dictionary of REHO results.
+    :type results: dict
+    :param plot: Choose among 'costs' and 'gwp'.
+    :type plot: str
+    :param label: Indicates the language to use for the plot. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+    :type label: str
+    :param indexed_on: Whether the results should be grouped on Scn_ID or Pareto_ID.
+    :type indexed_on: str
+    :param add_annotation: Adds the numerical values along the bar plots.
+    :type add_annotation: bool
+    :param per_m2: (Unused parameter?)
+    :type per_m2: bool
+    :param additional_costs: Dictionary of additional costs to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
+    :type additional_costs: dict
+    :param filename: Name of the file to be saved.
+    :type filename: str
+    :param export_format: Can be either 'html', 'png', or 'plotly_plot'.
+    :type export_format: str
+    :param scaling_factor: Scaling factor for the plot if a linear assumption is made.
+    :type scaling_factor: int or float
+    :param return_df: A dataframe can be returned for further post-processing or reporting purposes.
+    :type return_df: bool
+
+    :return: (Optional) A dataframe for further post-processing or reporting purposes.
+    :rtype: pd.DataFrame or None
     """
 
     sc = list(results.keys())[0]
@@ -152,8 +180,10 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         change_data['EN'] = ['Costs_Unit_inv', 'price', 'CAPEX', 'OPEX', 'Costs [CHF/y]', 'Costs', 'TOTEX', 'CHF']
         df_eco = df_eco.xs('costs', level='Perf_type')
     elif plot == 'gwp':
-        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Réseau', 'GWP [kgCO2/an]', 'Émissions', 'Total', 'kgCO2']
-        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Grid', 'GWP [kgCO2/y]', 'Emissions', 'Total', 'kgCO2']
+        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Réseau', 'GWP [kgCO2/an]', 'Émissions', 'Total',
+                             'kgCO2']
+        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Grid', 'GWP [kgCO2/y]', 'Emissions', 'Total',
+                             'kgCO2']
         df_eco = df_eco.xs('impact', level='Perf_type')
 
     if per_m2:
@@ -161,7 +191,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
         change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
 
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=True, additional_costs=additional_costs, scaling_factor=scaling_factor)
+    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=True, additional_costs=additional_costs,
+                                                 scaling_factor=scaling_factor)
 
     data_opex = data_opex.drop("avoided", level='type')
 
@@ -261,7 +292,9 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     else:
         return fig
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', include_avoided=False, premium_version=False, per_m2=False, additional_costs={},
+
+def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', include_avoided=False,
+                premium_version=False, per_m2=False, additional_costs={},
                 filename=None, export_format='html', scaling_factor=1, return_df=False):
     sc = list(results.keys())[0]
     id = list(results[sc].keys())[0]
@@ -270,15 +303,20 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', inc
     df_eco = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
-    change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1', 'leg_2']
+    change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1',
+                         'leg_2']
     lang = re.split('_', label)[0]
     if plot == 'costs':
-        change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX', 'CAPEX']
-        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/m2/y]', 'Costs', 'TOTEX', 'CHF', 'OPEX', 'CAPEX']
+        change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX',
+                             'CAPEX']
+        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/m2/y]', 'Costs', 'TOTEX', 'CHF',
+                             'OPEX', 'CAPEX']
         df_eco = df_eco.xs('costs', level='Perf_type')
     elif plot == 'gwp':
-        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Evitées', 'GWP [kgCO2/an]', 'Émissions', 'Total', 'kgCO2', 'Réseau', 'Constr']
-        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Avoided', 'GWP [kgCO2/y]', 'Emissions', 'Total', 'kgCO2', 'Grid', 'Constr']
+        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Evitées', 'GWP [kgCO2/an]', 'Émissions', 'Total',
+                             'kgCO2', 'Réseau', 'Constr']
+        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Avoided', 'GWP [kgCO2/y]', 'Emissions', 'Total',
+                             'kgCO2', 'Grid', 'Constr']
         df_eco = df_eco.xs('impact', level='Perf_type')
 
     if per_m2:
@@ -287,7 +325,8 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', inc
         change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
 
     indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, include_avoided=include_avoided,
-                                                 premium_version=premium_version, additional_costs=additional_costs, scaling_factor=scaling_factor)
+                                                 premium_version=premium_version, additional_costs=additional_costs,
+                                                 scaling_factor=scaling_factor)
 
     costs = pd.concat([data_capex, data_opex.xs('costs', level='type')],
                       keys=['investment', 'operation'], names=['Category'])
@@ -377,7 +416,7 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', inc
                    hovertemplate='<b>' + layer[label] + '</b>' +
                                  '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc[
                                      'unites', lang])
-            )
+        )
     # fig.add_trace(
     #     go.Bar(
     #         name=change_data.loc['total', lang],
@@ -411,28 +450,45 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', inc
     else:
         return fig
 
-def plot_sankey(df_Results, label='EN_long', color='ColorPastel', scaling_factor=1, return_df=False):
 
+def plot_sankey(df_Results, label='EN_long', color='ColorPastel', scaling_factor=1, return_df=False):
+    """
+    Generate a Sankey plot based on the results DataFrame.
+
+    :param df_Results: DataFrame containing results for the Sankey plot.
+    :type df_Results: pandas.DataFrame
+    :param label: Indicates the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+    :type label: str
+    :param color: Color scheme for the Sankey plot. Default is 'ColorPastel'.
+    :type color: str
+    :param scaling_factor: Scaling factor for the plot to adapt the results by a linear assumption. Default is 1.
+    :type scaling_factor: int or float
+    :param return_df: If True, return a dataframe for further post-processing or reporting purposes. Default is False.
+    :type return_df: bool
+
+    :return: If return_df is False, returns the Sankey plot. If True, returns a tuple containing the plot and a dataframe.
+    :rtype: plotly.graph_objects.Figure or tuple
+    """
     source, target, value, label_, color_ = sankey.df_sankey(df_Results, label=label, color=color, precision=2,
                                                              units='MWh', display_label_value=True,
                                                              scaling_factor=scaling_factor)
-    
+
     fig = go.Figure(data=[go.Sankey(
-        orientation = "h",
-        valueformat = ".2f",
-        valuesuffix = " MWh",
-        node = dict(
-          pad = 15,
-          thickness = 20,
-          line = dict(color = "black", width = 0.5),
-          label = label_,
-          color = color_,
+        orientation="h",
+        valueformat=".2f",
+        valuesuffix=" MWh",
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color="black", width=0.5),
+            label=label_,
+            color=color_,
         ),
-        link = dict(
-          source = source,
-          target = target,
-          value = value
-      ))])
+        link=dict(
+            source=source,
+            target=target,
+            value=value
+        ))])
 
     if return_df:
         df = pd.DataFrame()
@@ -445,10 +501,10 @@ def plot_sankey(df_Results, label='EN_long', color='ColorPastel', scaling_factor
 
 
 def plot_pareto(results, label='EN_long', color='ColorPastel', return_df=False):
-
     df_performance = dict_to_df(results, 'df_Performance').loc[
         (slice(None), slice(None), 'Network'),
-        ["Costs_op", "Costs_inv", "Costs_grid_connection", "Costs_rep", "GWP_op", "GWP_constr"]].reset_index(['Scn_ID', 'Hub'])
+        ["Costs_op", "Costs_inv", "Costs_grid_connection", "Costs_rep", "GWP_op", "GWP_constr"]].reset_index(
+        ['Scn_ID', 'Hub'])
     era = dict_to_df(results, 'df_Buildings').loc[(slice(None), 1, slice(None))].ERA.sum()
     df_performance["CAPEX"] = df_performance["Costs_inv"] + df_performance["Costs_rep"]
     df_performance["OPEX"] = df_performance["Costs_op"] + df_performance["Costs_grid_connection"]
@@ -456,7 +512,6 @@ def plot_pareto(results, label='EN_long', color='ColorPastel', return_df=False):
     df_performance["GWP"] = df_performance["GWP_op"] + df_performance["GWP_constr"]
 
     fig = make_subplots(specs=[[{"secondary_y": True}]])
-
 
     fig.add_trace(go.Scatter(
         x=list(df_performance.index),
@@ -527,9 +582,9 @@ def plot_pareto(results, label='EN_long', color='ColorPastel', return_df=False):
     else:
         return fig
 
-def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style='plotly', annotation="TOTEX",
-                annot_offset=0, legend=True, save_fig=False, name_fig='pareto', format_fig='png'):
 
+def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style='plotly', annotation="TOTEX",
+                    annot_offset=0, legend=True, save_fig=False, name_fig='pareto', format_fig='png'):
     df_performance_dict = {}
     # for results in results_list:
     df_performance = dict_to_df(results, 'df_Performance').loc[
@@ -541,7 +596,7 @@ def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style
     df_performance["TOTEX"] = df_performance["CAPEX"] + df_performance["OPEX"]
     df_performance["GWP"] = df_performance["GWP_op"] + df_performance["GWP_constr"]
     df_performance_dict[df_performance.loc[1, "Scn_ID"]] = df_performance[
-                                                                ["CAPEX", "OPEX", "TOTEX", "GWP"]].sort_values(
+                                                               ["CAPEX", "OPEX", "TOTEX", "GWP"]].sort_values(
         by=objectives[0]) / era
 
     if name_list is None:
@@ -623,7 +678,6 @@ def plot_pareto_old(results, name_list=None, objectives=["CAPEX", "OPEX"], style
 
 def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', color='ColorPastel',
                       save_fig=False, name_fig='pareto_units', format_fig='png', opex_line=False, title=None):
-
     fig, ax = plt.subplots()
     fig.set_size_inches(10, 5)
 
@@ -656,7 +710,6 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
         if objectives[1] == "GWP":
             grid_stack = "GWP_op"
 
-
         PV = df_unit[df_unit.index.get_level_values('Unit').str.contains('PV')]
         PV = PV.groupby(level='Pareto_ID', sort=False).sum() / era
 
@@ -665,7 +718,7 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
 
         BAT = df_unit[df_unit.index.get_level_values('Unit').str.contains('Battery')]
         BAT = BAT.groupby(level='Pareto_ID', sort=False).sum() / era
-        BAT["Costs_Unit_inv"] = BAT["Costs_Unit_inv"] + df_performance["Costs_rep"]/era
+        BAT["Costs_Unit_inv"] = BAT["Costs_Unit_inv"] + df_performance["Costs_rep"] / era
 
         BO = df_unit[df_unit.index.get_level_values('Unit').str.contains('NG_Boiler')]
         BO = BO.groupby(level='Pareto_ID', sort=False).sum() / era
@@ -678,8 +731,8 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
 
         idx = np.arange(0, 1, 1 / (len(PV.index)))
         if opex_line:
-            width = 0.4 * 2 / (len(PV.index)*nb_pareto)
-            shift_list = [[0], [-0.5, 0.5], [-1, 0, 1]][nb_pareto-1]
+            width = 0.4 * 2 / (len(PV.index) * nb_pareto)
+            shift_list = [[0], [-0.5, 0.5], [-1, 0, 1]][nb_pareto - 1]
             shift = shift_list[id_res]
             hatch = ["", "//", "."]
             linestyle = ["-", "--", ":"]
@@ -690,39 +743,41 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
 
         # Plotting
         ax.bar((idx + shift * width), BO[units_stack], label=layout.loc['Boiler', label], width=width,
-            color=layout.loc['Boiler', color],
-            edgecolor='black', hatch=hatch[id_res])
+               color=layout.loc['Boiler', color],
+               edgecolor='black', hatch=hatch[id_res])
         ax.bar((idx + shift * width), HP[units_stack], bottom=BO[units_stack], label=layout.loc['HeatPump_Air', label],
-            width=width,
-            color=layout.loc['HeatPump_Air', color],
-            edgecolor='black', hatch=hatch[id_res])
+               width=width,
+               color=layout.loc['HeatPump_Air', color],
+               edgecolor='black', hatch=hatch[id_res])
         ax.bar((idx + shift * width), EH[units_stack], bottom=HP[units_stack] + BO[units_stack],
-            label=layout.loc['ElectricalHeater', label], width=width, color=layout.loc['ElectricalHeater', color],
-            edgecolor='black', hatch=hatch[id_res])
+               label=layout.loc['ElectricalHeater', label], width=width, color=layout.loc['ElectricalHeater', color],
+               edgecolor='black', hatch=hatch[id_res])
         ax.bar((idx + shift * width), PV[units_stack],
-            bottom=EH[units_stack] + HP[units_stack] + BO[units_stack],
-            label=layout.loc['PV', label], width=width, color=layout.loc['PV', color],
-            edgecolor='black', hatch=hatch[id_res])
+               bottom=EH[units_stack] + HP[units_stack] + BO[units_stack],
+               label=layout.loc['PV', label], width=width, color=layout.loc['PV', color],
+               edgecolor='black', hatch=hatch[id_res])
         ax.bar((idx + shift * width), HS[units_stack],
-            bottom=PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
-            label=layout.loc['WaterTankSH', label], width=width, color=layout.loc['WaterTankSH', color],
-            edgecolor='black', hatch=hatch[id_res])
+               bottom=PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
+               label=layout.loc['WaterTankSH', label], width=width, color=layout.loc['WaterTankSH', color],
+               edgecolor='black', hatch=hatch[id_res])
         ax.bar((idx + shift * width), BAT[units_stack],
-            bottom=HS[units_stack] + PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
-            label=layout.loc['Battery', label], width=width, color=layout.loc['Battery', color],
-            edgecolor='black', hatch=hatch[id_res])
+               bottom=HS[units_stack] + PV[units_stack] + EH[units_stack] + HP[units_stack] + BO[units_stack],
+               label=layout.loc['Battery', label], width=width, color=layout.loc['Battery', color],
+               edgecolor='black', hatch=hatch[id_res])
 
         if not opex_line:
             ax.bar((idx + 0.5 * width), df_performance[grid_stack] / era, label="Resources", width=width,
-                color=cm['salmon'],
-                edgecolor='black')
+                   color=cm['salmon'],
+                   edgecolor='black')
             if objectives[1] == "OPEX":
                 ax.bar((idx + 0.5 * width), df_performance.Costs_grid_connection / era,
-                    bottom=df_performance.Costs_op.clip(lower=0) / era,
-                    label='Grid connection', width=width, color=cm['salmon_light'], edgecolor='black')
+                       bottom=df_performance.Costs_op.clip(lower=0) / era,
+                       label='Grid connection', width=width, color=cm['salmon_light'], edgecolor='black')
         else:
-            ax.plot(idx, df_performance[grid_stack] / era, label="Resources", color=cm['salmon'], linestyle=linestyle[id_res])
-            ax.plot(idx, (df_performance[grid_stack]+df_performance.Costs_inv) / era, label="TOTEX", color="red", linestyle=linestyle[id_res])
+            ax.plot(idx, df_performance[grid_stack] / era, label="Resources", color=cm['salmon'],
+                    linestyle=linestyle[id_res])
+            ax.plot(idx, (df_performance[grid_stack] + df_performance.Costs_inv) / era, label="TOTEX", color="red",
+                    linestyle=linestyle[id_res])
     ax.axhline(0, color='black', linewidth=0.8)
 
     ax.set_xticks(idx)
@@ -756,7 +811,7 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
         ax1.set_yticks([])
         circ = []
         for i in range(nb_pareto):
-            circ = circ + [(mpatches.Patch(facecolor='white',  edgecolor='black', hatch=hatch_pareto[i]),
+            circ = circ + [(mpatches.Patch(facecolor='white', edgecolor='black', hatch=hatch_pareto[i]),
                             Line2D([0], [0], color="black", linestyle=linestyle[i]))]
         ax1.legend(circ, label_pareto, loc='lower left', frameon=False, ncol=nb_pareto,
                    handler_map={tuple: HandlerTuple(ndivide=None)}, handlelength=5)
@@ -766,6 +821,7 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
         plt.savefig((name_fig + '_' + scenario + '.' + format_fig), format=format_fig, dpi=300)
 
     return plt
+
 
 def merge_handles_labels(ax):
     handles = []
@@ -836,11 +892,14 @@ def plot_LCOE(results, KPI_list, era, idx=None):
                   "electricity export": Salmon, "natural gas import": "black"}
 
         data_annual = {}
-        #data_annual["Import max"] = [res[0][i]["df_Grid_t"].xs(("Electricity", "Network"), level=(0, 1))["Grid_supply"][0:-2].max() for i in res[0]]
-        #data_annual["Export max"] = [res[0][i]["df_Grid_t"].xs(("Electricity", "Network"), level=(0, 1))["Grid_demand"][0:-2].max() for i in res[0]]
-        data_annual["electricity import"] = [res[0][i]["df_Annuals"].xs(("Electricity", "Network"), level=(0, 1))["Supply_MWh"][0] for i in res[0]]
-        data_annual["electricity export"] = [res[0][i]["df_Annuals"].xs(("Electricity", "Network"), level=(0, 1))["Demand_MWh"][0] for i in res[0]]
-        data_annual["natural gas import"] = [res[0][i]["df_Annuals"].xs(("NaturalGas", "Network"), level=(0, 1))["Supply_MWh"][0] for i in res[0]]
+        # data_annual["Import max"] = [res[0][i]["df_Grid_t"].xs(("Electricity", "Network"), level=(0, 1))["Grid_supply"][0:-2].max() for i in res[0]]
+        # data_annual["Export max"] = [res[0][i]["df_Grid_t"].xs(("Electricity", "Network"), level=(0, 1))["Grid_demand"][0:-2].max() for i in res[0]]
+        data_annual["electricity import"] = [
+            res[0][i]["df_Annuals"].xs(("Electricity", "Network"), level=(0, 1))["Supply_MWh"][0] for i in res[0]]
+        data_annual["electricity export"] = [
+            res[0][i]["df_Annuals"].xs(("Electricity", "Network"), level=(0, 1))["Demand_MWh"][0] for i in res[0]]
+        data_annual["natural gas import"] = [
+            res[0][i]["df_Annuals"].xs(("NaturalGas", "Network"), level=(0, 1))["Supply_MWh"][0] for i in res[0]]
 
         for kpi in KPI_list:
             kpi_res = [res[0][i]["df_KPI"].xs("Network")[kpi] for i in res[0]]
@@ -955,13 +1014,12 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
             for i in range(1, 366):
                 t = df['df_Index'].PeriodOfYear[i * 24]
                 supplies[unit] = np.concatenate((supplies[unit], supply.xs(t)))
-        if unit=='PV' and plot_curtailment:
+        if unit == 'PV' and plot_curtailment:
             curtailment = df_aggregated.droplevel('Layer').Units_curtailment[:-2].groupby(['Period', 'Time']).sum()
             curtailments[unit] = np.array([])
             for i in range(1, 366):
                 t = df['df_Index'].PeriodOfYear[i * 24]
                 curtailments[unit] = np.concatenate((curtailments[unit], curtailment.xs(t)))
-
 
     for unit in units_demand:
         demands[unit] = moving_average(demands[unit], items_average)
@@ -989,7 +1047,8 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
         for unit in units_supply:
             ax.plot(idx, -supplies[unit], label=layout.loc[unit, label], color=layout.loc[unit, color])
         if plot_curtailment:
-            ax.plot(idx, -curtailments['PV'], linestyle='.', label=layout.loc['Curtailment', label], color=layout.loc['Curtailment', color])
+            ax.plot(idx, -curtailments['PV'], linestyle='.', label=layout.loc['Curtailment', label],
+                    color=layout.loc['Curtailment', color])
 
         ax.set_title(title)
         ax.set_xlabel(obj_x)
@@ -1075,14 +1134,14 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
 
 def plot_resources(results, label='EN_long', color='ColorPastel',
                    save_path="", filename=None, export_format='html'):
-
     scenarios = list(results.keys())
     df_annuals = dict_to_df(results, 'df_Annuals')
     pareto_id = list(results[scenarios[0]].keys())[0]
     df_annuals = df_annuals.loc[(slice(None), pareto_id, slice(None), 'Network')]
     idx = df_annuals.index.levels[1].tolist()
     layers = ['NaturalGas', 'Oil', 'Electricity', 'Wood', 'Data']
-    df_resources = pd.DataFrame(0, index=['NaturalGas', 'Oil', 'Electrical_grid', 'Wood', ], columns=['scenario', 'Supply'])
+    df_resources = pd.DataFrame(0, index=['NaturalGas', 'Oil', 'Electrical_grid', 'Wood', ],
+                                columns=['scenario', 'Supply'])
     df_resources = df_resources.merge(layout, left_index=True, right_on='Name')
     df_resources = df_resources.rename({'Electrical_grid': 'Electricity'})
     for scn in scenarios:
@@ -1099,7 +1158,7 @@ def plot_resources(results, label='EN_long', color='ColorPastel',
                        hovertemplate='<b>' + df_to_plot[label] + '</b>' +
                                      '<br>%{y:.2f} MWh'
                        )
-                          )
+            )
     fig.update_layout(
         barmode="group",
         template='plotly_white',
@@ -1116,70 +1175,29 @@ def plot_resources(results, label='EN_long', color='ColorPastel',
     return fig
 
 
-def monthly_heat_balance(df_results):
+def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_format='html', scaling_factor=1,
+                 return_df=False):
     """
-        return data to plot a monthly heat balance of the df_results
-        TODO : check if multi-building is okay
-        Parameters:
-            df_results (df): dataframe of a scenario
-        Returns:
-            df series of House_Q_heating, -House_Q_cooling, House_Q_convection, HeatGains, SolarGains
+    Generate a Sunburst plot for End Use Demand (EUD) based on REHO results, by buildings' class.
+
+    :param results: Dictionary of REHO results.
+    :type results: dict
+    :param label: Indicates the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+    :type label: str
+    :param save_path: Path to save the plot file. Default is an empty string.
+    :type save_path: str
+    :param filename: Name of the file to be saved. Default is None.
+    :type filename: str or None
+    :param export_format: Format for exporting the plot. Can be 'html' or 'png'. Default is 'html'.
+    :type export_format: str
+    :param scaling_factor: Scaling factor for the plot to adapt the results by a linear assumption. Default is 1.
+    :type scaling_factor: int or float
+    :param return_df: If True, return a dataframe for further post-processing or reporting purposes. Default is False.
+    :type return_df: bool
+
+    :return: If return_df is False, returns the Sunburst plot. If True, returns a tuple containing the plot and a dataframe.
+    :rtype: plotly.graph_objects.Figure or tuple
     """
-    # Extract the data
-    df_external = df_results['df_External']
-    df_buildings_th_feature = df_results['df_Buildings'][['U_h', 'ERA']]
-    df_buildings_t = df_results['df_Buildings_t']
-    df_period_time = df_buildings_t.xs('Building1').index[:-2]
-
-    # Prepare the df to store the heat flux
-    list_columns = ['House_Q_heating', 'House_Q_cooling', 'House_Q_convection', 'HeatGains', 'SolarGains']
-    df_heat_building_t = pd.DataFrame(0,
-                                      index=df_period_time,
-                                      columns=list_columns)
-    # list of the two last periods used for design purpose to drop later
-    period_to_drop = list(df_buildings_t.xs('Building1').index.get_level_values('Period').unique()[-2:])
-
-    # For each building: calculation of the heat flux
-    # and addition of the flux of each building in df_heat_building_t
-    for b in list(df_buildings_th_feature.index):
-        df_Q_convection_calcul = df_buildings_t.xs(b).merge(df_external, left_index=True, right_index=True)
-        for i in period_to_drop:
-            df_Q_convection_calcul = df_Q_convection_calcul.drop(i, level='Period')
-        df_Q_convection_calcul['House_Q_convection'] = df_buildings_th_feature.loc[b, 'U_h'] * \
-                                                       df_buildings_th_feature.loc[b, 'ERA'] * \
-                                                       (df_Q_convection_calcul.T_ext - df_Q_convection_calcul.T_in)
-        df_Q_convection_calcul = df_Q_convection_calcul[list_columns]
-        df_heat_building_t = df_heat_building_t.add(df_Q_convection_calcul)
-
-    # Monthly average (hypothèse, 1 month: 730 hours)
-    House_Q_heating = np.array([])
-    House_Q_cooling = np.array([])
-    House_Q_convection = np.array([])
-    HeatGains = np.array([])
-    SolarGains = np.array([])
-
-    for i in range(1, 366):
-        id = df_results['df_Index'].PeriodOfYear[i * 24]
-        data_id = df_heat_building_t.xs(id)
-        House_Q_heating = np.concatenate((House_Q_heating, data_id.House_Q_heating))
-        House_Q_cooling = np.concatenate((House_Q_cooling, data_id.House_Q_cooling))
-        House_Q_convection = np.concatenate((House_Q_convection, data_id.House_Q_convection))
-        HeatGains = np.concatenate((HeatGains, data_id.HeatGains))
-        SolarGains = np.concatenate((SolarGains, data_id.SolarGains))
-
-    items_average = 730
-
-    House_Q_heating = np.sum(House_Q_heating.reshape(-1, items_average), axis=1)
-    House_Q_cooling = np.sum(House_Q_cooling.reshape(-1, items_average), axis=1)
-    House_Q_convection = np.sum(House_Q_convection.reshape(-1, items_average), axis=1)
-    HeatGains = np.sum(HeatGains.reshape(-1, items_average), axis=1)
-    SolarGains = np.sum(SolarGains.reshape(-1, items_average), axis=1)
-
-    # ! - for House_Q_cooling to get negative values for cooling
-    return House_Q_heating, -House_Q_cooling, House_Q_convection, HeatGains, SolarGains
-
-
-def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_format='html', scaling_factor=1, return_df=False):
 
     def add_class(row):
         ratio = [float(s) for s in str(row['ratio']).split("/")]
@@ -1194,8 +1212,10 @@ def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_f
                            'Electricity': 'elec_per_class'}
     classes = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII']
     df_buildings = dict_to_df(results, 'df_Buildings')
-    df_annuals = dict_to_df(results, 'df_Annuals').reset_index().pivot(index=['Scn_ID', 'Pareto_ID', 'Hub'], columns='Layer', values='Demand_MWh')
-    df_buildings = df_buildings.reset_index().merge(df_annuals, on=['Scn_ID', 'Pareto_ID', 'Hub']).set_index(['Scn_ID', 'Pareto_ID', 'Hub'])
+    df_annuals = dict_to_df(results, 'df_Annuals').reset_index().pivot(index=['Scn_ID', 'Pareto_ID', 'Hub'],
+                                                                       columns='Layer', values='Demand_MWh')
+    df_buildings = df_buildings.reset_index().merge(df_annuals, on=['Scn_ID', 'Pareto_ID', 'Hub']).set_index(
+        ['Scn_ID', 'Pareto_ID', 'Hub'])
     data_to_plot = pd.DataFrame(0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class',
                                                            'elec_per_class'])
     class_names = pd.read_csv(os.path.join(path_to_plotting, 'sia380_1.csv'), index_col='id_class', sep=";")
@@ -1231,21 +1251,22 @@ def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_f
                                                        '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}']]
-        [hover_template.append(element) for element in ['<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentParent:.2%}' + liaison + '%{parent}',
-                                                        '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
-                                                        '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
-                                                        '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}']]
+        [hover_template.append(element) for element in
+         ['<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentParent:.2%}' + liaison + '%{parent}',
+          '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
+          '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
+          '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}']]
 
-    values_sun = [round(val*scaling_factor, 2) for val in values_sun]
+    values_sun = [round(val * scaling_factor, 2) for val in values_sun]
     fig = go.Figure(go.Sunburst(
-                      labels=child_name,
-                      parents=parents_name,
-                      values=values_sun,
-                      branchvalues='total',
-                      name=hover_text,
-                      hovertemplate=hover_template,
-                      texttemplate=text_template,
-                      ))
+        labels=child_name,
+        parents=parents_name,
+        values=values_sun,
+        branchvalues='total',
+        name=hover_text,
+        hovertemplate=hover_template,
+        texttemplate=text_template,
+    ))
 
     fig.update_layout(
         sunburstcolorway=["#413D3A", "#CAC7C7", "#B51F1F", "#007480", "#00A79F", "#FEA993"],
@@ -1266,7 +1287,6 @@ def sunburst_eud(results, label='EN_long', save_path="", filename=None, export_f
         return fig, df
     else:
         return fig
-
 
 
 def temperature_profile(df_results):
@@ -1354,10 +1374,7 @@ def plot_EUD_FES(results):
     print(df_EUD_FEC)
 
 
-
-
 def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
-
     fig, ax = plt.subplots(1, figsize=(5.5, 4.2))
     ax2 = ax.twinx()
     data = {}
@@ -1366,30 +1383,32 @@ def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
         annuals = dict_to_df(res, 'df_Annuals')
 
         data["PV"] = df_unit[df_unit.index.get_level_values('Unit').str.contains('PV')]
-        data["PV"] = data["PV"].groupby(level='Pareto_ID', sort=False).sum()/1000
+        data["PV"] = data["PV"].groupby(level='Pareto_ID', sort=False).sum() / 1000
 
         data["PV_annuals"] = annuals[annuals.index.get_level_values('Hub').str.contains('PV')]
         data["PV_annuals"] = data["PV_annuals"].groupby(level='Pareto_ID', sort=False).sum()["Supply_MWh"]
 
         data["EVs"] = df_unit[df_unit.index.get_level_values('Unit').str.contains('EV_district')]
-        data["EVs"] = data["EVs"].groupby(level='Pareto_ID', sort=False).sum()/1000
+        data["EVs"] = data["EVs"].groupby(level='Pareto_ID', sort=False).sum() / 1000
 
-        data["C_tot"] = [res[0][i]["df_Performance"][["Costs_op", "Costs_inv"]].xs("Network").sum()/era for i in res[0]]
+        data["C_tot"] = [res[0][i]["df_Performance"][["Costs_op", "Costs_inv"]].xs("Network").sum() / era for i in
+                         res[0]]
         data["C_tot"] = np.array(data["C_tot"]) / [data["C_tot"][0]]
 
-        data["C_op"] = [res[0][i]["df_Performance"][["Costs_op"]].xs("Network").sum()/era for i in res[0]]
+        data["C_op"] = [res[0][i]["df_Performance"][["Costs_op"]].xs("Network").sum() / era for i in res[0]]
         data["C_op"] = np.array(data["C_op"]) / [data["C_op"][0]]
 
-        data["C_cap"] = [res[0][i]["df_Performance"][["Costs_inv"]].xs("Network").sum()/era for i in res[0]]
+        data["C_cap"] = [res[0][i]["df_Performance"][["Costs_inv"]].xs("Network").sum() / era for i in res[0]]
         data["C_cap"] = np.array(data["C_cap"]) / [data["C_cap"][0]]
 
         E_reimport = []
         for j in res[0]:
             df_el = res[0][j]["df_Grid_t"].xs("Electricity")["Grid_demand"]
-            delta_elec = df_el.drop(df_el.xs("Network", drop_level=False).index).groupby(["Period", "Time"]).sum() - df_el.xs("Network")
-            delta_elec = delta_elec.groupby("Period").sum().mul(res[0][1]["df_Time"].dp).sum()/1000
+            delta_elec = df_el.drop(df_el.xs("Network", drop_level=False).index).groupby(
+                ["Period", "Time"]).sum() - df_el.xs("Network")
+            delta_elec = delta_elec.groupby("Period").sum().mul(res[0][1]["df_Time"].dp).sum() / 1000
             E_reimport = E_reimport + [delta_elec]
-        data["E_reimport"] = [E_reimport[i]/data["PV_annuals"][i+1] for i in range(len(E_reimport))]
+        data["E_reimport"] = [E_reimport[i] / data["PV_annuals"][i + 1] for i in range(len(E_reimport))]
 
         data["SC"] = np.array([res[0][i]["df_KPI"]["SC"].xs("Network") for i in res[0]])
         E_dem = np.array([res[0][i]["df_Annuals"].xs("Network", level=1)["Demand_MWh"]["Electricity"] for i in res[0]])
@@ -1401,12 +1420,16 @@ def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
         data["NG_sup"][2] = 1.12
 
         style = ["-", "--", ":"][id_res]
-        idx = list(data["EVs"]["Units_Mult"]/data["EVs"]["Units_Mult"].max()*100)
-        ax2.plot(idx, data["SC"], marker='.', linestyle=style, color=layout.loc['Electricity', color], label="Self-consumption")
+        idx = list(data["EVs"]["Units_Mult"] / data["EVs"]["Units_Mult"].max() * 100)
+        ax2.plot(idx, data["SC"], marker='.', linestyle=style, color=layout.loc['Electricity', color],
+                 label="Self-consumption")
         ax.plot(idx, data["C_tot"], marker='.', linestyle=style, color="red", label=layout.loc['TOTEX', label])
-        ax.plot(idx, data["E_sup"], marker='.', linestyle=style, color=layout.loc['self_cons', color], label="Electricity retail")
-        ax.plot(idx, data["NG_sup"], marker='.', linestyle=style, color=layout.loc['NaturalGas', color], label="Gas retail")
-        ax.plot(idx, data["E_dem"], marker='.', linestyle=style, color=layout.loc['Heat', color], label="Electricity feed-in")
+        ax.plot(idx, data["E_sup"], marker='.', linestyle=style, color=layout.loc['self_cons', color],
+                label="Electricity retail")
+        ax.plot(idx, data["NG_sup"], marker='.', linestyle=style, color=layout.loc['NaturalGas', color],
+                label="Gas retail")
+        ax.plot(idx, data["E_dem"], marker='.', linestyle=style, color=layout.loc['Heat', color],
+                label="Electricity feed-in")
 
     # legend system design
     ax.set_ylabel('relative variation [-]', color="black")
@@ -1418,20 +1441,18 @@ def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
     by_label = merge_handles_labels([ax, ax2])
     ax.legend(by_label.values(), by_label.keys(), bbox_to_anchor=(0.9, -0.2), frameon=False, ncol=2)
 
-   # axx = ax.twinx()
-   # custom_lines = [Line2D([0], [0], color='black', linewidth=1.5),
-   #                 Line2D([0], [0], color='black', linewidth=1.5, linestyle='--')]
-   # axx.legend(custom_lines, ['coordinated', 'uncoordinated'], bbox_to_anchor=(0.9, -0.18), frameon=False,
-   #            ncol=2, title='system design')
-   # axx.set_axis_off()
+    # axx = ax.twinx()
+    # custom_lines = [Line2D([0], [0], color='black', linewidth=1.5),
+    #                 Line2D([0], [0], color='black', linewidth=1.5, linestyle='--')]
+    # axx.legend(custom_lines, ['coordinated', 'uncoordinated'], bbox_to_anchor=(0.9, -0.18), frameon=False,
+    #            ncol=2, title='system design')
+    # axx.set_axis_off()
     plt.tight_layout()
 
     return plt
 
 
-
-def plot_load_duration_curve(results, ids, save_fig = False, label='EN_long', color='ColorPastel'):
-
+def plot_load_duration_curve(results, ids, save_fig=False, label='EN_long', color='ColorPastel'):
     fig, ax = plt.subplots(figsize=(9, 6))
     axx = ax.twinx()
     linstyles = ["-", ":"]
@@ -1448,7 +1469,7 @@ def plot_load_duration_curve(results, ids, save_fig = False, label='EN_long', co
                 expanded_profile = np.repeat(profile[id].xs(i, level="Period").values, int(res[0][id]["df_Time"].dp[i]))
                 periods_profile = np.concatenate((periods_profile, expanded_profile))
             profile[id] = np.sort(periods_profile)
-            ax.plot(idx, profile[id][::-1], linstyles[0], color=[1.0-col, 0.1, col], label="EV "+str(id-1)+"0%")
+            ax.plot(idx, profile[id][::-1], linstyles[0], color=[1.0 - col, 0.1, col], label="EV " + str(id - 1) + "0%")
             col = col + 0.3
     ax.set_ylabel('transformer exchange [kW]', fontsize=19)
     ax.set_xlabel('time [hours]', fontsize=19)
@@ -1466,8 +1487,9 @@ def plot_load_duration_curve(results, ids, save_fig = False, label='EN_long', co
     plt.gca().add_patch(rect)
 
     custom_lines = [Line2D([0], [0], color='black', linewidth=1.5, ),
-                    Line2D([0], [0], color='black', linewidth=1.5, linestyle=':') ]
-    axx.legend(custom_lines, ['centralized', 'decentralized'], bbox_to_anchor=(0.86, -0.12), frameon=False, ncol=2, title='design strategy', fontsize=18, title_fontsize=18)
+                    Line2D([0], [0], color='black', linewidth=1.5, linestyle=':')]
+    axx.legend(custom_lines, ['centralized', 'decentralized'], bbox_to_anchor=(0.86, -0.12), frameon=False, ncol=2,
+               title='design strategy', fontsize=18, title_fontsize=18)
     axx.set_axis_off()
 
     if save_fig:
@@ -1476,3 +1498,180 @@ def plot_load_duration_curve(results, ids, save_fig = False, label='EN_long', co
         plt.savefig(('figures\\load_duration_curves' + '.' + format), format=format, dpi=300)
 
     return plt
+
+
+def monthly_average_balance(results, to_plot):
+    """
+        return data to plot a monthly heat balance of the df_results, from REHO
+        TODO : check if multi-building is okay
+
+        Author : Florent, Joseph
+
+        Parameters:
+            results (dict): dict from pickle of REHO
+
+        Returns:
+            df series of House_Q_heating, -House_Q_cooling, House_Q_convection, HeatGains, SolarGains
+    """
+
+    def monthly_average(results, df_to_extract):
+        np_to_extract = np.array([])
+        np_month = np.array([])
+        ranges = divide_hours_into_months()
+        for i in range(1, 366):
+            hour = i * 24
+            month = len(np_to_extract)
+            id_period = results['df_Index'].PeriodOfYear[hour]
+            data_id = df_to_extract.xs(id_period)
+            np_month = np.concatenate((np_month, data_id))
+            if ranges[month][1] == hour:
+                np_to_extract = np.append(np_to_extract, np.sum(np_month) / (ranges[month][1] - ranges[month][0]))
+                np_month = np.array([])
+
+        return np_to_extract
+
+    def divide_hours_into_months():
+        num_months = 12
+
+        month_ranges = []
+        start_hour = 1
+        for month in range(num_months):
+            days = calendar.monthrange(2023, month + 1)
+            end_hour = start_hour + days[1] * 24 - 1
+            month_ranges.append((start_hour, end_hour))
+            start_hour = end_hour + 1
+
+        return month_ranges
+
+    df_units_t = remove_building_from_index(results['df_Unit_t'])
+    pos_units = df_units_t.index.get_level_values('Unit').unique()
+    pos_columns_bui = ['House_Q_heating', 'House_Q_cooling', 'House_Q_convection', 'HeatGains', 'SolarGains']
+
+    # Df of time period
+    df_period_time = df_units_t.index.to_frame()[['Period', 'Time']].reset_index(drop=True)
+
+    df_type = ''
+    if to_plot in pos_units:
+        df_type = 'unit'
+    elif to_plot in pos_columns_bui:
+        df_type = 'building'
+
+    # For unit
+    if df_type == 'unit':
+        if to_plot == 'PV':
+            column_to_plot = 'Units_supply'
+        else:
+            column_to_plot = 'Units_demand'
+        df_to_extract = df_units_t.xs(to_plot, level='Unit').droplevel('Layer')[column_to_plot][:-2]
+
+    elif df_type == 'building':
+        # Extract the data
+        df_external = results['df_External']
+        df_buildings_th_feature = results['df_Buildings'][['U_h', 'ERA']]
+
+        if to_plot == 'House_Q_convection':
+            df_to_extract = pd.DataFrame(0, index=df_period_time, columns=[to_plot])
+            # For each building: calculation of the heat flux
+            # and addition of the flux of each building in df_heat_building_t
+            for b in list(df_buildings_th_feature.index):
+                df_to_extract['House_Q_convection'] = df_buildings_th_feature.loc[b, 'U_h'] * \
+                                                      df_buildings_th_feature.loc[b, 'ERA'] * \
+                                                      (df_external.T_ext - df_external.T_in)
+            df_to_extract = df_to_extract[:-2]
+        else:
+            df_to_extract = results['df_Buildings_t'][to_plot][:-2]
+    else:
+        # Case where the unit is not referenced in df_Unit_t such as for WaterTank
+        if 'df_Stream_t' in results.dict_config.keys():
+            df_stream = remove_building_from_index(results['df_Stream_t'])
+            df_to_extract = df_stream.xs(to_plot, level='Unit')['Streams_Q'][:-2]
+        else:
+            idx = pd.MultiIndex.from_frame(df_period_time)
+            units_mult = remove_building_from_index(results['df_Unit']).reset_index().groupby('Unit').sum()['Units_Mult']
+            df_to_extract = pd.Series(units_mult, index=idx)
+    month_values = monthly_average(results, df_to_extract)
+
+    return month_values
+
+
+def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename=None,
+                      export_format='html',
+                      auto_open=False):
+    design = layout.loc[to_plot['Unit']]
+    # Filter the right results dictionary from the REHO results dictionary
+    if 'Scn_ID' not in to_plot.keys() or not to_plot['Scn_ID']:
+        scn_id = list(results.keys())[0]
+        if 'Pareto_ID' not in to_plot.keys() or not to_plot['Pareto_ID']:
+            pareto_id = list(results[scn_id].keys())[0]
+        else:
+            pareto_id = to_plot['Pareto_ID']
+    else:
+        scn_id = to_plot['Scn_ID']
+        pareto_id = 0
+    to_plot = to_plot['Unit']
+    df_results = results[scn_id][pareto_id]
+
+    month_values = monthly_average_balance(df_results, to_plot)
+    sized = remove_building_from_index(df_results['df_Unit']).loc[to_plot]['Units_Mult']
+
+    title_y = 'Energy [kWh/h]'
+    power = 'Power installed [kW]'
+    energy = 'Mean energy produced per hour [kWh/h]'
+    title = 'Power installed and energy produced for {}'.format(design.loc[label])
+
+    if 'FR' in label:
+        locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
+        title_y = 'Energie [kWh/h]'
+        power = 'Puissance installée [kW]'
+        energy = 'Energie moyenne produite par heure [kWh/h]'
+        title = 'Puissance installée et énergie produite pour {}'.format(design.loc[label])
+    if 'short' in label:
+        month_ticks = list(calendar.month_abbr)[1:]
+    else:
+        month_ticks = list(calendar.month_name)[1:]
+
+    # month_ticks = [month.encode('latin1').decode('utf-8') for month in month_ticks]
+
+    fig = go.Figure(
+        go.Bar(
+            name=energy,
+            x=list(range(1, 13)), y=month_values,
+            width=1, showlegend=False,
+            hovertemplate="<b>" + design.loc[label] + "</b><br>%{y:.0f} kWh/h",
+            marker=dict(color=design.loc['ColorPastel']),
+        ),
+        go.Layout(
+            template='plotly_white',
+            bargap=0,
+            xaxis=dict(
+                tickmode='array',
+                tickvals=list(range(1, 13)),
+                ticktext=month_ticks
+            ),
+            yaxis=dict(title=title_y),
+            title=title
+        )
+    )
+    if sized is not None:
+        max_y = sized
+        fig.add_trace(
+            go.Bar(
+                name=power,
+                x=[6.5], y=[max_y],
+                width=12, showlegend=False,
+                hovertemplate="<b>" + design.loc[label] + "</b><br>%{y:.0f} kW",
+                marker=dict(color=design.loc['ColorPastel'], opacity=0.3),
+            )
+        )
+        fig.update_layout(yaxis=dict(range=[0, max_y]))
+
+    if filename is not None:
+        filename = os.path.join(save_path, filename + '_monthly_' + to_plot + '.')
+        if export_format == 'png':
+            fig.write_image(filename + export_format)
+        elif export_format == 'html':
+            fig.write_html(filename + export_format)
+    if auto_open:
+        fig.show()
+
+    return fig

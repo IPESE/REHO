@@ -64,7 +64,7 @@ html_theme_options = {
   # "external_links": [{"name": "IPESE", "url": "https://ipese-web.epfl.ch/ipese-blog/"},],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
-                  "icon": "_static/ipese-square.png",
+                  "icon": "https://github.com/IPESE/REHO/blob/main/documentation/images/ipese-square.png?raw=true",
                   "type": "url"}],
   "logo": {"image_light": 'sections/1_Overview/images/logo_reho.png',
            "image_dark": "images/logo_reho_light.png",

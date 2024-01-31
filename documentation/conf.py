@@ -56,7 +56,7 @@ html_theme = 'pydata_sphinx_theme'
 html_sidebars = {
   "**": []
 }
-html_logo = 'images/ipese-square.png'
+
 html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
   'header_links_before_dropdown': 6,

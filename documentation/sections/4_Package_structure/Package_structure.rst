@@ -121,6 +121,11 @@ Directory for plotting and visualization code.
 - `sia380_1.csv`
 - `yearly_profile_builder.py`
 
+.. automodule:: reho.plotting.plotting
+   :members:
+   :exclude-members: monthly_heat_balance
+
+
 
 *paths.py*
 ==================

@@ -26,7 +26,7 @@ The optimal solution minimizing the specified objective function will then be fu
 
 .. _energy_hub_v2:
 
-.. figure:: images/energy_hub_v2.svg
+.. figure:: images/district_documentation.svg
    :align: center
 
    District energy hub model in REHO

@@ -1,3 +1,4 @@
 sphinx
 sphinxcontrib-bibtex
-piccolo-theme
+sphinx-design
+pydata_sphinx_theme

@@ -74,6 +74,11 @@ class infrastructure:
     
 
     def generate_structure(self):
+        """
+        The indexes h_ht, h_mt, h_lt, c_ht state for the discretization of the streams. They are connected to the heat cascade.
+        h_ht: hotstream_hightemperature. h_mt: hotstream_mediumtemperature. h_lt: hotstream_lowtemperature. c_ht: coldstream_hightemperature
+        :return:
+        """
 
         for h in self.House:
             # Units------------------------------------------------------------

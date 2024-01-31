@@ -3,44 +3,164 @@
 Model
 +++++
 
-.. caution::
+.. warning::
+
+    Section still under development.
 
     Focus on the energy model and mathematical background of REHO
 
-    Bottom-up approach (building-level --> district-level)
+    Sequential approach : Inputs --> Model --> Outputs
 
+    .. Bottom-up approach (building-level --> district-level)
     .. Top-down approach (district --> buildings --> units + heat cascade)
 
 
 
 The energy hub concept is used to model an energy community where multi-energy carriers can supply diverse end use demands through building units and district units optimally interconnected and operated.
-:ref:`energy_hub_v2` displays the input data necessary to characterize a district-level energy hub to be optimized with REHO:
+:ref:`district_documentation` displays a district-level energy hub optimized with REHO.
 
-- the geographic boundaries of the considered territory;
-- the end use demands, resulting from the building stock and local weather;
-- the technologies available and their specifications regarding cost, life cycle, efficiency;
-- the endogenous resources;
-- and the energy market prices for district imports and exports.
 
-The optimal solution minimizing the specified objective function will then be fully characterized by the decision variables defining the energy system configuration. These decision variables are the installed capacities of the building and district units among the available technologies, their operation throughout a typical year, and the resulting energy flows (buildings interactions and district imports/exports).
-
-.. _energy_hub_v2:
-
-.. figure:: images/district_documentation.svg
+.. figure:: ../../images/district_documentation.svg
    :align: center
+   :name: district_documentation
 
    District energy hub model in REHO
 
+From a set of fixed parameters, REHO selects the optimal energy system configuration minimizing the specified objective function.
+All the energy flows (buildings interactions + district imports and exports) are then fully characterized by the model decision variables.
 
+.. note::
+    In the following all decision variables of the model are denoted with **bold letters** to distinguish them from parameters.
 
-Building model
+Inputs
 ===========================
 
-.. caution::
-    Describe equations
+Buildings characteristics
+---------------------------------
 
-Energy system
--------------------
+Affectation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Morphology
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Energy reference area, roof and facades area for solar panels
+
+Thermal envelope
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Quality of thermal envelope
+Temperatures of supply and return for heating system
+
+Weather data
+---------------------------------
+
+External temperature
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Solar irradiance
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Model uses data reduction with hourly resolution on typical days (eg, typically 10 typical days of 24 hours)
+*NB: Extreme periods are also considered, but only for the design of the capacities.*
+
+End use demand profiles
+---------------------------------
+
+
+
+Grids
+---------------------------------
+
+Energy layers
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Electricity
+- Natural gas
+- Oil
+- District heat
+- Data (ICT service)
+
+The grid parameters that can be changed in the model are:
+
+- Import and export tariffs
+- Carbon content
+- Environmental impact (detailed LCA characterization)
+
+They can be set as constant or specified at an hourly resolution.
+
+Specifications
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Cost, environmental impact, maximal capacity for district imports and exports
+
+Equipment
+---------------------------------
+
+Building-scale units
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The units parameters that can be changed in the model are:
+
+- Specific cost (fixed and variable costs, valid for a limited range fmin - fmax)
+- Environmental impact (= grey energy encompassing the manufacturing of the unit, and distributed over the lifetime of the unit)
+- Thermodynamics properties (efficiency, temperature of operation)
+
+
+
+District-scale units
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Specifications regarding cost, environmental impact, efficiency
+
+
+Model
+===========================
+
+Objective functions
+---------------------------------
+
+Annual operating expenses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. warning::
+    Adapt to all layers L
+
+.. math::
+    \boldsymbol{C^{op}_b} =  \sum_{p \in \text{P}} \sum_{t \in \text{T}} \left(  c^{el, +}_{p,t} \cdot \boldsymbol{ \dot{E}^{gr,+}_{b,p,t} } -  c^{el,-}_{p,t}\cdot \boldsymbol{ \dot{E}^{gr,-}_{b,p,t} } +  c^{ng,+}_{p,t} \cdot \boldsymbol{\dot{H}^{gr,+}_{b,p,t} } \right) \cdot d_t \cdot d_p  \quad \forall b \in  \text{B}
+
+Annual capital expenses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. math::
+    \begin{align}
+         \boldsymbol{C^{cap}_b} &=   \frac{i(1+i)}{(1+i)^n -1} \cdot \left(\boldsymbol{C^{inv}_b } +  \boldsymbol{C^{rep}_b } \right) \label{eq_ch1:Ccap}\\
+         \boldsymbol{C^{inv}_b }&= \sum_{u \in \text{U}}   b_{u} \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right) \label{eq_ch1:Cinv}\\
+         \boldsymbol{C^{rep}_b} &=   \sum_{u \in \text{U}}  \sum_{r \in \text{R}}  \frac{1}{\left( 1 + i \right)^{r \cdot l_u}}  \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right)   \quad \forall b \in  \text{B} \label{eq_ch1:Crep}
+    \end{align}
+
+Annual total expenses
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. math::
+    \boldsymbol{C^{tot}_b} =  \boldsymbol{C^{cap}_b} +  \boldsymbol{C^{op}_b} \quad \forall b \in \text{B}
+
+
+Global warming potential
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. math::
+    \boldsymbol{G^{op}_b} = \sum_{p \in \text{P}} \sum_{t\in \text{T}}  \left( g^{el}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,+}_{b,p,t}} - g^{el}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,-}_{b,p,t}} + g^{ng} \cdot \boldsymbol{\dot{H}^{gr,+}_{b,p,t}} \right) \cdot d_p \cdot d_t \quad \forall b \in  \text{B}
+
+.. math::
+    \boldsymbol{G^{bes}_b }= \sum_{u \in \text{U}}  \frac{1}{l_u}\cdot   \left( i^{g1}_u \cdot \boldsymbol{y_{b,u}} + i^{g2}_u\cdot \boldsymbol{f_{b,u}} \right) \quad \forall b \in \text{B}
+
+.. math::
+    \boldsymbol{G^{tot}_b} = \boldsymbol{G^{bes}_b} +  \boldsymbol{G^{op}_b} \quad \forall b \in \text{B}
+
+Building-scale constraints
+---------------------------------
+
 
 Sizing constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,9 +195,6 @@ Heat cascade
     \boldsymbol{\dot{R}_{1,b,p,t}}&= \boldsymbol{\dot{R}_{n_k+1,b,p,t}} = 0  \qquad \qquad  \forall k \in  \text{K} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T} \label{eq_ch1:heatK2}
     \end{align}
 
-Energy demand
--------------------
-
 Space heating
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -86,11 +203,22 @@ The general form of the SH demand can be expressed by the first order dynamic mo
 .. math::
     \boldsymbol{\dot{Q}_{b,p,t}^{SH}} = \dot{Q}_{b,p,t}^{gain} - U_b  \cdot A^{era}_b \cdot (\boldsymbol{T^{int}_{b,p,t}} - T^{ext}_{p,t}) - C_b \cdot A^{era}_b \cdot (\boldsymbol{T^{int}_{b,p,t+1}} - \boldsymbol{T^{int}_{b,p,t}})  \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
+- Global thermal transmittance coefficient [kW/m2/K]
+- Heat capacity [Wh/m2/K]
+
+**Heat gains**
+
 .. math::
     \dot{Q}^{gain}_{b,p,t}  = \dot{Q}^{int}_{b,p,t} + \dot{Q}^{irr}_{b,p,t}\quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
+**Internal heat gains**
+
 .. math::
     \dot{Q}^{int}_{b,p,t}  = A^{net}_b \cdot \sum_{r \in Rooms} f_{b,r} \cdot f^{u}_{r,p}  \cdot (\Phi^{P}_{r,p,t} + \Phi^{A+L}_{r,p,t}) \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
+
+**Solar heat gains**
+
+Middelhauve - Section 3.2.4 Solar heat gains
 
 .. math::
     \dot{Q}^{irr}_{b,p,t}  = A^{era}_b \cdot \phi^{irr} \cdot \dot{irr}^{ghi}_{b,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
@@ -112,63 +240,16 @@ When measured data is not available, the electricity demand can be calculated ba
 .. math::
     \dot{E}^{B}_{b,p,t}  = A^{net}_b \cdot \sum_{r \in Rooms} f_{b,r} \cdot f^{u}_{r,p}  \cdot  \dot{e}^{A+L}_{r,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
+Storage
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Building-level units
-------------------------
+A tank for domestic hot water is mandatory, and one for space heating is possible – generally helps to increase the self-consumption of PV + HP combination.
 
-.. caution::
-    TODO
+District-scale constraints
+---------------------------------
 
-Objective functions
-----------------------
-
-Annual operating expenses
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. math::
-    \boldsymbol{C^{op}_b} =  \sum_{p \in \text{P}} \sum_{t \in \text{T}} \left(  c^{el, +}_{p,t} \cdot \boldsymbol{ \dot{E}^{gr,+}_{b,p,t} } -  c^{el,-}_{p,t}\cdot \boldsymbol{ \dot{E}^{gr,-}_{b,p,t} } +  c^{ng,+}_{p,t} \cdot \boldsymbol{\dot{H}^{gr,+}_{b,p,t} } \right) \cdot d_t \cdot d_p  \quad \forall b \in  \text{B}
-
-Annual capital expenses
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. math::
-    \begin{align}
-         \boldsymbol{C^{cap}_b} &=   \frac{i(1+i)}{(1+i)^n -1} \cdot \left(\boldsymbol{C^{inv}_b } +  \boldsymbol{C^{rep}_b } \right) \label{eq_ch1:Ccap}\\
-         \boldsymbol{C^{inv}_b }&= \sum_{u \in \text{U}}   b_{u} \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right) \label{eq_ch1:Cinv}\\
-         \boldsymbol{C^{rep}_b} &=   \sum_{u \in \text{U}}  \sum_{r \in \text{R}}  \frac{1}{\left( 1 + i \right)^{r \cdot l_u}}  \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right)   \quad \forall b \in  \text{B} \label{eq_ch1:Crep}
-    \end{align}
-
-Annual total expenses
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. math::
-    \boldsymbol{C^{tot}_b} =  \boldsymbol{C^{cap}_b} +  \boldsymbol{C^{op}_b} \quad \forall b \in \text{B}
-
-
-Global warming potential
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. math::
-    \boldsymbol{G^{op}_b} = \sum_{p \in \text{P}} \sum_{t\in \text{T}}  \left( g^{el}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,+}_{b,p,t}} - g^{el}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,-}_{b,p,t}} + g^{ng} \cdot \boldsymbol{\dot{H}^{gr,+}_{b,p,t}} \right) \cdot d_p \cdot d_t \quad \forall b \in  \text{B}
-
-.. math::
-    \boldsymbol{G^{bes}_b }= \sum_{u \in \text{U}}  \frac{1}{l_u}\cdot   \left( i^{g1}_u \cdot \boldsymbol{y_{b,u}} + i^{g2}_u\cdot \boldsymbol{f_{b,u}} \right) \quad \forall b \in \text{B}
-
-.. math::
-    \boldsymbol{G^{tot}_b} = \boldsymbol{G^{bes}_b} +  \boldsymbol{G^{op}_b} \quad \forall b \in \text{B}
-
-
-Key performance indicators
-----------------------------------
-
-.. caution::
-    TODO
-
-District model
-===========================
-
-Master problem
--------------------
+Configuration selection
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. math::
     \begin{align}
@@ -193,41 +274,6 @@ Master problem
         \boldsymbol{G^{tot}} &=    \boldsymbol{G^{el}} +   \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot  \left(G^{gas}_{i,b} + G^{bes}_{i,b}    \right) \label{eq_ch4:GWP}
     \end{align}
 
-
-Transformer constraints
---------------------------
-
-.. _network_diagram:
-
-.. figure:: images/network_diagram.svg
-   :align: center
-
-   Energy flows and network constraints in REHO
-
-
-:ref:`energy_hub_v2` distinguishes the:
-
-- Grid = energy flows within the district boundary
-- Network = exchanges with the district exterior, through the interface (transformer perspective)
-
-.. math::
-        \begin{align}
-            &\sum_{b \in \text{B}}   (\boldsymbol{\dot{E}^{gr,+}_{b,l,p,t}} - \boldsymbol{\dot{E}^{gr,-}_{b,l,p,t}})  \cdot d_p \cdot d_t  = \boldsymbol{E^{net,+}_{l,p,t}} - \boldsymbol{ E^{net,-}_{l,p,t} }         \qquad \forall l, p, t \in \text{L, P, T}
-            \label{grid constraints}\\
-            &\boldsymbol{\dot{E}^{net,\pm}_{l,p,t}}  \leq  \dot{E}^{net, max}_l \qquad \forall l, p, t \in \text{L, P, T}
-            \label{Transformer max}
-        \end{align}
-
-
-District-level units
-------------------------
-
-.. caution::
-    TODO
-
-Objective functions
-----------------------
-
 .. math::
     \begin{align}
         &\boldsymbol{TOTEX} = \boldsymbol{OPEX} + \boldsymbol{CAPEX}
@@ -241,6 +287,47 @@ Objective functions
         &\boldsymbol{C^{rep}} = \sum_{\substack{u\in U}}\sum_{\substack{r\in R}}\frac{1}{(1+i)^{r\cdot l_u}}\cdot(i^{c1}_u\cdot \boldsymbol{y_u}+i^{c2}_u\cdot \boldsymbol{f_u})
         \label{crep}
     \end{align}
+
+Grid capacity
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. _network_diagram:
+
+.. figure:: images/network_diagram.svg
+   :align: center
+
+   Energy flows and network constraints in REHO
+
+
+:ref:`network_diagram` distinguishes the:
+
+- Grid = energy flows within the district boundary
+- Network = exchanges with the district exterior, through the interface (transformer perspective)
+
+.. math::
+        \begin{align}
+            &\sum_{b \in \text{B}}   (\boldsymbol{\dot{E}^{gr,+}_{b,l,p,t}} - \boldsymbol{\dot{E}^{gr,-}_{b,l,p,t}})  \cdot d_p \cdot d_t  = \boldsymbol{E^{net,+}_{l,p,t}} - \boldsymbol{ E^{net,-}_{l,p,t} }         \qquad \forall l, p, t \in \text{L, P, T}
+            \label{grid constraints}\\
+            &\boldsymbol{\dot{E}^{net,\pm}_{l,p,t}}  \leq  \dot{E}^{net, max}_l \qquad \forall l, p, t \in \text{L, P, T}
+            \label{Transformer max}
+        \end{align}
+
+Outputs
+===========================
+
+
+Decision variables
+----------------------------------
+
+- Installed capacities for building and district units
+- Operation time throughout a year
+
+
+
+Key performance indicators
+----------------------------------
+
+
 
 
 

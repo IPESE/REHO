@@ -247,7 +247,8 @@ Grids are initialized with:
     grids = infrastructure.initialize_grids(file="grids.csv")
 
 
-Where the file :code:`grids.csv` located in :code:`preprocessing/parameters/` directory contains the default parameters such as energy tariffs and carbon content.
+Where the file :code:`grids.csv` located in :code:`preprocessing/parameters/` directory contains the default parameters
+for the different energy layers available.
 
 To use custom prices, there are two options:
 

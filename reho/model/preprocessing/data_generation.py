@@ -160,7 +160,7 @@ def solar_gains_profile(ampl, buildings_data, File_ID):
         irr_west = pd.read_csv(filename, header=None)[0].values
 
     g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
-    g[irr_west > 0.2] = 0.1  # sunblinds for irradiation greater 200 W/m2
+    g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:

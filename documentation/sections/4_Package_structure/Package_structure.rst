@@ -1,6 +1,13 @@
 Package structure
 +++++++++++++++++
 
+.. contents::
+   :local:
+   :depth: 5
+
+.. toctree::
+   :maxdepth: 5
+
 .. caution::
 
     Focus on package structure and implementation
@@ -74,16 +81,59 @@ Extracts and postprocesses the output of the optimization:
 
 Prepares and manipulates the input of the optimization:
 
-- `clustering.py` executes the data reduction for meteorological data.
-- `data_generation.py`: calculates the buildings domestic hot water (DHW) and domestic electricity profiles. Also generates the heat gains and solar gains profiles.
-- `electricity_prices.py`: queries the electricity retail prices from the ELCOM database.
-- `electricity_profile_parser.py`: characterizes the electricity consumption profiles.
-- `emission_matrix_parser.py`: characterizes the CO2 emissions related to electricity generated from the grid.
-- `EV_profile_generator.py`: generates the electric vehicle electricity demand profiles.
-- `QBuildings.py`: connects and extract information from the QBuildings database.
-- `sia_parser.py`: collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.
-- `skydome_input_parser.py`: used for PV orientation.
-- `weather.py`: generates the meteorological data (temperature and solar irradiance).
+`clustering.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+executes the data reduction for meteorological data.
+
+`data_generation.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+calculates the buildings domestic hot water (DHW) and domestic electricity profiles. Also generates the heat gains and solar gains profiles.
+
+`electricity_prices.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.electricity_prices
+    :members: get_prices_from_elcom
+
+`electricity_profile_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+characterizes the electricity consumption profiles.
+
+`emission_matrix_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+characterizes the CO2 emissions related to electricity generated from the grid.
+
+`EV_profile_generator.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+generates the electric vehicle electricity demand profiles.
+
+`QBuildings.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+connects and extract information from the QBuildings database.
+
+.. autoclass:: reho.model.preprocessing.QBuildings.QBuildingsReader
+    :members:
+
+`sia_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.
+
+`skydome_input_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+used for PV orientation.
+
+`weather.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+generates the meteorological data (temperature and solar irradiance).
 
 
 *compact_optimization.py*
@@ -93,6 +143,7 @@ Collects all the data input and sends it an AMPL model, solves the optimization
 
 *district_decomposition.py*
 ------------------------------
+.. autoclass:: reho.model.district_decomposition.district_decomposition
 
 Applies the decomposition method
 
@@ -106,7 +157,7 @@ Characterizes all the sets and parameters which are connected to buildings, unit
 
 Performs the single or multi-objective optimization
 
-.. automodule:: reho.model.reho
+.. autoclass:: reho.model.reho.reho
    :members: save_results
 
 - `save_results`: saves the results in a specified format (.csv, .pickle).
@@ -119,8 +170,10 @@ Directory for plotting and visualization code.
 
 - `layout.csv`: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
 - `plotting.py` :
+
 .. automodule:: reho.plotting.plotting
    :members: plot_actors, plot_performance, plot_sankey, sunburst_eud, unit_monthly_plot
+
 - **rainbow_plots/**
 - `sankey.py`: builds the dataframe to use to plot a *sankey diagram* from a **reho_results**.
 - `sia380_1.csv`: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.

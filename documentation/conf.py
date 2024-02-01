@@ -12,6 +12,7 @@
 #
 import os
 import sys
+from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../'))
 import reho
 
@@ -31,7 +32,7 @@ release = '1.0'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinxcontrib.bibtex', 'sphinx.ext.autodoc', 'sphinx_design']
+extensions = ['sphinxcontrib.bibtex', 'sphinx.ext.autodoc', 'sphinx.ext.napoleon', 'sphinx_design']
 
 # Bibliography:
 bibtex_bibfiles = ['refs.bib']
@@ -68,7 +69,8 @@ html_theme_options = {
                   "type": "url"}],
   "logo": {"image_light": 'sections/1_Overview/images/logo_reho.png',
            "image_dark": "images/logo_reho_light.png",
-           "alt_text": "REHO documentation - Home"}
+           "alt_text": "REHO documentation - Home"},
+  "navigation_depth": 6
 }
 numfig = True  # Add figure numbering
 numtab = True  # Add table numbering
@@ -94,3 +96,13 @@ autodoc_mock_imports = ['pandas',
                         'matplotlib',
                         'plotly',
                         'geopandas']
+sys.modules['numpy'] = MagicMock()
+sys.modules['scikit-learn'] = MagicMock()
+sys.modules['sklearn'] = MagicMock()
+sys.modules['sklearn.metrics'] = MagicMock()
+sys.modules['scikit-learn-extra'] = MagicMock()
+sys.modules['sklearn_extra'] = MagicMock()
+sys.modules['sklearn_extra.cluster'] = MagicMock()
+sys.modules['sqlalchemy'] = MagicMock()
+sys.modules['sqlalchemy.dialects'] = MagicMock()
+sys.modules['shapely'] = MagicMock()

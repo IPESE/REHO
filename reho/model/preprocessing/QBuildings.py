@@ -18,7 +18,20 @@ import sys
 
 
 class QBuildingsReader:
+    """
+    This class is used to handle and prepare the data related to buildings.
 
+    There usually come from `GBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database. However,
+    one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in
+    `Processed GBuildings tables <https://ipese-web.epfl.ch/lepour/qbuildings/GBuildings/description.html#processed>`_.
+
+    Parameters
+    ----------
+    load_facades : bool
+        Whether the facades data should be added.
+    load_roofs : bool
+        Whether the roofs data should be added.
+    """
     def __init__(self, load_facades=False, load_roofs=False):
 
         self.db = None
@@ -32,7 +45,16 @@ class QBuildingsReader:
 
     def establish_connection(self, db):
         """
-        :param db: Name of the database to which we want to connect - Florissant, Sierre, Geneva
+        Allows to establish the connection with one of the QBuildings database.
+
+        Parameters
+        ----------
+        db : str
+            Name of the database to which we want to connect
+
+        Notes
+        -----
+        - It is highly recommend to pick 'Suisse' as a database as it is the only one maintained at the moment.
         """
         # Database connection
         file_ini = path_to_qbuildings + "/" + db + ".ini"
@@ -71,6 +93,49 @@ class QBuildingsReader:
         return
 
     def read_csv(self, buildings_filename, nb_buildings=None, roofs_filename=None, facades_filename=None):
+        """
+        Read buildings-related data from CSV files and prepare it for the REHO model.
+
+        If not all the buildings from the file should be extracted, one can give a number of buildings.
+        The fields from the files are translated to the corresponding ones used in REHO.
+
+        Parameters
+        ----------
+        buildings_filename : str
+            The filename of the CSV file containing buildings data.
+        nb_buildings : int, optional
+            The number of buildings to consider. If not provided, all buildings in the file are considered.
+        roofs_filename : str, optional
+            The filename of the CSV file containing roofs data.
+        facades_filename : str, optional
+            The filename of the CSV file containing facades data.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the prepared data for the REHO model, including buildings, facades, roofs,
+            and shadows if roofs and facades are loaded.
+
+        Notes
+        -----
+        - If `nb_buildings` is not provided, all buildings in the 'buildings' data are considered.
+        - If ``load_roofs = True``, `roofs_filename` must be provided, else it is not useful. Same goes for the facades.
+        - This function can be used with default files in case one does not want to connect to the database and does not need a particular building.
+          In that case, use `buildings_example.csv`, `roofs_example.csv` and `facades_example.csv`. It should be noted that those names are therefore reserved for the default and cannot be used for your own files.
+
+        Example
+        -------
+        >>> from reho.model.reho import *
+        >>> reader = QBuildingsReader(load_roofs=True)
+        >>> qbuildings_data = reho_instance.read_csv("buildings_example.csv", roofs_filename="roofs_example.csv",
+        ...                                          nb_buildings=7)
+
+        >>> qbuildings_data['buildings_data'].keys()
+        dict_keys(['Building1', 'Building2', 'Building3'])
+
+        >>> qbuildings_data['buildings_data']['Building1'].keys()
+        dict_keys(['id_class', 'ratio', 'status', 'ERA', 'SolarRoofArea', 'area_facade_m2', 'height_m', 'U_h', 'HeatCapacity', 'T_comfort_min_0', 'Th_supply_0', 'Th_return_0', 'Tc_supply_0', 'Tc_return_0', 'x', 'y', 'z', 'geometry', 'transformer', 'id_building', 'egid', 'period', 'n_p', 'energy_heating_signature_kWh_y', 'energy_cooling_signature_kWh_y', 'energy_hotwater_signature_kWh_y', 'energy_el_kWh_y'])
+        """
         self.data['buildings'] = file_reader(path_handler(buildings_filename))
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
@@ -100,11 +165,64 @@ class QBuildingsReader:
 
     def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False, return_location=False):
         """
-        :param transformer: ID of the transformer on which we want to optimize
-        :param nb_buildings: Number of buildings to select
-        :param egid: To specify a list of buildings to optimize with their egid
-        :param to_csv: To export the data into csv
-        :param return_location: To obtain the corresponding meteo cluster
+        Reads the database and extract from it the buildings required, by the LV transformer's ID.
+
+        If not all the buildings from the transformer should be extracted, one can give a number of buildings or if
+        the EGIDs are known, pass a list of EGIDs.
+        The fields from the database are translated to the corresponding ones used in REHO.
+
+        Parameters
+        ----------
+        transformer : int
+            ID of the transformer on which we want to optimize
+        nb_buildings : int
+            Number of buildings to select
+        egid : list
+            To specify a list of buildings to optimize with their EGIDs
+        to_csv : bool
+            To export the data into csv
+        return_location : bool
+            To obtain the corresponding meteo cluster
+
+        Returns
+        -------
+        dict
+            A Dictionary that contains the qbuildings data. The default has only one key ``buildings_data``
+            with a dictionary of buildings, with their fields and corresponding values.
+
+
+        Notes
+        -----
+        - The use of this function requires the previous creation of a ``QBuildingsReader`` and the use of ``establish_connection('Suisse')``.
+        - EGIDs are the postal address unique identifier used in Switzerland. One can find the EGIDs of a given address at the `RegBL <https://www.housing-stat.ch/fr/query/adrtoegid.html>`_.
+        - If ``load_roofs = True`` the roofs are returned as well in the dictionary as a DataFrame under the key ``roofs_data``.
+        - If ``load_facades = True`` the facades and the shadows are returned as well in the dictionary as a DataFrame under the keys ``roofs_data`` and ``shadows_data``.
+
+        Examples
+        --------
+        >>> from reho.model.reho import *
+        >>> reader = QBuildingsReader(load_roofs=True)
+        >>> reader.establish_connection('Suisse')
+        >>> qbuildings_data = reader.read_db(transformer=3658, egid=[954117])
+
+        >>> qbuildings_data['buildings_data']
+        {'buildings_data': {'Building1': {'id_class': 'I', 'ratio': '1.0', 'status': "['existing', 'existing', 'existing']", 'ERA': 1396.0, 'SolarRoofArea': 1121.8206745917826, 'area_facade_m2': 848.6771960464813, 'height_m': 9.211343577064236, 'U_h': 0.00152, 'HeatCapacity': 120.29999999999991, 'T_comfort_min_0': 20.0, 'Th_supply_0': 65.0, 'Th_return_0': 50.0, 'Tc_supply_0': 12.0, 'Tc_return_0': 17.0, 'x': 2592703.9673297284, 'y': 1120087.7339999992, 'z': 572.4461527539248, 'geometry': <POLYGON ((2592684.383 1120074.623, 2592683.644 1120075.443, 2592679.083 112...>, 'transformer': 3658, 'id_building': '40214', 'egid': '954117', 'period': '1981-1990', 'n_p': 34.9, 'energy_heating_signature_kWh_y': 111855.52745599969, 'energy_cooling_signature_kWh_y': 0.0, 'energy_hotwater_signature_kWh_y': 4562.903646729638, 'energy_el_kWh_y': 39088.0}}
+
+        >>> qbuildings_data['roofs_data']
+            TILT  ...                                           geometry
+        0     26  ...  MULTIPOLYGON (((2592819.164 1120187.216, 25928...
+        1     25  ...  MULTIPOLYGON (((2592832.585 1120154.503, 25928...
+        2     25  ...  MULTIPOLYGON (((2592819.164 1120187.216, 25928...
+        3     26  ...  MULTIPOLYGON (((2592824.929 1120157.956, 25928...
+        0     19  ...  MULTIPOLYGON (((2592378.668 1120324.589, 25923...
+        ..   ...  ...                                                ...
+        25     0  ...  MULTIPOLYGON (((2592872.699 1120127.178, 25928...
+        26     0  ...  MULTIPOLYGON (((2592917.016 1120132.965, 25929...
+        27    28  ...  MULTIPOLYGON (((2592891.248 1120129.691, 25928...
+        28    26  ...  MULTIPOLYGON (((2592901.604 1120125.591, 25929...
+        29    27  ...  MULTIPOLYGON (((2592887.725 1120119.181, 25928...
+        [252 rows x 6 columns]
+
         """
 
         # TODO: SQL query to select only buildings, roofs and facades of interest

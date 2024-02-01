@@ -10,30 +10,40 @@ import pandas as pd
 
 
 class district_decomposition:
+    """
+    Store district attributes, scenario, method, attributes for the decomposition, and initiate an attribute
+    that will store results.
+
+    Parameters
+    ----------
+    qbuildings_data : dict
+        Contains 3 layers: A dictionary of the buildings characteristics such as surface area, class, egid, a DataFrame for Roofs characteristics and a DataFrame for Facades characteristics.
+    units : dict
+        Units characteristics.
+    grids : dict
+        Grids characteristics.
+    parameters : dict, optional
+        Parameters set in the script (usually energy tariffs).
+    set_indexed : dict, optional
+        The indexes used in the model.
+    cluster : dict, optional
+        Define location district, number of periods, and number of timesteps.
+    method : dict, optional
+        The different methods to run the optimization (refer to :ref:`tbl-methods`).
+    solver : str, optional
+        Chosen solver for AMPL (gurobi, cplex, highs, cbc, etc.).
+    DW_params : dict, optional
+        Hyperparameters of the decomposition and other useful information.
+
+    Notes
+    -----
+    - The REHO class inherits this class, so the inputs are similar.
+    - ``qbuildings_data`` contains by default only the buildings data. The roofs and facades are added solely with the use of methods: *use_pv_orientation* and *use_facades*.
+    """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
                  cluster=None, method=None, solver=None, DW_params=None):
-        """
-        Description
-        -----------
-        - Initialize the district_decomposition class. The REHO class inherits this class, so the inputs are similar.
-        - Store district attributes, scenario, method, attributes for the decomposition and initiate attribute
-            that will store results.
 
-        Inputs
-        ------
-        qbuildings_data : dictionary,  Buildings characteristics such as surface area, class, egid, ...
-        units : units characteristics
-        grids : grids characteristics
-        exclude_units : List of the unit not considered
-        parameters : dictionary,  Parameters set in the script (usually energy tariffs)
-        set_indexed :dictionary,  The indexes used in the model
-        cluster : dictionary,  Define location district, number of periods and number of timesteps
-        method : dictionary, The different method to run the optimization (decomposed, PV orientations, parallel computation,...)
-        solver: string, chosen solver for AMPL (gurobi, cplex, highs, cbc...)
-        DW_params : dictionary, hyperparameters of the decomposition and other useful information
-
-        """
         # ampl solver
         self.solver = solver
 

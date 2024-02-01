@@ -32,6 +32,9 @@ from reho.model.postprocessing.postcompute_decentralized_districts import *
 from reho.paths import *
 
 class reho(district_decomposition):
+    """
+
+    """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
                  cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
@@ -855,7 +858,42 @@ class reho(district_decomposition):
 
     def save_results(self, format=('pickle'), filename='results', erase_file=True, filter=True):
         """
-        Save the results in the desired format: pickle file or Excel sheet
+        Save the results in the desired format: pickle file or Excel sheet.
+
+        The results are indexed on the scenarios and pareto IDs.
+
+        Parameters
+        ----------
+        format : tuple, optional
+            Format(s) in which to save the results. Choose from 'pickle' and 'xlsx'.
+            Default is ('pickle').
+        filename : str, optional
+            Base name of the file to be saved. The extension will be added based on the format.
+            Default is 'results'.
+        erase_file : bool, optional
+            Whether to overwrite existing files with the same name.
+            Default is True.
+        filter : bool, optional
+            Whether to filter out rows with only zeros in Excel sheets.
+            Default is True.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        If 'erase_file' is set to False, a unique counter is added to the filename to avoid overwriting existing files.
+
+        Examples
+        --------
+            >>> from reho.model.reho import reho
+            >>> # Given that the parameters have been set before
+            >>> reho_instance = reho(qbuildings_data=qbuildings_data, units=units, grids=grids,
+            ...                      cluster=cluster, scenario=scenario, method=method)
+            >>> reho_instance.single_optimization()
+            >>> reho_instance.save_results(format=('pickle', 'xlsx'), filename='my_results', filter=True)
+
         """
         try:
             os.makedirs('results')

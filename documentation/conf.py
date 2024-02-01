@@ -100,7 +100,8 @@ autodoc_mock_imports = ['pandas',
                         'scipy',
                         'matplotlib',
                         'plotly',
-                        'geopandas']
+                        'geopandas',
+                        'urllib3']
 sys.modules['numpy'] = MagicMock()
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()

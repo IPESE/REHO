@@ -1,3 +1,4 @@
+import urllib3
 from reho.paths import *
 from reho.model.preprocessing.QBuildings import QBuildingsReader
 
@@ -8,8 +9,6 @@ from typing import Dict, Optional, Union
 import geopandas as gpd
 import pandas as pd
 import requests
-from urllib3.util import Retry
-from requests.adapters import HTTPAdapter
 from shapely import wkt
 
 FIND_PATTERN = "PREFIX\\s*(.*?)\n"
@@ -53,14 +52,14 @@ def requests_retry_session(
 ):
 
     session = session or requests.Session()
-    retry = Retry(
+    retry = urllib3.util.Retry(
         total=retries,
         read=retries,
         connect=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
     )
-    adapter = HTTPAdapter(max_retries=retry)
+    adapter = requests.adapters.HTTPAdapter(max_retries=retry)
     session.mount("http://", adapter)
     session.mount("https://", adapter)
 

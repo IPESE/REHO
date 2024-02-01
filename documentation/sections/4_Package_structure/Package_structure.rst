@@ -1,6 +1,19 @@
 Package structure
 +++++++++++++++++
 
+.. contents::
+   :local:
+   :depth: 5
+
+.. toctree::
+   :maxdepth: 5
+
+.. .. autosummary::
+    :toctree: _autosummary
+    :recursive:
+
+..    reho
+
 .. warning::
 
     Section still under development.
@@ -69,7 +82,7 @@ Extracts and postprocesses the output of the optimization:
 
 - `KPIs.py`: calculates the KPIs resulting from the optimization.
 - `post_compute_decentralized_districts.py`: manipulates results to have consistency between the building-scale and district-scale optimizations.
-- `write_results.py`: extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes).
+- `write_results.py`: extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
 
 
 **preprocessing/**
@@ -77,62 +90,142 @@ Extracts and postprocesses the output of the optimization:
 
 Prepares and manipulates the input of the optimization:
 
-- `clustering.py` executes the data reduction for meteorological data.
-- `data_generation.py`: calculates the buildings domestic hot water (DHW) and domestic electricity profiles. Also generates the heat gains and solar gains profiles.
-- `electricity_prices.py`: queries the electricity retail prices from the ELCOM database.
-- `electricity_profile_parser.py`: characterizes the electricity consumption profiles.
-- `emission_matrix_parser.py`: characterizes the CO2 emissions related to electricity generated from the grid.
-- `EV_profile_generator.py`: generates the electric vehicle electricity demand profiles.
-- `QBuildings.py`: connects and extract information from the QBuildings database.
-- `sia_parser.py`: collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.
-- `skydome_input_parser.py`: used for PV orientation.
-- `weather.py`: generates the meteorological data (temperature and solar irradiance).
+`clustering.py`
+~~~~~~~~~~~~~~~~~~~~~~~
 
+*Executes the data reduction for meteorological data.*
+
+.. note::
+    The meteo file provided are only the ones from the 6 meteo archetypes. Should we link every other location to these
+    typical meteos if no meteo file is provided? This could be easily done as the transformer in QBuildings have
+    the meteo_cluster.
+
+`data_generation.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+*Calculates the buildings domestic hot water (DHW) and domestic electricity profiles. Also generates the heat gains and solar gains profiles.*
+
+.. caution::
+    It seems the solar gain profiles relies on `skydome/typical_irradiation.csv` that is specific to Rolle.
+
+.. automodule:: reho.model.preprocessing.data_generation
+    :members: profiles_from_sia2024, solar_gains_profile
+
+`electricity_prices.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.electricity_prices
+    :members: get_prices_from_elcom_by_canton, get_prices_from_elcom_by_city, get_injection_prices, get_electricity_prices
+
+`electricity_profile_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Allows to give an electricity consumption profile, hour by hour and adapt it to the clustering periods.*
+
+.. caution::
+    To be adapted from Luise's case study.
+
+`emission_matrix_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Characterizes the CO2 emissions related to electricity generated from the grid.*
+
+.. caution::
+    It relies on `emissions/electricity_matrix_2019_reduced.csv`, is that ok?.
+
+`EV_profile_generator.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Generates the electric vehicle electricity demand profiles.*
+
+.. caution::
+    Needs to be documented.
+
+`QBuildings.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: reho.model.preprocessing.QBuildings.QBuildingsReader
+    :members:
+
+`sia_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+*Collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.*
+
+`skydome_input_parser.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Used for PV orientation.*
+
+.. caution::
+    As for the solar heat gains, it relies on a skydome generated for Luise's case study. How to generalise it?
+
+`weather.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+*Generates the meteorological data (temperature and solar irradiance).*
+
+.. automodule:: reho.model.preprocessing.weather
+    :members: get_cluster_file_ID, generate_output_data, write_dat_files
 
 *compact_optimization.py*
 ------------------------------
 
-Collects all the data input and sends it an AMPL model, solves the optimization
+.. autoclass:: reho.model.compact_optimization.compact_optimization
 
 *district_decomposition.py*
 ------------------------------
+
 .. autoclass:: reho.model.district_decomposition.district_decomposition
 
-Applies the decomposition method
 
 *infrastructure.py*
 ------------------------------
 
-Characterizes all the sets and parameters which are connected to buildings, units and grids
+*Characterizes all the sets and parameters which are connected to buildings, units and grids.*
 
 The default values (ampl code), the inputs from the district structure (costs, fmax, fmin, …) and new parameters from the data folder.
+
+.. caution::
+    To be documented.
 
 *reho.py*
 ------------------------------
 
-Performs the single or multi-objective optimization
-
 .. autoclass:: reho.model.reho.reho
    :members: save_results
-
-- `save_results`: saves the results in a specified format (.csv, .pickle).
 
 
 **plotting/**
 ==================
 
-Directory for plotting and visualization code.
+*Directory for plotting and visualization code.*
 
 - `layout.csv`: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
-- `plotting.py` :
+- `sia380_1.csv`: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
+
+`plotting.py`
+---------------
+
+*Contains ready-to-use representations for results generated by REHO.*
 
 .. automodule:: reho.plotting.plotting
    :members: plot_actors, plot_performance, plot_sankey, sunburst_eud, unit_monthly_plot
 
-- **rainbow_plots/**
-- `sankey.py`: builds the dataframe to use to plot a *sankey diagram* from a **reho_results**.
-- `sia380_1.csv`: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
-- `yearly_profile_builder.py`
+**rainbow_plots/**
+------------------
+
+*Contains the scripts to generate rainbow plots for results generated by REHO.*
+
+`sankey.py`
+-----------
+
+*Builds the dataframe to use to plot a sankey diagram from a **reho_results**.*
+
+`yearly_profile_builder.py`
+---------------------------
+
+*Reconstructs a yearly profile from the clustering periods.*
 
 
 
@@ -142,4 +235,4 @@ Directory for plotting and visualization code.
 *paths.py*
 ==================
 
-File for managing file paths and configurations.
+*File for managing file paths and configurations.*

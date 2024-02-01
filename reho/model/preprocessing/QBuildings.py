@@ -1,6 +1,5 @@
 import configparser
 import os.path
-
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
 import geopandas as gpd

@@ -35,7 +35,7 @@ release = '1.0'
 extensions = ['sphinxcontrib.bibtex',
               'sphinx.ext.autodoc',
               'sphinx.ext.napoleon',
-              # 'sphinx.ext.autosummary',
+              'sphinx.ext.autosummary',
               'sphinx_design']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
@@ -101,7 +101,8 @@ autodoc_mock_imports = ['pandas',
                         'matplotlib',
                         'plotly',
                         'geopandas',
-                        'urllib3']
+                        'urllib3',
+                        'dotenv']
 sys.modules['numpy'] = MagicMock()
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()
@@ -112,6 +113,6 @@ sys.modules['sklearn_extra.cluster'] = MagicMock()
 sys.modules['sqlalchemy'] = MagicMock()
 sys.modules['sqlalchemy.dialects'] = MagicMock()
 sys.modules['shapely'] = MagicMock()
-sys.modules['typing'] = MagicMock()
-sys.modules['urllib3'] = MagicMock()
-sys.modules['requests'] = MagicMock()
+# sys.modules['typing'] = MagicMock()
+# sys.modules['urllib3'] = MagicMock()
+# sys.modules['requests'] = MagicMock()

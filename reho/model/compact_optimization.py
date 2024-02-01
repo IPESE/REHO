@@ -118,7 +118,10 @@ class compact_optimization:
             modules.load()
             ampl = AMPL()
         else:
-            ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
+            try:
+                ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
+            except:
+                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
         # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS

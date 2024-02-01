@@ -329,7 +329,10 @@ class district_decomposition:
             modules.load()
             ampl_MP = AMPL()
         else:
-            ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+            try:
+                ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+            except:
+                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('show_stats', 2)

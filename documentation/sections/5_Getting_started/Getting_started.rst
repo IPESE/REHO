@@ -285,10 +285,14 @@ Units are initialized with:
 
 Where:
 
-- 'exclude_units' is a list containing the units excluded from the available options
+- 'exclude_units' is a list containing the units excluded from the available technologies
 - 'enforce_units' is a list containing the units forced to be installed
+    - You have to use the `UnitOfType` field from the function `infrastructure.return_building_units`
+    - If you don't want to exclude or enforce any unit, give empty lists.
 - :code:`grids` is the dictionary formerly returned by :code:`initialize_grids()`
 - "building_units.csv" located in :code:`preprocessing/parameters/` contains the default parameters for units characteristics (specific cost, LCA indicators...)
+
+
 
 District units can be enabled with the boolean argument :code:`district_units`:
 

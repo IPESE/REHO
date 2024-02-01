@@ -14,58 +14,112 @@ Model
     .. Bottom-up approach (building-level --> district-level)
     .. Top-down approach (district --> buildings --> units + heat cascade)
 
-
-
-The energy hub concept is used to model an energy community where multi-energy carriers can supply diverse end use demands through building units and district units optimally interconnected and operated.
-:ref:`district_documentation` displays a district-level energy hub optimized with REHO.
-
+The energy hub concept is used to model an energy community where multi-energy carriers can supply
+diverse end use demands through building-level equipment and district-level infrastructure optimally interconnected and operated.
+For a delimeted perimeter of buildings, REHO selects the optimal energy system configuration minimizing the specified objective function.
+All the energy flows at building-level and district-level are then fully characterized by the model decision variables.
 
 .. figure:: ../../images/district_documentation.svg
    :align: center
    :name: district_documentation
 
-   District energy hub model in REHO
+   District-level energy hub model in REHO
 
-From a set of fixed parameters, REHO selects the optimal energy system configuration minimizing the specified objective function.
-All the energy flows (buildings interactions + district imports and exports) are then fully characterized by the model decision variables.
+
+Energy demands considered by the model are: thermal comfort (space heating and cooling), domestic hot water (DHW), domestic electricity, and mobility needs.
+Domestic electricity, DHW, and mobility needs are generated using standardized profiles according to norms or measurements in a pre-processing step.
+In contrast, the thermal comfort demand is modeled within the framework itself in order to include the control strategy of the energy management system and the possibility of a thermal renovation of the building.
+This heating or cooling demand is impacted by factors such as the conductive heat losses through the building envelope, the heat capacity of the building and the heat gains from occupants, electric appliances and solar irradiation.
+Furthermore, the energy demand associated with thermal comfort is characterized by the desired comfort temperature of the rooms, the nominal return and supply temperature of the heat distribution system and the control strategy of latter.
+
+Heating and cooling requirements can be satisfied by energy conversion technologies (such as a heat pump, an electrical heater, a fuel cell, a gas boiler, an air conditioner...) or directly from a district heating infrastructure.
+Energy can be stored in installed equipment (such as a battery or a water tank), or in the form of building thermal inertia.
+Photovoltaic panels act as a renewable energy source.
+The building-level energy system is interconnected to the energy distribution infratructure of the district (electrical grid, natural gas grid, ...).
+
+.. figure:: images/building_energy_hub.png
+   :width: 450
+   :align: center
+   :name: building_energy_hub
+
+   Building-level energy hub in REHO
+
 
 .. note::
-    In the following all decision variables of the model are denoted with **bold letters** to distinguish them from parameters.
+    In the following, all decision variables of the model are denoted with **bold letters** to distinguish them from the parameters.
 
 Inputs
 ===========================
 
+The first step for the application of REHO is to collect the data to characterize the district in terms of energy demands.
+
+.. note::
+    When real data is not available, the buildings characteristics can be estimated using statistical data.
+
 Buildings characteristics
 ---------------------------------
 
-Affectation
+The buildings are defined by their usage type, their morphology, and their heating performance.
+
+Usage
 ~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Building category (I to XII) based on SIA 2024:2015
 
 Morphology
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Energy reference area, roof and facades area for solar panels
+- Energy reference area (ERA) :math:`A_{ERA} [m^2]`
+- Roof surfaces :math:`A_{roofs} [m^2]`
+- Facades surfaces :math:`A_{facades} [m^2]`
 
-Thermal envelope
+Heating performance
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Quality of thermal envelope
-Temperatures of supply and return for heating system
+- Year of construction or renovation
+- Quality of thermal envelope
+    - Overall heat transfer coefficient :math:`U_{h} [kW/K/m^2]`
+    - Heat capacity coefficient :math:`C_{h} [Wh/K/m^2]`
+- Temperatures of supply and return for heating system :math:`T_{h,supply}-T_{h,return} [°C]`
+- Temperatures of supply and return for cooling system :math:`T_{c,supply}-T_{c,return} [°C]`
+- Reference indoor temperature :math:`T_{in} [°C]`
 
 Weather data
 ---------------------------------
 
-External temperature
+To calculate energy demand profiles the outdoor ambient temperature global irradiation for the region in study are necessary.
+
+- Outdoor ambient temperature (yearly profile) :math:`T_{out} [°C]`
+- Global horizontal irradiation (yearly profile) :math:`Irr_{out} [°C]`
+
+Data reduction
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Solar irradiance
-~~~~~~~~~~~~~~~~~~~~~~~~
+The hourly timesteps of a typical annual profile, leads to 8760 data points per year.
+This leads, together with the complexity of the model, to computationally untraceable models.
+Reducing the size of the data representing the energy demand of the renewable energy hub and weather conditions is required.
+The aggregation of timeseries to typical periods is specifically popular, as patterns occur naturally in the supply and demand of energy, which arise in the time dimension through hourly, daily and seasonal cycles.
+The k-medoids clustering algorithm is used in REHO. Typical days are identified based on two variables: global irradiation and ambient temperature.
 
-Model uses data reduction with hourly resolution on typical days (eg, typically 10 typical days of 24 hours)
 *NB: Extreme periods are also considered, but only for the design of the capacities.*
+
+
+
 
 End use demand profiles
 ---------------------------------
+
+Middelhauve - Section 1.2
+
+End use demand profiles are constructed based on the standardized national norm SIA 2024:2015, which allows to calculate:
+
+- The internal heat gains from occupancy
+- The internal heat gains from electric appliances
+- The demand profile for domestic hot water and domestic electricity
+
+These profiles are generally specific to each room type and usage.
+
+
 
 
 
@@ -97,18 +151,46 @@ Cost, environmental impact, maximal capacity for district imports and exports
 Equipment
 ---------------------------------
 
-Building-scale units
+Building-level units
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The units parameters that can be changed in the model are:
+Energy conversion and energy storage technologies can be installed at the building-level.
+
+Overview of building-level units: Input and output streams, the reference unit of each technology
+
++---------------------------------+---------------------------+-------------------+----------------+
+| Technology                      | Input stream              | Output stream     | Reference unit |
++=================================+===========================+===================+================+
+| Energy conversion technologies  |                           |                   |                |
++---------------------------------+---------------------------+-------------------+----------------+
+| gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| heat pump                       | ambient heat, electricity | heat              |   $$kW_{e}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| electrical heater SH            | electricity               | heat              |  $$kW_{th}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| electrical heater DHW           | electricity               | heat              |  $$kW_{th}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| PV panel                        | solar irradiation         | electricity       |   $$kW_{p}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| Electricity storage technologies|                           |                   |                |
++---------------------------------+---------------------------+-------------------+----------------+
+| thermal storage SH              | heat                      | heat              |    $$m^3$$     |
++---------------------------------+---------------------------+-------------------+----------------+
+| thermal storage DHW             | heat                      | heat              |    $$m^3$$     |
++---------------------------------+---------------------------+-------------------+----------------+
+| battery                         | electricity               | electricity       |    $$kWh$$     |
++---------------------------------+---------------------------+-------------------+----------------+
+
+The parameters that can be changed are:
 
 - Specific cost (fixed and variable costs, valid for a limited range fmin - fmax)
 - Environmental impact (= grey energy encompassing the manufacturing of the unit, and distributed over the lifetime of the unit)
 - Thermodynamics properties (efficiency, temperature of operation)
 
-
-
-District-scale units
+District-level units
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Specifications regarding cost, environmental impact, efficiency
@@ -119,6 +201,14 @@ Model
 
 Objective functions
 ---------------------------------
+
+Middelhauve - Section 1.2.4
+
+REHO can optimize energy hubs considering economic indicators (minimizing operational expenses, capital expenses, total expenses) or
+environmental indicators (global warming potential).
+
+As objectives can be generally competing, the problem can be approached using a multi-objective optimization (MOO) approach.
+MOO is implemented using the $\epsilon$-constraint method to generate Pareto curves.
 
 Annual operating expenses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -158,14 +248,16 @@ Global warming potential
 .. math::
     \boldsymbol{G^{tot}_b} = \boldsymbol{G^{bes}_b} +  \boldsymbol{G^{op}_b} \quad \forall b \in \text{B}
 
-Building-scale constraints
+Building-level constraints
 ---------------------------------
 
 
 Sizing constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The main equation for sizing and scheduling problem units are  described by:
+Upper and lower bounds for unit installations are necessary for identifying the validity range for the linearization of the cost function of the unit.
+
+The main equation for sizing and scheduling problem units are described by:
 
 .. math::
     \begin{align}
@@ -174,6 +266,7 @@ The main equation for sizing and scheduling problem units are  described by:
     \boldsymbol{y_{b,u,p,t}} &\leq  \boldsymbol{y_{b,u}}\\
     & \quad \forall b \in  \text{B} \quad \forall u \in  \text{U}  \quad \forall p \in  \text{P} \quad \forall t\in  \text{T} \nonumber
     \end{align}
+
 
 Energy balance
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -195,7 +288,7 @@ Heat cascade
     \boldsymbol{\dot{R}_{1,b,p,t}}&= \boldsymbol{\dot{R}_{n_k+1,b,p,t}} = 0  \qquad \qquad  \forall k \in  \text{K} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T} \label{eq_ch1:heatK2}
     \end{align}
 
-Space heating
+Thermal comfort
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The general form of the SH demand can be expressed by the first order dynamic model of buildings:
@@ -203,20 +296,18 @@ The general form of the SH demand can be expressed by the first order dynamic mo
 .. math::
     \boldsymbol{\dot{Q}_{b,p,t}^{SH}} = \dot{Q}_{b,p,t}^{gain} - U_b  \cdot A^{era}_b \cdot (\boldsymbol{T^{int}_{b,p,t}} - T^{ext}_{p,t}) - C_b \cdot A^{era}_b \cdot (\boldsymbol{T^{int}_{b,p,t+1}} - \boldsymbol{T^{int}_{b,p,t}})  \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
-- Global thermal transmittance coefficient [kW/m2/K]
-- Heat capacity [Wh/m2/K]
 
-**Heat gains**
+Where heat gains are constituted by:
 
 .. math::
     \dot{Q}^{gain}_{b,p,t}  = \dot{Q}^{int}_{b,p,t} + \dot{Q}^{irr}_{b,p,t}\quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
-**Internal heat gains**
+With internal heat gains calculated based on SIA 2024:2015 and include the rooms usage:
 
 .. math::
     \dot{Q}^{int}_{b,p,t}  = A^{net}_b \cdot \sum_{r \in Rooms} f_{b,r} \cdot f^{u}_{r,p}  \cdot (\Phi^{P}_{r,p,t} + \Phi^{A+L}_{r,p,t}) \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
-**Solar heat gains**
+And solar heat gains proportional to the global irradiation, through a solar gain coefficient:
 
 Middelhauve - Section 3.2.4 Solar heat gains
 
@@ -224,10 +315,17 @@ Middelhauve - Section 3.2.4 Solar heat gains
     \dot{Q}^{irr}_{b,p,t}  = A^{era}_b \cdot \phi^{irr} \cdot \dot{irr}^{ghi}_{b,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
 
+.. note::
+    The internal building temperature :math:`T_{int}` is considered as a variable to be optimized.
+    This allows the building heat capacity to work as an additional, free thermal storage for the building energy system, thus making it possible to use available surplus electricity, which was generated onsite.
+
+**Penalty costs**
+
+Clearly, comfort should also be taken into account: this is achieved through the introduction of a penalty cost in the optimization problem objective at each hour when the indoor temperature exceeds pre-defined bounds.
+These penalty costs are deduced in a post-computing step.
+
 Domestic hot water
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
-Typical DHW demand is stated in standardized national norms. Similar to the internal heat gains, the DHW profile is specific to each room type and usage.
 
 .. math::
     {Q}^{dhw,-}_{b} = A^{net}_b \cdot \sum_{r \in Rooms} f_{b,r}\cdot f^{u}_{r,p} \cdot V^{dhw,ref}_{r}  \cdot \frac{n^{ref}}{A^{net}_r}\cdot c_p^{dhw} \cdot \rho^{dhw} ( T^{dhw} - T^{cw})  \quad \forall b \in  \text{B}
@@ -235,7 +333,6 @@ Typical DHW demand is stated in standardized national norms. Similar to the inte
 Domestic electricity
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-When measured data is not available, the electricity demand can be calculated based on the profiles provided by national standard norms.
 
 .. math::
     \dot{E}^{B}_{b,p,t}  = A^{net}_b \cdot \sum_{r \in Rooms} f_{b,r} \cdot f^{u}_{r,p}  \cdot  \dot{e}^{A+L}_{r,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
@@ -243,10 +340,15 @@ When measured data is not available, the electricity demand can be calculated ba
 Storage
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+Cyclic constraints are imposed both on the indoor temperature and on thermal and electrical energy storage systems, to ensure the the state is reset to its initial status at the end of each period.
+
 A tank for domestic hot water is mandatory, and one for space heating is possible – generally helps to increase the self-consumption of PV + HP combination.
 
-District-scale constraints
+District-level constraints
 ---------------------------------
+
+Decomposition algorithm (Dantzig-Wolfe) to break down the energy community into a master problem (transformer perspective) and one subproblem for each building ones.
+The obtained solution is an approximation of the compact formulation (= solving all the buildings simultaneously, exponential computational complexity) but has a linear computational complexity.
 
 Configuration selection
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -291,6 +393,9 @@ Configuration selection
 Grid capacity
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+The maximum capacity of the local low-voltage transformer is considered.
+The electricity export and the import is constrained within the feasibility range of the transformer.
+
 .. _network_diagram:
 
 .. figure:: images/network_diagram.svg
@@ -319,16 +424,15 @@ Outputs
 Decision variables
 ----------------------------------
 
-- Installed capacities for building and district units
+- Installed capacities for building-level and district-level units
 - Operation time throughout a year
 
-
+These fully characterize the energy flows at building-level and district-level, as well as the financial flows (investments + operational costs).
 
 Key performance indicators
 ----------------------------------
 
-
-
-
+The KPIs are divided in four subgroups: Environmental, economical, technical and security indicators.
+For more information on how to calculate the KPIs presented below, please refer Middelhauve - Section 1.2.5.
 
 

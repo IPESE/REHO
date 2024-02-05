@@ -14,8 +14,6 @@ import os
 import sys
 from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../'))
-import reho
-
 
 # -- Project information -----------------------------------------------------
 
@@ -39,10 +37,11 @@ extensions = ['sphinxcontrib.bibtex',
               'sphinx_design']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
-# Bibliography:
+# -- Bibliography ------------------------------------------------------------
 bibtex_bibfiles = ['refs.bib']
 bibtex_default_style = 'plain'
-# bibtex_reference_style = 'super'
+bibtex_reference_style = 'super'
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -79,7 +78,8 @@ html_theme_options = {
 }
 numfig = True  # Add figure numbering
 numtab = True  # Add table numbering
-
+add_function_parentheses = False
+toc_object_entries_show_parents = 'all'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -89,7 +89,8 @@ numtab = True  # Add table numbering
 #     app.add_css_file('css/custom.css')
 
 # ------------ Autodoc ------------------------------------
-autodoc_mock_imports = ['pandas',
+autodoc_mock_imports = ['amplpy',
+                        'pandas',
                         'openpyxl',
                         'numpy',
                         'scikit-learn',
@@ -115,4 +116,3 @@ sys.modules['sqlalchemy.dialects'] = MagicMock()
 sys.modules['shapely'] = MagicMock()
 # sys.modules['typing'] = MagicMock()
 # sys.modules['urllib3'] = MagicMock()
-# sys.modules['requests'] = MagicMock()

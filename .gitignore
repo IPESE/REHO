@@ -307,8 +307,8 @@ pip-selfcheck.json
 # Documentation
 documentation/_build
 documentation/sections/4_Package_structure/_autosummary
-# Data
 
+# Data
 reho/data/electricity/*
 !reho/data/electricity/typical_profiles.csv
 !reho/data/electricity/annual_profiles.csv

@@ -10,20 +10,38 @@ from reho.model.preprocessing.QBuildings import *
 
 
 class compact_optimization:
-    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
-        """
-        :param district: Instance of class district, Contains relevant structure in district such as Units or grids
-        :param buildings_data: Dictionary containing relevant Building data
-        :param parameters: Dictionary containing 'new' parameter for the AMPL model if incomplete uses data from buildings_data
-        :param set_indexed: Dictionary containing new data which are indexed sets in AMPL model
-        :param cluster: Dictionary containing information about clustering
-        :param scenario: Dictionary, containing the objective function, EMOO constraints, additional constraints
-        :param method: Dictionary, containing different options for methodology choices
-        :param solver: String, chosen solver for AMPL (gurobi, cplex, highs, cbc...)
-        :param qbuildings_data: Dictionary, containing input data for the buildings
+    """
+            Collects all the data input and sends it an AMPL model, solves the optimization.
 
-        :return:
-        """
+            Parameters
+            ----------
+            district : district
+                Instance of the class district, contains relevant structure in the district such as Units or grids.
+            buildings_data : dict
+                Dictionary containing relevant Building data.
+            parameters : dict, optional
+                Dictionary containing 'new' parameters for the AMPL model. If incomplete, uses data from buildings_data.
+            set_indexed : dict, optional
+                Dictionary containing new data which are indexed sets in the AMPL model.
+            cluster : dict, optional
+                Dictionary containing information about clustering.
+            scenario : dict, optional
+                Dictionary containing the objective function, EMOO constraints, and additional constraints.
+            method : dict, optional
+                Dictionary containing different options for methodology choices.
+            solver : str, optional
+                Chosen solver for AMPL (gurobi, cplex, highs, cbc...).
+            qbuildings_data : dict, optional
+                Dictionary containing input data for the buildings.
+
+            See also
+            --------
+            reho.model.reho.reho
+            reho.model.district_decomposition.district_decomposition
+
+            """
+    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
+
         self.buildings_data_compact = buildings_data
         if method['use_facades']:
             self.facades_compact = qbuildings_data['facades_data']

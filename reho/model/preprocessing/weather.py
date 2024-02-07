@@ -6,7 +6,29 @@ import datetime as dt
 from reho.paths import *
 from reho.model.preprocessing.clustering import ClusterClass
 
+
 def get_cluster_file_ID(cluster):
+    """
+    Gets the weather file ID that corresponds to what was given in the reho initalization:
+    ``cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}``
+
+    Looks at data/weather/clustering results.
+    If that file does not exist yet, run the ClusterClass to create the required file.
+
+    Parameters
+    ----------
+    cluster : dict
+        Dictionary that contains a 'Location' (str), some 'Attributes' (list, among 'I', 'T', 'W'), a number of periods
+        'Periods' (int) and a 'PeriodDuration' (int)
+
+    Returns
+    -------
+    A string that is the file ID
+
+    Notes
+    -----
+    - The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
+    """
     # get correct file ID for weather file
     attributes = []
 
@@ -60,6 +82,23 @@ def read_hourly_dat(location):
 
 
 def generate_output_data(cl, attributes):
+    """
+    Generates the data for the cluster timesteps obtained from the ClusterClass.
+
+    Results are saved in temporary csv files to are then written properly using `write_dat_files`
+
+    Parameters
+    ----------
+    cl : ClusterClass
+        A ClusterClass object where the run_clustering method has already been executed.
+    attributes : list
+        List that contains string among 'Irr', 'Text', 'Weekday'.
+
+    See also
+    --------
+    reho.model.preprocessing.clustering.ClusterClass.run_clustering
+    write_dat_files
+    """
     # - saving
 
     data_idx = cl.results["idx"]
@@ -118,7 +157,24 @@ def generate_output_data(cl, attributes):
 
 
 def write_dat_files(attributes, location):
+    """
+    Writes the clustering results computed from `generate_output_data` as .dat file at data/weather/clustering_results/
 
+    Parameters
+    ----------
+    attributes : list
+        List that contains string among 'Irr', 'Text', 'Weekday'.
+        If 'Irr' is in the list, writes a file named 'GHI' + '_File_ID.dat'
+        If 'Text' is in the list, writes a file named 'T' + '_File_ID.dat'
+    location : str
+        Location of the corresponding weather data.
+
+    Notes
+    -----
+    - Not depending on the attributes, time depending files are generated, namely 'frequency' + '_File_ID.dat',
+      'index' + '_File_ID.dat' and 'timestamp' + '_File_ID.dat'.
+
+    """
     df = pd.read_csv(os.path.join(path_to_clustering_results, 'temp/values-cluster.csv'))
 
     df_dd = df['time.dd'].unique()  # id of typical period

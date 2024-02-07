@@ -33,7 +33,7 @@ REHO exploits the benefits of two programming languages:
 
 .. _software_diagram:
 
-.. figure:: images/software_diagram.svg
+.. figure:: images/diagram_package.svg
 
    Diagram of the REHO architecture
 
@@ -58,12 +58,11 @@ Directory for data-related files.
 - **skydome/**
 - **weather/**
 
-.. automodule:: reho.model
 
 **model/**
 ==================
 
-Directory for model-related code.
+.. automodule:: reho.model
 
 **ampl_model/**
 ---------------------

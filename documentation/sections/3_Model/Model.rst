@@ -16,7 +16,7 @@ Model
 
 The energy hub concept is used to model an energy community where multi-energy carriers can supply
 diverse end use demands through building-level equipment and district-level infrastructure optimally interconnected and operated.
-For a delimeted perimeter of buildings, REHO selects the optimal energy system configuration minimizing the specified objective function.
+For a delimited perimeter of buildings, REHO selects the optimal energy system configuration minimizing the specified objective function.
 All the energy flows at building-level and district-level are then fully characterized by the model decision variables.
 
 .. figure:: ../../images/district_documentation.svg
@@ -35,7 +35,13 @@ Furthermore, the energy demand associated with thermal comfort is characterized 
 Heating and cooling requirements can be satisfied by energy conversion technologies (such as a heat pump, an electrical heater, a fuel cell, a gas boiler, an air conditioner...) or directly from a district heating infrastructure.
 Energy can be stored in installed equipment (such as a battery or a water tank), or in the form of building thermal inertia.
 Photovoltaic panels act as a renewable energy source.
-The building-level energy system is interconnected to the energy distribution infratructure of the district (electrical grid, natural gas grid, ...).
+The building-level energy system is interconnected to the energy distribution infrastructure of the district (electrical grid, natural gas grid, ...).
+
+.. figure:: images/diagram_model.svg
+   :align: center
+   :name: fig-diagram_model
+
+   REHO model architecture
 
 .. figure:: images/building_energy_hub.png
    :width: 450
@@ -45,36 +51,371 @@ The building-level energy system is interconnected to the energy distribution in
    Building-level energy hub in REHO
 
 
+List of symbols
+===========================
+
 .. note::
     In the following, all decision variables of the model are denoted with **bold letters** to distinguish them from the parameters.
+
+.. tab-set::
+
+    .. tab-item:: Variables
+
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{C}`       | cost                                            | :math:`\text{currency}` |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{E}`       | electricity                                     | :math:`kW(h)`           |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{G}`       | global warming potential                        | :math:`kg_{CO_2, eq}`   |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{H}`       | natural gas or fresh water                      | :math:`kW(h)`           |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{Q}`       | thermal energy                                  | :math:`kWh`             |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{R}`       | residual heat                                   | :math:`kWh`             |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{T}`       | temperature                                     | :math:`K`               |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{f}`       | sizing variable                                 | :math:`\diamondsuit`    |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{\lambda}` | decomposition decision variable, master problem | :math:`-`               |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{y}`       | decision variable, binary                       | :math:`-`               |
+        +------------------------------+-------------------------------------------------+-------------------------+
+
+    .. tab-item:: Parameters
+
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`A`         | area                                     | :math:`m^2`                          |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`C`         | heat capacity coefficient                | :math:`kW/m^2K`                      |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`F`         | bound of validity range of unit sizes    | :math:`\diamondsuit`                 |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\Phi`      | specific heat gain                       | :math:`kW/m^2`                       |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`Q`         | thermal power                            | :math:`kW`                           |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`T`         | temperature                              | :math:`K`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`U`         | heat transfer coefficient                | :math:`kW/m^2K`                      |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`V`         | volume                                   | :math:`m^3`                          |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\alpha`    | azimuth angle                            | :math:`^{\circ}`                     |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`b`         | baremodule                               | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\beta`     | limiting angle                           | :math:`^{\circ}`                     |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`c`         | energy tariff                            | :math:`\text{currency}/kWh`          |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`c_p`       | specific heat capacity                   | :math:`kJ/(kgK)`                     |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`d`         | distance                                 | :math:`m`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`d_p`       | frequency of periods per year            | :math:`d/yr`                         |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`d_t`       | frequency of timesteps per period        | :math:`h/d`                          |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`e`         | electric power                           | :math:`kW/m^2`                       |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\epsilon`  | elevation angle                          | :math:`^{\circ}`                     |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\nu`       | efficiency                               | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`f_{b,r}`   | spatial fraction of a room in a building | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`f^s`       | solar factor                             | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`fû`        | usage factor                             | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`g`         | global warming potential streams         | :math:`kg_{CO_2, eq}/kWh`            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\gamma`    | tilt angle                               | :math:`^{\circ}`                     |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`g^{glass}` | ratio of glass per facades               | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`h`         | height                                   | :math:`m`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`i`         | interest rate                            | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`i^{cl}`    | fixed investment cost                    | :math:`\text{currency}`              |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`i^{c2}`    | continuous investment cost               | :math:`\text{currency}/\diamondsuit` |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`i^{g1}`    | fixed impact factor                      | :math:`kg_{CO_2, eq}`                |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`i^{g2}`    | continuous impact factor                 | :math:`kg_{CO_2, eq}/ \diamondsuit`  |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`irr`       | irradiation density                      | :math:`kWh/m^2`                      |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`l`         | lifetime                                 | :math:`yr`                           |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`m`         | mass                                     | :math:`kg`                           |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`n`         | project horizon                          | :math:`yr`                           |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`pd`        | period duration                          | :math:`h`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\phi`      | solar gain fraction                      | :math:`kW/m^2`                       |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`q`         | thermal power                            | :math:`kW/m^2`                       |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\rho`      | density                                  | :math:`kg/m^3`                       |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`s`         | shading factor                           | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`x`         | coordinate, pointing east                | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`y`         | coordinate, pointing north               | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`z`         | coordinate, pointing to zenith           | :math:`-`                            |
+            +-------------------+------------------------------------------+--------------------------------------+
+
+    .. tab-item:: Dual variables
+
+        +-----------------+-------------------------------------------------------+
+        | :math:`[\beta]` | epsilon constraint for multi objective   optimization |
+        +-----------------+-------------------------------------------------------+
+        | :math:`[\mu]`   | incentive to change design proposal                   |
+        +-----------------+-------------------------------------------------------+
+        | :math:`[\pi]`   | cost or global warming potential of electricity       |
+        +-----------------+-------------------------------------------------------+
+
+    .. tab-item:: Superscripts
+
+        +-----------+-------------------------------+
+        | A         | appliances                    |
+        +-----------+-------------------------------+
+        | B         | building                      |
+        +-----------+-------------------------------+
+        | L         | light                         |
+        +-----------+-------------------------------+
+        | P         | people                        |
+        +-----------+-------------------------------+
+        | bat       | bateobatle                    |
+        +-----------+-------------------------------+
+        | bes       | bes                           |
+        +-----------+-------------------------------+
+        | cap       | cap                           |
+        +-----------+-------------------------------+
+        | chp       | chp                           |
+        +-----------+-------------------------------+
+        | cw        | cw                            |
+        +-----------+-------------------------------+
+        | :math:`-` | demand                        |
+        +-----------+-------------------------------+
+        | dhw       | domestic hot water            |
+        +-----------+-------------------------------+
+        | el        | electricity                   |
+        +-----------+-------------------------------+
+        | ERA       | enery reference area          |
+        +-----------+-------------------------------+
+        | ext       | external                      |
+        +-----------+-------------------------------+
+        | gain      | heat gain                     |
+        +-----------+-------------------------------+
+        | ghi       | global horizontal irradiation |
+        +-----------+-------------------------------+
+        | gr        | grid                          |
+        +-----------+-------------------------------+
+        | hp        | heat pump                     |
+        +-----------+-------------------------------+
+        | int       | internal                      |
+        +-----------+-------------------------------+
+        | inv       | investment                    |
+        +-----------+-------------------------------+
+        | irr       | irradiation                   |
+        +-----------+-------------------------------+
+        | max       | maximum                       |
+        +-----------+-------------------------------+
+        | min       | minimum                       |
+        +-----------+-------------------------------+
+        | net       | netto                         |
+        +-----------+-------------------------------+
+        | ng        | natural gas                   |
+        +-----------+-------------------------------+
+        | op        | operation                     |
+        +-----------+-------------------------------+
+        | pv        | photovoltaic panel            |
+        +-----------+-------------------------------+
+        | r         | return                        |
+        +-----------+-------------------------------+
+        | ref       | reference                     |
+        +-----------+-------------------------------+
+        | rep       | replacement                   |
+        +-----------+-------------------------------+
+        | s         | supply                        |
+        +-----------+-------------------------------+
+        | SH        | space heating                 |
+        +-----------+-------------------------------+
+        | stat      | static                        |
+        +-----------+-------------------------------+
+        | :math:`+` | supply                        |
+        +-----------+-------------------------------+
+        | tot       | total                         |
+        +-----------+-------------------------------+
+        | TR        | transformer                   |
+        +-----------+-------------------------------+
+
+    .. tab-item:: Indexes
+
+        +------------+-----------------------------------+
+        | 0          | nominal state                     |
+        +------------+-----------------------------------+
+        | II         | ref. to 1st law of thermodynamics |
+        +------------+-----------------------------------+
+        | II         | ref. to 2nd law of thermodynamics |
+        +------------+-----------------------------------+
+        | :math:`b`  | building                          |
+        +------------+-----------------------------------+
+        | :math:`f`  | facades                           |
+        +------------+-----------------------------------+
+        | :math:`i`  | iteration                         |
+        +------------+-----------------------------------+
+        | :math:`k`  | temperature interval              |
+        +------------+-----------------------------------+
+        | :math:`l`  | linearization interval            |
+        +------------+-----------------------------------+
+        | :math:`p`  | period                            |
+        +------------+-----------------------------------+
+        | :math:`pt` | patch                             |
+        +------------+-----------------------------------+
+        | :math:`r`  | replacement                       |
+        +------------+-----------------------------------+
+        | :math:`t`  | timestep                          |
+        +------------+-----------------------------------+
+        | :math:`u`  | unit                              |
+        +------------+-----------------------------------+
+
+    .. tab-item:: Sets
+
+        +-------------+------------------------------+
+        | :math:`A`   | azimuth angles               |
+        +-------------+------------------------------+
+        | :math:`B`   | buildings                    |
+        +-------------+------------------------------+
+        | :math:`F`   | facades                      |
+        +-------------+------------------------------+
+        | :math:`I`   | iterations                   |
+        +-------------+------------------------------+
+        | :math:`K`   | temperature levels           |
+        +-------------+------------------------------+
+        | :math:`L`   | linearization intervals      |
+        +-------------+------------------------------+
+        | :math:`O`   | orientations                 |
+        +-------------+------------------------------+
+        | :math:`P`   | typical periods              |
+        +-------------+------------------------------+
+        | :math:`R`   | roofs                        |
+        +-------------+------------------------------+
+        | :math:`S`   | skydome patches              |
+        +-------------+------------------------------+
+        | :math:`T`   | timesteps                    |
+        +-------------+------------------------------+
+        | :math:`U`   | units                        |
+        +-------------+------------------------------+
+        | :math:`U_r` | units that need replacements |
+        +-------------+------------------------------+
+        | :math:`Y`   | tilt angles                  |
+        +-------------+------------------------------+
+
+
+
+
 
 Inputs
 ===========================
 
-The first step for the application of REHO is to collect the data to characterize the district in terms of energy demands.
+For the application of REHO, the energy hub description needs to contain - as highlighted by :ref:`fig-diagram_model` :
 
-.. note::
-    When real data is not available, the buildings characteristics can be estimated using statistical data.
+- the *End Use Demands (EUDs)*, from the meteorological data and the buildings characteristics,
+- the resources to which it has access to provide those *EUDs*, namely the grids,
+- the equipments that can be used to convert those resources into the required services.
+
+
+End use demand profiles
+---------------------------------
+
+:cite:t:`middelhauveRoleDistrictsRenewable2022` - Section 1.2
+
+The *EUDs* profiles to be determined are:
+
+- The demand profile for domestic hot water
+- The demand profile for domestic electricity
+- The demand profile for space heating computed with:
+    - The internal heat gains from occupancy,
+    - The internal heat gains from electric appliances,
+    - The heat exchange with the exterior,
+    - The solar gains from the irradiance.
+
+.. admonition:: Statistical profiles
+
+    When real data is not available, the profiles can be estimated using statistical data.
+
+    In the case of REHO, the consumption profiles are computed from statistical data on buildings characteristics,
+    combined with weather data.
 
 Buildings characteristics
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The buildings are defined by their usage type, their morphology, and their heating performance.
 
 Usage
-~~~~~~~~~~~~~~~~~~~~~~~~
+"""""""""
 
-- Building category (I to XII) based on SIA 2024:2015
+Usage is defined by the building category (I to XII) from `SIA 380/1:2016 <https://shop.sia.ch/collection%20des%20normes/architecte/380-1_2016_f/F/Product>`_.
+It defines, combined with `SIA 2024:2015 <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_,
+the statistical profiles for each category in terms of occupation, lighting and hot water demand.
+
+These profiles are generally specific to each room type and usage.
+
+.. dropdown:: List of SIA 380/1 categories
+    :icon: home
+
+    .. table::
+        :name: tbl-sia380
+
+        +------+-----------------------+
+        | I    | Collective housing    |
+        +------+-----------------------+
+        | II   | Individual housing    |
+        +------+-----------------------+
+        | III  | Administrative        |
+        +------+-----------------------+
+        | IV   | School                |
+        +------+-----------------------+
+        | V    | Commercial            |
+        +------+-----------------------+
+        | VI   | Restaurant            |
+        +------+-----------------------+
+        | VII  | Gathering places      |
+        +------+-----------------------+
+        | VIII | Hospital              |
+        +------+-----------------------+
+        | IX   | Industry              |
+        +------+-----------------------+
+        | X    | Shed, warehouse       |
+        +------+-----------------------+
+        | XI   | Sports facilities     |
+        +------+-----------------------+
+        | XII  | Covered swimming-pool |
+        +------+-----------------------+
+        | XIII | Other                 |
+        +------+-----------------------+
+
 
 Morphology
-~~~~~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""""
 
 - Energy reference area (ERA) :math:`A_{ERA} [m^2]`
 - Roof surfaces :math:`A_{roofs} [m^2]`
 - Facades surfaces :math:`A_{facades} [m^2]`
+- Glass fraction :math:`g^{glass} [-]`
 
 Heating performance
-~~~~~~~~~~~~~~~~~~~~~~~~
+""""""""""""""""""""""
 
 - Year of construction or renovation
 - Quality of thermal envelope
@@ -85,15 +426,14 @@ Heating performance
 - Reference indoor temperature :math:`T_{in} [°C]`
 
 Weather data
----------------------------------
-
+~~~~~~~~~~~~~~~~~~~~~~~~
 To calculate energy demand profiles the outdoor ambient temperature global irradiation for the region in study are necessary.
 
 - Outdoor ambient temperature (yearly profile) :math:`T_{out} [°C]`
 - Global horizontal irradiation (yearly profile) :math:`Irr_{out} [°C]`
 
 Data reduction
-~~~~~~~~~~~~~~~~~~~~~~~~
+"""""""""""""""""""
 
 The hourly timesteps of a typical annual profile, leads to 8760 data points per year.
 This leads, together with the complexity of the model, to computationally untraceable models.
@@ -104,97 +444,120 @@ The k-medoids clustering algorithm is used in REHO. Typical days are identified 
 *NB: Extreme periods are also considered, but only for the design of the capacities.*
 
 
-
-
-End use demand profiles
----------------------------------
-
-Middelhauve - Section 1.2
-
-End use demand profiles are constructed based on the standardized national norm SIA 2024:2015, which allows to calculate:
-
-- The internal heat gains from occupancy
-- The internal heat gains from electric appliances
-- The demand profile for domestic hot water and domestic electricity
-
-These profiles are generally specific to each room type and usage.
-
-
-
-
-
 Grids
 ---------------------------------
+
+In the REHO model, a grid is characterized by the energy carrier it transports and its specifications.
 
 Energy layers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-- Electricity
-- Natural gas
-- Oil
-- District heat
-- Data (ICT service)
+Five energy carriers are considered in REHO, namely:
 
-The grid parameters that can be changed in the model are:
+- Electricity,
+- Natural gas,
+- Oil,
+- District heat,
+- Data (ICT service).
 
-- Import and export tariffs
-- Carbon content
-- Environmental impact (detailed LCA characterization)
+These layers are modeled through parameters that can be changed in the model:
 
-They can be set as constant or specified at an hourly resolution.
+- Import and export tariffs,
+- Carbon content,
+- Environmental impact (detailed LCA characterization).
+
+.. _List of LCA criteria:
+
+.. dropdown:: List of LCA criteria
+
+    - Land use
+    - Human toxicity
+    - Water pollutants
+    - ....
+
+    .. caution:: Complete list of LCA
+
+They can be set as constant through the year or specified at an hourly resolution.
 
 Specifications
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Cost, environmental impact, maximal capacity for district imports and exports
 
-Equipment
+.. Are they internal costs?
+
+
+Equipments
 ---------------------------------
+
+The model has to choose between several energy conversion and energy storage technologies that can be installed to answer
+the *EUDs*.
+
+The units are parametrized by:
+
+- Specific cost (fixed and variable costs, valid for a limited range :math:`f_{min}` - :math:`f_{max}`)
+- Environmental impact (= grey energy encompassing the manufacturing of the unit, and distributed over the lifetime of the unit, see `List of LCA criteria`_)
+- Thermodynamics properties (efficiency, temperature of operation)
 
 Building-level units
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Energy conversion and energy storage technologies can be installed at the building-level.
+.. table:: Overview of building-level units in REHO: Input and output streams, the reference unit of each technology
+    :name: tbl-building-units
 
-Overview of building-level units: Input and output streams, the reference unit of each technology
-
-+---------------------------------+---------------------------+-------------------+----------------+
-| Technology                      | Input stream              | Output stream     | Reference unit |
-+=================================+===========================+===================+================+
-| Energy conversion technologies  |                           |                   |                |
-+---------------------------------+---------------------------+-------------------+----------------+
-| gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| heat pump                       | ambient heat, electricity | heat              |   $$kW_{e}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| electrical heater SH            | electricity               | heat              |  $$kW_{th}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| electrical heater DHW           | electricity               | heat              |  $$kW_{th}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| PV panel                        | solar irradiation         | electricity       |   $$kW_{p}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Electricity storage technologies|                           |                   |                |
-+---------------------------------+---------------------------+-------------------+----------------+
-| thermal storage SH              | heat                      | heat              |    $$m^3$$     |
-+---------------------------------+---------------------------+-------------------+----------------+
-| thermal storage DHW             | heat                      | heat              |    $$m^3$$     |
-+---------------------------------+---------------------------+-------------------+----------------+
-| battery                         | electricity               | electricity       |    $$kWh$$     |
-+---------------------------------+---------------------------+-------------------+----------------+
-
-The parameters that can be changed are:
-
-- Specific cost (fixed and variable costs, valid for a limited range fmin - fmax)
-- Environmental impact (= grey energy encompassing the manufacturing of the unit, and distributed over the lifetime of the unit)
-- Thermodynamics properties (efficiency, temperature of operation)
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Technology                      | Input stream              | Output stream     | Reference unit |
+    +=================================+===========================+===================+================+
+    | Energy conversion technologies  |                           |                   |                |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | heat pump                       | ambient heat, electricity | heat              |   $$kW_{e}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | electrical heater SH            | electricity               | heat              |  $$kW_{th}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | electrical heater DHW           | electricity               | heat              |  $$kW_{th}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | PV panel                        | solar irradiation         | electricity       |   $$kW_{p}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Storage technologies            |                           |                   |                |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | thermal storage SH              | heat                      | heat              |    $$m^3$$     |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | thermal storage DHW             | heat                      | heat              |    $$m^3$$     |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | battery                         | electricity               | electricity       |    $$kWh$$     |
+    +---------------------------------+---------------------------+-------------------+----------------+
 
 District-level units
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Specifications regarding cost, environmental impact, efficiency
+The units cannot be used at the building-scale.
 
+.. table:: Overview of district-level units in REHO: Input and output streams, the reference unit of each technology
+    :name: tbl-district-units
+
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Technology                      | Input stream              | Output stream     | Reference unit |
+    +=================================+===========================+===================+================+
+    | Energy conversion technologies  |                           |                   |                |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | geothermal heat pump            | ambient heat, electricity | heat              |   $$kW_{e}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | district heating network        | heat                      | heat              |  $$kW_{th}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Electricity storage technologies|                           |                   |                |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | electrical vehicle              | electricity               | electricity       |    $$kWh$$     |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | battery                         | electricity               | electricity       |    $$kWh$$     |
+    +---------------------------------+---------------------------+-------------------+----------------+
 
 Model
 ===========================
@@ -202,13 +565,13 @@ Model
 Objective functions
 ---------------------------------
 
-Middelhauve - Section 1.2.4
+:cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.4*
 
 REHO can optimize energy hubs considering economic indicators (minimizing operational expenses, capital expenses, total expenses) or
 environmental indicators (global warming potential).
 
-As objectives can be generally competing, the problem can be approached using a multi-objective optimization (MOO) approach.
-MOO is implemented using the $\epsilon$-constraint method to generate Pareto curves.
+As objectives can be generally competing, the problem can be approached using a *Multi-Objective Optimization (MOO)* approach.
+MOO is implemented using the :math:`\epsilon`-constraint method to generate Pareto curves.
 
 Annual operating expenses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -217,7 +580,7 @@ Annual operating expenses
     Adapt to all layers L
 
 .. math::
-    \boldsymbol{C^{op}_b} =  \sum_{p \in \text{P}} \sum_{t \in \text{T}} \left(  c^{el, +}_{p,t} \cdot \boldsymbol{ \dot{E}^{gr,+}_{b,p,t} } -  c^{el,-}_{p,t}\cdot \boldsymbol{ \dot{E}^{gr,-}_{b,p,t} } +  c^{ng,+}_{p,t} \cdot \boldsymbol{\dot{H}^{gr,+}_{b,p,t} } \right) \cdot d_t \cdot d_p  \quad \forall b \in  \text{B}
+    \boldsymbol{C^{op}_b} =  \sum_{l \in \text{L}} \sum_{p \in \text{P}} \sum_{t \in \text{T}} \left(  c^{l, +}_{p,t} \cdot \boldsymbol{ \dot{E}^{gr,+}_{b,l,p,t} } -  c^{l,-}_{p,t}\cdot \boldsymbol{ \dot{E}^{gr,-}_{b,l,p,t} } \right) \cdot d_t \cdot d_p  \quad \forall b \in  \text{B}
 
 Annual capital expenses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -240,7 +603,7 @@ Global warming potential
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. math::
-    \boldsymbol{G^{op}_b} = \sum_{p \in \text{P}} \sum_{t\in \text{T}}  \left( g^{el}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,+}_{b,p,t}} - g^{el}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,-}_{b,p,t}} + g^{ng} \cdot \boldsymbol{\dot{H}^{gr,+}_{b,p,t}} \right) \cdot d_p \cdot d_t \quad \forall b \in  \text{B}
+    \boldsymbol{G^{op}_b} = \sum_{l \in \text{L}} \sum_{p \in \text{P}} \sum_{t\in \text{T}}  \left( g^{l,+}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,+}_{b,l,p,t}} - g^{l,-}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,-}_{b,l,p,t}} \right) \cdot d_p \cdot d_t \quad \forall b \in  \text{B}
 
 .. math::
     \boldsymbol{G^{bes}_b }= \sum_{u \in \text{U}}  \frac{1}{l_u}\cdot   \left( i^{g1}_u \cdot \boldsymbol{y_{b,u}} + i^{g2}_u\cdot \boldsymbol{f_{b,u}} \right) \quad \forall b \in \text{B}
@@ -294,7 +657,7 @@ Thermal comfort
 The general form of the SH demand can be expressed by the first order dynamic model of buildings:
 
 .. math::
-    \boldsymbol{\dot{Q}_{b,p,t}^{SH}} = \dot{Q}_{b,p,t}^{gain} - U_b  \cdot A^{era}_b \cdot (\boldsymbol{T^{int}_{b,p,t}} - T^{ext}_{p,t}) - C_b \cdot A^{era}_b \cdot (\boldsymbol{T^{int}_{b,p,t+1}} - \boldsymbol{T^{int}_{b,p,t}})  \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
+    \boldsymbol{\dot{Q}_{b,p,t}^{SH}} = \dot{Q}_{b,p,t}^{gain} - U_{b}^{h}  \cdot A^{ERA}_b \cdot (\boldsymbol{T^{int}_{b,p,t}} - T^{ext}_{p,t}) - C^h_b \cdot A^{ERA}_b \cdot (\boldsymbol{T^{int}_{b,p,t+1}} - \boldsymbol{T^{int}_{b,p,t}})  \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
 
 Where heat gains are constituted by:
@@ -309,10 +672,10 @@ With internal heat gains calculated based on SIA 2024:2015 and include the rooms
 
 And solar heat gains proportional to the global irradiation, through a solar gain coefficient:
 
-Middelhauve - Section 3.2.4 Solar heat gains
+:cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 3.2.4 Solar heat gains*
 
 .. math::
-    \dot{Q}^{irr}_{b,p,t}  = A^{era}_b \cdot \phi^{irr} \cdot \dot{irr}^{ghi}_{b,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
+    \dot{Q}^{irr}_{b,p,t}  = A^{ERA}_b \cdot \phi^{irr} \cdot \dot{irr}^{ghi}_{b,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
 
 
 .. note::

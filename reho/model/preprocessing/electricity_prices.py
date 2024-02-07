@@ -790,8 +790,12 @@ def get_injection_prices(city=None, year=2024, category=None, tva=None):
     1914     2701        Basel          624  ...          0.0        13.0        14.0
     [1 rows x 8 columns]
     """
-    # TODO: ask how to store that information
-    license_key = ''
+    # Retrieve license key
+    load_dotenv()
+    if 'API_VESE_KEY' not in os.environ:
+        raise UserWarning("You need a key from VESE to access the injection prices")
+    else:
+        license_key = os.environ["API_VESE_KEY"]
     if len(str(year)) == 4:
         year = year % 100
 

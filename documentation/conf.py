@@ -104,7 +104,6 @@ autodoc_mock_imports = ['amplpy',
                         'geopandas',
                         'urllib3',
                         'dotenv']
-sys.modules['numpy'] = MagicMock()
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()
 sys.modules['sklearn.metrics'] = MagicMock()
@@ -114,5 +113,3 @@ sys.modules['sklearn_extra.cluster'] = MagicMock()
 sys.modules['sqlalchemy'] = MagicMock()
 sys.modules['sqlalchemy.dialects'] = MagicMock()
 sys.modules['shapely'] = MagicMock()
-# sys.modules['typing'] = MagicMock()
-# sys.modules['urllib3'] = MagicMock()

@@ -4,31 +4,48 @@ Getting started
 Installation
 ============
 
-REHO package
-------------
+.. grid:: 1 2 2 2
+    :gutter: 4
 
-.. code-block:: bash
+    .. grid-item-card:: Part-Time User? 😎
+        :class-card: install-card
+        :columns: 12 12 6 6
+        :padding: 3
 
-   pip install --extra-index-url https://pypi.ampl.com REHO
+        REHO is available as a `PyPI package <https://pypi.org/project/REHO/>`__
+        and can be installed via pip with:
 
-REHO repository
----------------
+        ++++++++++++++++++++++
 
-Select a directory where you would like to have your files,
-open the terminal/cmd in this folder and clone the `REHO repository <https://github.com/IPESE/REHO>`_ using the command:
+        .. code-block:: bash
 
-.. code-block:: bash
+            pip install --extra-index-url https://pypi.ampl.com REHO
 
-   git clone https://github.com/IPESE/REHO.git
+    .. grid-item-card:: Talented Developer? 🏄
+        :class-card: install-card
+        :columns: 12 12 6 6
+        :padding: 3
+
+        Full code can be accessed from the `REHO repository <https://github.com/IPESE/REHO>`__
+        and project cloned using the command:
+
+        ++++
+
+        .. code-block:: bash
+
+            git clone https://github.com/IPESE/REHO.git
+
+Requirements
+------------------
 
 Python
-------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
-As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_, offering a free full-featured license for students.
+As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_.
 
 AMPL
-----
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solver.
 
@@ -38,17 +55,12 @@ As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solv
 Plenty of text editors exist which feature AMPL. We recommend using `Sublime Text <https://www.sublimetext.com/>`_, which
 provides the `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_.
 
-
-
 Setup environment
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-Important: As soon as everything is cloned, please check out your own branch (from branch master).
-Go back to the terminal and run:
+.. note::
+    As soon as the repository is cloned, don't forget to check out your own branch !
 
-.. code-block:: bash
-
-   git checkout -b your_branch_name
 
 1. Open PyCharm, open a project and browse to the folder of the repository REHO. Do not accept the automatic virtual environment creation.
 2. Go to File > Settings > Project: REHO to set up your Project Interpreter, click on the gear symbol and choose to add.
@@ -112,7 +124,7 @@ This latter should allow you to get started with the tool and conduct your first
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['pickle'], filename='totex')
+    reho.save_results(format=['pickle'], filename='my_results')
 
     # Plot energy flows
     plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel').show()
@@ -142,12 +154,10 @@ REHO can connect to QBuildings and read the data it contains with the following 
     reader.establish_connection('Suisse')   # connect to QBuildings database
     qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)      # read data
 
-The two files implied in the process are:
 
-- :code:`data/QBuildings/Suisse.ini` contains the login information to access the database
-- :code:`model/preprocessing/QBuildings.py` contains the :code:`QBuildingsReader` class, with functions to access to database and extract specified information
+See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_db` for further description.
 
-*NB: Note that you need to be connected to EPFL network or VPN to access the database*
+.. warning:: Note that you need to be connected to EPFL network or VPN to access the database
 
 CSV files
 ~~~~~~~~~~~~~~~~~
@@ -157,10 +167,98 @@ The buildings information can also be provided through a CSV file, with the call
 .. code-block:: python
 
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=2)
+    qbuildings_data = reader.read_csv(buildings_filename='my_buildings_file.csv', nb_buildings=2)
 
-The CSV file must be located in the :code:`data/buildings/` folder.
+See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_csv` for further description.
 
+.. warning::
+
+    To work properly, the *.csv* given should contain the same fields as it came from QBuildings.
+
+    The order does not matter. It can be helpful to explore the *data/model/buildings_example.csv*,
+    *data/model/roofs_example.csv* and *data/model/facades_example.csv*.
+
+    .. dropdown:: List of buildings parameters
+        :icon: list-unordered
+
+        .. table:: Table of mandatory buildings parameters
+            :name: tbl-csv-buildings
+
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | Parameters                              | Description                                                                                                                                                                                                                        | Example          |
+            +=========================================+====================================================================================================================================================================================================================================+==================+
+            | id_class                                | Building's class, from :ref:`tbl-sia380`. If several, separate them with   /                                                                                                                                                       | I/II/I           |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | ratio                                   | Share of the ERA attributed to each id_class. If one class   should be 1, else should follow the order of the id_class                                                                                                             | 0.4/0.25/0.35    |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | status                                  | From SIA2024, characterize the electricity consumption in REHO. Put   'standard' by default.                                                                                                                                       | standard         |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | area_era_m2                             | Energetic Reference Area                                                                                                                                                                                                           | 279.4            |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | area_facade_m2                          | area of vertical facades                                                                                                                                                                                                           | 348              |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | area_roof_solar_m2                      | Roof area suitable for solar panels installation. See   `Sonnendach   <https://www.bfe.admin.ch/bfe/en/home/supply/statistics-and-geodata/geoinformation/geodata/solar-energy/suitability-of-roofs-for-use-of-solar-energy.html>`_ | 148.3            |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | height_m                                | Height up to the last ceiling. Use to determine shadowing in   *use_facades*.                                                                                                                                                      | 12.83            |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | thermal_transmittance_signature_kW_m2_K | Averaged conductance                                                                                                                                                                                                               | 0.00202          |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | thermal_specific_capacity_Wh_m2_K       | Thermal inertia                                                                                                                                                                                                                    | 119.4            |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | temperature_interior_C                  | Target temperature to reach                                                                                                                                                                                                        | 20.0             |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | temperature_cooling_supply_C            |                                                                                                                                                                                                                                    | 12.0             |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | temperature_cooling_return_C            |                                                                                                                                                                                                                                    | 17.0             |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | temperature_heating_supply_C            |                                                                                                                                                                                                                                    | 65.0             |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+            | temperature_heating_return_C            |                                                                                                                                                                                                                                    | 50.0             |
+            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+
+    .. dropdown:: List of roofs parameters
+        :icon: list-unordered
+
+        .. table:: Table of mandatory roofs parameters
+            :name: tbl-csv-roofs
+
+            +--------------------+----------------------------------------------------+------------------+
+            | Parameters         | Description                                        | Example          |
+            +====================+====================================================+==================+
+            | tilt               | Inclination of the roof, in degree                 | 30               |
+            +--------------------+----------------------------------------------------+------------------+
+            | azimuth            | Orientation of the roof, in degree                 | 12               |
+            +--------------------+----------------------------------------------------+------------------+
+            | id_roof            | Unique identifier                                  | 1                |
+            +--------------------+----------------------------------------------------+------------------+
+            | area_roof_solar_m2 | Surface suitable for solar panels                  | 210.3            |
+            +--------------------+----------------------------------------------------+------------------+
+            | id_building        | Use to identify to which building the roof belongs | 10               |
+            +--------------------+----------------------------------------------------+------------------+
+
+    .. dropdown:: List of facades parameters
+            :icon: list-unordered
+
+            .. table:: Table of mandatory facades parameters
+                :name: tbl-csv-facades
+
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | Parameters           | Description                                                                                        | example of value                                     |
+            +======================+====================================================================================================+======================================================+
+            | azimuth              | Orientation of the roof, in degree                                                                 | 12                                                   |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | id_facade            | Unique identifier                                                                                  | 1                                                    |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | area_facade_solar_m2 | Surface suitable for solar panels                                                                  | 145.6                                                |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | id_building          | Use to identify to which building the roof belongs                                                 | 10                                                   |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | cx                   | Coordinate x of the facade centroid                                                                | 2592822.33                                           |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | cy                   | Coordinate y of the facade centroid                                                                | 2592809.46                                           |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | geometry             | Geometry of the facade, useful if centroid is not available. Should be in   *wkb* or *wkt* format. | MULTILINESTRING ((2592822 1120151, 2592809 1120182)) |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
 
 Select weather data
 -----------------------
@@ -229,13 +327,13 @@ at building-scale or district-scale respectively.
     scenario['nPareto'] = 2
 
 The parameter :code:`nPareto` indicates the number of intermediate points for each objective.
-The total number of optimizations will be :code:``2 + 2 * nPareto`` (2 extreme points plus 2 times a discretized interval of :code:`nPareto` points.
+The total number of optimizations will be ``2 + 2 * nPareto`` (2 extreme points plus 2 times a discretized interval of :code:`nPareto` points.
 
 
 Initialize available units and grids
 -------------------------------------------
 
-Initializing the energy system structure is done with the :code:`infrastructure` class.
+Initializing the energy system structure is done with the :class:`reho.model.infrastructure.infrastructure` class.
 
 Grids
 ~~~~~
@@ -382,13 +480,16 @@ Conduct a district-scale optimization, by setting:
 PV orientation and PV on facades
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This line of code will enable PV orientation and PV on facades:
+These lines of code will enable PV orientation and PV on facades:
 
 .. code-block:: python
-
+    reader = QBuildingsReader(load_roofs=True, load_facades=True)
+    reader.establish_connection('Suisse')
+    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
     method = {'use_pv_orientation': True, 'use_facades': False, 'district-scale': True}
 
 
+*N.B.: Note the roofs and facades are required hence the load_roofs and load_facades in the reader a priori.*
 
 
 Run optimization
@@ -405,23 +506,44 @@ Once `reho` instance has been properly initialized as :code:`reho(qbuildings_dat
     reho.generate_pareto_curve()
 
 
-Save results
------------------------
-
-Results are saved in a `reho.results` dictionary and indexed on `Scn_ID` and `Pareto_ID`.
-If you want to access a value, you can check here which attribute you have to call in the `df_Results` dataframe.
-
-Assuming that you already have loaded your output file and you would like to know the size of the units which are installed,
-a look into the main AMPL file `model.mod` reveals that the variable you need is called `Units_Mult`.
-You can then search for the variable in the result class in Python and realize that it is located in the dataframe called `df_Unit`.
-
 Plot energy flows
 -----------------------
 
-Plotting directly with `reho.results`
+At the end of an optimization, the results are written in `reho.results`, a dictionary indexed on `Scn_ID` and `Pareto_ID`.
+You can directly use this dictionary to plot results:
 
 .. code-block:: python
 
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long').show()
     plotting.plot_performance(reho.results, plot='gwp', indexed_on='Scn_ID', label='EN_long').show()
     plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel').show()
+
+Refer to :mod:`reho.plotting.plotting` for more details.
+
+Save and read results
+-----------------------
+
+These results can be saved on a `pickle` or `xlsx` format with:
+
+.. code-block:: python
+
+    reho.save_results(format=['pickle', 'xlsx'], filename='my_results')
+
+
+If you want to access them on a later stage, you can browse the results with:
+
+.. code-block:: python
+
+    results = pd.read_pickle('my_results.pickle')
+    Scn_ID = list(results.keys())
+    Pareto_ID = list(results[Scn_ID[0]].keys())
+    df_Results = results[Scn_ID[0]][Pareto_ID[0]]
+
+
+`df_Results` corresponds to the output of one single-optimization, and is a dictionary containing the following dataframes:
+`df_Performance`, `df_Annuals`, `df_Buildings`, `df_Unit`, `df_Unit_t`, `df_Grid_t`, `df_Buildings_t`, `df_Time`, `df_External`, `df_Index`, `df_KPIs`, `df_Economics`.
+
+.. note::
+    For example, let's say you would like to know the size of the units which are installed.
+    A look into the main AMPL file `model.mod` reveals that the variable you are looking for is called `Units_Mult`.
+    You can then search for the variable in the `write_results.py` file and realize that it is located in the dataframe called `df_Unit`.

@@ -31,8 +31,16 @@ from reho.model.postprocessing.postcompute_decentralized_districts import *
 
 from reho.paths import *
 
+
 class reho(district_decomposition):
     """
+    Wrapper class used to perform the single or multi-objective optimization.
+
+    Parameters are inherited from `district_decomposition`
+
+    See also
+    --------
+    reho.model.district_decomposition.district_decomposition
 
     """
 

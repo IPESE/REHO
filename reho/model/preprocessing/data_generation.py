@@ -15,7 +15,45 @@ def profile_reference_temperature(parameters_to_ampl, cluster):  # TODO: time de
 
 
 def profiles_from_sia2024(buildings_data, File_ID, cluster, include_stochasticity=False, sd_stochasticity=None):
+    """
+    Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
+    `SIA 2024 <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_.
 
+    The SIA profiles are daily profiles with coefficient attributed to each month.
+    This function extends the profiles to the periods used, according the building's affectation.
+
+    Parameters
+    ----------
+    buildings_data : dict
+        Dictionary of buildings data from QBuildingsReader class.
+    File_ID : str
+        File ID of the clustering results, used to know the periods and period duration.
+    cluster : dict
+        cluster parameter from the reho.model.reho.reho class
+    include_stochasticity : bool
+        Activate the method `include_stochasticity`, from the reho.model.reho.reho class, that includes variability
+        in the values given by the SIA profiles.
+    sd_stochasticity : dict
+        Dictionary, from the reho.model.reho.reho class, that precises the parameters of the stochasticity (see :ref:`tbl-methods`).
+
+    Returns
+    -------
+    Three Numpy arrays of shape (242,): the 1st one for the heat gains from people, the 2nd for DHW and the 3rd for
+    the electricity demand.
+
+    See also
+    --------
+    reho.model.preprocessing.QBuildings.QBuildingsReader :
+        Class used to handle the buildings' data.
+    reho.model.reho.reho :
+        Wrapper Class that manages the optimization.
+
+    Notes
+    -----
+    - One building can have several affectations. In that case, the building is divided by the share of ERA by
+      affectations and the profiles are summed.
+
+    """
     # get cluster information
     timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
     df = pd.read_csv(timestamp_file, delimiter='\t')
@@ -101,6 +139,7 @@ def profiles_from_sia2024(buildings_data, File_ID, cluster, include_stochasticit
 
     return np_gain_all, np_dhw_all, np_el_all
 
+
 def apply_stochasticity(df_profiles, scale, SF):
 
     # implement the intensity variation in standard profiles
@@ -120,6 +159,7 @@ def apply_stochasticity(df_profiles, scale, SF):
 
     return df_profiles
 
+
 def create_random_var(sd_amplitude, sd_timeshift):
     # constraints
     if sd_amplitude < 0: sd_amplitude = 0
@@ -136,8 +176,27 @@ def create_random_var(sd_amplitude, sd_timeshift):
 
     return RV_scaling, SF
 
-def solar_gains_profile(ampl, buildings_data, File_ID):
 
+def solar_gains_profile(ampl, buildings_data, File_ID):
+    """
+    Computes the solar heat gains from the irradiance.
+
+    It uses a typical irradiation file and uses `calc_orientation_profiles` to obtain the irradiation on the west
+    facades. Additionally, the solar gains depends on the facades and on a window fraction (obtained from SIA 2024).
+
+    Parameters
+    ----------
+    ampl : AMPL
+        The AMPL object created in the reho.model.reho.reho class.
+    buildings_data : dict
+        Dictionary of buildings data from QBuildingsReader class.
+    File_ID : str
+        File ID of the clustering results, used to know the periods and period duration.
+
+    Returns
+    -------
+    A Numpy array of shape (242,) with the solar gains for each timesteps.
+    """
     # Number of days computation
     PeriodDuration = ampl.getParameter('TimeEnd').getValues().toPandas()
     timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_'+File_ID+'.dat')

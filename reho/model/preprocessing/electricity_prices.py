@@ -63,12 +63,12 @@ def requests_retry_session(
 
 class SparqlClient:
     def __init__(
-        self,
-        base_url: str = None,
-        timeout: Optional[int] = 15,
-        output: Optional[str] = "pandas",
-        user: Optional[str] = None,
-        password: Optional[str] = None,
+            self,
+            base_url: str = None,
+            timeout: Optional[int] = 15,
+            output: Optional[str] = "pandas",
+            user: Optional[str] = None,
+            password: Optional[str] = None,
     ) -> None:
 
         self.BASE_URL = base_url

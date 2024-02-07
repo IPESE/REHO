@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime
 
+
 def reduce_matrix_file():
     df = pd.read_csv(path_to_emissions_matrix_full,  header=None, index_col=[0, 1, 2, 3])
 
@@ -18,6 +19,7 @@ def reduce_matrix_file():
 
     return df_small
 
+
 def find_average_value(country, value):
     # sort city to country
     df = pd.read_csv(path_to_emissions_matrix, index_col = [0,1,2])
@@ -28,6 +30,7 @@ def find_average_value(country, value):
     if (value  == 'GWP100a') or (value == 'GWP20a'):
         average = average/1000 #g/kWh to kg/kWh
     return average
+
 
 def interpolate(series):
 
@@ -133,6 +136,7 @@ def select_typical_emission_profiles(cluster, File_ID, value):
 
     df_E = df_E.rename(columns={df_E.columns[0]: 'GWP_supply'})
     return df_E
+
 
 if __name__ == '__main__':
 

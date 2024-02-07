@@ -11,6 +11,8 @@ import pandas as pd
 
 class district_decomposition:
     """
+    Applies the decomposition method.
+
     Store district attributes, scenario, method, attributes for the decomposition, and initiate an attribute
     that will store results.
 

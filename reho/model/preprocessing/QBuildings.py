@@ -10,10 +10,6 @@ import reho.model.preprocessing.skydome_input_parser as skd
 import pandas as pd
 import numpy as np
 import math
-from csv import Sniffer
-from pathlib import Path
-from pandas import read_csv, read_table, read_excel
-import sys
 
 
 class QBuildingsReader:
@@ -91,7 +87,8 @@ class QBuildingsReader:
 
         return
 
-    def read_csv(self, buildings_filename, nb_buildings=None, roofs_filename=None, facades_filename=None):
+    def read_csv(self, buildings_filename='buildings_example.csv', nb_buildings=None,
+                 roofs_filename='roofs_example.csv', facades_filename='facades_example.csv'):
         """
         Read buildings-related data from CSV files and prepare it for the REHO model.
 
@@ -119,8 +116,11 @@ class QBuildingsReader:
         -----
         - If `nb_buildings` is not provided, all buildings in the 'buildings' data are considered.
         - If ``load_roofs = True``, `roofs_filename` must be provided, else it is not useful. Same goes for the facades.
-        - This function can be used with default files in case one does not want to connect to the database and does not need a particular building.
-          In that case, use `buildings_example.csv`, `roofs_example.csv` and `facades_example.csv`. It should be noted that those names are therefore reserved for the default and cannot be used for your own files.
+        - This function can be used with default files in case one does not want to connect to the database and does
+          not need a particular building.
+          In that case, do not fill any filename. `buildings_example.csv`, `roofs_example.csv` and `facades_example.csv`
+          will be used by default.
+          It should be noted that those names are therefore reserved for the default and cannot be used for your own files.
 
         Example
         -------
@@ -135,7 +135,7 @@ class QBuildingsReader:
         >>> qbuildings_data['buildings_data']['Building1'].keys()
         dict_keys(['id_class', 'ratio', 'status', 'ERA', 'SolarRoofArea', 'area_facade_m2', 'height_m', 'U_h', 'HeatCapacity', 'T_comfort_min_0', 'Th_supply_0', 'Th_return_0', 'Tc_supply_0', 'Tc_return_0', 'x', 'y', 'z', 'geometry', 'transformer', 'id_building', 'egid', 'period', 'n_p', 'energy_heating_signature_kWh_y', 'energy_cooling_signature_kWh_y', 'energy_hotwater_signature_kWh_y', 'energy_el_kWh_y'])
         """
-        self.data['buildings'] = file_reader(path_handler(buildings_filename))
+        self.data['buildings'] = file_reader(buildings_filename)
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
         if nb_buildings is None:
@@ -671,43 +671,6 @@ def return_shadows_id_building(id_building, df_district):
     df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow'})
 
     return df_beta_dome
-
-
-def path_handler(path_given):
-    """To handle the path to csv file, absolute path or not"""
-
-    if path_given == 'buildings_example.csv' or path_given == 'roofs_example.csv' or path_given == 'facades_example.csv':
-        return os.path.join(path_to_qbuildings, path_given)
-
-    if os.path.isabs(path_given):
-        if os.path.isfile(path_given):
-            return path_given
-        else:
-            print('The absolute path that was given is not a valid file.')
-    else:
-        if os.path.isfile(os.path.realpath(path_given)):
-            return os.path.realpath(path_given)
-        else:
-            print('The relative path that was given is not a valid file.')
-
-
-def file_reader(file, index_col=None):
-    """To read data files correctly, whether there are csv, txt, dat or excel"""
-    file = Path(file)
-    try:
-        if file.suffix == '.csv' or file.suffix == '.dat' or file.suffix == '.txt':
-            sniffer = Sniffer()
-            with open(file, 'r') as f:
-                line = next(f).strip()
-                delim = sniffer.sniff(line)
-            return read_csv(file, sep=delim.delimiter, index_col=index_col)
-        elif file.suffix == '.xlsx':
-            return read_excel(file)
-        else:
-            return read_table(file)
-    except:
-        print('It seems there is a problem when reading the file...\n')
-        print("%s" % sys.exc_info()[1])
 
 
 def add_geometry(df):

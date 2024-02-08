@@ -28,6 +28,9 @@ def get_cluster_file_ID(cluster):
     Notes
     -----
     - The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
+    - The weather file is search using the Location
+    - If one wants to use his own meteo file, he can add to the cluster dictionary a key ``weather_file`` with the path
+      to the meteo. Should be a *.dat* with the same structure as the other weather_file.
     """
     # get correct file ID for weather file
     attributes = []
@@ -55,11 +58,13 @@ def get_cluster_file_ID(cluster):
     File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + \
               T + I + W + E
 
-    if not os.path.exists(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')):
-
-        df = read_hourly_dat(cluster['Location'])
+    among_cl_results = os.path.exists(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat'))
+    if not among_cl_results or 'weather_file' in cluster.keys():
+        if 'weather_file' in cluster.keys():
+            df = read_hourly_dat(cluster['weather_file'])
+        else:
+            df = read_hourly_dat(cluster['Location'])
         df = df[attributes]
-
         cl = ClusterClass(data=df, Iter=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
         cl.run_clustering()
 
@@ -71,7 +76,10 @@ def get_cluster_file_ID(cluster):
 
 def read_hourly_dat(location):
 
-    df1 = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
+    if location.endswith('.dat'):
+        df1 = np.loadtxt(path_handler(location), unpack=True, skiprows=1)
+    else:
+        df1 = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
     df1 = pd.DataFrame(df1).transpose()
     df1 = df1.drop([5,6,7,8], axis=1)
     df1.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']

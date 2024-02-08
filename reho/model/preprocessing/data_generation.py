@@ -1,5 +1,38 @@
+import pandas as pd
+from datetime import timedelta
+from reho.model.preprocessing.weather import get_cluster_file_ID
 from reho.model.preprocessing.sia_parser import *
 from reho.model.preprocessing.QBuildings import *
+
+
+def annual_to_typical(cluster, annual_file, typical_file=None):
+
+    # Get which days are the typical ones
+    File_ID = get_cluster_file_ID(cluster)
+    timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
+    df_time = pd.read_csv(timestamp_file, delimiter='\t')
+    typical_days = df_time.Date.apply(lambda date: date[1:-3]).values
+
+    # df_annual = pd.read_csv(os.path.join(path_to_electricity, annual_file), sep=',')
+    df_annual = file_reader(annual_file)
+    t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
+
+    # hour 1 is between 0:00 - 1:00 and is indexed with starting hour so 0:00
+    for h in df_annual.index.values:
+        df_annual.loc[h, 'h'] = t1 + timedelta(hours=(int(h)-1))
+
+    df_annual = df_annual.set_index('h')
+    df_typical = pd.DataFrame()
+    for i, td in enumerate(typical_days):
+        df_typical = pd.concat([df_typical, df_annual.loc[td]],  sort=True)
+    periods = list(range(1, cluster['Periods'] + 1))
+    hours = list(range(1, cluster['PeriodDuration'] + 1))
+    df_typical = df_typical.reset_index(drop=True)
+    df_typical = df_typical.set_index(pd.MultiIndex.from_product([periods, hours], names=['Period', 'Hour']))
+    if typical_file:
+        df_typical.to_csv(typical_file)
+
+    return df_typical
 
 
 def profile_reference_temperature(parameters_to_ampl, cluster):  # TODO: time dependent indoor temperature f.e. lower at night
@@ -14,7 +47,8 @@ def profile_reference_temperature(parameters_to_ampl, cluster):  # TODO: time de
     return np_temperature
 
 
-def profiles_from_sia2024(buildings_data, File_ID, cluster, include_stochasticity=False, sd_stochasticity=None):
+def build_eud_profiles(buildings_data, File_ID, cluster,
+                       include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
     Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
     `SIA 2024 <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_.
@@ -67,7 +101,12 @@ def profiles_from_sia2024(buildings_data, File_ID, cluster, include_stochasticit
     np_dhw_all = np.array([])
     np_el_all = np.array([])
 
-    for b in buildings_data: #iterate over buildings
+    if use_custom_profiles:
+        # Replace filepath in dictionary to typical profiles
+        for key, val in use_custom_profiles.items():
+            use_custom_profiles[key] = annual_to_typical(cluster, annual_file=val)
+
+    for b in buildings_data:  # iterate over buildings
         # get SIA Profiles
         classes = buildings_data[b]['id_class'].split('/')
         if isinstance(buildings_data[b]['ratio'], float):
@@ -97,16 +136,35 @@ def profiles_from_sia2024(buildings_data, File_ID, cluster, include_stochasticit
             for p in df.index:  # get profiles for each typical day
 
                 df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df.xs(p).Date, df_SIA)
-
                 if include_stochasticity:
                     df_profiles = apply_stochasticity(df_profiles, RV_scaling, SF)
 
-                heatgain_day = (df_profiles['heatgainpeople_W/m2'] + df_profiles[
-                    'electricity_W/m2']) * area_net_floor / 1000  # kW/m2
+                df_custom_profiles = pd.DataFrame()
+                if use_custom_profiles:
+                    for key, df_key in use_custom_profiles.items():
+                        df_custom_profiles[key] = df_key.xs(i+1, level='Period').loc[:, b]
+                    if include_stochasticity:
+                        df_custom_profiles = apply_stochasticity(df_custom_profiles, RV_scaling, SF)
 
-                hot_water_day = (df_profiles['hotwater_l/m2']) * area_net_floor  # L/m2
+                if not df_custom_profiles.empty and 'electricity' in df_custom_profiles.columns:
+                    conv_heat_factor = 0.7
+                    elec_gain = conv_heat_factor * df_custom_profiles['electricity'] * area_net_floor / 1000
+                    elec = df_custom_profiles['electricity']
+                else:
+                    elec_gain = df_profiles['elecgain_W/m2']
+                    elec = df_profiles['electricity_W/m2']
+                if not df_custom_profiles.empty and 'occupancy' in df_custom_profiles.columns:
+                    people_gain = df_custom_profiles['occupancy']
+                else:
+                    people_gain = df_profiles['heatgainpeople_W/m2']
+                if not df_custom_profiles.empty and 'dhw' in df_custom_profiles.columns:
+                    hotwater = df_custom_profiles['dhw']
+                else:
+                    hotwater = df_profiles['hotwater_l/m2']
 
-                electric_day = df_profiles['electricity_W/m2'] * area_net_floor / 1000  # kW/m2
+                heatgain_day = (people_gain + elec_gain) * area_net_floor / 1000  # kW/m2
+                hot_water_day = hotwater * area_net_floor  # L/m2
+                electric_day = elec * area_net_floor / 1000  # kW/m2
 
                 # sort it correctly (if first hour is not 12:00)
                 begin = df.xs(p).Date.hour

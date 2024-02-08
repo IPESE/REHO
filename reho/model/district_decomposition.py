@@ -71,11 +71,9 @@ class district_decomposition:
             self.parameters = parameters
 
         # Heat gains from electricity and people, domestic hot water demand, domestic electricity demand
-        self.parameters['HeatGains'], self.parameters['DHW_flowrate'], domestic_elec = DGF.profiles_from_sia2024(self.buildings_data, self.File_ID, self.cluster, self.method['include_stochasticity'], self.method['sd_stochasticity'])
-        if self.method["read_electricity_profiles"] is not None:
-            self.parameters['Domestic_electricity'] = el_parser.read_typical_profiles(self.method["read_electricity_profiles"], self.File_ID)
-        else:
-            self.parameters['Domestic_electricity'] = domestic_elec
+        self.parameters['HeatGains'], self.parameters['DHW_flowrate'], domestic_elec = \
+            DGF.build_eud_profiles(self.buildings_data, self.File_ID, self.cluster, self.method['include_stochasticity'],
+                                   self.method['sd_stochasticity'], self.method['use_custom_profiles'])
 
         if set_indexed is None:
             self.set_indexed = {}

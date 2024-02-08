@@ -167,7 +167,6 @@ Prepares and manipulates the input of the optimization:
 *Generates the meteorological data (temperature and solar irradiance).*
 
 .. automodule:: reho.model.preprocessing.weather
-    :caption: weather
     :members: get_cluster_file_ID, generate_output_data, write_dat_files
 
 *compact_optimization.py*

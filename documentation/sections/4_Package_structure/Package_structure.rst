@@ -137,10 +137,8 @@ Prepares and manipulates the input of the optimization:
 `EV_profile_generator.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Generates the electric vehicle electricity demand profiles.*
-
-.. caution::
-    Needs to be documented.
+.. automodule:: reho.model.preprocessing.EV_profile_generator
+    :members: generate_EV_plugged_out_profiles_district
 
 `QBuildings.py`
 ~~~~~~~~~~~~~~~~~~~~~~~

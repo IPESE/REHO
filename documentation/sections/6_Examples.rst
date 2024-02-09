@@ -14,12 +14,12 @@ The content there (code, results, and figures) will be ignored by the git versio
 
 Single-optimization
 ====================================
-.. literalinclude:: ../../../scripts/examples/1a_building-scale_totex.py
+.. literalinclude:: ../../scripts/examples/1a_building-scale_totex.py
    :language: python
 
 Pareto curve
 ====================================
-.. literalinclude:: ../../../scripts/examples/1b_building-scale_Pareto.py
+.. literalinclude:: ../../scripts/examples/1b_building-scale_Pareto.py
    :language: python
 
 2. District-scale
@@ -27,12 +27,12 @@ Pareto curve
 
 Single-optimization
 ====================================
-.. literalinclude:: ../../../scripts/examples/2a_district-scale_totex.py
+.. literalinclude:: ../../scripts/examples/2a_district-scale_totex.py
    :language: python
 
 Pareto curve
 ====================================
-.. literalinclude:: ../../../scripts/examples/2b_district-scale_Pareto.py
+.. literalinclude:: ../../scripts/examples/2b_district-scale_Pareto.py
    :language: python
 
 3. Various features
@@ -40,52 +40,52 @@ Pareto curve
 
 Buildings as .csv files
 ====================================
-.. literalinclude:: ../../../scripts/examples/3a_Read_csv.py
+.. literalinclude:: ../../scripts/examples/3a_Read_csv.py
    :language: python
 
 Stochastic profiles for EUD
 ====================================
-.. literalinclude:: ../../../scripts/examples/3b_Stochastic_profiles.py
+.. literalinclude:: ../../scripts/examples/3b_Stochastic_profiles.py
    :language: python
 
 Fix units size
 ====================================
-.. literalinclude:: ../../../scripts/examples/3c_Fix_units.py
+.. literalinclude:: ../../scripts/examples/3c_Fix_units.py
    :language: python
 
 Change heat pump temperature
 ====================================
-.. literalinclude:: ../../../scripts/examples/3d_HP_T_source.py
+.. literalinclude:: ../../scripts/examples/3d_HP_T_source.py
    :language: python
 
 Add other energy layers
 ====================================
-.. literalinclude:: ../../../scripts/examples/3e_Layers.py
+.. literalinclude:: ../../scripts/examples/3e_Layers.py
    :language: python
 
 Include electric vehicles
 ====================================
-.. literalinclude:: ../../../scripts/examples/3f_EVs.py
+.. literalinclude:: ../../scripts/examples/3f_EVs.py
    :language: python
 
 Integrate a district heating network
 ====================================
-.. literalinclude:: ../../../scripts/examples/3g_DHN.py
+.. literalinclude:: ../../scripts/examples/3g_DHN.py
    :language: python
 
 Connect to ELCOM database for electricity prices
 ===========================================================
-.. literalinclude:: ../../../scripts/examples/3h_Electricity_prices.py
+.. literalinclude:: ../../scripts/examples/3h_Electricity_prices.py
    :language: python
 
 Progressive integrated system
 ====================================
-.. literalinclude:: ../../../scripts/examples/4a_Progressive_scenarios.py
+.. literalinclude:: ../../scripts/examples/4a_Progressive_scenarios.py
    :language: python
 
 Include photovoltaics on facades
 ====================================
-.. literalinclude:: ../../../scripts/examples/5a_Facades.py
+.. literalinclude:: ../../scripts/examples/5a_Facades.py
    :language: python
 
 

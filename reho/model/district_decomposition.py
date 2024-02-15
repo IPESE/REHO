@@ -71,7 +71,7 @@ class district_decomposition:
             self.parameters = parameters
 
         # Heat gains from electricity and people, domestic hot water demand, domestic electricity demand
-        self.parameters['HeatGains'], self.parameters['DHW_flowrate'], domestic_elec = \
+        self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
             DGF.build_eud_profiles(self.buildings_data, self.File_ID, self.cluster, self.method['include_stochasticity'],
                                    self.method['sd_stochasticity'], self.method['use_custom_profiles'])
 

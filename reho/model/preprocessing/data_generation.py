@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from datetime import timedelta
 from reho.model.preprocessing.weather import get_cluster_file_ID
@@ -13,7 +14,6 @@ def annual_to_typical(cluster, annual_file, typical_file=None):
     df_time = pd.read_csv(timestamp_file, delimiter='\t')
     typical_days = df_time.Date.apply(lambda date: date[1:-3]).values
 
-    # df_annual = pd.read_csv(os.path.join(path_to_electricity, annual_file), sep=',')
     df_annual = file_reader(annual_file)
     t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
 
@@ -24,8 +24,8 @@ def annual_to_typical(cluster, annual_file, typical_file=None):
     df_annual = df_annual.set_index('h')
     df_typical = pd.DataFrame()
     for i, td in enumerate(typical_days):
-        df_typical = pd.concat([df_typical, df_annual.loc[td]],  sort=True)
-    periods = list(range(1, cluster['Periods'] + 1))
+        df_typical = pd.concat([df_typical, df_annual.loc[td]], sort=True)
+    periods = list(range(1, len(typical_days) + 1))
     hours = list(range(1, cluster['PeriodDuration'] + 1))
     df_typical = df_typical.reset_index(drop=True)
     df_typical = df_typical.set_index(pd.MultiIndex.from_product([periods, hours], names=['Period', 'Hour']))
@@ -35,7 +35,8 @@ def annual_to_typical(cluster, annual_file, typical_file=None):
     return df_typical
 
 
-def profile_reference_temperature(parameters_to_ampl, cluster):  # TODO: time dependent indoor temperature f.e. lower at night
+def profile_reference_temperature(parameters_to_ampl, cluster):
+    # TODO: time dependent indoor temperature f.e. lower at night
 
     total_timesteps = cluster['Periods'] * cluster['PeriodDuration'] + 2
     T_comfort_min_0 = parameters_to_ampl['T_comfort_min_0']
@@ -147,7 +148,7 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
                         df_custom_profiles = apply_stochasticity(df_custom_profiles, RV_scaling, SF)
 
                 if not df_custom_profiles.empty and 'electricity' in df_custom_profiles.columns:
-                    conv_heat_factor = 0.7
+                    conv_heat_factor = 0.7  # TODO: question with Dorsan this factor
                     elec_gain = conv_heat_factor * df_custom_profiles['electricity'] * area_net_floor / 1000
                     elec = df_custom_profiles['electricity']
                 else:
@@ -166,27 +167,33 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
                 hot_water_day = hotwater * area_net_floor  # L/m2
                 electric_day = elec * area_net_floor / 1000  # kW/m2
 
-                # sort it correctly (if first hour is not 12:00)
-                begin = df.xs(p).Date.hour
+                if p not in df.index.tolist()[-2:]:
+                    # sort it correctly (if first hour is not 12:00)
+                    begin = df.xs(p).Date.hour
 
-                # Size = 24 hours
-                heat_day = np.concatenate((heatgain_day.iloc[begin:].values, heatgain_day.iloc[:begin].values))
-                dhw_day = np.concatenate((hot_water_day.iloc[begin:].values, hot_water_day.iloc[:begin].values))
-                el_day = np.concatenate((electric_day.iloc[begin:].values, electric_day.iloc[:begin].values))
+                    # Size = 24 hours
+                    heat_day = np.concatenate((heatgain_day.iloc[begin:].values, heatgain_day.iloc[:begin].values))
+                    dhw_day = np.concatenate((hot_water_day.iloc[begin:].values, hot_water_day.iloc[:begin].values))
+                    el_day = np.concatenate((electric_day.iloc[begin:].values, electric_day.iloc[:begin].values))
 
-                # Size = PeriodDuration (= TimeEnd in ampl)
-                heat_period = np.tile(heat_day, round(cluster['PeriodDuration']/24))
-                dwh_period = np.tile(dhw_day, round(cluster['PeriodDuration']/24))
-                el_period = np.tile(el_day, round(cluster['PeriodDuration']/24))
+                    # Size = PeriodDuration (= TimeEnd in ampl)
+                    heat_period = np.tile(heat_day, round(cluster['PeriodDuration']/24))
+                    dhw_period = np.tile(dhw_day, round(cluster['PeriodDuration']/24))
+                    el_period = np.tile(el_day, round(cluster['PeriodDuration']/24))
+
+                elif p == df.index.tolist()[-2:][0]:  # Minimum period
+                    heat_period = np.array([min(heatgain_day)])
+                    dhw_period = np.array([max(dhw_day)])
+                    el_period = np.array([max(el_day)])
+                else:                                 # Maximum period
+                    heat_period = np.array([max(heatgain_day)])
+                    dhw_period = np.array([max(dhw_day)])
+                    el_period = np.array([max(el_day)])
 
                 np_gain = np.concatenate((np_gain, heat_period))
-                np_dhw = np.concatenate((np_dhw, dwh_period))
+                np_dhw = np.concatenate((np_dhw, dhw_period))
                 np_el = np.concatenate((np_el, el_period))
 
-            # Size = Periods * PeriodDuration + 2 extreme periods
-            np_gain = np.append(np_gain, [min(np_gain), max(np_gain)])
-            np_dhw = np.append(np_dhw, [max(np_dhw), max(np_dhw)])
-            np_el = np.append(np_el, [max(np_el), max(np_el)])
             np_gain_class += np_gain
             np_dhw_class += np_dhw
             np_el_class += np_el

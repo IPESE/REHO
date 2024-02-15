@@ -28,54 +28,51 @@ Contents
 .. grid::
 
    .. grid-item-card:: :octicon:`home` Overview
-      :link: sections/1_Overview/Overview.html
+      :link: sections/1_Overview.html
 
-      Start with a quick summary of what is REHO and what it can do
+      Start with a quick summary of what is REHO and what it can do.
 
 .. grid::
 
     .. grid-item-card:: :octicon:`book` Model
-        :link: sections/3_Model/Model.html
+        :link: sections/3_Model.html
 
-        Describes the mathematical formulation behind the REHO model
+        Describes the mathematical formulation behind the REHO model.
 
     .. grid-item-card:: :octicon:`package` Package structure
-        :link: sections/4_Package_structure/Package_structure.html
+        :link: sections/4_Package_structure.html
 
-        Describes the content of the REHO package, with a description of functions you will come to use
+        Describes the content of the REHO package, with a description of functions you will come to use.
 
 .. grid::
 
    .. grid-item-card:: :octicon:`rocket` Getting started
-        :link: sections/5_Getting_started/Getting_started.html
+        :link: sections/5_Getting_started.html
 
-        Check out how to install and run REHO on your machine, setting up different configurations
+        Check out how to install and run REHO on your machine, setting up different configurations.
 
    .. grid-item-card:: :octicon:`code-review` Examples
-        :link: sections/6_Examples/Examples.html
+        :link: sections/6_Examples.html
 
-        Still not sure how you should use REHO? Here are examples that include various features
+        Still not sure how you should use REHO? Here are examples that include various features.
 
 .. grid::
 
    .. grid-item-card:: :octicon:`git-branch` Releases
-        :link: sections/2_Releases/Releases.html
+        :link: sections/2_Releases.html
 
-        Find here the code versions, the license, how to cite and the list of the related works
+        Find here the code versions, the license, how to cite and the list of the related works.
 
 .. toctree::
    :maxdepth: 1
    :hidden:
 
-   sections/1_Overview/Overview
-   sections/2_Releases/Releases
-   sections/3_Model/Model
-   sections/4_Package_structure/Package_structure
-   sections/5_Getting_started/Getting_started
-   sections/6_Examples/Examples
-   sections/Input data
-   sections/Bibliography
-   sections/99_Appendix/Appendix
+   sections/1_Overview
+   sections/2_Releases
+   sections/3_Model
+   sections/4_Package_structure
+   sections/5_Getting_started
+   sections/6_Examples
 
 
 .. Indices and tables
@@ -87,31 +84,44 @@ Contents
 Downloading REHO
 =======================
 
-REHO is available as an open-source and collaborative Python library.
+.. grid::
 
-It is deployed as a PyPI package (https://pypi.org/project/REHO/) and can be installed with:
+    .. grid-item-card:: Part-Time User? 😎
+        :padding: 3
 
-.. code-block:: bash
+        REHO is available as a `PyPI package <https://pypi.org/project/REHO/>`__
+        and can be installed via pip with:
 
-   pip install REHO
+        ++++++++++++++++++++++
 
-The developer version can be accessed from its GitHub repository (https://github.com/IPESE/REHO) and installed with:
+        .. code-block:: bash
 
-.. code-block:: bash
+            pip install --extra-index-url https://pypi.ampl.com REHO
 
-   git clone https://github.com/IPESE/REHO.git
+.. grid::
+
+    .. grid-item-card:: Talented Developer? 🏄
+
+        REHO is an open-source and collaborative Python library.
+        Full code can be accessed from the `REHO repository <https://github.com/IPESE/REHO>`__ and project cloned using the command:
+
+        ++++
+
+        .. code-block:: bash
+
+            git clone https://github.com/IPESE/REHO.git
 
 
 Main contributors
 =================
 
-.. image:: images/ipese-logo-black.svg
+.. image:: images/logos/ipese-logo-black.svg
    :width: 600
    :height: 150
    :align: right
    :class: only-light
 
-.. image:: images/ipese-logo-white.svg
+.. image:: images/logos/ipese-logo-white.svg
    :width: 600
    :height: 150
    :align: right

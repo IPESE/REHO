@@ -6,6 +6,31 @@ import numpy as np
 
 
 def generate_EV_plugged_out_profiles_district(cluster):
+    """
+    Computes hourly electric vehicle (EV) profiles for each typical day considering weekdays and weekends. Data are taken from
+    `UK Department for Transport 2013 <https://www.gov.uk/government/collections/energy-and-environment-statistics#publications>`_
+    and `SFSO 2015 <https://www.bfs.admin.ch/asset/fr/1840478>`_. The EV occupancy profiles are used to
+    optimize EV electricity demand profiles with the evehicle.mod ampl model.
+
+
+
+    Parameters
+    ----------
+    cluster : dict
+        Define location district, number of periods, and number of timesteps.
+
+    Returns
+    -------
+    EV_plugged_out : array
+        Hourly profile of the share of vehicles being plugged out of the district LV grid.
+    EV_plugging_in : array
+        Hourly profile of the share of vehicles connecting to the district LV grid.
+
+    Notes
+    -----
+    - EV_plugged_out, EV_plugging_in
+
+    """
     #TODO IMPLEMENTATION of flexible period duration
     File_ID = WD.get_cluster_file_ID(cluster)
 

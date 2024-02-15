@@ -5,21 +5,17 @@ Model
 
 .. warning::
 
-    Section still under development.
+    Section still under construction.
+    Focus on the energy model and mathematical background of REHO.
+    Sequential approach : Inputs --> Model --> Outputs.
 
-    Focus on the energy model and mathematical background of REHO
-
-    Sequential approach : Inputs --> Model --> Outputs
-
-    .. Bottom-up approach (building-level --> district-level)
-    .. Top-down approach (district --> buildings --> units + heat cascade)
 
 The energy hub concept is used to model an energy community where multi-energy carriers can supply
 diverse end use demands through building-level equipment and district-level infrastructure optimally interconnected and operated.
 For a delimited perimeter of buildings, REHO selects the optimal energy system configuration minimizing the specified objective function.
 All the energy flows at building-level and district-level are then fully characterized by the model decision variables.
 
-.. figure:: ../../images/district_documentation.svg
+.. figure:: ../images/district_documentation.svg
    :align: center
    :name: district_documentation
 
@@ -37,13 +33,13 @@ Energy can be stored in installed equipment (such as a battery or a water tank),
 Photovoltaic panels act as a renewable energy source.
 The building-level energy system is interconnected to the energy distribution infrastructure of the district (electrical grid, natural gas grid, ...).
 
-.. figure:: images/diagram_model.svg
+.. figure:: ../images/diagram_model.svg
    :align: center
    :name: fig-diagram_model
 
    REHO model architecture
 
-.. figure:: images/building_energy_hub.png
+.. figure:: ../images/building_energy_hub.png
    :width: 450
    :align: center
    :name: building_energy_hub
@@ -425,6 +421,12 @@ Heating performance
 - Temperatures of supply and return for cooling system :math:`T_{c,supply}-T_{c,return} [°C]`
 - Reference indoor temperature :math:`T_{in} [°C]`
 
+The heating technique is maily measured in degrees Celsius. In building we have heating and cooling system.
+They include supply and return temperatures for both heating and cooling.
+The supply and return temperatures for cooling are captured by *temperature_cooling_supply_C* and *temperature_cooling_return_C*, respectively.
+Similarly, the parameters *temperature_heating_supply_C* and *temperature_heating_return_C* represent the corresponding temperatures for the heating system.
+The target temperature to be reached inside the building is defined by the parameter *temperature_interior_C*.
+
 Weather data
 ~~~~~~~~~~~~~~~~~~~~~~~~
 To calculate energy demand profiles the outdoor ambient temperature global irradiation for the region in study are necessary.
@@ -762,7 +764,7 @@ The electricity export and the import is constrained within the feasibility rang
 
 .. _network_diagram:
 
-.. figure:: images/network_diagram.svg
+.. figure:: ../images/network_diagram.svg
    :align: center
 
    Energy flows and network constraints in REHO

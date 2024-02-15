@@ -7,6 +7,9 @@ from reho.model.preprocessing.QBuildings import *
 
 
 def annual_to_typical(cluster, annual_file, typical_file=None):
+    """
+    From an annual profile, with 8760 values, extracts the values corresponding to the typical days.
+    """
 
     # Get which days are the typical ones
     File_ID = get_cluster_file_ID(cluster)
@@ -70,6 +73,8 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
         in the values given by the SIA profiles.
     sd_stochasticity : dict
         Dictionary, from the reho.model.reho.reho class, that precises the parameters of the stochasticity (see :ref:`tbl-methods`).
+    use_custom_profiles : dict
+        Dictionary, from the reho.model.reho.reho class, that allows to give custom profiles (see :ref:`tbl-methods`).
 
     Returns
     -------
@@ -87,7 +92,16 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
     -----
     - One building can have several affectations. In that case, the building is divided by the share of ERA by
       affectations and the profiles are summed.
+    - To use custom profiles, use csv files with 8760 rows. The name of the columns should be the name of the buildings,
+      which name comes from the `buildings_data`.
 
+    Examples
+    --------
+    >>> my_profiles = {'electricity': 'my_folder/electricity.csv'}
+    >>> file_id = 'Geneva_10_24_T_I_W'
+    >>> cluster = {'Location': 'Bruxelles', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    >>> people_gain, eud_dhw, eud_elec =
+    >>>     build_eud_profiles(buildings_data, file_id, cluster, use_custom_profiles=my_profiles)
     """
     # get cluster information
     timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')

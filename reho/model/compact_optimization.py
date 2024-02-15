@@ -708,8 +708,8 @@ def initialize_default_methods(method):
 
     if 'use_dynamic_emission_profiles' not in method:
         method['use_dynamic_emission_profiles'] = False
-    if 'read_electricity_profiles' not in method:
-        method['read_electricity_profiles'] = None
+    if 'use_custom_profiles' not in method:
+        method['use_custom_profiles'] = False
 
     if 'include_all_solutions' not in method:
         method['include_all_solutions'] = False
@@ -726,9 +726,6 @@ def initialize_default_methods(method):
         method["include_all_solutions"] = True
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False
-
-    if 'use_custom_profiles' not in method:
-        method['use_custom_profiles'] = False
 
     if 'use_Storage_Interperiod' not in method:
         method['use_Storage_Interperiod'] = False

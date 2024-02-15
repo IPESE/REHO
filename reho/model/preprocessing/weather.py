@@ -93,14 +93,14 @@ def generate_output_data(cl, attributes, location):
     """
     Generates the data for the cluster timesteps obtained from the ClusterClass.
 
-    Results are saved in temporary csv files to are then written properly using `write_dat_files`
+    Calls for *write_dat_files* to generate the saves.
 
     Parameters
     ----------
     cl : ClusterClass
         A ClusterClass object where the run_clustering method has already been executed.
     attributes : list
-        List that contains string among 'Irr', 'Text', 'Weekday'.
+        Contains string among 'Irr', 'Text', 'Weekday'.
     location : str
         Location of the corresponding weather data.
 
@@ -183,6 +183,10 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
         If 'Text' is in the list, writes a file named 'T' + '_File_ID.dat'
     location : str
         Location of the corresponding weather data.
+    values_cluster : pd.DataFrame
+        Produced by the *generate_output_data* function.
+    index_inter : pd.DataFrame
+        Produced by the *generate_output_data* function.
 
     Notes
     -----

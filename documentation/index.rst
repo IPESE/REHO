@@ -75,6 +75,7 @@ Contents
    sections/6_Examples/Examples
    sections/Input data
    sections/Bibliography
+   sections/99_Appendix/Appendix
 
 
 .. Indices and tables

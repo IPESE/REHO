@@ -469,6 +469,7 @@ These layers are modeled through parameters that can be changed in the model:
 .. _List of LCA criteria:
 
 .. dropdown:: List of LCA criteria
+    :icon: globe
 
     - Land use
     - Human toxicity

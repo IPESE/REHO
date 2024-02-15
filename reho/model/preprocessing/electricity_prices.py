@@ -738,7 +738,18 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
 
     return prices
 
-
+def get_vese_key():
+    try:
+        response = rq.get("https://ipese-lectures.epfl.ch/static/reho.json", timeout=1)
+        if response.status_code == 200:
+            json_data = response.json()
+            api_key_value = json_data.get("API_VESE_KEY")
+            return api_key_value
+        else:
+            return f"Error: {response.status_code}"
+    except Exception:
+        return False
+    
 def get_injection_prices(city=None, year=2024, category=None, tva=None):
     """
     Retrieve injection prices from the `pvtarif.ch <https://www.vese.ch/fr/pvtarif/>`_  API.
@@ -793,7 +804,9 @@ def get_injection_prices(city=None, year=2024, category=None, tva=None):
     # Retrieve license key
     load_dotenv()
     if 'API_VESE_KEY' not in os.environ:
-        raise UserWarning("You need a key from VESE to access the injection prices")
+        license_key=get_vese_key()
+        if not license_key:
+            raise UserWarning("You need a key from VESE to access the injection prices")
     else:
         license_key = os.environ["API_VESE_KEY"]
     if len(str(year)) == 4:

@@ -5,7 +5,6 @@ from itertools import groupby
 import warnings
 import time
 import gc
-import reho.model.preprocessing.electricity_profile_parser as el_parser
 import pandas as pd
 
 

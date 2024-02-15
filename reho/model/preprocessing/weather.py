@@ -146,7 +146,7 @@ def generate_output_data(cl, attributes, location):
     T_min.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[0], 1, 1]
     T_max.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[1], 1, 1]
     data_cls = pd.concat([data_cls, T_min.rename({T_idx[0]: 240}), T_max.rename({T_idx[1]: 241})])
-    # Add a 10% margin for the extreme over 20 years
+    # Add a 10% margin for the extreme over 20 years TODO: question with Dorsan this factor
     data_cls.loc[[240, 241], ['Text', 'Irr']] = data_cls.loc[[240, 241], ['Text', 'Irr']] * 1.1
    
     # - construct : model data
@@ -230,7 +230,6 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     df_T = values_cluster['Text']
     filename = os.path.join(path_to_clustering_results, 'T_' + File_ID + '.dat')
     df_T.to_csv(filename, index=False, header=False)
-    print(filename + ' generated and saved')
 
     # -------------------------------------------------------------------------------------
     # GHI
@@ -238,7 +237,6 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     df_GHI = values_cluster['Irr']
     filename = os.path.join(path_to_clustering_results, 'GHI_' + File_ID + '.dat')
     df_GHI.to_csv(filename, index=False, header=False)
-    print(filename + ' generated and saved')
 
     # -------------------------------------------------------------------------------------
     # frequency
@@ -272,9 +270,7 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     for p, d in enumerate(pt):
         IterationFile.write('\n' + str(p + 1) + ' ' + str(d))
     IterationFile.write('\n;')
-
     IterationFile.close()
-    print(filename + ' generated and saved')
 
     # -------------------------------------------------------------------------------------
     # index
@@ -301,8 +297,6 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     IterationFile.write('param : PeriodOfYear TimeOfYear := \n')
     IterationFile.write(df_aim.to_string(header=False))
     IterationFile.write('\n;')
-
-    print(filename + ' generated and saved')
     IterationFile.close()
 
     # -------------------------------------------------------------------------------------
@@ -311,7 +305,6 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     filename = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
     IterationFile = open(filename, 'w')
     header = 'Date\tDay\tFrequency\tWeekday\n'
-    print(header)
     IterationFile.write(header)
     for key in dict_index:
         pt = df_time.iloc[0].timesteps  # take the same period duration also for modulo
@@ -323,8 +316,6 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
         else:
             text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict_index[key] - 1])
         IterationFile.write(text + '\n')
-        print(text)
-    print(filename + ' generated and saved')
     IterationFile.close()
 
     return

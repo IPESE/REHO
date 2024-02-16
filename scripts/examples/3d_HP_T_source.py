@@ -1,5 +1,6 @@
 from reho.model.reho import *
 
+# Heat pump can have different sources such as air, lake, geothermal
 
 if __name__ == '__main__':
     # Set building parameters
@@ -32,5 +33,5 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3d')
+    reho.save_results(format=['xlsx', 'pickle'], filename='3d')
 

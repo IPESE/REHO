@@ -1,5 +1,4 @@
 from reho.model.reho import *
-from reho.model.preprocessing.QBuildings import QBuildingsReader
 
 
 if __name__ == '__main__':
@@ -26,11 +25,11 @@ if __name__ == '__main__':
 
     # Set method options
     # select PV orientation and/or facades methods
-    method = {'use_pv_orientation': True, 'use_facades': True, 'building-scale': True}
+    method = {'use_pv_orientation': True, 'use_facades': True}
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='5a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='5a')

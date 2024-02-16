@@ -38,4 +38,4 @@ if __name__ == '__main__':
     reho.single_optimization()  # run optimization with DHN costs
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3g')
+    reho.save_results(format=['xlsx', 'pickle'], filename='3g')

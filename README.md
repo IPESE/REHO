@@ -21,7 +21,7 @@ Cédric Terrier <cedric.terrier@epfl.ch>
 Joseph Loustau <joseph.loustau@epfl.ch>
 
 ## Licence
-Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
+Copyright (C) <2021-2024> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
 
 Licensed under the Apache License, Version0 (the "License");
 you may not use this file except in compliance with the License.
@@ -36,12 +36,12 @@ limitations under the License.
 Description and complete License: see LICENSE file.
 
 ## Installation
-1. Clone repository available at https://github.com/Renewable-Energy-Hub-Optimizer/REHO
+1. Clone repository available at https://github.com/IPESE/REHO
 2. Create `venv` in the repository and install required libraries with
 ```
 pip install -r requirements.txt
 ```
-3. Please refer to "Getting started" section of the documentation for step-by-step guidelines.
+3. Please refer to "User guide" section of the documentation for step-by-step guidelines.
 
 ## Suggestions and contributions
 All suggestions or implementation must be tracked with dedicated issues and reported in the project repository.

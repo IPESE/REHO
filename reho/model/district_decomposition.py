@@ -1,4 +1,3 @@
-import os
 import reho.model.infrastructure as infrastructure
 from reho.model.compact_optimization import *
 import reho.model.postprocessing.write_results as WR
@@ -7,36 +6,46 @@ import warnings
 import time
 import gc
 import reho.model.preprocessing.electricity_profile_parser as el_parser
-import pickle
-from os.path import exists
-import multiprocessing as mp
+import pandas as pd
 
 
 class district_decomposition:
+    """
+    Applies the decomposition method.
+
+    Store district attributes, scenario, method, attributes for the decomposition, and initiate an attribute
+    that will store results.
+
+    Parameters
+    ----------
+    qbuildings_data : dict
+        Contains 3 layers: A dictionary of the buildings characteristics such as surface area, class, egid, a DataFrame for Roofs characteristics and a DataFrame for Facades characteristics.
+    units : dict
+        Units characteristics.
+    grids : dict
+        Grids characteristics.
+    parameters : dict, optional
+        Parameters set in the script (usually energy tariffs).
+    set_indexed : dict, optional
+        The indexes used in the model.
+    cluster : dict, optional
+        Define location district, number of periods, and number of timesteps.
+    method : dict, optional
+        The different methods to run the optimization (refer to :ref:`tbl-methods`).
+    solver : str, optional
+        Chosen solver for AMPL (gurobi, cplex, highs, cbc, etc.).
+    DW_params : dict, optional
+        Hyperparameters of the decomposition and other useful information.
+
+    Notes
+    -----
+    - The REHO class inherits this class, so the inputs are similar.
+    - ``qbuildings_data`` contains by default only the buildings data. The roofs and facades are added solely with the use of methods: *use_pv_orientation* and *use_facades*.
+    """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
                  cluster=None, method=None, solver=None, DW_params=None):
-        """
-        Description
-        -----------
-        - Initialize the district_decomposition class. The REHO class inherits this class, so the inputs are similar.
-        - Store district attributes, scenario, method, attributes for the decomposition and initiate attribute
-            that will store results.
 
-        Inputs
-        ------
-        qbuildings_data : dictionary,  Buildings characteristics such as surface area, class, egid, ...
-        units : units characteristics
-        grids : grids characteristics
-        exclude_units : List of the unit not considered
-        parameters : dictionary,  Parameters set in the script (usually energy tariffs)
-        set_indexed :dictionary,  The indexes used in the model
-        cluster : dictionary,  Define location district, number of periods and number of timesteps
-        method : dictionary, The different method to run the optimization (decomposed, PV orientations, parallel computation,...)
-        solver: string, chosen solver for AMPL (gurobi, cplex, highs, cbc...)
-        DW_params : dictionary, hyperparameters of the decomposition and other useful information
-
-        """
         # ampl solver
         self.solver = solver
 
@@ -279,7 +288,7 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
@@ -322,7 +331,10 @@ class district_decomposition:
             modules.load()
             ampl_MP = AMPL()
         else:
-            ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+            try:
+                ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+            except:
+                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('show_stats', 2)
@@ -380,7 +392,7 @@ class district_decomposition:
         df_Performance = df_Performance.drop(index='Network', level='Hub').groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'Hub']).head(1).droplevel('Hub')  # select current Scn_ID and Pareto_ID
         df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 6)
 
-        # prepare df to have the same index than the AMPL model
+        # prepare df to have the same index as AMPL model
         if not self.method['include_all_solutions']:
             df_Performance = df_Performance.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID'))
             df_Grid_t = df_Grid_t.xs((Scn_ID, Pareto_ID, 'Network'), level=('Scn_ID', 'Pareto_ID', 'Hub'))
@@ -397,11 +409,12 @@ class district_decomposition:
         MP_parameters['Costs_ft_SPs'] = pd.DataFrame(np.round(df_Performance.Costs_ft, 6)).set_axis(['Costs_ft_SPs'], axis=1)
         MP_parameters['GWP_house_constr_SPs'] = pd.DataFrame(df_Performance.GWP_constr).set_axis(['GWP_house_constr_SPs'], axis=1)
 
-        df_lca_Units = self.return_combined_SP_results(self.results_SP, 'df_lca_Units')
-        df_lca_Units = df_lca_Units.groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'house']).sum()
-        MP_parameters['lca_house_units_SPs'] = df_lca_Units.droplevel(["Scn_ID", "Pareto_ID"]).stack().swaplevel(1, 2)
-        if not self.method['include_all_solutions']:
-            MP_parameters['lca_house_units_SPs'] = MP_parameters['lca_house_units_SPs'].xs(self.feasible_solutions - 1, level="FeasibleSolution", drop_level=False)
+        if self.method['save_lca']:
+            df_lca_Units = self.return_combined_SP_results(self.results_SP, 'df_lca_Units')
+            df_lca_Units = df_lca_Units.groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'house']).sum()
+            MP_parameters['lca_house_units_SPs'] = df_lca_Units.droplevel(["Scn_ID", "Pareto_ID"]).stack().swaplevel(1, 2)
+            if not self.method['include_all_solutions']:
+                MP_parameters['lca_house_units_SPs'] = MP_parameters['lca_house_units_SPs'].xs(self.feasible_solutions - 1, level="FeasibleSolution", drop_level=False)
 
         MP_parameters['Grids_Parameters'] = self.infrastructure.Grids_Parameters
         MP_parameters['Grids_Parameters_lca'] = self.infrastructure.Grids_Parameters_lca
@@ -669,7 +682,7 @@ class district_decomposition:
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
 
-        df_Results = WR.get_df_Results_from_compact(ampl, scenario, self.method, self.buildings_data)
+        df_Results = WR.get_df_Results_from_SP(ampl, scenario, self.method, self.buildings_data)
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         del ampl
@@ -746,8 +759,11 @@ class district_decomposition:
             df = last_SP_results[h]["df_Performance"].iloc[0]
             Cinv_h = pd.Series(df.Costs_rep + df.Costs_inv, index=["TOTEX"])
             Cinv_h_GWP = pd.Series(df.GWP_constr, index=["GWP"])
-            Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
-            Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
+            if self.method['save_lca']:
+                Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
+                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
+            else:
+                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP])).transpose()
             Cinv_h.index = Cop_h.index
             Cinv = pd.concat([Cinv, Cinv_h])
 

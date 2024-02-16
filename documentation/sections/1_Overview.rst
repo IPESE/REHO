@@ -2,10 +2,12 @@ Overview
 ++++++++
 .. _label_sec_overview:
 
+.. figure:: ../images/logos/logo_reho.png
+   :align: center
 
-:Version: |version| (|release|)
+:Version: |version| |release|
 :Date: |today|
-:Version main developers: Dorsan Lepour, Cédric Terrier (EPFL)
+:Version main developers: Dorsan Lepour, Joseph Loustau, Cédric Terrier (EPFL)
 :Short summary: Renewable Energy Hub Optimizer (REHO) - A Comprehensive Decision Support Tool for Sustainable Energy System Planning
 
 The transition to sustainable energy systems in the face of growing renewable energy adoption and electrification is

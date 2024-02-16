@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def get_df_Results_from_compact(ampl, scenario, method, buildings_data, filter=True):
+def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
     def set_df_performance(df, ampl, scenario):
         df1 = get_variable_in_pandas(df, 'Costs_House_op')  # without the comfort penalty costs
@@ -96,6 +96,11 @@ def get_df_Results_from_compact(ampl, scenario, method, buildings_data, filter=T
 
         df_Annuals = pd.concat([df12, df3456, df789], sort=False)
         df_Annuals.index.names = ['Layer', 'Hub']
+
+        # Correction of DHW layer
+        hubs = [s for s in df_Annuals.index.levels[1] if s.startswith("Building")]
+        for h in hubs:
+            df_Annuals.loc[('DHW', h), 'Demand_MWh'] = df_Annuals.loc[('DHW', 'WaterTankDHW_' + h), 'Supply_MWh']
 
         return df_Annuals
 
@@ -356,7 +361,7 @@ def get_df_Results_from_compact(ampl, scenario, method, buildings_data, filter=T
     return df_Results
 
 
-def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DHN=False):
+def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False):
 
     df_Results = dict()
     df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
@@ -476,7 +481,7 @@ def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DH
     df1 = get_variable_in_pandas(df, 'Units_Use')
     df2 = get_variable_in_pandas(df, 'Units_Mult')
     df3 = tau[0] * get_variable_in_pandas(df, 'Costs_Unit_inv')
-    df4 = get_variable_in_pandas(df, 'GWP_Unit_constr')  # per year! For total- multiply with lifetime
+    df4 = get_variable_in_pandas(df, 'GWP_Unit_constr')  # per year! For total - multiply with lifetime
     df5 = get_parameter_in_pandas(ampl, 'lifetime', multi_index=False)
     df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
     if read_DHN:
@@ -503,24 +508,31 @@ def get_df_Results_from_MP(ampl, binary=False, method={}, district=None, read_DH
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6], axis=1)
     df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
-    df_Results["df_Unit_t"] = df_Unit_t.sort_index()
+
+    units_districts = district.UnitsOfDistrict
+    district_l_u = []
+    for l, units in district.UnitsOfLayer.items():
+        [district_l_u.append((l, unit)) for unit in units if unit in units_districts]
+    df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
+    df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
 
     # df_lca
-    LCA_units = get_variable_in_pandas(df, 'lca_units')
-    LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
-    df_Results["df_lca_Units"] = LCA_units
+    if method["save_lca"]:
+        LCA_units = get_variable_in_pandas(df, 'lca_units')
+        LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
+        df_Results["df_lca_Units"] = LCA_units
 
-    LCA_tot = get_variable_in_pandas(df, 'lca_tot')
-    LCA_tot = LCA_tot.stack().unstack(level=0)
-    LCA_tot.index = ["Network"]
-    LCA_tot_house = get_variable_in_pandas(df, 'lca_tot_house')
-    LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
-    df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
-    df_Results["df_lca_Performance"].index.names = ['Hub']
+        LCA_tot = get_variable_in_pandas(df, 'lca_tot')
+        LCA_tot = LCA_tot.stack().unstack(level=0)
+        LCA_tot.index = ["Network"]
+        LCA_tot_house = get_variable_in_pandas(df, 'lca_tot_house')
+        LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
+        df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
+        df_Results["df_lca_Performance"].index.names = ['Hub']
 
-    LCA_op = get_variable_in_pandas(df, 'lca_op')
-    LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
-    df_Results["df_lca_operation"] = LCA_op
+        LCA_op = get_variable_in_pandas(df, 'lca_op')
+        LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
+        df_Results["df_lca_operation"] = LCA_op
 
     if method["actors_cost"]:
         df1 = get_variable_in_pandas(df, 'Cost_demand_district').groupby(level=(0,2)).sum()

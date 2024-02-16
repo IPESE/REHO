@@ -1,4 +1,5 @@
 import configparser
+import os.path
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
 import geopandas as gpd
@@ -16,7 +17,20 @@ import sys
 
 
 class QBuildingsReader:
+    """
+    This class is used to handle and prepare the data related to buildings.
 
+    There usually come from `GBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database. However,
+    one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in
+    `Processed GBuildings tables <https://ipese-web.epfl.ch/lepour/qbuildings/GBuildings/description.html#processed>`_.
+
+    Parameters
+    ----------
+    load_facades : bool
+        Whether the facades data should be added.
+    load_roofs : bool
+        Whether the roofs data should be added.
+    """
     def __init__(self, load_facades=False, load_roofs=False):
 
         self.db = None
@@ -30,7 +44,16 @@ class QBuildingsReader:
 
     def establish_connection(self, db):
         """
-        :param db: Name of the database to which we want to connect - Florissant, Sierre, Geneva
+        Allows to establish the connection with one of the QBuildings database.
+
+        Parameters
+        ----------
+        db : str
+            Name of the database to which we want to connect
+
+        Notes
+        -----
+        - It is highly recommend to pick 'Suisse' as a database as it is the only one maintained at the moment.
         """
         # Database connection
         file_ini = path_to_qbuildings + "/" + db + ".ini"
@@ -69,8 +92,49 @@ class QBuildingsReader:
         return
 
     def read_csv(self, buildings_filename, nb_buildings=None, roofs_filename=None, facades_filename=None):
+        """
+        Read buildings-related data from CSV files and prepare it for the REHO model.
 
-        self.data['buildings'] = file_reader(os.path.join(path_to_buildings, buildings_filename))
+        If not all the buildings from the file should be extracted, one can give a number of buildings.
+        The fields from the files are translated to the corresponding ones used in REHO.
+
+        Parameters
+        ----------
+        buildings_filename : str
+            The filename of the CSV file containing buildings data.
+        nb_buildings : int, optional
+            The number of buildings to consider. If not provided, all buildings in the file are considered.
+        roofs_filename : str, optional
+            The filename of the CSV file containing roofs data.
+        facades_filename : str, optional
+            The filename of the CSV file containing facades data.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the prepared data for the REHO model, including buildings, facades, roofs,
+            and shadows if roofs and facades are loaded.
+
+        Notes
+        -----
+        - If `nb_buildings` is not provided, all buildings in the 'buildings' data are considered.
+        - If ``load_roofs = True``, `roofs_filename` must be provided, else it is not useful. Same goes for the facades.
+        - This function can be used with default files in case one does not want to connect to the database and does not need a particular building.
+          In that case, use `buildings_example.csv`, `roofs_example.csv` and `facades_example.csv`. It should be noted that those names are therefore reserved for the default and cannot be used for your own files.
+
+        Example
+        -------
+        >>> from reho.model.reho import *
+        >>> reader = QBuildingsReader(load_roofs=True)
+        >>> qbuildings_data = reader.read_csv("buildings_example.csv", roofs_filename="roofs_example.csv", nb_buildings=7)
+
+        >>> qbuildings_data['buildings_data'].keys()
+        dict_keys(['Building1', 'Building2', 'Building3'])
+
+        >>> qbuildings_data['buildings_data']['Building1'].keys()
+        dict_keys(['id_class', 'ratio', 'status', 'ERA', 'SolarRoofArea', 'area_facade_m2', 'height_m', 'U_h', 'HeatCapacity', 'T_comfort_min_0', 'Th_supply_0', 'Th_return_0', 'Tc_supply_0', 'Tc_return_0', 'x', 'y', 'z', 'geometry', 'transformer', 'id_building', 'egid', 'period', 'n_p', 'energy_heating_signature_kWh_y', 'energy_cooling_signature_kWh_y', 'energy_hotwater_signature_kWh_y', 'energy_el_kWh_y'])
+        """
+        self.data['buildings'] = file_reader(path_handler(buildings_filename))
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
         if nb_buildings is None:
@@ -79,16 +143,16 @@ class QBuildingsReader:
         # buildings = add_geometry(buildings)
         qbuildings = {'buildings_data': buildings}
         if self.load_facades:
-            self.data['facades'] = file_reader(os.path.join(path_to_buildings, facades_filename))
+            self.data['facades'] = file_reader(path_handler(facades_filename))
             selected_facades = self.select_roofs_or_facades_data(roof=False)
             self.data['facades'] = self.data['facades'][self.data['facades'].index.isin(selected_facades)]
             self.data['facades'] = add_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(self.data['buildings'], self.data['facades'])
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'])
 
         if self.load_roofs:
-            self.data['roofs'] = file_reader(os.path.join(path_to_buildings, roofs_filename))
+            self.data['roofs'] = file_reader(path_handler(roofs_filename))
             selected_roofs = self.select_roofs_or_facades_data(roof=True)
             self.data['roofs'] = self.data['roofs'][self.data['roofs'].index.isin(selected_roofs)]
             self.data['roofs'] = add_geometry(self.data['roofs'])
@@ -97,15 +161,66 @@ class QBuildingsReader:
 
         return qbuildings
 
-    def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False, to_csv_REHO=False,
-                return_location=False):
+    def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False, return_location=False):
         """
-        :param transformer: ID of the transformer on which we want to optimize
-        :param nb_buildings: Number of buildings to select
-        :param egid: To specify a list of buildings to optimize with their egid
-        :param to_csv: To export the data into csv
-        :param to_csv_REHO: To export the data into csv but translated for REHO
-        :param return_location: To obtain the corresponding meteo cluster
+        Reads the database and extract from it the buildings required, by the LV transformer's ID.
+
+        If not all the buildings from the transformer should be extracted, one can give a number of buildings or if
+        the EGIDs are known, pass a list of EGIDs.
+        The fields from the database are translated to the corresponding ones used in REHO.
+
+        Parameters
+        ----------
+        transformer : int
+            ID of the transformer on which we want to optimize
+        nb_buildings : int
+            Number of buildings to select
+        egid : list
+            To specify a list of buildings to optimize with their EGIDs
+        to_csv : bool
+            To export the data into csv
+        return_location : bool
+            To obtain the corresponding meteo cluster
+
+        Returns
+        -------
+        dict
+            A Dictionary that contains the qbuildings data. The default has only one key ``buildings_data``
+            with a dictionary of buildings, with their fields and corresponding values.
+
+
+        Notes
+        -----
+        - The use of this function requires the previous creation of a ``QBuildingsReader`` and the use of ``establish_connection('Suisse')``.
+        - EGIDs are the postal address unique identifier used in Switzerland. One can find the EGIDs of a given address at the `RegBL <https://www.housing-stat.ch/fr/query/adrtoegid.html>`_.
+        - If ``load_roofs = True`` the roofs are returned as well in the dictionary as a DataFrame under the key ``roofs_data``.
+        - If ``load_facades = True`` the facades and the shadows are returned as well in the dictionary as a DataFrame under the keys ``roofs_data`` and ``shadows_data``.
+
+        Examples
+        --------
+        >>> from reho.model.reho import *
+        >>> reader = QBuildingsReader(load_roofs=True)
+        >>> reader.establish_connection('Suisse')
+        >>> qbuildings_data = reader.read_db(transformer=3658, egid=[954117])
+
+        >>> qbuildings_data['buildings_data']
+        {'buildings_data': {'Building1': {'id_class': 'I', 'ratio': '1.0', 'status': "['existing', 'existing', 'existing']", 'ERA': 1396.0, 'SolarRoofArea': 1121.8206745917826, 'area_facade_m2': 848.6771960464813, 'height_m': 9.211343577064236, 'U_h': 0.00152, 'HeatCapacity': 120.29999999999991, 'T_comfort_min_0': 20.0, 'Th_supply_0': 65.0, 'Th_return_0': 50.0, 'Tc_supply_0': 12.0, 'Tc_return_0': 17.0, 'x': 2592703.9673297284, 'y': 1120087.7339999992, 'z': 572.4461527539248, 'geometry': <POLYGON ((2592684.383 1120074.623, 2592683.644 1120075.443, 2592679.083 112...>, 'transformer': 3658, 'id_building': '40214', 'egid': '954117', 'period': '1981-1990', 'n_p': 34.9, 'energy_heating_signature_kWh_y': 111855.52745599969, 'energy_cooling_signature_kWh_y': 0.0, 'energy_hotwater_signature_kWh_y': 4562.903646729638, 'energy_el_kWh_y': 39088.0}}
+
+        >>> qbuildings_data['roofs_data']
+            TILT  ...                                           geometry
+        0     26  ...  MULTIPOLYGON (((2592819.164 1120187.216, 25928...
+        1     25  ...  MULTIPOLYGON (((2592832.585 1120154.503, 25928...
+        2     25  ...  MULTIPOLYGON (((2592819.164 1120187.216, 25928...
+        3     26  ...  MULTIPOLYGON (((2592824.929 1120157.956, 25928...
+        0     19  ...  MULTIPOLYGON (((2592378.668 1120324.589, 25923...
+        ..   ...  ...                                                ...
+        25     0  ...  MULTIPOLYGON (((2592872.699 1120127.178, 25928...
+        26     0  ...  MULTIPOLYGON (((2592917.016 1120132.965, 25929...
+        27    28  ...  MULTIPOLYGON (((2592891.248 1120129.691, 25928...
+        28    26  ...  MULTIPOLYGON (((2592901.604 1120125.591, 25929...
+        29    27  ...  MULTIPOLYGON (((2592887.725 1120119.181, 25928...
+        [252 rows x 6 columns]
+
         """
 
         # TODO: SQL query to select only buildings, roofs and facades of interest
@@ -119,6 +234,7 @@ class QBuildingsReader:
             meteo_cluster = translate_meteo_to_period_cluster(self.data['transformers']['meteo'][0])
         else:
             meteo_cluster = None
+
         # Select buildings
         sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]) \
             .where(self.tables[self.db_schema + '.' + 'buildings'].columns.transformer == transformer)
@@ -129,16 +245,21 @@ class QBuildingsReader:
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
-
         if to_csv:
-            csv_file = os.path.join(path_to_buildings,
-                                    self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '.csv')
-            self.data['buildings'].to_csv(csv_file, index=False)
+            self.data['buildings'].to_csv('buildings.csv', index=False)
 
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
-        # self.district = self.data['buildings']
         buildings = self.select_buildings_data(nb_buildings, egid)
+        if to_csv:
+            csv_columns = list(buildings[list(buildings.keys())[0]].keys())
+            with open('reho_input.csv', 'w') as csvfile:
+                writer = csv.DictWriter(csvfile, csv_columns)
+                writer.writeheader()
+                for building in buildings:
+                    writer.writerow(buildings[building])
+
         qbuildings = {'buildings_data': buildings}
+
         if self.load_facades:
             # TODO: Correct the roofs and facades selection with the id filtered by select_buildings_data
             self.data['facades'] = gpd.GeoDataFrame()
@@ -148,6 +269,8 @@ class QBuildingsReader:
                 self.data['facades'] = pd.concat(
                     (self.data['facades'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
                                                             con=self.db_engine, geom_col='geometry').fillna(np.nan)))
+            if to_csv:
+                self.data['facades'].to_csv('facades.csv', index=False)
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
             qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
@@ -159,22 +282,14 @@ class QBuildingsReader:
                 self.data['roofs'] = pd.concat(
                     (self.data['roofs'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
                                                           con=self.db_engine, geom_col='geometry').fillna(np.nan)))
+            if to_csv:
+                self.data['roofs'].to_csv('roofs.csv', index=False)
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
 
-        if to_csv_REHO:
-            csv_file = os.path.join(path_to_buildings,
-                                    self.db + '_' + str(transformer) + '_' + str(nb_buildings) + '_REHO.csv')
-            csv_columns = list(buildings[list(buildings.keys())[0]].keys())
-            with open(csv_file, 'w') as csvfile:
-                writer = csv.DictWriter(csvfile, csv_columns)
-                writer.writeheader()
-                for building in buildings:
-                    writer.writerow(buildings[building])
-
-        # TODO return meteo_cluster
         if qbuildings["buildings_data"] == {}:
             raise print("Empty building data")
+
         return qbuildings
 
     def select_buildings_data(self, nb_buildings, egid=None):
@@ -227,7 +342,6 @@ class QBuildingsReader:
 
 
 def translate_buildings_to_REHO(df_buildings):
-
     new_buildings_data = gpd.GeoDataFrame()
     dict_QBuildings_REHO = {
 
@@ -355,7 +469,6 @@ def translate_buildings_to_REHO(df_buildings):
 
 
 def translate_facades_to_REHO(df_facades, df_buildings):
-
     new_facades_data = gpd.GeoDataFrame()
     dict_facades = {'azimuth': 'AZIMUTH',
                     'id_facade': 'Facades_ID',
@@ -508,19 +621,18 @@ def neighbourhood_angles(buildings, facades):
 
         df_angles = pd.concat((df_angles, df_BUI))
 
-    # filename = os.path.join(path_to_buildings, 'angles.csv')
-    # df_angles.to_csv(filename)
-    # df_angles.index = int(df_angles.index)
+    df_angles.to_csv('angles.csv')
+
     return df_angles
 
 
 def return_shadows_district(buildings, facades):
-    df_district = pd.DataFrame()
-    filename = os.path.join(path_to_buildings, 'angles.csv')
-    # if not os.path.exists(filename):
-    df_angles = neighbourhood_angles(buildings, facades)
-    # else:
-    #   df_angles = pd.read_csv(filename)
+    df_shadows = pd.DataFrame()
+
+    if os.path.exists('angles.csv'):
+        df_angles = pd.read_csv('angles.csv')
+    else:
+        df_angles = neighbourhood_angles(buildings, facades)
 
     for b in buildings:
         id_building = int(buildings[b]['id_building'])
@@ -532,20 +644,19 @@ def return_shadows_district(buildings, facades):
             print('NO DATA AVAILABLE FOR id_building ' + str(id_building))
             df_id_building = pd.DataFrame(index=[id_building],
                                           columns=['tanb', 'beta', 'azimuth', 'id_building'])  # pass NaN instead
-        df_district = pd.concat((df_district, df_id_building))
+        df_shadows = pd.concat((df_shadows, df_id_building))
 
-    df_district["id_building"] = df_district["id_building"].astype(str)
-    out_put = os.path.join(path_to_buildings, 'district_shadows.csv')
-    df_district.to_csv(out_put)
+    df_shadows["id_building"] = df_shadows["id_building"].astype(str)
+    df_shadows.to_csv('shadows.csv')
 
-    return df_district
+    return df_shadows
 
 
 def return_shadows_id_building(id_building, df_district):
     id_building = int(id_building)
-    filepath = os.path.join(path_to_buildings, 'district_shadows.csv')
-    if os.path.isfile(filepath):
-        df = file_reader(filepath, index_col=0)
+
+    if os.path.isfile('shadows.csv'):
+        df = file_reader('shadows.csv', index_col=0)
     else:
         df = df_district
     df = df.xs(id_building)
@@ -558,6 +669,24 @@ def return_shadows_id_building(id_building, df_district):
     df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow'})
 
     return df_beta_dome
+
+
+def path_handler(path_given):
+    """To handle the path to csv file, absolute path or not"""
+
+    if path_given == 'buildings_example.csv' or path_given == 'roofs_example.csv' or path_given == 'facades_example.csv':
+        return os.path.join(path_to_qbuildings, path_given)
+
+    if os.path.isabs(path_given):
+        if os.path.isfile(path_given):
+            return path_given
+        else:
+            print('The absolute path that was given is not a valid file.')
+    else:
+        if os.path.isfile(os.path.realpath(path_given)):
+            return os.path.realpath(path_given)
+        else:
+            print('The relative path that was given is not a valid file.')
 
 
 def file_reader(file, index_col=None):
@@ -575,7 +704,7 @@ def file_reader(file, index_col=None):
         else:
             return read_table(file)
     except:
-        print('It seems there is a problem while reading the file...\n')
+        print('It seems there is a problem when reading the file...\n')
         print("%s" % sys.exc_info()[1])
 
 
@@ -585,18 +714,15 @@ def add_geometry(df):
     """
     try:
         geom = gpd.GeoSeries.from_wkb(df['geometry'])
-    except TypeError:
+    except KeyError:
+        print("No geometry in the dataframe")
+        return df
+    except:
         try:
             geom = gpd.GeoSeries.from_wkt(df['geometry'])
         except TypeError:
             print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings\n"
                   "I wonder what you are trying to do here...")
             return df
-    except KeyError:
-        print("No geometry in the dataframe")
-        return df
-    except:
-        print("Incompatible geometry")
-        return df
 
     return gpd.GeoDataFrame(df, geometry=geom)

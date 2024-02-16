@@ -31,4 +31,4 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='2a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='2a')

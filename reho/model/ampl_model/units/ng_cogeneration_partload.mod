@@ -24,7 +24,7 @@
 param NG_Cogeneration_partload_max{u in UnitsOfType['NG_Cogeneration']} default 1;										#- [-]	Viessmann (ESS units, Otto engine)
 param NG_Cogeneration_partload_min{u in UnitsOfType['NG_Cogeneration']} default 0.5;									#- [-]	Viessmann (ESS units, Otto engine)
 param NG_Cogeneration_operating_min{u in UnitsOfType['NG_Cogeneration']} default 3;									# hr 	Viessmann (ESS units, Otto engine)
-param NG_Cogeneration_startup_max{u in UnitsOfType['NG_Cogeneration']} default 8;										#-
+param NG_Cogeneration_startup_max{u in UnitsOfType['NG_Cogeneration']} default 8;										# the maximum number of times we switch on the cogeneration in a day
 param NG_Cogeneration_E_efficiency_nom{u in UnitsOfType['NG_Cogeneration']} default 0.27;								#- 		Viessmann (ESS units, Otto engine)
 param NG_Cogeneration_Q_efficiency_nom{u in UnitsOfType['NG_Cogeneration']} default 0.59;								#- 		Viessmann (ESS units, Otto engine) at Tr 50°C
 param NG_Cogeneration_capacity_aux{u in UnitsOfType['NG_Cogeneration']} default 0;										#kW/kW	estimated

@@ -18,11 +18,12 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    # you can add more resources layers than simply electricity and gas
-    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.10, "Cost_supply_cst": 0.26},
+    # you can add more resources layers besides electricity and natural gas, and adapt their prices or keep the default values from data/parameters/grids.csv
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
+                                             'NaturalGas': {"Cost_supply_cst": 0.15},
                                              'Wood': {},
                                              'Oil': {},
-                                             'NaturalGas': {'NaturalGas': {"Cost_demand_cst": 0.06, "Cost_supply_cst": 0.20}}})
+                                             })
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options
@@ -33,4 +34,4 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='3e')
+    reho.save_results(format=['xlsx', 'pickle'], filename='3e')

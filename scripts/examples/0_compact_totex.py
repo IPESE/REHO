@@ -25,7 +25,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []  # specify some units to be enforced
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()  # grids are based on data/parameters/grids.csv
+    grids = infrastructure.initialize_grids()  # grids parameters are based on data/parameters/grids.csv
     units = infrastructure.initialize_units(scenario, grids)  # units are based on data/parameters/building_units.csv
 
     # Set method options (as defined in compact_optimization.py > initialize_default_methods)
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    SR.save_results(reho, save=['xlsx', 'pickle'], filename='0')
+    reho.save_results(format=['xlsx', 'pickle'], filename='0')
 
     # Plot results
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long').show()

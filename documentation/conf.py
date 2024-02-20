@@ -47,7 +47,7 @@ html_sidebars = {
 
 html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
-  'header_links_before_dropdown': 6,
+  'header_links_before_dropdown': 7,
   'navbar_align': 'left',
   # "external_links": [{"name": "IPESE", "url": "https://ipese-web.epfl.ch/ipese-blog/"},],
   "icon_links": [{"name": "IPESE",

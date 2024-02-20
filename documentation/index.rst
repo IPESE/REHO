@@ -73,6 +73,8 @@ Contents
    sections/4_Package_structure
    sections/5_Getting_started
    sections/6_Examples
+   sections/7_Contribute
+   sections/Appendix
 
 
 .. Indices and tables

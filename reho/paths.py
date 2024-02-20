@@ -5,6 +5,10 @@ from pandas import read_csv, read_table, read_excel
 import sys
 from dotenv import load_dotenv
 
+__doc__ = """
+*File for managing file paths and configurations.*
+"""
+
 
 load_dotenv()
 if "AMPL_PATH" not in os.environ:

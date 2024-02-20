@@ -6,6 +6,9 @@ from reho.paths import *
 import itertools as it
 import matplotlib.pyplot as plt
 
+__doc__ = """
+*Used for PV orientation.*
+"""
 
 def convert_results_txt_to_csv(load_timesteps):
     """ load one txt file for each hour/timestep in "load_timesteps".

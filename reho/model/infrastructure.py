@@ -6,7 +6,18 @@ from reho.paths import *
 
 
 class infrastructure:
+    """
+    This class characterizes all the sets and parameters which are connected to buildings, units and grids.
 
+    Parameters
+    ----------
+    qbuildings_data : dict
+        Buildings characterization
+    units : dict
+        Units characterization
+    grids : dict
+        Grids characterization
+    """
     def __init__(self, qbuildings_data, units, grids):
 
         self.units = units["building_units"]

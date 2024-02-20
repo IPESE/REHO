@@ -7,6 +7,9 @@ import datetime as dt
 from reho.paths import *
 from reho.model.preprocessing.clustering import ClusterClass
 
+__doc__ = """
+*Generates the meteorological data (temperature and solar irradiance).*
+"""
 
 def get_cluster_file_ID(cluster):
     """
@@ -510,5 +513,4 @@ if __name__ == '__main__':
 
     plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)
     plot_LDC(cl, Location, save_fig=False)
-    generate_output_data(cl, Attributes)
-    write_dat_files(Attributes, Location)
+    generate_output_data(cl, Attributes, Location)

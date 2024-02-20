@@ -4,6 +4,9 @@ import numpy as np
 from reho.paths import *
 from matplotlib import pyplot as plt
 
+__doc__ = """
+*Reconstructs a yearly profile from the clustering periods.*
+"""
 
 def yearly_profile(df_cluster, df):
 

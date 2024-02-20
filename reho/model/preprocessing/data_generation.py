@@ -5,6 +5,9 @@ from reho.model.preprocessing.weather import get_cluster_file_ID
 from reho.model.preprocessing.sia_parser import *
 from reho.model.preprocessing.QBuildings import *
 
+__doc__ = """
+*Generates the buildings profiles : 1) Domestic hot water (DHW), 2) Domestic electricity, 3) Heat gains, 4) Solar gains.*
+"""
 
 def annual_to_typical(cluster, annual_file, typical_file=None):
     """

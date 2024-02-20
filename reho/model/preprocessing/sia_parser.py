@@ -2,6 +2,9 @@ import pandas as pd
 from reho.paths import *
 import numpy as np
 
+__doc__ = """
+*Collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.*
+"""
 
 def read_sia2024_rooms_sia380_1(digit):
 

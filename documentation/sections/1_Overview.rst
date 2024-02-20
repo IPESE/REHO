@@ -2,7 +2,7 @@ Overview
 ++++++++
 .. _label_sec_overview:
 
-.. figure:: images/logo_reho.png
+.. figure:: ../images/logos/logo_reho.png
    :align: center
 
 :Version: |version| |release|

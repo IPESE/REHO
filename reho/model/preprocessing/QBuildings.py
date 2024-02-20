@@ -126,8 +126,7 @@ class QBuildingsReader:
         -------
         >>> from reho.model.reho import *
         >>> reader = QBuildingsReader(load_roofs=True)
-        >>> qbuildings_data = reho_instance.read_csv("buildings_example.csv", roofs_filename="roofs_example.csv",
-        ...                                          nb_buildings=7)
+        >>> qbuildings_data = reader.read_csv("buildings_example.csv", roofs_filename="roofs_example.csv", nb_buildings=7)
 
         >>> qbuildings_data['buildings_data'].keys()
         dict_keys(['Building1', 'Building2', 'Building3'])

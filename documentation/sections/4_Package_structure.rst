@@ -17,13 +17,8 @@ Package structure
 
 .. warning::
 
-    Section still under development.
-
-    Focus on package structure and implementation
-
-    Sequential approach : Preprocessing --> Optimization --> Postprocessing
-
-    .. Top-down approach (reho.py --> district_decomposition.py --> compact_optimization.py --> infrastructure.py)
+    Section still under construction.
+    Focus on package structure and implementation.
 
 
 REHO exploits the benefits of two programming languages:
@@ -33,7 +28,7 @@ REHO exploits the benefits of two programming languages:
 
 .. _software_diagram:
 
-.. figure:: images/diagram_package.svg
+.. figure:: ../images/software_diagram.svg
 
    Diagram of the REHO architecture
 
@@ -165,7 +160,6 @@ Prepares and manipulates the input of the optimization:
 *Generates the meteorological data (temperature and solar irradiance).*
 
 .. automodule:: reho.model.preprocessing.weather
-    :caption: weather
     :members: get_cluster_file_ID, generate_output_data, write_dat_files
 
 *compact_optimization.py*
@@ -233,4 +227,5 @@ The default values (ampl code), the inputs from the district structure (costs, f
 *paths.py*
 ==================
 
-*File for managing file paths and configurations.*
+
+File for managing file paths and configurations.

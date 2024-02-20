@@ -105,7 +105,7 @@ Prepares and manipulates the input of the optimization:
     It seems the solar gain profiles relies on `skydome/typical_irradiation.csv` that is specific to Rolle.
 
 .. automodule:: reho.model.preprocessing.data_generation
-    :members: profiles_from_sia2024, solar_gains_profile
+    :members: build_eud_profiles, solar_gains_profile
 
 `electricity_prices.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,13 +113,6 @@ Prepares and manipulates the input of the optimization:
 .. automodule:: reho.model.preprocessing.electricity_prices
     :members: get_prices_from_elcom_by_canton, get_prices_from_elcom_by_city, get_injection_prices, get_electricity_prices
 
-`electricity_profile_parser.py`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*Allows to give an electricity consumption profile, hour by hour and adapt it to the clustering periods.*
-
-.. caution::
-    To be adapted from Luise's case study.
 
 `emission_matrix_parser.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

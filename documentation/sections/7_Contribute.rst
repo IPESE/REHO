@@ -38,20 +38,6 @@ The repository consists of three types of branches:
 - **documentation**: Contains additions and corrections to the tool documentation (this may concern .rst files, but also the DocStrings for the Python functions and classes). Anyone can push.
 - **others**: Used by *Developers* to collaborate and develop advanced features, or by *Users* to generate results.
 
-Pull requests
-----------------
-
-Everyone can contribute to the development by:
-
-1. Creating your own branch from the `main branch <https://github.com/IPESE/REHO/tree/main>`_
-2. Developing the code
-3. Creating a pull request in the appropriate `Pull requests section <https://github.com/IPESE/REHO/pulls>`_
-4. Getting accepted by an Administrator
-
-.. warning::
-    Remember to adhere to the guidelines outlined in the repository to ensure your pull request is accepted.
-
-
 Reporting issues
 -------------------
 
@@ -69,6 +55,20 @@ To report an issue:
     Ensure to review existing issues to prevent duplicates, and furnish comprehensive details to facilitate the community in understanding and addressing your concern effectively.
 
 Always bear in mind that your contributions, whether in the form of code, documentation, or issue reporting, are instrumental in the ongoing development and enhancement of REHO.
+
+Pull requests
+----------------
+
+Everyone can contribute to the development by:
+
+1. Creating your own branch from the `main branch <https://github.com/IPESE/REHO/tree/main>`_
+2. Developing the code
+3. Creating a pull request in the appropriate `Pull requests section <https://github.com/IPESE/REHO/pulls>`_
+4. Getting accepted by an Administrator
+
+.. warning::
+    Remember to adhere to the guidelines outlined in the repository to ensure your pull request is accepted.
+
 
 Documentation
 ----------------

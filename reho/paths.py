@@ -1,4 +1,8 @@
 import os
+from csv import Sniffer
+from pathlib import Path
+from pandas import read_csv, read_table, read_excel
+import sys
 from dotenv import load_dotenv
 
 
@@ -49,3 +53,40 @@ path_to_weather = os.path.join(path_to_data, 'weather')
 # actors solutions
 path_to_actors_results = os.path.join(path_to_scripts, 'actors', 'results')
 path_to_configuration = os.path.join(path_to_actors_results, "configurations")
+
+
+def path_handler(path_given):
+    """To handle the path to csv file, absolute path or not"""
+
+    if path_given == 'buildings_example.csv' or path_given == 'roofs_example.csv' or path_given == 'facades_example.csv':
+        return os.path.join(path_to_qbuildings, path_given)
+
+    if os.path.isabs(path_given):
+        if os.path.isfile(path_given):
+            return path_given
+        else:
+            raise FileNotFoundError('The absolute path that was given is not a valid file.')
+    else:
+        if os.path.isfile(os.path.realpath(path_given)):
+            return os.path.realpath(path_given)
+        else:
+            raise FileNotFoundError('The relative path that was given is not a valid file.')
+
+
+def file_reader(file, index_col=None):
+    """To read data files correctly, whether there are csv, txt, dat or excel"""
+    file = Path(path_handler(file))
+    try:
+        if file.suffix == '.csv' or file.suffix == '.dat' or file.suffix == '.txt':
+            sniffer = Sniffer()
+            with open(file, 'r') as f:
+                line = next(f).strip()
+                delim = sniffer.sniff(line)
+            return read_csv(file, sep=delim.delimiter, index_col=index_col)
+        elif file.suffix == '.xlsx':
+            return read_excel(file)
+        else:
+            return read_table(file)
+    except:
+        print('It seems there is a problem when reading the file...\n')
+        print("%s" % sys.exc_info()[1])

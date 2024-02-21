@@ -18,14 +18,14 @@ def annual_to_typical(cluster, annual_file, typical_file=None):
     File_ID = get_cluster_file_ID(cluster)
     timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
     df_time = pd.read_csv(timestamp_file, delimiter='\t')
-    typical_days = df_time.Date.apply(lambda date: date[1:-3]).values
+    typical_days = df_time.Date.apply(lambda date: date[0:-3]).values
 
     df_annual = file_reader(annual_file)
     t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
 
     # hour 1 is between 0:00 - 1:00 and is indexed with starting hour so 0:00
     for h in df_annual.index.values:
-        df_annual.loc[h, 'h'] = t1 + timedelta(hours=(int(h)-1))
+        df_annual.loc[h, 'h'] = t1 + timedelta(hours=(int(h) - 1))
 
     df_annual = df_annual.set_index('h')
     df_typical = pd.DataFrame()
@@ -95,8 +95,13 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
     -----
     - One building can have several affectations. In that case, the building is divided by the share of ERA by
       affectations and the profiles are summed.
-    - To use custom profiles, use csv files with 8760 rows. The name of the columns should be the name of the buildings,
-      which name comes from the `buildings_data`.
+    - To use custom profiles, use csv files with 8760 rows. The name of the columns should be the same as the buildings keys in `buildings_data`.
+    -
+
+    .. caution::
+
+        When using custom electricity profiles, the heat gains from electricity appliances are estimated through a conversion
+        factor ``conv_heat_factor`` (default value = 70%).
 
     Examples
     --------
@@ -113,7 +118,7 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
 
     path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
     df_SIA = pd.read_excel(path_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl',
-                       index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+                           index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
 
     np_gain_all = np.array([])
     np_dhw_all = np.array([])
@@ -160,29 +165,31 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
                 df_custom_profiles = pd.DataFrame()
                 if use_custom_profiles:
                     for key, df_key in use_custom_profiles.items():
-                        df_custom_profiles[key] = df_key.xs(i+1, level='Period').loc[:, b]
+                        df_custom_profiles[key] = df_key.xs(i + 1, level='Period').loc[:, b]
                     if include_stochasticity:
                         df_custom_profiles = apply_stochasticity(df_custom_profiles, RV_scaling, SF)
 
                 if not df_custom_profiles.empty and 'electricity' in df_custom_profiles.columns:
-                    conv_heat_factor = 0.7  # TODO: question with Dorsan this factor
-                    elec_gain = conv_heat_factor * df_custom_profiles['electricity'] * area_net_floor / 1000
+                    conv_heat_factor = 0.70
+                    elec_gain = conv_heat_factor * df_custom_profiles['electricity']
                     elec = df_custom_profiles['electricity']
                 else:
-                    elec_gain = df_profiles['elecgain_W/m2']
-                    elec = df_profiles['electricity_W/m2']
+                    elec_gain = df_profiles['elecgain_W/m2'] * area_net_floor
+                    elec = df_profiles['electricity_W/m2'] * area_net_floor
+
                 if not df_custom_profiles.empty and 'occupancy' in df_custom_profiles.columns:
                     people_gain = df_custom_profiles['occupancy']
                 else:
-                    people_gain = df_profiles['heatgainpeople_W/m2']
+                    people_gain = df_profiles['heatgainpeople_W/m2'] * area_net_floor
+
                 if not df_custom_profiles.empty and 'dhw' in df_custom_profiles.columns:
                     hotwater = df_custom_profiles['dhw']
                 else:
-                    hotwater = df_profiles['hotwater_l/m2']
+                    hotwater = df_profiles['hotwater_l/m2'] * area_net_floor
 
-                heatgain_day = (people_gain + elec_gain) * area_net_floor / 1000  # kW/m2
-                hot_water_day = hotwater * area_net_floor  # L/m2
-                electric_day = elec * area_net_floor / 1000  # kW/m2
+                heatgain_day = (people_gain + elec_gain) / 1000  # kW profiles for each typical day
+                hot_water_day = hotwater  # L profiles for each typical day
+                electric_day = elec / 1000  # kW profiles for each typical day
 
                 if p not in df.index.tolist()[-2:]:
                     # sort it correctly (if first hour is not 12:00)
@@ -194,15 +201,15 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
                     el_day = np.concatenate((electric_day.iloc[begin:].values, electric_day.iloc[:begin].values))
 
                     # Size = PeriodDuration (= TimeEnd in ampl)
-                    heat_period = np.tile(heat_day, round(cluster['PeriodDuration']/24))
-                    dhw_period = np.tile(dhw_day, round(cluster['PeriodDuration']/24))
-                    el_period = np.tile(el_day, round(cluster['PeriodDuration']/24))
+                    heat_period = np.tile(heat_day, round(cluster['PeriodDuration'] / 24))
+                    dhw_period = np.tile(dhw_day, round(cluster['PeriodDuration'] / 24))
+                    el_period = np.tile(el_day, round(cluster['PeriodDuration'] / 24))
 
                 elif p == df.index.tolist()[-2:][0]:  # Minimum period
                     heat_period = np.array([min(heatgain_day)])
                     dhw_period = np.array([max(dhw_day)])
                     el_period = np.array([max(el_day)])
-                else:                                 # Maximum period
+                else:  # Maximum period
                     heat_period = np.array([max(heatgain_day)])
                     dhw_period = np.array([max(dhw_day)])
                     el_period = np.array([max(el_day)])
@@ -223,7 +230,6 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
 
 
 def apply_stochasticity(df_profiles, scale, SF):
-
     # implement the intensity variation in standard profiles
     df_profiles = df_profiles * scale
 
@@ -243,18 +249,30 @@ def apply_stochasticity(df_profiles, scale, SF):
 
 
 def create_random_var(sd_amplitude, sd_timeshift):
+    """
+    Creates an array of random variables for the use of ``apply_stochasticity``.
+
+    Notes
+    -----
+    - The array is hard-coded to be of dimension 1,5 so it the stochasticity should apply to a df of another dimension,
+      one should adapt the function.
+
+    See also
+    --------
+    apply_stochasticity
+    """
     # constraints
     if sd_amplitude < 0: sd_amplitude = 0
     if sd_timeshift < 0: sd_timeshift = 0
 
     # create the random variable for the intensity variation
     mu = 1
-    RV_scaling = np.random.normal(mu, sd_amplitude, 4)
+    RV_scaling = np.random.normal(mu, sd_amplitude, 5)
     if RV_scaling.argmin() < 0: print("-------------- Negative value in the intensity variation --------------")
 
     # create the random variable for time-shift in standard profiles
     mu = 0
-    SF = np.random.normal(mu, sd_timeshift, 4)
+    SF = np.random.normal(mu, sd_timeshift, 5)
 
     return RV_scaling, SF
 
@@ -281,15 +299,14 @@ def solar_gains_profile(ampl, buildings_data, File_ID):
     """
     # Number of days computation
     PeriodDuration = ampl.getParameter('TimeEnd').getValues().toPandas()
-    timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_'+File_ID+'.dat')
+    timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
     df = pd.read_csv(timestamp_file, delimiter='\t')
     df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
     frequency_dict = pd.Series(df.Frequency.values, index=df.Date).to_dict()
-    frequency_dict['PeriodDuration'] ={}
+    frequency_dict['PeriodDuration'] = {}
     for p in ampl.getSet('PeriodStandard').getValues().toList():
         frequency_dict['PeriodDuration'][p] = PeriodDuration.loc[p].TimeEnd
-
 
     # get west_facades irradiation
     # check if irradiation already exists:

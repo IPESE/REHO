@@ -107,6 +107,12 @@ def generate_output_data(cl, attributes, location):
     location : str
         Location of the corresponding weather data.
 
+    Notes
+    ------
+    .. caution::
+
+        The extreme temperatures and irradiance are estimated by adding 10% to the extreme found in the yearly weather data.
+
     See also
     --------
     reho.model.preprocessing.clustering.ClusterClass.run_clustering

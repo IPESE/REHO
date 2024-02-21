@@ -471,7 +471,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_pa
     scenario : dict or None
         A dictionary containing information about the scenario.
     grids : dict or None, optional
-        Information about the energy grids. If None, default behavior is assumed.
+        Information about the energy layers considered. If None, ``['Electricity', 'NaturalGas', 'Oil', 'Wood', 'Data', 'Heat']``.
     building_data : str, optional
         Path to the CSV file containing building unit data. Default is 'building_units.csv'.
     district_data : str or bool or None, optional

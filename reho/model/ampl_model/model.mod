@@ -484,9 +484,9 @@ param SolarRoofArea{h in House} default ERA[h]/3;							#m2 		: Roof area availa
 param T_comfort_min_0{h in House} default 20;											#deg C		: Reference lower comfort bound
 param T_comfort_min{h in House,p in Period,t in Time[p]} default T_comfort_min_0[h];	#deg C		: Time dependent lower comfort bound
 param T_comfort_max_0{h in House} default 25;											#deg C		: Reference upper comfort bound
-param T_penality{h in House} default 3;													#CHF/K hr	: Comfort Penality costs
-param T_inf_limit{h in House} default 3;												#deg C		: Maximum delta of cold temperature acceptable
-param T_sup_limit{h in House} default 1000;												#deg C		: Maximum delta of hot temperature acceptable
+param T_penality{h in House} default 3;													#CHF/C hr	: Comfort Penality costs
+param T_inf_limit{h in House} default 5;												#deg C		: Maximum delta of cold temperature acceptable
+param T_sup_limit{h in House} default 10;												#deg C		: Maximum delta of hot temperature acceptable
 
 param HeatGains{h in House,p in Period,t in Time[p]}>= 0, default 0;		#kW : Internal heat gains
 param SolarGains{h in House,p in Period,t in Time[p]} >= 0, default 0;  	#kW	: Solar heat gains

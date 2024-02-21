@@ -1,3 +1,3 @@
 __doc__ = """
-Directory for model-related code.
+*Directory for model-related code.*
 """

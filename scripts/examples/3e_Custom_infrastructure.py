@@ -18,13 +18,15 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    # you can add more resources layers besides electricity and natural gas, and adapt their prices or keep the default values from data/parameters/grids.csv
+    # You can add more resources layers besides electricity and natural gas, and adapt their prices
+    # or keep the default values from data/parameters/grids.csv
     grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              'Wood': {},
                                              'Oil': {},
                                              })
-    units = infrastructure.initialize_units(scenario, grids)
+    path_to_custom_units = '../../reho/data/parameters/building_units.csv'
+    units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
 
     # Set method options
     method = {'building-scale': True}

@@ -27,7 +27,7 @@ from scipy.stats import qmc
 
 from reho.model.district_decomposition import *
 from reho.model.postprocessing.KPIs import *
-from reho.model.postprocessing.postcompute_decentralized_districts import *
+from reho.model.postprocessing.building_scale_network_builder import *
 
 from reho.paths import *
 

@@ -6,6 +6,9 @@ from reho.paths import *
 import itertools as it
 import matplotlib.pyplot as plt
 
+__doc__ = """
+*Used for PV orientation.*
+"""
 
 def convert_results_txt_to_csv(load_timesteps):
     """ load one txt file for each hour/timestep in "load_timesteps".
@@ -17,7 +20,7 @@ def convert_results_txt_to_csv(load_timesteps):
 
     df = pd.DataFrame()
     for ts in load_timesteps:
-        result_file = os.path.join(path_to_test_files, 'results' + str(ts) +'.txt')
+        result_file = os.path.join(path_to_test_files, 'results' + str(ts) + '.txt')
 
         gh_result = np.loadtxt(result_file)
         gh_result = gh_result.reshape(-1, len(gh_result))  # column to row
@@ -25,7 +28,7 @@ def convert_results_txt_to_csv(load_timesteps):
         df_hour = pd.DataFrame(gh_result, index=[int(ts)])
         df = df.append(df_hour)
 
-    output_file = os.path.join(path_to_skydome,'total_irradiation.csv')
+    output_file = os.path.join(path_to_skydome, 'total_irradiation.csv')
     df.to_csv(output_file)
 
     t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
@@ -46,8 +49,8 @@ def skydome_to_df():
 
     :return:   df
     """
-    areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt') #area of patches
-    cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt') #location of centre points
+    areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt')  # area of patches
+    cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt')  # location of centre points
 
     # create one df for all skydome data
     df_area = pd.read_csv(areas, header=None)
@@ -60,18 +63,19 @@ def skydome_to_df():
     df_dome['Z'] = df_cenpts[2]
 
     # Add basic caluclations
-    df_dome['XY'] = df_dome[['X','Y']].apply(f_sqrt, axis = 1)
-    df_dome['XYZ'] = df_dome[['XY','Z']].apply(f_sqrt, axis=1)
+    df_dome['XY'] = df_dome[['X', 'Y']].apply(f_sqrt, axis=1)
+    df_dome['XYZ'] = df_dome[['XY', 'Z']].apply(f_sqrt, axis=1)
     df_dome['Sin_e'] = round(df_dome['Z']/df_dome['XYZ'],4)
     df_dome['Cos_e'] = round(df_dome['XY']/df_dome['XYZ'],4)
-    df_dome['Cos_a']  = round(df_dome['Y']/df_dome['XY'],4)
-    df_dome['Sin_a']  =  round(df_dome['X']/df_dome['XY'],4)
-    df_dome['azimuth'] = df_dome[['X','Y']].apply(f_atan, axis=1)
-    df_dome['elavation'] = df_dome[['Z','XY']].apply(f_atan, axis=1)
+    df_dome['Cos_a'] = round(df_dome['Y']/df_dome['XY'],4)
+    df_dome['Sin_a'] = round(df_dome['X']/df_dome['XY'],4)
+    df_dome['azimuth'] = df_dome[['X', 'Y']].apply(f_atan, axis=1)
+    df_dome['elavation'] = df_dome[['Z', 'XY']].apply(f_atan, axis=1)
 
     return df_dome
 
-def irradiation_to_df(ampl,irradiation_csv, File_ID):
+
+def irradiation_to_df(ampl, irradiation_csv, File_ID):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
@@ -133,33 +137,34 @@ def irradiation_to_df_general(irradiation_csv):
 
     #change column name from string to int
     df_IRR.columns = df_IRR.columns.astype(int)
-    #change values from string to float
+    # change values from string to float
     df_IRR = df_IRR.infer_objects()
 
     return df_IRR
 
-def irradiation_to_typical_df( typical_days_string):
+
+def irradiation_to_typical_df(typical_days_string):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
-    thisfile =  os.path.join(path_to_skydome, 'total_irradiation_time.csv')
+    thisfile = os.path.join(path_to_skydome, 'total_irradiation_time.csv')
 
-    df_profiles = pd.read_csv(thisfile, sep=",",parse_dates=[1])
-    df_profiles.set_index('time',inplace =True)
+    df_profiles = pd.read_csv(thisfile, sep=",", parse_dates=[1])
+    df_profiles.set_index('time', inplace=True)
 
     df_profiles.index = pd.to_datetime(df_profiles.index)
 
-    #print(df_profiles[df_profiles.index.isin(typical_days_string)])
-    #print(df_profiles.loc['20160921'])
-    #print(df_profiles['20160921'])
+    # print(df_profiles[df_profiles.index.isin(typical_days_string)])
+    # print(df_profiles.loc['20160921'])
+    # print(df_profiles['20160921'])
 
-    #select typical days, keep typday index as reference
+    # select typical days, keep typday index as reference
     df_typical = pd.DataFrame()
     for i, td in enumerate(typical_days_string):
         df_typical = pd.concat([df_typical, df_profiles[td]],  sort = True)
-        #df_typical.loc[td,'TypdayID'] = int(i)
+        # df_typical.loc[td,'TypdayID'] = int(i)
 
-    #save profiles in csv
+    # save profiles in csv
     df_typical.to_csv(os.path.join(path_to_skydome,'typical_irradiation.csv'))
     print('Typical profiles saved in' + path_to_skydome)
 
@@ -181,6 +186,7 @@ def f_sqrt(x):
     """
     return math.hypot(x[0],x[1])
 
+
 def f_atan(x):
     """
     math.atan2(y, x) : Returns atan(y / x), in radians. The result is between -pi and pi. The vector in the plane from
@@ -191,19 +197,21 @@ def f_atan(x):
     """
     x[0] = round(x[0], 8)
     x[1] = round(x[1], 8)
-    azimuth = math.degrees(math.atan2(x[0],x[1]) )
+    azimuth = math.degrees(math.atan2(x[0], x[1]))
 
     if azimuth < 0:
-                azimuth = azimuth + 360
+        azimuth = azimuth + 360
     else:
         azimuth = azimuth
 
     return int(round(azimuth))
 
+
 def f_cos(x):
     a1 = math.radians(x[0])
     a2 = math.radians(x[1])  # cos(-a) = cos(a)
     return math.cos(a1-a2)
+
 
 def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typical_frequency):
     cos_a = round(math.cos(math.radians(azimuth)), 8)
@@ -245,14 +253,14 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typ
         else:
             linear_factor = 'here is a problem linearization of skydome'
         if linear_factor < 0:
-            raise ('linear factor negative, changes irradiation direction')
+            raise 'linear factor negative, changes irradiation direction'
 
         # calculation orientation in skydome, rotation
 
         rotation = - sin_a * sin_y * df_dome.xs(pt)['Sin_a'] * df_dome.xs(pt)['Cos_e'] \
                    - sin_y * cos_a * df_dome.xs(pt)['Cos_a'] * df_dome.xs(pt)['Cos_e'] - cos_y * df_dome.xs(pt)['Sin_e']
         irradiation_patch = round(df_IRR[pt] * rotation * linear_factor, 10)
-        if (irradiation_patch.min() < 0):
+        if irradiation_patch.min() < 0:
             df_irr_neg[pt] = irradiation_patch
         else:
             df_irr_pos[pt] = irradiation_patch
@@ -270,7 +278,7 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typ
 
     period_duration = typical_frequency.pop('PeriodDuration')
 
-    for number, key in enumerate(typical_frequency.keys()):
+    for number, key in enumerate(list(typical_frequency.keys())[:-2]):
         hours_component = int(period_duration[number + 1])
         end = key + timedelta(hours=hours_component - 1)
         irr_day = -1 * df_irr_panel_t.loc[key: end]
@@ -280,7 +288,8 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typ
 
     return df_irr_panel_t, df_period
 
-def calc_orientated_surface(azimuth, tilt, design_lim_angle, typical_file, typical_frequency ):
+
+def calc_orientated_surface(azimuth, tilt, design_lim_angle, typical_file, typical_frequency):
     df_irr_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typical_frequency)
 
     # construct annual sum
@@ -296,6 +305,7 @@ def calc_orientated_surface(azimuth, tilt, design_lim_angle, typical_file, typic
 
     return azimuth, tilt, annual_irr
 
+
 def construct_annual_orientation_df(limiting_angle):
 
     azimuth = np.array(range(0, 360))
@@ -307,9 +317,11 @@ def construct_annual_orientation_df(limiting_angle):
         d = {'azimuth': azimuth, 'tilt': tilt, 'irr': annual_irr}
         df = df.append(d, ignore_index=True)
     print(df)
-    filename = 'orientated_irr_linerazied'+str(limiting_angle)+'.csv'
+    filename = 'orientated_irr_linearized' + str(limiting_angle) + '.csv'
     df.to_csv(filename)
     print('Data saved in: ' + filename)
+
+
 def limiting_angle_for_tilt():
 
     a = 180
@@ -320,10 +332,10 @@ def limiting_angle_for_tilt():
 
     df = pd.DataFrame()
 
-    for (l,t) in it.product(limit_angle, tilt):
+    for (l, t) in it.product(limit_angle, tilt):
         azimuth, tilt, annual_irr = calc_orientated_surface(a, t, l)
 
-        d = {'tilt':tilt, 'limit_angle':l, 'irr': annual_irr}
+        d = {'tilt': tilt, 'limit_angle': l, 'irr': annual_irr}
         df = df.append(d, ignore_index=True)
     print(df)
     filename = 'irr_tilt_limiting_angle_azi' + str(a) + '.csv'
@@ -332,18 +344,16 @@ def limiting_angle_for_tilt():
 
 
 def plot_irr(save_fig):
-    cm= plt.cm.get_cmap('Spectral_r')
+    cm = plt.cm.get_cmap('Spectral_r')
 
     #cm = plt.cm.get_cmap('cividis')
     #cm = plt.cm.get_cmap('tab20c')
 
     #cm = plt.cm.get_cmap('GnBu')
 
-    filename =  os.path.join(path_to_skydome,'orientated_irr.csv')
+    filename = os.path.join(path_to_skydome, 'orientated_irr.csv')
 
     df = pd.read_csv(filename, index_col=0)
-
-
 
     df_2 = df[(df['azimuth'] >= 80) & (df['azimuth'] <= 280)]
     df_3 = df_2[(df_2['irr'] >= 950) & (df_2['irr'] <= 1200)]
@@ -355,7 +365,7 @@ def plot_irr(save_fig):
     # plotting: for all: plot df, for only tip plot df_3 (next line ax = df_3.plot....) change ax_xlim([])
     ###############################################################################################################
 
-    ax= df.plot.scatter(x='azimuth', y = 'irr', c='tilt', cmap =cm, alpha = 1, edgecolors= 'none',vmin=0, vmax=90)
+    ax = df.plot.scatter(x='azimuth', y ='irr', c='tilt', cmap=cm, alpha=1, edgecolors='none', vmin=0, vmax=90)
 
     #az_max = df_3.xs(df_3['irr'].idxmax())['azimuth']
     #irr_max = df_3.xs(df_3['irr'].idxmax())['irr']
@@ -376,18 +386,13 @@ def plot_irr(save_fig):
     cax.set_ylabel('Tilt angle [degree]')
     xax.set_ylabel('Annual irradiation density [kWh/m2]')
 
-
     plt.tight_layout()
 
-
     if save_fig:
-        format = 'pdf'
-        plt.savefig(('all_irr_spectral' + '.' + str(format)), format=format)
+        export_format = 'pdf'
+        plt.savefig(('all_irr_spectral' + '.' + str(export_format)), format=export_format)
     else:
         plt.show()
-
-
-
 
 
 if __name__ == '__main__':

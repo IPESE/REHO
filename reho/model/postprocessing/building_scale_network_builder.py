@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 
+__doc__ = """
+*Manipulates results to have consistency between the building-scale and district-scale optimizations.*
+"""
+
 def correct_network_values(reho, scn_id=0, pareto_id=0):
     """
     This function is only useful to find KPIs from the district perspective with a building scale optimization.

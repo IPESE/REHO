@@ -74,22 +74,35 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 **postprocessing/**
 -----------------------
 
-Extracts and postprocesses the output of the optimization:
+.. automodule:: reho.model.postprocessing
 
-- `KPIs.py`: calculates the KPIs resulting from the optimization.
-- `post_compute_decentralized_districts.py`: manipulates results to have consistency between the building-scale and district-scale optimizations.
-- `write_results.py`: extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
+`building_scale_network_builder.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.postprocessing.building_scale_network_builder
+
+`KPIs.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.postprocessing.KPIs
+
+`write_results.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.postprocessing.write_results
+
 
 
 **preprocessing/**
 ------------------------
 
-Prepares and manipulates the input of the optimization:
+.. automodule:: reho.model.preprocessing
+
 
 `clustering.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-*Executes the data reduction for meteorological data.*
+.. autoclass:: reho.model.preprocessing.clustering
 
 .. note::
     The meteo file provided are only the ones from the 6 meteo archetypes. Should we link every other location to these
@@ -99,13 +112,11 @@ Prepares and manipulates the input of the optimization:
 `data_generation.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-*Calculates the buildings domestic hot water (DHW) and domestic electricity profiles. Also generates the heat gains and solar gains profiles.*
+.. automodule:: reho.model.preprocessing.data_generation
+    :members: build_eud_profiles, solar_gains_profile
 
 .. caution::
     It seems the solar gain profiles relies on `skydome/typical_irradiation.csv` that is specific to Rolle.
-
-.. automodule:: reho.model.preprocessing.data_generation
-    :members: profiles_from_sia2024, solar_gains_profile
 
 `electricity_prices.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,18 +124,11 @@ Prepares and manipulates the input of the optimization:
 .. automodule:: reho.model.preprocessing.electricity_prices
     :members: get_prices_from_elcom_by_canton, get_prices_from_elcom_by_city, get_injection_prices, get_electricity_prices
 
-`electricity_profile_parser.py`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*Allows to give an electricity consumption profile, hour by hour and adapt it to the clustering periods.*
-
-.. caution::
-    To be adapted from Luise's case study.
 
 `emission_matrix_parser.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Characterizes the CO2 emissions related to electricity generated from the grid.*
+.. automodule:: reho.model.preprocessing.emission_matrix_parser
 
 .. caution::
     It relies on `emissions/electricity_matrix_2019_reduced.csv`, is that ok?.
@@ -144,20 +148,18 @@ Prepares and manipulates the input of the optimization:
 `sia_parser.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-*Collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.*
+.. automodule:: reho.model.preprocessing.sia_parser
 
 `skydome_input_parser.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*Used for PV orientation.*
+.. automodule:: reho.model.preprocessing.skydome_input_parser
 
 .. caution::
     As for the solar heat gains, it relies on a skydome generated for Luise's case study. How to generalise it?
 
 `weather.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
-
-*Generates the meteorological data (temperature and solar irradiance).*
 
 .. automodule:: reho.model.preprocessing.weather
     :members: get_cluster_file_ID, generate_output_data, write_dat_files
@@ -176,12 +178,8 @@ Prepares and manipulates the input of the optimization:
 *infrastructure.py*
 ------------------------------
 
-*Characterizes all the sets and parameters which are connected to buildings, units and grids.*
+.. autoclass:: reho.model.infrastructure
 
-The default values (ampl code), the inputs from the district structure (costs, fmax, fmin, …) and new parameters from the data folder.
-
-.. caution::
-    To be documented.
 
 *reho.py*
 ------------------------------
@@ -193,7 +191,8 @@ The default values (ampl code), the inputs from the district structure (costs, f
 **plotting/**
 ==================
 
-*Directory for plotting and visualization code.*
+.. automodule:: reho.plotting
+
 
 - `layout.csv`: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
 - `sia380_1.csv`: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
@@ -204,28 +203,23 @@ The default values (ampl code), the inputs from the district structure (costs, f
 .. automodule:: reho.plotting.plotting
    :members: plot_actors, plot_performance, plot_sankey, sunburst_eud, unit_monthly_plot
 
-**rainbow_plots/**
+*rainbow_plots.py*
 ------------------
 
-*Contains the scripts to generate rainbow plots for results generated by REHO.*
+.. automodule:: reho.plotting.rainbow_plots
 
 `sankey.py`
 -----------
 
-*Builds the dataframe to use to plot a sankey diagram from a **reho_results**.*
+.. automodule:: reho.plotting.sankey
 
 `yearly_profile_builder.py`
 ---------------------------
 
-*Reconstructs a yearly profile from the clustering periods.*
-
-
-
-
+.. automodule:: reho.plotting.yearly_profile_builder
 
 
 *paths.py*
 ==================
 
-
-File for managing file paths and configurations.
+.. automodule:: reho.paths

@@ -1,3 +1,3 @@
 __doc__ = """
-Directory where the data from the AMPL model are manipulated to give the final REHO results dictionary.
+*Directory where the output of the optimization from the AMPL model is extracted and processed to give a REHO results dictionary.*
 """

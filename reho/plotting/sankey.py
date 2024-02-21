@@ -3,6 +3,10 @@ import pandas as pd
 import numpy as np
 from reho.paths import *
 
+__doc__ = """
+*Builds the dataframe for the visualization of annual flows from REHO results in the form of a Sankey diagram.*
+"""
+
 # Colors and labels for units and layers
 layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Name').dropna(how='all')
 

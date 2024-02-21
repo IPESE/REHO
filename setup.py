@@ -3,18 +3,26 @@
 # This work can be distributed under the Apache Software License.
 # See the LICENSE file for more details.
 
+import subprocess
+import sys
 from setuptools import setup, find_packages
 
 
 def read_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return file.read()
+    
+def install_dependencies():
+    try:
+        subprocess.run([sys.executable, '-m', 'pip', 'install', 'psycopg2'])
+    except subprocess.CalledProcessError:
+        subprocess.run([sys.executable, '-m', 'pip', 'install', 'psycopg2-binary'])
 
 
 setup(
 
     name='REHO',
-    version='1.0.0',
+    version='1.0.1',
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',
@@ -27,8 +35,6 @@ setup(
                       'scikit-learn>=1.2.2,<2.0.0',
                       'scikit-learn-extra>=0.3.0',
                       'sqlalchemy>=1.4.42,<2.0.0',
-                      'psycopg2>=2.9.4,<3.0.0',
-                      'psycopg2-binary>=2.9.9,<3.0.0',
                       'geopandas>=0.12.2,<1.0.0',
                       'matplotlib>=3.6.1,<4.0.0',
                       'plotly>=5.10,<6.0.0',

@@ -3,6 +3,9 @@ import numpy as np
 import reho.model.preprocessing.emission_matrix_parser as emission
 import reho.model.preprocessing.weather as WD
 
+__doc__ = """
+*Calculates the KPIs resulting from the optimization.*
+"""
 
 def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network, df_profiles, df_external, df_Time):
     # --------------------------------------------------------------------

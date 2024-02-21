@@ -2,6 +2,9 @@ import pandas as pd
 from reho.paths import *
 import numpy as np
 
+__doc__ = """
+*Collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.*
+"""
 
 def read_sia2024_rooms_sia380_1(digit):
 
@@ -88,24 +91,28 @@ def daily_profiles_with_monthly_deviation(status, rooms, date, df):
     # get 2024 profiles
     df_el_appliance, df_el_light, df_el_add, df_dhw, df_occupancy, df_heat_gain = read_sia_2024_profiles(status, df)
     df_el = df_el_appliance + df_el_light + df_el_add  # W/m2
+    df_el_gain = df_el_appliance + df_el_light
     # adjust for current day of the year
     df_el = df_el.multiply(weekly_factor*monthly_factor, axis=0)
+    df_el_gain = df_el_gain.multiply(weekly_factor * monthly_factor, axis=0)
     df_dhw = df_dhw.multiply(weekly_factor*monthly_factor, axis=0)
     df_occupancy = df_occupancy.multiply(weekly_factor*monthly_factor, axis=0)
     df_heat_gain = df_heat_gain.multiply(weekly_factor*monthly_factor, axis=0)
 
     # get profiles for each room. multiply by usage. nan if not appearing in building
     df_el = df_el.multiply(rooms.values, axis=0).dropna()
+    df_el_gain = df_el_gain.multiply(rooms.values, axis=0).dropna()
     df_dhw = df_dhw.multiply(rooms.values, axis=0).dropna()
     df_occupancy = df_occupancy.multiply(rooms.values, axis=0).dropna()
     df_heat_gain = df_heat_gain.multiply(rooms.values, axis=0).dropna()
 
     # aggregate
     df_profiles = pd.DataFrame()
-    df_profiles['electricity_W/m2'] = df_el.sum(axis = 0)
-    df_profiles['hotwater_l/m2'] = df_dhw.sum(axis = 0)
-    df_profiles['occupancy'] = df_occupancy.sum(axis = 0)
-    df_profiles['heatgainpeople_W/m2'] = df_heat_gain.sum(axis = 0)
+    df_profiles['electricity_W/m2'] = df_el.sum(axis=0)
+    df_profiles['hotwater_l/m2'] = df_dhw.sum(axis=0)
+    df_profiles['occupancy'] = df_occupancy.sum(axis=0)
+    df_profiles['elecgain_W/m2'] = df_el_gain.sum(axis=0)
+    df_profiles['heatgainpeople_W/m2'] = df_heat_gain.sum(axis=0)
 
     return df_profiles
 

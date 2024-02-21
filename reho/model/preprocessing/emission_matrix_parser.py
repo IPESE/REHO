@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 import datetime
 
+__doc__ = """
+*Characterizes the CO2 emissions related to electricity generated from the grid.*
+"""
 
 def reduce_matrix_file():
     df = pd.read_csv(path_to_emissions_matrix_full,  header=None, index_col=[0, 1, 2, 3])

@@ -274,7 +274,6 @@ class QBuildingsReader:
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
             qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
-
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:

@@ -169,7 +169,7 @@ class district_decomposition:
             SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
             SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
 
-        for scenario_cst in SP_scenario['specific']:
+        for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
                 SP_scenario['specific'].remove(scenario_cst)
                 SP_scenario_init['specific'].remove(scenario_cst)
@@ -644,9 +644,9 @@ class district_decomposition:
 
         parameters_SP = {}
         parameters_SP['Cost_supply_network'] = pi
-        parameters_SP['Cost_demand_network'] = pi * 0.999
+        parameters_SP['Cost_demand_network'] = pi * (1-1e-9)
         parameters_SP['Cost_supply'] = pi_h
-        parameters_SP['Cost_demand'] = pi_h * 0.999
+        parameters_SP['Cost_demand'] = pi_h * (1-1e-9)
         parameters_SP['GWP_supply'] = pi_GWP
         # set emissions of feed in to 0 -> changed in  postcompute
         parameters_SP['GWP_demand'] = pi_GWP.mul(0)
@@ -1128,9 +1128,10 @@ class district_decomposition:
                 if isinstance(self.parameters[key], (int, float)):
                     parameters_SP[key] = self.parameters[key]
                 elif self.parameters[key].shape[0] >= self.DW_params['timesteps']:  # if demands profiles (heat gains / DHW / electricity) are set for more than 1 building
-                    nb_buildings = round(self.parameters[key].shape[0]/self.DW_params['timesteps'])
-                    profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
-                    parameters_SP[key] = profile_building_x[ID]
+                    if len(self.infrastructure.houses) < self.DW_params['timesteps']:
+                        nb_buildings = round(self.parameters[key].shape[0]/self.DW_params['timesteps'])
+                        profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
+                        parameters_SP[key] = profile_building_x[ID]
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
 

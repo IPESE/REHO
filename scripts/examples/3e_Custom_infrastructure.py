@@ -25,7 +25,7 @@ if __name__ == '__main__':
                                              'Wood': {},
                                              'Oil': {},
                                              })
-    path_to_custom_units = '../../reho/data/parameters/building_units.csv'
+    path_to_custom_units = '../../reho/data/infrastructure/building_units.csv'
     units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
 
     # Set method options

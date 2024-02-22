@@ -133,7 +133,7 @@ class infrastructure:
                 stream = u['name'] + '_' + s
                 self.StreamsOfUnit[name] = np.append(self.StreamsOfUnit[name], stream)
 
-        lca_kpi_list = np.array(pd.read_csv(os.path.join(path_to_parameters, "building_units.csv")).columns)
+        lca_kpi_list = np.array(pd.read_csv(os.path.join(path_to_infrastructure, "building_units.csv")).columns)
         lca_kpi_list = [key for key in lca_kpi_list if "_1" in key]
         self.lca_kpis = np.array([key.replace("_1", "") for key in lca_kpi_list])
         self.__generate_set_dict()  # generate dictionary containing all sets for AMPL
@@ -231,7 +231,7 @@ class infrastructure:
             for u in self.houses[h]['units']:
                 if u['HP_parameters'] is not None:
                     complete_name = u['name'] + '_' + h
-                    file = os.path.join(path_to_parameters, u['HP_parameters'])
+                    file = os.path.join(path_to_infrastructure, u['HP_parameters'])
                     if u['UnitOfType'] == 'Air_Conditioner' or u['UnitOfType'] == 'HeatPump':
                         df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
                         df = pd.concat([df], keys=[complete_name])
@@ -461,7 +461,7 @@ def return_storage_units(file):
     return [HC, CH4S, MTZ, ETZ, HS, LHS]
 
 
-def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_parameters, "building_units.csv"),
+def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
                      district_data=None, storage_data=None):
     """
     Initialize the available units for the energy system.
@@ -512,11 +512,11 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_pa
     building_units = return_building_units(exclude_units, grids, file=building_data)
 
     if storage_data is True:
-        building_units = np.concatenate([building_units, return_storage_units(file=os.path.join(path_to_parameters, "storage_units.csv"))])
+        building_units = np.concatenate([building_units, return_storage_units(file=os.path.join(path_to_infrastructure, "storage_units.csv"))])
     elif storage_data:
         building_units = np.concatenate([building_units, return_storage_units(file=storage_data)])
     if district_data is True:
-        district_units = return_district_units(exclude_units, grids, file=os.path.join(path_to_parameters, "district_units.csv"))
+        district_units = return_district_units(exclude_units, grids, file=os.path.join(path_to_infrastructure, "district_units.csv"))
     elif district_data:
         district_units = return_district_units(exclude_units, grids, file=district_data)
     else:
@@ -537,7 +537,7 @@ def create_grid(name, Grids_flowrate_out, Grids_flowrate_in, grid_data):
 
 
 def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
-                     file=os.path.join(path_to_parameters, "grids.csv")):
+                     file=os.path.join(path_to_infrastructure, "grids.csv")):
     """
     Initialize grid information for the energy system.
 

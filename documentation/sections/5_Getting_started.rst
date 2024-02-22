@@ -98,7 +98,7 @@ This latter should allow you to get started with the tool and conduct your first
 
     # Set building parameters
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=3)
+    qbuildings_data = reader.read_csv(buildings_filename='buildings.csv', nb_buildings=3)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -175,8 +175,8 @@ See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_csv` for fu
 
     To work properly, the *.csv* given should contain the same fields as it came from QBuildings.
 
-    The order does not matter. It can be helpful to explore the *data/model/buildings_example.csv*,
-    *data/model/roofs_example.csv* and *data/model/facades_example.csv*.
+    The order does not matter. It can be helpful to explore the *scripts/template/data/buildings.csv*,
+    *scripts/template/data/roofs.csv* and *scripts/template/data/facades.csv*.
 
     .. dropdown:: List of buildings parameters
         :icon: list-unordered

@@ -62,7 +62,7 @@ def get_cluster_file_ID(cluster):
     File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + \
               T + I + W + E
 
-    among_cl_results = os.path.exists(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat'))
+    among_cl_results = os.path.exists(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'))
     if not among_cl_results or 'weather_file' in cluster.keys():
         if 'weather_file' in cluster.keys():
             df = read_hourly_dat(cluster['weather_file'])
@@ -80,16 +80,16 @@ def get_cluster_file_ID(cluster):
 def read_hourly_dat(location):
 
     if location.endswith('.dat'):
-        df1 = np.loadtxt(path_handler(location), unpack=True, skiprows=1)
+        df = np.loadtxt(path_handler(location), unpack=True, skiprows=1)
     else:
-        df1 = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
-    df1 = pd.DataFrame(df1).transpose()
-    df1 = df1.drop([5,6,7,8], axis=1)
-    df1.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']
-    df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday.txt'), index_col=[0], header=None)
-    df1['Weekday'] = df2
+        df = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
+    df = pd.DataFrame(df).transpose()
+    df = df.drop([5,6,7,8], axis=1)
+    df.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']
+    df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday_2005.txt'), index_col=[0], header=None)
+    df['Weekday'] = df2
 
-    return df1
+    return df
 
 
 def generate_output_data(cl, attributes, location):
@@ -155,7 +155,7 @@ def generate_output_data(cl, attributes, location):
     T_min.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[0], 1, 1]
     T_max.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[1], 1, 1]
     data_cls = pd.concat([data_cls, T_min.rename({T_idx[0]: 240}), T_max.rename({T_idx[1]: 241})])
-    # Add a 10% margin for the extreme over 20 years TODO: question with Dorsan this factor
+    # Add a 10% margin for the extreme over 20 years
     data_cls.loc[[240, 241], ['Text', 'Irr']] = data_cls.loc[[240, 241], ['Text', 'Irr']] * 1.1
    
     # - construct : model data
@@ -174,15 +174,15 @@ def generate_output_data(cl, attributes, location):
         columns=["IndexDy", "intra_t"])
     data_idp["intra_end"] = [id + cl.pd if (id % cl.pd) == 0 else 0 for id in data_idp.index]
     
-    # Call for the write dat function
+    # Call for the write_dat_files function
     write_dat_files(attributes, location, data_cls, data_idy)
     
-    return print(f'The data have been computed and saved at {path_to_clustering_results}.')
+    return print(f'The data have been computed and saved in {path_to_clustering}.')
 
 
 def write_dat_files(attributes, location, values_cluster, index_inter):
     """
-    Writes the clustering results computed from `generate_output_data` as .dat file at data/weather/clustering_results/
+    Writes the clustering results computed from `generate_output_data` as .dat file
 
     Parameters
     ----------
@@ -199,7 +199,7 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
 
     Notes
     -----
-    - Not depending on the attributes, time depending files are generated, namely 'frequency' + '_File_ID.dat',
+    - Not depending on the attributes, time dependent files are generated, namely 'frequency' + '_File_ID.dat',
       'index' + '_File_ID.dat' and 'timestamp' + '_File_ID.dat'.
 
     """
@@ -237,18 +237,21 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
         E = ''
     File_ID = location + '_' + str(len(df_dd) - 2) + '_' + str(int(max(pt))) + T + I + W + E
 
+    if not os.path.isdir(path_to_clustering):
+        os.makedirs(path_to_clustering)
+
     # -------------------------------------------------------------------------------------
     # T
     # -------------------------------------------------------------------------------------
     df_T = values_cluster['Text']
-    filename = os.path.join(path_to_clustering_results, 'T_' + File_ID + '.dat')
+    filename = os.path.join(path_to_clustering, 'T_' + File_ID + '.dat')
     df_T.to_csv(filename, index=False, header=False)
 
     # -------------------------------------------------------------------------------------
     # GHI
     # -------------------------------------------------------------------------------------
     df_GHI = values_cluster['Irr']
-    filename = os.path.join(path_to_clustering_results, 'GHI_' + File_ID + '.dat')
+    filename = os.path.join(path_to_clustering, 'GHI_' + File_ID + '.dat')
     df_GHI.to_csv(filename, index=False, header=False)
 
     # -------------------------------------------------------------------------------------
@@ -260,7 +263,7 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
             w = values_cluster.loc[values_cluster['time.dd'] == dd, 'Weekday'].unique()
             Weekday = np.append(Weekday, w)
 
-    filename = os.path.join(path_to_clustering_results, 'frequency_' + File_ID + '.dat')
+    filename = os.path.join(path_to_clustering, 'frequency_' + File_ID + '.dat')
 
     IterationFile = open(filename, 'w')
 
@@ -305,7 +308,7 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
 
     df_aim.index = df_aim.index + 1
 
-    filename = os.path.join(path_to_clustering_results, 'index_' + File_ID + '.dat')
+    filename = os.path.join(path_to_clustering, 'index_' + File_ID + '.dat')
     IterationFile = open(filename, 'w')
     IterationFile.write('param : PeriodOfYear TimeOfYear := \n')
     IterationFile.write(df_aim.to_string(header=False))
@@ -315,7 +318,7 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     # -------------------------------------------------------------------------------------
     # Time stamp
     # -------------------------------------------------------------------------------------
-    filename = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
+    filename = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
     IterationFile = open(filename, 'w')
     header = 'Date\tDay\tFrequency\tWeekday\n'
     IterationFile.write(header)

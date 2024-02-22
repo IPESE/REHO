@@ -377,7 +377,7 @@ class district_decomposition:
             ampl_MP.cd(path_to_units)
             ampl_MP.read('DHN.mod')
 
-        ampl_MP.cd(path_to_clustering_results)
+        ampl_MP.cd(path_to_clustering)
         ampl_MP.readData('frequency_' + self.File_ID + '.dat')
         ampl_MP.cd(path_to_ampl_model)
 

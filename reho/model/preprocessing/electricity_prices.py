@@ -282,7 +282,7 @@ geosparql.add_prefixes({
 })
 
 
-def get_providers_by_municipality_id(city=None, from_csv=True):
+def get_providers_by_municipality_id(city=None, from_csv=False):
     """
     Gives the electricity providers for a given municipality.
 
@@ -322,7 +322,7 @@ def get_providers_by_municipality_id(city=None, from_csv=True):
 
     #  Use csv of correspondance from 01.02.2024
     if from_csv:
-        communes = pd.read_csv(os.path.join(path_to_electricity, 'correspondance_table_municipality_operator.csv'),
+        communes = pd.read_csv(os.path.join(path_to_elcom, 'correspondance_table_municipality_operator.csv'),
                                index_col=0)
         if city is not None:
             mask = (communes['id_city'] == city) + (communes['commune'] == city)
@@ -597,7 +597,7 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
         city = city.data['transformers']['id_city'][0]
         city_query = '<' + city_link + str(city) + '>'
     elif isinstance(city, str):
-        cities = pd.read_csv(os.path.join(path_to_electricity, 'correspondance_table_municipality_operator.csv'),
+        cities = pd.read_csv(os.path.join(path_to_elcom, 'correspondance_table_municipality_operator.csv'),
                              index_col=0)
         mask = (cities['id_city'] == city) + (cities['commune'] == city)
         cities = cities[mask]

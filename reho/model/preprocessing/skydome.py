@@ -91,7 +91,7 @@ def irradiation_to_df(ampl, irradiation_csv, File_ID):
     df_IRR.index = pd.to_datetime(df_IRR.index)
 
     # get relevant cluster information
-    thisfile = os.path.join(path_to_clustering_results, 'timestamp_'+ File_ID +'.dat')
+    thisfile = os.path.join(path_to_clustering, 'timestamp_'+ File_ID +'.dat')
     df = pd.read_csv(thisfile, delimiter='\t', parse_dates=[0])
     PeriodDuration  = ampl.getParameter('TimeEnd').getValues().toPandas()
 
@@ -406,7 +406,7 @@ if __name__ == '__main__':
     typical_frequency = {'20050921':    54, '20050228':   46, '20050810':    17, '20050313':    49, '20050725':    52,
                            '20050107':    68, '20050911':    49, '20050618':    30}
 
-    #thisfile = os.path.join(path_to_clustering_results, 'timestamp.dat')
+    #thisfile = os.path.join(path_to_clustering, 'timestamp.dat')
     #df = pd.read_csv(thisfile, delimiter='\t')
 
     #typical_days_string = df.Date.values

@@ -6,7 +6,7 @@ import geopandas as gpd
 import re
 import csv
 from reho.paths import *
-import reho.model.preprocessing.skydome_input_parser as skd
+import reho.model.preprocessing.skydome as skd
 import pandas as pd
 import numpy as np
 import math
@@ -87,8 +87,8 @@ class QBuildingsReader:
 
         return
 
-    def read_csv(self, buildings_filename='buildings_example.csv', nb_buildings=None,
-                 roofs_filename='roofs_example.csv', facades_filename='facades_example.csv'):
+    def read_csv(self, buildings_filename='buildings.csv', nb_buildings=None,
+                 roofs_filename='roofs.csv', facades_filename='facades.csv'):
         """
         Read buildings-related data from CSV files and prepare it for the REHO model.
 
@@ -118,7 +118,7 @@ class QBuildingsReader:
         - If ``load_roofs = True``, `roofs_filename` must be provided, else it is not useful. Same goes for the facades.
         - This function can be used with default files in case one does not want to connect to the database and does
           not need a particular building.
-          In that case, do not fill any filename. `buildings_example.csv`, `roofs_example.csv` and `facades_example.csv`
+          In that case, do not fill any filename. `buildings.csv`, `roofs.csv` and `facades.csv`
           will be used by default.
           It should be noted that those names are therefore reserved for the default and cannot be used for your own files.
 
@@ -126,7 +126,7 @@ class QBuildingsReader:
         -------
         >>> from reho.model.reho import *
         >>> reader = QBuildingsReader(load_roofs=True)
-        >>> qbuildings_data = reader.read_csv("buildings_example.csv", roofs_filename="roofs_example.csv", nb_buildings=7)
+        >>> qbuildings_data = reader.read_csv("buildings.csv", roofs_filename="roofs.csv", nb_buildings=7)
 
         >>> qbuildings_data['buildings_data'].keys()
         dict_keys(['Building1', 'Building2', 'Building3'])

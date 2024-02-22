@@ -41,10 +41,10 @@ def generate_EV_plugged_out_profiles_district(cluster):
 
 
     if use_weekdays:
-        timestamp = np.loadtxt(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3), skiprows=1)
+        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3), skiprows=1)
         timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
     else:
-        df = pd.read_csv(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat'), delimiter = '\t')
+        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter = '\t')
         timestamp = df.fillna(1) #only weekdays
 
     # Federal Office of Statistic, Comportement de la population en matiere de transports, 2015

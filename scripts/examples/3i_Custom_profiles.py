@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     # you can as well define your district from a csv file instead of reading the database
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=2)
+    qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # Set method options
     # In that, give an electricity consumption profile
-    path_to_custom_elec_profile = '../../reho/data/electricity/annual_profiles.csv'
+    path_to_custom_elec_profile = '../template/data/profiles/electricity.csv'
     method = {'building-scale': True, 'use_custom_profiles': {'electricity': path_to_custom_elec_profile}}
 
     # Run optimization

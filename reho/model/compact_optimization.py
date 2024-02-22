@@ -3,8 +3,8 @@ from amplpy import AMPL, Environment
 import itertools as itertools
 import reho.model.preprocessing.data_generation as DGF
 import reho.model.preprocessing.weather as WD
-import reho.model.preprocessing.skydome_input_parser as SkyDome
-import reho.model.preprocessing.emission_matrix_parser as emission
+import reho.model.preprocessing.skydome as SkyDome
+import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.EV_profile_generator as EV_gen
 from reho.model.preprocessing.QBuildings import *
 
@@ -248,14 +248,14 @@ class compact_optimization:
         # -Setting DATA
         # -----------------------------------------------------------------------------------------------------#
 
-        ampl.cd(path_to_clustering_results)
+        ampl.cd(path_to_clustering)
 
         File_ID = WD.get_cluster_file_ID(self.cluster_compact)
 
         ampl.readData('frequency_' + File_ID + '.dat')
         ampl.readData('index_' + File_ID + '.dat')
-        self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(path_to_clustering_results, 'T_' + File_ID + '.dat'))
-        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering_results, 'GHI_' + File_ID + '.dat'))
+        self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(path_to_clustering, 'T_' + File_ID + '.dat'))
+        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering, 'GHI_' + File_ID + '.dat'))
 
         ampl.cd(path_to_ampl_model)
         return ampl
@@ -306,7 +306,7 @@ class compact_optimization:
 
     def set_emissions_profiles(self, File_ID):
 
-        df_em = emission.select_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a')
+        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a')
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})

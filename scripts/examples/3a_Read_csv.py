@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     # you can as well define your district from a csv file instead of reading the database
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=2)
+    qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}

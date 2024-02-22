@@ -16,7 +16,7 @@ def annual_to_typical(cluster, annual_file, typical_file=None):
 
     # Get which days are the typical ones
     File_ID = get_cluster_file_ID(cluster)
-    timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
+    timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
     df_time = pd.read_csv(timestamp_file, delimiter='\t')
     typical_days = df_time.Date.apply(lambda date: date[0:-3]).values
 
@@ -112,7 +112,7 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
     >>>     build_eud_profiles(buildings_data, file_id, cluster, use_custom_profiles=my_profiles)
     """
     # get cluster information
-    timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
+    timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
     df = pd.read_csv(timestamp_file, delimiter='\t')
     df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
@@ -299,7 +299,7 @@ def solar_gains_profile(ampl, buildings_data, File_ID):
     """
     # Number of days computation
     PeriodDuration = ampl.getParameter('TimeEnd').getValues().toPandas()
-    timestamp_file = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
+    timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
     df = pd.read_csv(timestamp_file, delimiter='\t')
     df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
@@ -310,7 +310,7 @@ def solar_gains_profile(ampl, buildings_data, File_ID):
 
     # get west_facades irradiation
     # check if irradiation already exists:
-    filename = os.path.join(path_to_clustering_results, 'westfacades_irr_' + File_ID + '.txt')
+    filename = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt')
     if not os.path.exists(filename):
         df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, total_irradiation_csv, frequency_dict)
         np.savetxt(filename, irr_west)

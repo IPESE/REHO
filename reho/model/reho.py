@@ -639,8 +639,8 @@ class reho(district_decomposition):
 
     def read_configurations(self, path=None):
          if path is None:
-             file_name = 'config_' + str(len(self.buildings_data)) + '_' + str(self.buildings_data["Building1"]["transformer"]) + '.pickle'
-             path = os.path.join('results/configurations', file_name)
+             filename = 'tr_' + str(self.buildings_data["Building1"]["transformer"] + '_' + str(len(self.buildings_data))) + '.pickle'
+             path = os.path.join(path_to_configurations, filename)
          with open(path, 'rb') as f:
              [self.results_SP, self.feasible_solutions, self.number_SP_solutions] = pickle.load(f)
 

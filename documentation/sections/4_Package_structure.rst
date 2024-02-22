@@ -125,10 +125,10 @@ Core of the optimization model (model objectives, constraints, modelling equatio
     :members: get_prices_from_elcom_by_canton, get_prices_from_elcom_by_city, get_injection_prices, get_electricity_prices
 
 
-`emission_matrix_parser.py`
+`emissions_parser.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: reho.model.preprocessing.emission_matrix_parser
+.. automodule:: reho.model.preprocessing.emissions_parser
 
 .. caution::
     It relies on `emissions/electricity_matrix_2019_reduced.csv`, is that ok?.
@@ -150,10 +150,10 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.model.preprocessing.sia_parser
 
-`skydome_input_parser.py`
+`skydome.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: reho.model.preprocessing.skydome_input_parser
+.. automodule:: reho.model.preprocessing.skydome
 
 .. caution::
     As for the solar heat gains, it relies on a skydome generated for Luise's case study. How to generalise it?

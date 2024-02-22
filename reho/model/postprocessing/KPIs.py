@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import reho.model.preprocessing.emission_matrix_parser as emission
+import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as WD
 
 __doc__ = """
@@ -270,7 +270,7 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
 def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, cluster,
                                  infrastructure):
     # --------------------------------------------------------------------
-    # emission
+    # emissions
     # --------------------------------------------------------------------
 
     em_supply_dy = df_profiles_net.GWP_supply.xs('Electricity')
@@ -309,8 +309,8 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
     df_el_net = df_profiles_net.xs('Electricity', level=0)
 
     File_ID = WD.get_cluster_file_ID(cluster)
-    res_profile = emission.select_typical_emission_profiles(df_Time, File_ID, 'method 1')
-    res_av = emission.find_average_value('CH', 'method 1')
+    res_profile = emissions.return_typical_emission_profiles(df_Time, File_ID, 'method 1')
+    res_av = emissions.find_average_value('CH', 'method 1')
     s_RES_dy = pd.Series(dtype='float')
     s_RES_av = pd.Series(dtype='float')
 
@@ -318,7 +318,7 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
         res_e = res_profile['GWP_supply'].values * df_profiles.Grid_supply.xs(h, level='Hub', drop_level=False)
         res_e = res_e.groupby(level=['Hub', 'Period']).sum()
         res_e = res_e.mul(df_Time.dp, axis=0).groupby(
-            level='Hub').sum() / 1000  # annual emission from elec with dy profiles ton/year
+            level='Hub').sum() / 1000  # annual emissions from elec with dy profiles ton/year
         res_av.index = res_e.index
 
         df_h = df_annual.loc[h]

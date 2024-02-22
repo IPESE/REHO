@@ -92,7 +92,7 @@ lambda[f,h] = lambda_binary[f,h];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---Network BALANCES - attention only electricity layer!
+#---Network BALANCES
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 param Grid_supply{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in Time[p]};
@@ -352,7 +352,7 @@ var EMOO_slack_totex          >= 0, <= abs(EMOO_TOTEX)*Area_tot;
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid connection costs
 #--------------------------------------------------------------------------------------------------------------------#
-param monthly_grid_connection_cost{l in ResourceBalances} default 0; # CHF/kW/month
+param Cost_connection{l in ResourceBalances} default 0; # CHF/kW/month
 
 var peak_exchange_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
 var Costs_grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
@@ -362,7 +362,7 @@ subject to peak_exchange_calculation{l in ResourceBalances, f in FeasibleSolutio
 peak_exchange_House[l,h] >= (Grid_supply[l,f,h,p,t]+Grid_demand[l,f,h,p,t]) * lambda[f,h];
 
 subject to grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]}:
-Costs_grid_connection_House[l,h] = 12*monthly_grid_connection_cost[l]*peak_exchange_House[l,h];
+Costs_grid_connection_House[l,h] = 12*Cost_connection[l]*peak_exchange_House[l,h];
 
 subject to grid_connection_total:
 Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];

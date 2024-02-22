@@ -312,7 +312,8 @@ def solar_gains_profile(ampl, buildings_data, File_ID):
     # check if irradiation already exists:
     filename = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt')
     if not os.path.exists(filename):
-        df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, total_irradiation_csv, frequency_dict)
+        typical_irradiation = os.path.join(path_to_skydome, 'typical_irradiation.csv')
+        df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, typical_irradiation, frequency_dict)
         np.savetxt(filename, irr_west)
     else:
         irr_west = pd.read_csv(filename, header=None)[0].values

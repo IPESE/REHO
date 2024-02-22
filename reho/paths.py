@@ -45,8 +45,7 @@ path_to_sia = os.path.join(path_to_data, 'SIA')
 
 # skydome
 path_to_skydome = os.path.join(path_to_data, 'skydome')
-typical_irradiation_csv = os.path.join(path_to_skydome, 'typical_irradiation.csv')
-total_irradiation_csv = os.path.join(path_to_skydome, 'total_irradiation_time.csv')
+
 
 # weather
 path_to_weather = os.path.join(path_to_data, 'weather')

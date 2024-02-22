@@ -28,9 +28,6 @@ def convert_results_txt_to_csv(load_timesteps):
         df_hour = pd.DataFrame(gh_result, index=[int(ts)])
         df = df.append(df_hour)
 
-    output_file = os.path.join(path_to_skydome, 'total_irradiation.csv')
-    df.to_csv(output_file)
-
     t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
 
     # hour 1 is between 0:00 - 1:00 and is indexed with starting hour so 0:00
@@ -38,7 +35,7 @@ def convert_results_txt_to_csv(load_timesteps):
         df.loc[h, 'time'] = t1 + timedelta(hours=(int(h)-1))
 
     df = df.set_index('time')
-    output_file = os.path.join(path_to_skydome, 'total_irradiation_time.csv')
+    output_file = os.path.join(path_to_skydome, 'total_irradiation.csv')
     df.to_csv(output_file)
     print(df)
 
@@ -116,10 +113,6 @@ def irradiation_to_df(ampl, irradiation_csv, File_ID):
     # marry index and data
     df_IRR = df_p.set_index(idx)
 
-    #add extreme conditions
-    #TODO Find better conditions
-    df_IRR.loc[(df.index[-1]+2, 1), :] = 0 #+1 bc of ampl +1 to be the next period
-    df_IRR.loc[(df.index[-1]+3, 1), :] = 0
     #df_IRR = pd.concat([df_IRR], axis=1, keys=['Patches'])
     df = df_IRR.stack()
     df = df.reorder_levels([2, 0, 1])
@@ -147,9 +140,8 @@ def irradiation_to_typical_df(typical_days_string):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
-    thisfile = os.path.join(path_to_skydome, 'total_irradiation_time.csv')
-
-    df_profiles = pd.read_csv(thisfile, sep=",", parse_dates=[1])
+    filename = os.path.join(path_to_skydome, 'total_irradiation.csv')
+    df_profiles = pd.read_csv(filename, sep=",", parse_dates=[1])
     df_profiles.set_index('time', inplace=True)
 
     df_profiles.index = pd.to_datetime(df_profiles.index)
@@ -165,8 +157,7 @@ def irradiation_to_typical_df(typical_days_string):
         # df_typical.loc[td,'TypdayID'] = int(i)
 
     # save profiles in csv
-    df_typical.to_csv(os.path.join(path_to_skydome,'typical_irradiation.csv'))
-    print('Typical profiles saved in' + path_to_skydome)
+    df_typical.to_csv(os.path.join(path_to_skydome, 'typical_irradiation.csv'))
 
     return df_typical
 
@@ -396,10 +387,8 @@ def plot_irr(save_fig):
 
 
 if __name__ == '__main__':
-    path_to_test_files = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'preprocessing', 'skydome_irradiation')
 
-
-    irradiation_csv = os.path.join(path_to_skydome,'typical_irradiation.csv')
+    typical_file = os.path.join(path_to_skydome, 'typical_irradiation.csv')
     typical_days_string = ['20050921', '20050228', '20050810', '20050313', '20050725',
                            '20050107', '20050911',
                            '20050618']
@@ -423,15 +412,12 @@ if __name__ == '__main__':
     save_fig = False
     plt.rcParams.update({'font.size': 12})
     plot_irr(save_fig)
-    pd.set_option('display.max_rows', 500)
-    pd.set_option('display.max_columns', 500)
-    pd.set_option('display.width', 1000)
 
     #azimuth = 175
     #tilt = 20
     #design_lim_angle = 20
     #print('design limiting angle:', design_lim_angle)
-    calc_orientated_surface(270, 90, 0, irradiation_csv, typical_frequency)
+    calc_orientated_surface(270, 90, 0, typical_file, typical_frequency)
     #limiting_angle_for_tilt()
     #df = skydome_to_df()
     #print(df)

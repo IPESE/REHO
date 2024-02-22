@@ -42,6 +42,7 @@ set UnitsOfType{UnitTypes} within Units default {'Battery_district', 'EV_distric
 set UnitsOfLayer{Layers} within Units;
 
 set House;
+set HousesOfLayer{Layers} within House;
 set FeasibleSolutions ordered;
 
 set Period;				# Set of periods (days)
@@ -349,6 +350,35 @@ var EMOO_slack_totex          >= 0, <= abs(EMOO_TOTEX)*Area_tot;
 
 
 #--------------------------------------------------------------------------------------------------------------------#
+#---Grid connection costs
+#--------------------------------------------------------------------------------------------------------------------#
+param monthly_grid_connection_cost{l in ResourceBalances} default 0; # CHF/kW/month
+
+var peak_exchange_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
+var Costs_grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
+var Costs_grid_connection >= 0;
+
+subject to peak_exchange_calculation{l in ResourceBalances, f in FeasibleSolutions, h in HousesOfLayer[l], p in PeriodStandard,t in Time[p]}:
+peak_exchange_House[l,h] >= (Grid_supply[l,f,h,p,t]+Grid_demand[l,f,h,p,t]) * lambda[f,h];
+
+subject to grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]}:
+Costs_grid_connection_House[l,h] = 12*monthly_grid_connection_cost[l]*peak_exchange_House[l,h];
+
+subject to grid_connection_total:
+Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];
+
+#--------------------------------------------------------------------------------------------------------------------#
+#---Grid capacity constraints
+#--------------------------------------------------------------------------------------------------------------------#
+param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;  #kW
+
+subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
+Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h]; 
+
+subject to LineCapacity_demand{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
+Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
+
+#--------------------------------------------------------------------------------------------------------------------#
 #---Transformer capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
 
@@ -402,10 +432,10 @@ penalties = penalty_ratio * (Costs_inv + Costs_op + sum{k in Lca_kpi} lca_tot[k]
 
 # objective functions
 minimize TOTEX:
-Costs_tot + penalties;
+Costs_tot + Costs_grid_connection + penalties;
 
 minimize OPEX:
-Costs_op + penalties;
+Costs_op + Costs_grid_connection + penalties;
 
 minimize CAPEX: # the second term is added to correspond to objective set in design_cst
 Costs_inv + penalties;
@@ -418,3 +448,9 @@ lca_tot["Human_toxicity"] + penalties;
 
 minimize land_use:
 lca_tot["land_use"] + penalties;
+
+
+
+
+
+

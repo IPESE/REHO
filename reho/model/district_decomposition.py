@@ -87,7 +87,7 @@ class district_decomposition:
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
-                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init',
+                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
                          "list_constraints_MP": []
                          }
@@ -456,7 +456,7 @@ class district_decomposition:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'Lca_kpi']:
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 

@@ -20,7 +20,7 @@ def convert_results_txt_to_csv(load_timesteps):
 
     df = pd.DataFrame()
     for ts in load_timesteps:
-        result_file = os.path.join(path_to_test_files, 'results' + str(ts) + '.txt')
+        result_file = os.path.join(path_to_skydome, 'results' + str(ts) + '.txt')
 
         gh_result = np.loadtxt(result_file)
         gh_result = gh_result.reshape(-1, len(gh_result))  # column to row
@@ -125,7 +125,6 @@ def irradiation_to_df_general(irradiation_csv):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
-
     df_IRR = pd.read_csv(irradiation_csv, index_col=[0])
 
     #change column name from string to int
@@ -204,7 +203,7 @@ def f_cos(x):
     return math.cos(a1-a2)
 
 
-def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typical_frequency):
+def calc_orientation_profiles(azimuth, tilt, design_lim_angle, irradiation_file, typical_frequency):
     cos_a = round(math.cos(math.radians(azimuth)), 8)
     sin_a = round(math.sin(math.radians(azimuth)), 8)
     sin_y = round(math.sin(math.radians(tilt)), 8)
@@ -212,7 +211,7 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typ
     print('PANEL ORIENTATION: azimuth ', azimuth, ', tilt ', tilt)
 
     df_dome = skydome_to_df()
-    df_IRR = irradiation_to_df_general(typical_file)
+    df_IRR = irradiation_to_df_general(irradiation_file)
 
     df_irr_pos = pd.DataFrame()
     df_irr_neg = pd.DataFrame()
@@ -280,8 +279,8 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typ
     return df_irr_panel_t, df_period
 
 
-def calc_orientated_surface(azimuth, tilt, design_lim_angle, typical_file, typical_frequency):
-    df_irr_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, typical_file, typical_frequency)
+def calc_orientated_surface(azimuth, tilt, design_lim_angle, irradiation_file, typical_frequency):
+    df_irr_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, irradiation_file, typical_frequency)
 
     # construct annual sum
     df_period = pd.DataFrame()
@@ -388,7 +387,7 @@ def plot_irr(save_fig):
 
 if __name__ == '__main__':
 
-    typical_file = os.path.join(path_to_skydome, 'typical_irradiation.csv')
+    irradiation_file = os.path.join(path_to_skydome, 'typical_irradiation.csv')
     typical_days_string = ['20050921', '20050228', '20050810', '20050313', '20050725',
                            '20050107', '20050911',
                            '20050618']
@@ -417,7 +416,7 @@ if __name__ == '__main__':
     #tilt = 20
     #design_lim_angle = 20
     #print('design limiting angle:', design_lim_angle)
-    calc_orientated_surface(270, 90, 0, typical_file, typical_frequency)
+    calc_orientated_surface(270, 90, 0, irradiation_file, typical_frequency)
     #limiting_angle_for_tilt()
     #df = skydome_to_df()
     #print(df)

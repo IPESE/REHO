@@ -46,7 +46,6 @@ path_to_sia = os.path.join(path_to_data, 'SIA')
 # skydome
 path_to_skydome = os.path.join(path_to_data, 'skydome')
 
-
 # weather
 path_to_weather = os.path.join(path_to_data, 'weather')
 

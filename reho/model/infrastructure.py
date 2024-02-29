@@ -1,5 +1,5 @@
 import os.path
-
+import math
 import numpy as np
 import pandas as pd
 from reho.paths import *
@@ -133,7 +133,7 @@ class infrastructure:
                 stream = u['name'] + '_' + s
                 self.StreamsOfUnit[name] = np.append(self.StreamsOfUnit[name], stream)
 
-        lca_kpi_list = np.array(pd.read_csv(os.path.join(path_to_infrastructure, "building_units.csv")).columns)
+        lca_kpi_list = np.array(file_reader(os.path.join(path_to_infrastructure, "building_units.csv")).columns)
         lca_kpi_list = [key for key in lca_kpi_list if "_1" in key]
         self.lca_kpis = np.array([key.replace("_1", "") for key in lca_kpi_list])
         self.__generate_set_dict()  # generate dictionary containing all sets for AMPL
@@ -229,7 +229,7 @@ class infrastructure:
         for h in self.House:
 
             for u in self.houses[h]['units']:
-                if u['HP_parameters'] is not None:
+                if not u['HP_parameters'] in ['nan', 'None', None]:
                     complete_name = u['name'] + '_' + h
                     file = os.path.join(path_to_infrastructure, u['HP_parameters'])
                     if u['UnitOfType'] == 'Air_Conditioner' or u['UnitOfType'] == 'HeatPump':
@@ -320,145 +320,98 @@ class infrastructure:
 
         self.Set['UnitSizes'] = self.UnitSizes  # add to all sets
 
-def create_unit(name, ref_unit, UnitOfType, UnitOfLayer, UnitOfService, StreamsOfUnit, Units_flowrate_in,
-                Units_flowrate_out, unit_data, HP_parameters, stream_Tin=[], stream_Tout=[]):
 
-    unit = {'name': name, 'ref_unit': ref_unit, 'UnitOfType': UnitOfType, 'UnitOfLayer': UnitOfLayer, 'UnitOfService': UnitOfService,
-           'StreamsOfUnit': StreamsOfUnit, 'Units_flowrate_in': {}, 'Units_flowrate_out': {}, 'HP_parameters': HP_parameters,
-            'stream_Tin': stream_Tin, 'stream_Tout': stream_Tout}
+def prepare_units_array(file, exclude_units=[], grids=None):
+    """
+    Prepares the array that will be used in the initialize_units.
 
-    for key in unit_data.loc[name].index:
-        unit[key] = unit_data.loc[name][key]
+    Parameters
+    ----------
+    file : str
+        Name of the file where to find the units' data (building, district or storage).
+    exclude_units : list of str
+        The units you want to exclude, given through ``initialize_units``.
+    grids : dict
+        Grids given through ``initialize_units``.
 
-    for i in Units_flowrate_in:
-        unit['Units_flowrate_in'][i] = 1e6
-        if i not in Units_flowrate_out:  # if inflow is initialized of a stream but not the outflow, it needs to be set to 0
-            unit['Units_flowrate_out'][i] = 0
+    Returns
+    -------
+    np.array
+        Array that contains the one dictionary by cell, containing the units information.
 
-    for o in Units_flowrate_out:
-        unit['Units_flowrate_out'][o] = 1e6
-        if o not in Units_flowrate_in:  # if outflow is initialized of a stream but not the inflow, it needs to be set to 0
-            unit['Units_flowrate_in'][o] = 0
+    See also
+    --------
+    initialize_units
 
-    return unit
-
-
-def return_building_units(exclude_units, grids, file):
+    Notes
+    -----
+    - Make sure the name of the columns you are using are the same as the one from the default files, that can be found
+      in *data/infrastructure*.
+    - The name of the units, which will be used as keys, do not matter but the *UnitOfType* must be along a defined
+      list of possibilities.
+    """
 
     unit_data = file_reader(file)
     unit_data = unit_data.set_index("Unit")
 
-    BO = create_unit('NG_Boiler', 'kWth', 'NG_Boiler', ['NaturalGas', 'HeatCascade'], ['DHW', 'SH'], ['h_ht'],
-                     ['NaturalGas'], [], unit_data, None, [80], [60])
-    OIL = create_unit('OIL_Boiler', 'kWth', 'OIL_Boiler', ['Oil', 'HeatCascade'], ['DHW', 'SH'], ['h_ht'], ['Oil'],
-                      [], unit_data, None, [80], [60])
-    WS = create_unit('WOOD_Stove', 'kWth', 'WOOD_Stove', ['Wood', 'HeatCascade'], ['SH'], ['h_ht'], ['Wood'],
-                     [], unit_data, None, [80], [60])
-    HP_air = create_unit('HeatPump_Air', 'kWe', 'HeatPump', ['HeatCascade', 'Electricity'], ['DHW', 'SH'],
-                         ['h_ht', 'h_mt', 'h_lt'], ['Electricity'], [], unit_data, 'HP_parameters.txt', [55, 45, 35], [50, 40, 30])
-    HP_lake = create_unit('HeatPump_Lake', 'kWe', 'HeatPump', ['HeatCascade', 'Electricity'], ['DHW', 'SH'],
-                          ['h_ht', 'h_mt', 'h_lt'], ['Electricity'], [], unit_data, 'HP_parameters.txt', [55, 45, 35], [50, 40, 30])
-    HP_geothermal = create_unit('HeatPump_Geothermal', 'kWe', 'HeatPump', ['HeatCascade', 'Electricity'], ['DHW', 'SH'],
-                                ['h_ht', 'h_mt', 'h_lt'], ['Electricity'], [], unit_data, 'HP_parameters.txt', [55, 45, 35], [50, 40, 30])
-    HP_dhn = create_unit('HeatPump_DHN', 'kWe', 'HeatPump', ['HeatCascade', 'Electricity', 'Heat'], ['DHW', 'SH'],
-                         ['h_ht', 'h_mt', 'h_lt'], ['Electricity', 'Heat'], [], unit_data, 'HP_parameters.txt', [55, 45, 35], [50, 40, 30])
-    HP_anergy = create_unit('HeatPump_Anergy', 'kWe', 'HeatPump', ['HeatCascade', 'Electricity'], ['DHW', 'SH'],
-                            ['h_ht', 'h_mt', 'h_lt'], ['Electricity'], [], unit_data, 'HP_parameters.txt', [55, 45, 35], [50, 40, 30])
-    AC = create_unit('Air_Conditioner_Air', 'kWe', 'Air_Conditioner', ['HeatCascade', 'Electricity'], ['Cooling'],
-                     ['c_ht', 'c_mt', 'c_lt'], ['Electricity'], [], unit_data, 'AC_parameters.txt', [13, 15, 18], [14, 16, 19])
-    AC_dhn = create_unit('Air_Conditioner_DHN', 'kWe', 'Air_Conditioner', ['Heat', 'HeatCascade', 'Electricity'], ['Cooling'],
-                     ['c_ht', 'c_mt', 'c_lt'], ['Electricity'], ['Heat'], unit_data, 'AC_parameters.txt', [13, 15, 18], [14, 16, 19])
-    EH_sh = create_unit('ElectricalHeater_SH', 'kWth', 'ElectricalHeater', ['HeatCascade', 'Electricity'], ['SH'],
-                        ['h_ht'], ['Electricity'], [], unit_data, None, [80], [60])
-    EH_dhw = create_unit('ElectricalHeater_DHW', 'kWth', 'ElectricalHeater', ['HeatCascade', 'Electricity'],
-                         ['DHW'], ['h_ht'], ['Electricity'], [], unit_data, None, [80], [60])
-    PV = create_unit('PV', 'kWe', 'PV', ['Electricity'], [], [], [], ['Electricity'], unit_data, None, [], [])
-    TS = create_unit('ThermalSolar', 'kWth', 'ThermalSolar', ['HeatCascade'], ['DHW'], ['h_ht'], [], [], unit_data, None, [62], [48])
-    NG_cogen = create_unit('NG_Cogeneration', 'kWe', 'NG_Cogeneration', ['HeatCascade', 'Electricity', 'NaturalGas'],
-                           ['DHW', 'SH'], ['h_ht'], ['NaturalGas'], ['Electricity'], unit_data, None, [60], [40])
-    BA = create_unit('Battery', 'kWh', 'Battery', ['Electricity'], [], [], ['Electricity'], ['Electricity'],
-                     unit_data, None, [], [])
-    SH = create_unit('WaterTankSH', 'm3', 'WaterTankSH', ['HeatCascade'], ['SH'], ['h_lt', 'c_lt'], [], [],
-                      unit_data, None, [35, 35], [35, 35])
-    DHW = create_unit('WaterTankDHW', 'm3', 'WaterTankDHW', ['HeatCascade'], ['DHW'], ['c_ht'], [], [],
-                      unit_data, None, [10], [60])
-    DH_sh = create_unit('DataHeat_SH', 'kWth', 'DataHeat', ['Electricity', 'HeatCascade', 'Data'], ['SH'],
-                        ['h_ht'], ['Electricity'], ['Data'], unit_data, None, [80], [60])
-    DH_dhw = create_unit('DataHeat_DHW', 'kWth', 'DataHeat', ['Electricity', 'HeatCascade', 'Data'], ['DHW'],
-                         ['h_ht'], ['Electricity'], ['Data'], unit_data, None, [80], [60])
-    DHN_in = create_unit('DHN_hex_in', 'kWth', 'DHN_hex', ['HeatCascade', 'Heat'],
-                         ['SH', 'DHW'], ['h_ht'], ['Heat'], [], unit_data, None, [80], [60])
-    DHN_out = create_unit('DHN_hex_out', 'm2', 'DHN_hex', ['Heat', 'HeatCascade'], ['Cooling'],
-                     ['c_ht'], ['Heat'], ['Heat'], unit_data, None, [18], [19])
-    DHN_pipes = create_unit('DHN_pipes', 'kW', 'DHN_pipes', ['Heat'], [], [], [], [], unit_data, None, [], [])
+    def transform_into_list(column):
+        for idx, row in column.items():
+            try:
+                new_value = [float(el) for el in row.split('/') if el != '']
+            except:
+                new_value = [el.strip() for el in row.split('/') if el != '']
+            if unit_data.index.get_loc(idx) == 0 and new_value == []:
+                unit_data.at[idx, column.name] = ['']
+            unit_data.at[idx, column.name] = new_value
 
-    units_considered = [BO, OIL, WS, HP_air, HP_geothermal, HP_dhn, AC, AC_dhn, PV,
-                        BA, SH, DHW, EH_sh, EH_dhw, TS, NG_cogen, DH_dhw, DHN_in, DHN_out, DHN_pipes]
-    units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "ThermalSolar"]
-    units = filter_units(grids, units_considered, exclude_units, units_to_keep)
+    list_of_columns = ['UnitOfLayer', 'UnitOfService', 'StreamsOfUnit', 'Units_flowrate_in', 'Units_flowrate_out',
+                       'stream_Tin', 'stream_Tout']
+    try:
+        unit_data[list_of_columns] = unit_data[list_of_columns].fillna('').astype(str)
+        unit_data[list_of_columns].apply(transform_into_list)
+    except KeyError:
+        raise KeyError('There is a name in the columns of your csv. Make sure the columns correspond to the default'
+                       ' files in data/infrastructure.')
 
-    return units
+    def check_validity(row):
+        if len(row['StreamsOfUnit']) > 1 and len(row['stream_Tin']) == 1:
+            row['stream_Tin'] = [row['stream_Tin'][0] for el in row['StreamsOfUnit']]
+        if len(row['StreamsOfUnit']) > 1 and len(row['stream_Tout']) == 1:
+            row['stream_Tout'] = [row['stream_Tout'][0] for el in row['StreamsOfUnit']]
+        return row
 
-def filter_units(grids, units_considered, exclude_units, units_to_keep):
+    unit_data = unit_data.apply(check_validity, axis=1)
+    unit_data['HP_parameters'] = unit_data['HP_parameters'].astype(str)
+
     units = []
     if grids is None:
         grid_layers = ['Electricity', 'NaturalGas', 'Oil', 'Wood', 'Data', 'Heat', 'HeatCascade']
     else:
         grid_layers = list(grids.keys()) + ['HeatCascade']
 
-    for unit_dict in units_considered:
-        if all([layer in grid_layers for layer in unit_dict["UnitOfLayer"]]):
-            if unit_dict['name'] not in exclude_units or unit_dict['name'] in units_to_keep:
+    # Some units need to be defined for thermodynamical reasons in the model. They can still be set to 0.
+    units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "ThermalSolar"]
+
+    for idx, row in unit_data.iterrows():
+        if all([layer in grid_layers for layer in row["UnitOfLayer"]]):
+            if idx not in exclude_units or row['UnitOfType'] in units_to_keep:
+                unit_dict = row.to_dict()
+                unit_dict['name'] = idx
+                flow_in = {}
+                flow_out = {}
+                for el in row['Units_flowrate_in']:
+                    flow_in[el] = 1e6
+                    if el not in row['Units_flowrate_out']:
+                        flow_out[el] = 0
+                for el in row['Units_flowrate_out']:
+                    flow_out[el] = 1e6
+                    if el not in row['Units_flowrate_in']:
+                        flow_in[el] = 0
+                unit_dict['Units_flowrate_in'] = flow_in
+                unit_dict['Units_flowrate_out'] = flow_out
                 units = np.concatenate([units, [unit_dict]])
+
     return units
-
-
-def return_district_units(exclude_units, grids, file):
-
-    unit_district_data = file_reader(file)
-    unit_district_data = unit_district_data.set_index("Unit")
-    BAT = create_unit('Battery_district', 'kWh', 'Battery', ['Electricity'], [], [], ['Electricity'],
-                      ['Electricity'], unit_district_data, None, [], [])
-    EV = create_unit('EV_district', '-', 'EV', ['Electricity'], [], [], ['Electricity'], ['Electricity'], unit_district_data, None, [], [])
-    NG_cogen = create_unit('NG_Cogeneration_district', 'kWe', 'NG_Cogeneration', ['Heat', 'Electricity', 'NaturalGas'],
-                           [], [], ['NaturalGas'], ['Heat', 'Electricity'], unit_district_data, None, [60], [40])
-    BO = create_unit('NG_Boiler_district', 'kWth', 'NG_Boiler', ['NaturalGas', "Heat"], [], [], ['NaturalGas'], ["Heat"], unit_district_data, None, [80], [60])
-    HP_geothermal = create_unit('HeatPump_Geothermal_district', 'kWe', 'HeatPump', ['Heat', 'Electricity'], [],
-                                ['h_ht', 'h_mt', 'h_lt'], ['Electricity'], ['Heat'], unit_district_data, 'HP_parameters.txt', [21, 16, 11], [20, 15, 10])
-    DHN_out = create_unit('DHN_out_district', 'm2', 'DHN_direct_cooling', ['Heat'], [], [], ['Heat'], [], unit_district_data, None, [], [])
-
-    units_considered = [BAT, EV, NG_cogen, BO, HP_geothermal, DHN_out]
-    units = filter_units(grids, units_considered, exclude_units, units_to_keep=[])
-    return units
-
-
-def return_storage_units(file):
-    unit_data = file_reader(file)
-    unit_data = unit_data.set_index("Unit")
-
-    BESS_IP = create_unit('BESS_IP', 'kWh', 'Battery_interperiod', ['Electricity'], [], [], ['Electricity'],
-                          ['Electricity'], unit_data, None, [0], [0])
-    PTES_S_IP = create_unit('PTES_S_IP', 'kWh', 'PTES_storage', [], [], [], [], [], unit_data, None, [0], [0])
-    PTES_C_IP = create_unit('PTES_C_IP', 'kW', 'PTES_conversion', ['Electricity', 'HeatCascade'], ['SH', 'DHW'],
-                            ['h_ht'], ['Electricity'], ['Electricity'], unit_data, None, [0], [0])
-    HC = create_unit('HC', 'kW', 'HeatCurtailment', ['HeatCascade'], ['SH', 'DHW'], ['c_lt'], [], [], unit_data, None, [0], [0])
-    CH4S = create_unit('CH4_storage', 'kWh', 'CH4storage', ['Biogas'], [], [], ['Biogas'], ['Biogas'], unit_data, None, [0], [0])
-    H2S = create_unit('H2S_storage', 'kWh', 'H2storage', [], [], [], [], [], unit_data, None, [0], [0])
-    H2C = create_unit('H2_compression', 'kW', 'H2compression', ['Hydrogen', 'Electricity'], [], [],
-                      ['Hydrogen', 'Electricity'], ['Hydrogen', 'Electricity'], unit_data, None, [0], [0])
-    SOEFC = create_unit('SOEFC', 'kW', 'SOEFC', ['Electricity', 'HeatCascade', 'Hydrogen', 'Biogas'], ['SH'],
-                        ['h_ht'], ['Hydrogen', 'Electricity', 'Biogas'], ['Electricity', 'Hydrogen'], unit_data, None, [0], [0])
-    MTZ = create_unit('MTZ', 'kW', 'Methanizer', ['Biogas', 'HeatCascade', 'Hydrogen'], ['SH'], ['h_ht'],
-                      ['Hydrogen'], ['Biogas'], unit_data, None, [0], [0])
-    FC = create_unit('FC', 'kW', 'FuelCell', ['Electricity', 'Hydrogen', 'HeatCascade'], ['SH'], ['h_ht'],
-                     ['Hydrogen'], ['Electricity'], unit_data, None, [0], [0])
-    ETZ = create_unit('ETZ', 'kW', 'Electrolyzer', ['Electricity', 'Hydrogen', 'HeatCascade'], ['SH'], ['h_ht'],
-                      ['Electricity'], ['Hydrogen'], unit_data, None, [0], [0])
-    HS = create_unit('HS_IP', 'm3', 'WaterTankSH_interperiod', ['HeatCascade'], ['SH'], ['h_lt', 'c_lt'], [], [], unit_data, None, [0, 0], [0, 0])
-    LHS = create_unit('LHS', 'kWh', 'SolidLiquidLHS', ['HeatCascade'], ['SH'], ['h_ht', 'c_ht'], [], [], unit_data, None, [0, 0], [0, 0])
-
-    #return [BESS_IP, PTES_S_IP, PTES_C_IP, HC, CH4S, H2S, H2C, SOEFC, MTZ, FC, ETZ, HS, LHS] not working
-    return [HC, CH4S, MTZ, ETZ, HS, LHS]
 
 
 def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
@@ -502,23 +455,24 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     """
 
     default_units_to_exclude = ["DataHeat_DHW", "OIL_Boiler", "Air_Conditioner", "DHN_hex"]
+    units_to_exclude_except_enforced = ['HeatPump_Anergy', 'DataHeat_SH', 'HeatPump_Lake']
     if scenario is None:
-        exclude_units = default_units_to_exclude
+        exclude_units = default_units_to_exclude + units_to_exclude_except_enforced
     elif "exclude_units" not in scenario:
-        exclude_units = default_units_to_exclude
+        exclude_units = default_units_to_exclude + units_to_exclude_except_enforced
     else:
-        exclude_units = scenario["exclude_units"]
+        exclude_units = scenario["exclude_units"] + units_to_exclude_except_enforced
 
-    building_units = return_building_units(exclude_units, grids, file=building_data)
+    building_units = prepare_units_array(building_data, exclude_units, grids)
 
     if storage_data is True:
-        building_units = np.concatenate([building_units, return_storage_units(file=os.path.join(path_to_infrastructure, "storage_units.csv"))])
+        building_units = np.concatenate([building_units, prepare_units_array(os.path.join(path_to_infrastructure, "storage_units.csv"))])
     elif storage_data:
-        building_units = np.concatenate([building_units, return_storage_units(file=storage_data)])
+        building_units = np.concatenate([building_units, prepare_units_array(storage_data)])
     if district_data is True:
-        district_units = return_district_units(exclude_units, grids, file=os.path.join(path_to_infrastructure, "district_units.csv"))
+        district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids)
     elif district_data:
-        district_units = return_district_units(exclude_units, grids, file=district_data)
+        district_units = prepare_units_array(district_data, exclude_units, grids)
     else:
         district_units = []
 

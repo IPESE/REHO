@@ -1,3 +1,4 @@
+import math
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,7 +7,35 @@ import datetime as dt
 from reho.paths import *
 from reho.model.preprocessing.clustering import ClusterClass
 
+__doc__ = """
+*Generates the meteorological data (temperature and solar irradiance).*
+"""
+
 def get_cluster_file_ID(cluster):
+    """
+    Gets the weather file ID that corresponds to what was given in the reho initalization:
+    ``cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}``
+
+    Looks at data/weather/clustering results.
+    If that file does not exist yet, run the ClusterClass to create the required file.
+
+    Parameters
+    ----------
+    cluster : dict
+        Dictionary that contains a 'Location' (str), some 'Attributes' (list, among 'I', 'T', 'W'), a number of periods
+        'Periods' (int) and a 'PeriodDuration' (int)
+
+    Returns
+    -------
+    A string that is the file ID
+
+    Notes
+    -----
+    - The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
+    - The weather file is search using the Location
+    - If one wants to use his own meteo file, he can add to the cluster dictionary a key ``weather_file`` with the path
+      to the meteo. Should be a *.dat* with the same structure as the other weather_file.
+    """
     # get correct file ID for weather file
     attributes = []
 
@@ -33,66 +62,102 @@ def get_cluster_file_ID(cluster):
     File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + \
               T + I + W + E
 
-    if not os.path.exists(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')):
-
-        df = read_hourly_dat(cluster['Location'])
+    among_cl_results = os.path.exists(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'))
+    if not among_cl_results or 'weather_file' in cluster.keys():
+        if 'weather_file' in cluster.keys():
+            df = read_hourly_dat(cluster['weather_file'])
+        else:
+            df = read_hourly_dat(cluster['Location'])
         df = df[attributes]
-
         cl = ClusterClass(data=df, Iter=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
         cl.run_clustering()
 
-        generate_output_data(cl, attributes)
-        write_dat_files(attributes, cluster['Location'])
+        generate_output_data(cl, attributes, cluster['Location'])
 
     return File_ID
 
 
 def read_hourly_dat(location):
 
-    df1 = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
-    df1 = pd.DataFrame(df1).transpose()
-    df1 = df1.drop([5,6,7,8], axis=1)
-    df1.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']
-    df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday.txt'), index_col=[0], header=None)
-    df1['Weekday'] = df2
+    if location.endswith('.dat'):
+        df = np.loadtxt(path_handler(location), unpack=True, skiprows=1)
+    else:
+        df = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
+    df = pd.DataFrame(df).transpose()
+    df = df.drop([5,6,7,8], axis=1)
+    df.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']
+    df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday_2005.txt'), index_col=[0], header=None)
+    df['Weekday'] = df2
 
-    return df1
+    return df
 
 
-def generate_output_data(cl, attributes):
-    # - saving
+def generate_output_data(cl, attributes, location):
+    """
+    Generates the data for the cluster timesteps obtained from the ClusterClass.
 
+    Calls for *write_dat_files* to generate the saves.
+
+    Parameters
+    ----------
+    cl : ClusterClass
+        A ClusterClass object where the run_clustering method has already been executed.
+    attributes : list
+        Contains string among 'Irr', 'Text', 'Weekday'.
+    location : str
+        Location of the corresponding weather data.
+
+    Notes
+    ------
+    .. caution::
+
+        The extreme temperatures and irradiance are estimated by adding 10% to the extreme found in the yearly weather data.
+
+    See also
+    --------
+    reho.model.preprocessing.clustering.ClusterClass.run_clustering
+    write_dat_files
+    """
+    
     data_idx = cl.results["idx"]
-    # data_prf = cl.kpis_clu.stack("dimension")
-    # data_prf.to_csv(os.path.join(root_dir, "database", "climates", self.filename, "clustering_kpi.csv"), index=True)
-
     # - construct : cluster data
     frame = []
     cl.nbr_opt = str(cl.nbr_opt)
-    for id in data_idx.loc[:, cl.nbr_opt].unique():  # get unique typical periods from index vector
-        id = int(id)
+    for idx in data_idx.loc[:, cl.nbr_opt].unique():  # get unique typical periods from index vector
+        idx = int(idx)
         df = pd.DataFrame(
-            np.reshape(cl.attr_org[id - 1, :], (-1, int(cl.attr_org.shape[1] / len(attributes)))).transpose(),
+            np.reshape(cl.attr_org[idx - 1, :], (-1, int(cl.attr_org.shape[1] / len(attributes)))).transpose(),
             columns=attributes)  # put the attributes into columns of a df
-        df["dt"] = sum(data_idx.loc[:, cl.nbr_opt] == id)  # Frequency
+        df["dt"] = sum(data_idx.loc[:, cl.nbr_opt] == idx)  # Frequency
         df["time.hh"] = np.arange(1, df.shape[0] + 1, 1)  # timesteps in typical period
-        df["time.dd"] = id  # typical period index
+        df["time.dd"] = idx  # typical period index
         frame.append(df.reindex(["time.dd", "time.hh"] + attributes + ["dt"], axis=1))
 
     data_cls = pd.concat(frame, axis=0)
     data_cls_mod = pd.DataFrame()
-    if cl.modulo != 0:
+    if cl.modulo != 0:  # Not clear what is this
         df_mod = pd.DataFrame.from_dict(dict(zip(cl.data_org.columns, cl.mod_org)))
         max_time_dd = len(cl.attr_org)
         df_mod['time.dd'] = np.repeat(max_time_dd + 1, cl.modulo)
         df_mod['dt'] = np.repeat(1, cl.modulo)
         df_mod['time.hh'] = np.arange(1, cl.modulo + 1)
         data_cls_mod = df_mod
-    data_cls = data_cls.append(data_cls_mod, ignore_index=True)
-    temp_results_path = os.path.join(path_to_clustering_results, 'temp')
-    if not os.path.exists(temp_results_path):
-        os.makedirs(temp_results_path)
-    data_cls.to_csv(os.path.join(temp_results_path, 'values-cluster.csv'), index=False)
+    data_cls = pd.concat([data_cls, data_cls_mod], ignore_index=True)
+
+    # Determine the day of the max and min temperature
+    T_idx = [cl.data_org[cl.data_org['Text'] == cl.data_org['Text'].min()].index[0],
+             cl.data_org[cl.data_org['Text'] == cl.data_org['Text'].max()].index[0]]
+    T_day = [math.floor(T_idx[0] / 24), math.floor(T_idx[1] / 24)]
+    T_min = cl.data_org.iloc[[T_idx[0]]].copy()
+    # Get the max/min irradiance from the same day
+    T_max = cl.data_org.iloc[[T_idx[1]]].copy()
+    T_max['Irr'] = cl.data_org.loc[T_day[1] * 24: T_day[1] * 24 + 24, 'Irr'].max()
+    T_min.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[0], 1, 1]
+    T_max.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[1], 1, 1]
+    data_cls = pd.concat([data_cls, T_min.rename({T_idx[0]: 240}), T_max.rename({T_idx[1]: 241})])
+    # Add a 10% margin for the extreme over 20 years
+    data_cls.loc[[240, 241], ['Text', 'Irr']] = data_cls.loc[[240, 241], ['Text', 'Irr']] * 1.1
+   
     # - construct : model data
     # - ** inter-period
     data_idy = pd.DataFrame(
@@ -100,35 +165,53 @@ def generate_output_data(cl, attributes):
                  axis=1), columns=["IndexYr", "inter_t"])
     if cl.modulo != 0:
         max_time_dd = len(cl.attr_org)
-        data_idy = data_idy.append(pd.DataFrame([[max_time_dd + 1, max_time_dd + 1]], columns=data_idy.columns),
-                                   ignore_index=True)
-    data_idy.to_csv(os.path.join(path_to_clustering_results, 'temp/index-inter.csv'), index=False)
+        data_idy = pd.concat([data_idy, pd.DataFrame([[max_time_dd + 1, max_time_dd + 1]], columns=data_idy.columns)],
+                             ignore_index=True)
+
     # - ** intra-period
     data_idp = pd.DataFrame(
         np.stack((np.arange(1, data_cls.shape[0] + 1, 1), np.arange(1, data_cls.shape[0] + 1, 1)), axis=1),
         columns=["IndexDy", "intra_t"])
     data_idp["intra_end"] = [id + cl.pd if (id % cl.pd) == 0 else 0 for id in data_idp.index]
-    data_idp.to_csv(os.path.join(path_to_clustering_results, 'temp/index-intra.csv'), index=False)
-    # - ** costs-period
-    # cols = pd.MultiIndex.from_product([["Cost_supply_cst_r", "Cost_demand_cst_r"], self.grids], names=["Layer", "param"])
-    # rows = pd.MultiIndex.from_arrays([data_cls.loc[:, "time.dd"].values, data_cls.loc[:, "time.hh"].values],
-    #                                 names=["day", "hour"])
-    # data_cts = pd.DataFrame(np.tile([0.24, 0.12, 0.08, 0, 0.08, 0], (data_cls.shape[0], 1)), columns=cols, index=rows)
-    # data_cts.to_csv(os.path.join(root_dir, "database", "climates", self.filename, "values-costs.csv"), index=True)
+    
+    # Call for the write_dat_files function
+    write_dat_files(attributes, location, data_cls, data_idy)
+    
+    return print(f'The data have been computed and saved in {path_to_clustering}.')
 
 
-def write_dat_files(attributes, location):
+def write_dat_files(attributes, location, values_cluster, index_inter):
+    """
+    Writes the clustering results computed from `generate_output_data` as .dat file
 
-    df = pd.read_csv(os.path.join(path_to_clustering_results, 'temp/values-cluster.csv'))
+    Parameters
+    ----------
+    attributes : list
+        List that contains string among 'Irr', 'Text', 'Weekday'.
+        If 'Irr' is in the list, writes a file named 'GHI' + '_File_ID.dat'
+        If 'Text' is in the list, writes a file named 'T' + '_File_ID.dat'
+    location : str
+        Location of the corresponding weather data.
+    values_cluster : pd.DataFrame
+        Produced by the *generate_output_data* function.
+    index_inter : pd.DataFrame
+        Produced by the *generate_output_data* function.
 
-    df_dd = df['time.dd'].unique()  # id of typical period
+    Notes
+    -----
+    - Not depending on the attributes, time dependent files are generated, namely 'frequency' + '_File_ID.dat',
+      'index' + '_File_ID.dat' and 'timestamp' + '_File_ID.dat'.
+
+    """
+
+    df_dd = values_cluster['time.dd'].unique()  # id of typical period
 
     dp = np.array([])  # duration of period e.g. frequency
     pt = np.array([])  # period duration / number of timesteps in period
 
     for dd in df_dd:
-        p = df.loc[df['time.dd'] == dd, 'dt'].unique()
-        t = len(df.loc[df['time.dd'] == dd, 'dt'])
+        p = values_cluster.loc[values_cluster['time.dd'] == dd, 'dt'].unique()
+        t = len(values_cluster.loc[values_cluster['time.dd'] == dd, 'dt'])
 
         dp = np.append(dp, p)
         pt = np.append(pt, t)
@@ -136,8 +219,6 @@ def write_dat_files(attributes, location):
     # -------------------------------------------------------------------------------------
     # attributes for saving
     # -------------------------------------------------------------------------------------
-    nop = len(df_dd)  # number of periods
-    max_pt = int(max(pt))  # maximum period duration
     if 'Text' in attributes:
         T = '_T'
     else:
@@ -151,136 +232,109 @@ def write_dat_files(attributes, location):
     else:
         W = ''
     if 'Emissions' in attributes:
-        E ='_E'
+        E = '_E'
     else:
         E = ''
-    File_ID = location + '_' + str(nop) + '_' + str(max_pt)  + T  + I +  W  + E
+    File_ID = location + '_' + str(len(df_dd) - 2) + '_' + str(int(max(pt))) + T + I + W + E
+
+    if not os.path.isdir(path_to_clustering):
+        os.makedirs(path_to_clustering)
 
     # -------------------------------------------------------------------------------------
     # T
     # -------------------------------------------------------------------------------------
-    data = pd.Series([-5, 35])
-    df_T = df['Text']
-    df_T = df_T.append(data, ignore_index=True)
-
-    filename = os.path.join(path_to_clustering_results, 'T_' + File_ID + '.dat')
-
+    df_T = values_cluster['Text']
+    filename = os.path.join(path_to_clustering, 'T_' + File_ID + '.dat')
     df_T.to_csv(filename, index=False, header=False)
-
-    print(filename + ' generated and saved')
 
     # -------------------------------------------------------------------------------------
     # GHI
     # -------------------------------------------------------------------------------------
-    df_GHI = df['Irr']
-    data = pd.Series([0, df_GHI.max()])
-    df_GHI = df_GHI.append(data, ignore_index=True)
-
-    filename = os.path.join(path_to_clustering_results, 'GHI_' + File_ID + '.dat')
+    df_GHI = values_cluster['Irr']
+    filename = os.path.join(path_to_clustering, 'GHI_' + File_ID + '.dat')
     df_GHI.to_csv(filename, index=False, header=False)
-    print(filename + ' generated and saved')
 
     # -------------------------------------------------------------------------------------
     # frequency
+    # -------------------------------------------------------------------------------------
+    if 'Weekday' in attributes:
+        Weekday = np.array([])
+        for dd in df_dd:
+            w = values_cluster.loc[values_cluster['time.dd'] == dd, 'Weekday'].unique()
+            Weekday = np.append(Weekday, w)
+
+    filename = os.path.join(path_to_clustering, 'frequency_' + File_ID + '.dat')
+
+    IterationFile = open(filename, 'w')
+
+    IterationFile.write('\nset Period := ')
+    for p in range(1, len(dp) + 1):  # +1 bc ampl starts at 0, +2 for extreme periods
+        IterationFile.write('\n' + str(p))
+    IterationFile.write('\n;')
+
+    IterationFile.write('\nset PeriodStandard := ')
+    for p in range(1, len(dp) - 1):  # +1 bc ampl starts at 0, -2 to exclude extreme periods
+        IterationFile.write('\n' + str(p))
+    IterationFile.write('\n;')
+
+    IterationFile.write('\nparam: dp := ')
+    for p, d in enumerate(dp):
+        IterationFile.write('\n' + str(p + 1) + ' ' + str(d))
+    IterationFile.write('\n;')
+
+    IterationFile.write('\nparam: TimeEnd := ')
+    for p, d in enumerate(pt):
+        IterationFile.write('\n' + str(p + 1) + ' ' + str(d))
+    IterationFile.write('\n;')
+    IterationFile.close()
+
+    # -------------------------------------------------------------------------------------
+    # index
     # -------------------------------------------------------------------------------------
     df_time = pd.DataFrame()
     df_time['originalday'] = df_dd
     df_time['frequency'] = dp
     df_time['timesteps'] = pt
-
-    if 'Weekday' in attributes:
-        Weekday = np.array([])
-        for dd in df_dd:
-            w = df.loc[df['time.dd'] == dd, 'Weekday'].unique()
-            Weekday = np.append(Weekday, w)
-
-    filename = os.path.join(path_to_clustering_results, 'frequency_' + File_ID + '.dat')
-
-    IterationFile = open(filename, 'w')
-
-    IterationFile.write('\nset Period := ')
-    for p in range(1, len(dp) + 3):  # +1 bc ampl starts at 0, +2 for extreme periods
-        IterationFile.write('\n' + str(p))
-    IterationFile.write('\n;')
-    IterationFile.write('\nset PeriodStandard := ')
-
-    for p in range(1, len(dp) + 1):  # +1 bc ampl starts at 0
-        IterationFile.write('\n' + str(p))
-    IterationFile.write('\n;')
-
-    IterationFile.write('\nparam: dp := ')
-
-    for p, d in enumerate(dp):
-        IterationFile.write('\n' + str(p + 1) + ' ' + str(d))
-
-    IterationFile.write('\n' + str(len(dp) + 1) + ' ' + str(1))  # extreme periods
-    IterationFile.write('\n' + str(len(dp) + 2) + ' ' + str(1))
-    IterationFile.write('\n;')
-
-    IterationFile.write('\nparam: TimeEnd := ')
-
-    for p, d in enumerate(pt):
-        IterationFile.write('\n' + str(p + 1) + ' ' + str(d))
-
-    IterationFile.write('\n' + str(len(pt) + 1) + ' ' + str(1))  # extreme periods
-    IterationFile.write('\n' + str(len(pt) + 2) + ' ' + str(1))
-    IterationFile.write('\n;')
-
-    IterationFile.close()
-    print(filename + ' generated and saved')
-
-    # -------------------------------------------------------------------------------------
-    # index
-    # -------------------------------------------------------------------------------------
-    df = pd.read_csv(os.path.join(path_to_clustering_results, 'temp/index-inter.csv'))
-    dict = {}
-    for i, dd in enumerate(df_dd): dict[dd] = i + 1
-    df['index_r'] = df.inter_t.map(dict)
-    df_time['index_r'] = df['index_r'].unique()
-    df_time = df_time.set_index('index_r', drop=True)
+    dict_index = {}
+    for i, dd in enumerate(df_dd): dict_index[dd] = i + 1
+    index_inter['index_r'] = index_inter.inter_t.map(dict_index)
+    df_time.index = df_time.index + 1
 
     df_aim = pd.DataFrame()
-
-    for d in df['index_r']:
+    for d in index_inter['index_r']:
         nt = int(df_time['timesteps'].xs(d))  # number of timesteps
-
         df_d = pd.DataFrame([np.repeat(d, nt), np.array(range(1, (nt + 1)))])
-        df_aim = df_aim.append(df_d.transpose(), ignore_index=True)
+        df_aim = pd.concat([df_aim, df_d.transpose()], ignore_index=True)
 
     df_aim.index = df_aim.index + 1
 
-    filename = os.path.join(path_to_clustering_results, 'index_' + File_ID + '.dat')
-
+    filename = os.path.join(path_to_clustering, 'index_' + File_ID + '.dat')
     IterationFile = open(filename, 'w')
     IterationFile.write('param : PeriodOfYear TimeOfYear := \n')
     IterationFile.write(df_aim.to_string(header=False))
-
     IterationFile.write('\n;')
-
-    print(filename + ' generated and saved')
     IterationFile.close()
 
     # -------------------------------------------------------------------------------------
     # Time stamp
     # -------------------------------------------------------------------------------------
-    filename = os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat')
+    filename = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
     IterationFile = open(filename, 'w')
     header = 'Date\tDay\tFrequency\tWeekday\n'
-    print(header)
     IterationFile.write(header)
-    for key in dict:
+    for key in dict_index:
         pt = df_time.iloc[0].timesteps  # take the same period duration also for modulo
         date = dt.datetime(2005, 1, 1) + dt.timedelta(hours=float((key - 1) * pt))
 
         if 'Weekday' in attributes:
-            text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict[key] - 1]) + '\t' + str(
-                Weekday[dict[key] - 1])
+            text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict_index[key] - 1]) + '\t' + str(
+                Weekday[dict_index[key] - 1])
         else:
-            text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict[key] - 1])
+            text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict_index[key] - 1])
         IterationFile.write(text + '\n')
-        print(text)
-    print(filename + ' generated and saved')
     IterationFile.close()
+
+    return
 
 
 def plot_cluster_KPI_separate(df, save_fig):
@@ -307,8 +361,8 @@ def plot_cluster_KPI_separate(df, save_fig):
     # plt.ylim([0,0.40])
     if save_fig:
         plt.tight_layout()
-        format = 'pdf'
-        plt.savefig(('Cluster_KPIs' + '.' + format), format=format, dpi=300)
+        export_format = 'pdf'
+        plt.savefig(('Cluster_KPIs' + '.' + export_format), format=export_format, dpi=300)
     else:
         plt.show()
 
@@ -324,8 +378,8 @@ def plot_cluster_KPI_separate(df, save_fig):
     # plt.ylim([0,0.40])
     if save_fig:
         plt.tight_layout()
-        format = 'pdf'
-        plt.savefig(('MAE_KPIs' + '.' + format), format=format, dpi=300)
+        export_format = 'pdf'
+        plt.savefig(('MAE_KPIs' + '.' + export_format), format=export_format, dpi=300)
     else:
         plt.show()
 
@@ -341,8 +395,8 @@ def plot_cluster_KPI_separate(df, save_fig):
     # plt.ylim([0,0.40])
     if save_fig:
         plt.tight_layout()
-        format = 'pdf'
-        plt.savefig(('MAPE_KPIs' + '.' + format), format=format, dpi=300)
+        export_format = 'pdf'
+        plt.savefig(('MAPE_KPIs' + '.' + export_format), format=export_format, dpi=300)
     else:
         plt.show()
 
@@ -468,5 +522,4 @@ if __name__ == '__main__':
 
     plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)
     plot_LDC(cl, Location, save_fig=False)
-    generate_output_data(cl, Attributes)
-    write_dat_files(Attributes, Location)
+    generate_output_data(cl, Attributes, Location)

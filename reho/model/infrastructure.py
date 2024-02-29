@@ -1,10 +1,23 @@
+import os.path
+
 import numpy as np
 import pandas as pd
 from reho.paths import *
 
 
 class infrastructure:
+    """
+    This class characterizes all the sets and parameters which are connected to buildings, units and grids.
 
+    Parameters
+    ----------
+    qbuildings_data : dict
+        Buildings characterization
+    units : dict
+        Units characterization
+    grids : dict
+        Grids characterization
+    """
     def __init__(self, qbuildings_data, units, grids):
 
         self.units = units["building_units"]
@@ -74,6 +87,11 @@ class infrastructure:
     
 
     def generate_structure(self):
+        """
+        The indexes h_ht, h_mt, h_lt, c_ht state for the discretization of the streams. They are connected to the heat cascade.
+        h_ht: hotstream_hightemperature. h_mt: hotstream_mediumtemperature. h_lt: hotstream_lowtemperature. c_ht: coldstream_hightemperature
+        :return:
+        """
 
         for h in self.House:
             # Units------------------------------------------------------------
@@ -115,7 +133,7 @@ class infrastructure:
                 stream = u['name'] + '_' + s
                 self.StreamsOfUnit[name] = np.append(self.StreamsOfUnit[name], stream)
 
-        lca_kpi_list = np.array(pd.read_csv(os.path.join(path_to_parameters, "building_units.csv")).columns)
+        lca_kpi_list = np.array(pd.read_csv(os.path.join(path_to_infrastructure, "building_units.csv")).columns)
         lca_kpi_list = [key for key in lca_kpi_list if "_1" in key]
         self.lca_kpis = np.array([key.replace("_1", "") for key in lca_kpi_list])
         self.__generate_set_dict()  # generate dictionary containing all sets for AMPL
@@ -185,7 +203,7 @@ class infrastructure:
         self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
         # Grids------------------------------------------------------------
-        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst']
+        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection']
         lca_impact_demand = [key + "_demand_cst" for key in self.lca_kpis]
         lca_impact_supply = [key + "_supply_cst" for key in self.lca_kpis]
         for g in self.grids:
@@ -213,7 +231,7 @@ class infrastructure:
             for u in self.houses[h]['units']:
                 if u['HP_parameters'] is not None:
                     complete_name = u['name'] + '_' + h
-                    file = os.path.join(path_to_parameters, u['HP_parameters'])
+                    file = os.path.join(path_to_infrastructure, u['HP_parameters'])
                     if u['UnitOfType'] == 'Air_Conditioner' or u['UnitOfType'] == 'HeatPump':
                         df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
                         df = pd.concat([df], keys=[complete_name])
@@ -324,9 +342,10 @@ def create_unit(name, ref_unit, UnitOfType, UnitOfLayer, UnitOfService, StreamsO
 
     return unit
 
+
 def return_building_units(exclude_units, grids, file):
 
-    unit_data = pd.read_csv(os.path.join(path_to_parameters, file))
+    unit_data = file_reader(file)
     unit_data = unit_data.set_index("Unit")
 
     BO = create_unit('NG_Boiler', 'kWth', 'NG_Boiler', ['NaturalGas', 'HeatCascade'], ['DHW', 'SH'], ['h_ht'],
@@ -393,8 +412,10 @@ def filter_units(grids, units_considered, exclude_units, units_to_keep):
                 units = np.concatenate([units, [unit_dict]])
     return units
 
+
 def return_district_units(exclude_units, grids, file):
-    unit_district_data = pd.read_csv(os.path.join(path_to_parameters, file))
+
+    unit_district_data = file_reader(file)
     unit_district_data = unit_district_data.set_index("Unit")
     BAT = create_unit('Battery_district', 'kWh', 'Battery', ['Electricity'], [], [], ['Electricity'],
                       ['Electricity'], unit_district_data, None, [], [])
@@ -410,8 +431,9 @@ def return_district_units(exclude_units, grids, file):
     units = filter_units(grids, units_considered, exclude_units, units_to_keep=[])
     return units
 
+
 def return_storage_units(file):
-    unit_data = pd.read_csv(os.path.join(path_to_parameters, file))
+    unit_data = file_reader(file)
     unit_data = unit_data.set_index("Unit")
 
     BESS_IP = create_unit('BESS_IP', 'kWh', 'Battery_interperiod', ['Electricity'], [], [], ['Electricity'],
@@ -439,7 +461,46 @@ def return_storage_units(file):
     return [HC, CH4S, MTZ, ETZ, HS, LHS]
 
 
-def initialize_units(scenario, grids=None, building_data="building_units.csv", district_data="district_units.csv", district_units=False, storage_units=False):
+def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
+                     district_data=None, storage_data=None):
+    """
+    Initialize the available units for the energy system.
+
+    Parameters
+    ----------
+    scenario : dict or None
+        A dictionary containing information about the scenario.
+    grids : dict or None, optional
+        Information about the energy layers considered. If None, ``['Electricity', 'NaturalGas', 'Oil', 'Wood', 'Data', 'Heat']``.
+    building_data : str, optional
+        Path to the CSV file containing building unit data. Default is 'building_units.csv'.
+    district_data : str or bool or None, optional
+        Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
+        If None, district units won't be considered. Default is None.
+    storage_data :  str or bool or None, optional
+        Path to the CSV file containing storage unit data. If True, storage units are initialized with 'storage_units.csv'.
+        If None, storage units won't be considered. Default is None.
+
+    Returns
+    -------
+    dict
+        A dictionary containing building_units and district_units.
+
+    See also
+    --------
+    initialize_grids
+
+    Notes
+    -----
+    - The default files are located at *reho/data/parameters*.
+    - The custom files can be given as absolute or relative path
+
+    Examples
+    --------
+    >>> units = infrastructure.initialize_units(scenario, grids, building_data="custom_building_units.csv",
+    ...                                         district_data="custom_district_units.csv", storage_data=True)
+    """
+
     default_units_to_exclude = ["DataHeat_DHW", "OIL_Boiler", "Air_Conditioner", "DHN_hex"]
     if scenario is None:
         exclude_units = default_units_to_exclude
@@ -450,10 +511,13 @@ def initialize_units(scenario, grids=None, building_data="building_units.csv", d
 
     building_units = return_building_units(exclude_units, grids, file=building_data)
 
-    if storage_units:
-        building_units = np.concatenate([building_units, return_storage_units(file="storage_units.csv")])
-
-    if district_units:
+    if storage_data is True:
+        building_units = np.concatenate([building_units, return_storage_units(file=os.path.join(path_to_infrastructure, "storage_units.csv"))])
+    elif storage_data:
+        building_units = np.concatenate([building_units, return_storage_units(file=storage_data)])
+    if district_data is True:
+        district_units = return_district_units(exclude_units, grids, file=os.path.join(path_to_infrastructure, "district_units.csv"))
+    elif district_data:
         district_units = return_district_units(exclude_units, grids, file=district_data)
     else:
         district_units = []
@@ -461,6 +525,7 @@ def initialize_units(scenario, grids=None, building_data="building_units.csv", d
     units = {"building_units": building_units, "district_units": district_units}
 
     return units
+
 
 def create_grid(name, Grids_flowrate_out, Grids_flowrate_in, grid_data):
     grid = {'name': name, 'Grids_flowrate_out': 1e6*Grids_flowrate_out, 'Grids_flowrate_in': 1e6*Grids_flowrate_in}
@@ -470,9 +535,43 @@ def create_grid(name, Grids_flowrate_out, Grids_flowrate_in, grid_data):
 
     return grid
 
-def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}}, file="grids.csv"):
 
-    grid_data = pd.read_csv(os.path.join(path_to_parameters, file))
+def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
+                     file=os.path.join(path_to_infrastructure, "grids.csv")):
+    """
+    Initialize grid information for the energy system.
+
+    Parameters
+    ----------
+    available_grids : dict, optional
+        A dictionary specifying the available grids and their parameters. The keys represent grid names,
+        and the values are dictionaries containing optional parameters ['Cost_demand_cst',
+        'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst'].
+    file : str, optional
+        Path to the CSV file containing grid data. Default is 'grids.csv' in the parameters folder.
+
+    Returns
+    -------
+    dict
+        A dictionary containing information about the initialized grids.
+
+    See also
+    --------
+    initialize_units
+
+    Notes
+    -----
+    - If one wants to use its one custom grid file, he should pay attention that the name of the layer and
+      the parameters correspond.
+    - Adding a layer in a custom file will not add it to the model as it is not modelized.
+
+    Examples
+    --------
+    >>> available_grids = {'Electricity': {'Cost_demand_cst': 0.1, 'GWP_supply_cst': 0.05}, 'NaturalGas': {'Cost_supply_cst': 0.15}}
+    >>> grids = initialize_grids(available_grids, file="custom_grids.csv")
+    """
+
+    grid_data = file_reader(file)
     grid_data = grid_data.set_index("Grid")
 
     # list of all grids implemented in the model
@@ -499,5 +598,7 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}}, file
             grids[name]['GWP_demand_cst'] = parameters['GWP_demand_cst']
         if 'GWP_supply_cst' in parameters:
             grids[name]['GWP_supply_cst'] = parameters['GWP_supply_cst']
+        if 'Cost_connection' in parameters:
+            grids[name]['Cost_connection'] = parameters['Cost_connection']
 
     return grids

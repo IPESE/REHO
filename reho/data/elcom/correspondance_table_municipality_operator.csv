@@ -1,0 +1,3464 @@
+,id_city,commune,id_operator,operator
+0,33,Kleinandelfingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+1,114,Fischenthal,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+2,35,Marthalen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+3,142,Wädenswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+4,116,Grüningen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+5,140,Schönenberg (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+6,251,Weiningen (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+7,224,Pfungen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+8,58,Glattfelden,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+9,200,Wangen-Brüttisellen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+10,179,Sternenberg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+11,171,Bauma,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+12,133,Horgen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+13,246,Oetwil an der Limmat,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+14,249,Unterengstringen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+15,132,Hirzel,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+16,51,Bachenbülach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+17,134,Hütten,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+18,95,Regensberg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+19,241,Aesch (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+20,7,Knonau,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+21,117,Hinwil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+22,84,Dällikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+23,296,Illnau-Effretikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+24,9,Mettmenstetten,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+25,219,Elsau,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+26,250,Urdorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+27,57,Freienstein-Teufen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+28,295,Horgen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+29,294,Elgg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+30,23,Berg am Irchel,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+31,293,Wädenswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+32,292,Stammheim,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+33,11,Ottenbach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+34,62,Kloten,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+35,1,Aeugst am Albis,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+36,227,Seuzach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+37,298,Wiesendangen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+38,2937,Neuhausen am Rheinfall,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+39,217,Elgg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+40,222,Hofstetten (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+41,92,Oberglatt,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+42,67,Rafz,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+43,225,Rickenbach (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+44,100,Stadel,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+45,28,Flaach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+46,213,Brütten,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+47,216,Dinhard,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+48,40,Trüllikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+49,101,Steinmaur,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+50,66,Opfikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+51,174,Illnau-Effretikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+52,157,Oetwil am See,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+53,175,Kyburg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+54,56,Embrach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+55,214,Dägerlen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+56,245,Oberengstringen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+57,231,Zell (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+58,98,Schleinikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+59,55,Eglisau,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+60,34,Laufen-Uhwiesen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+61,69,Wallisellen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+62,64,Nürensdorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+63,53,Bülach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+64,94,Otelfingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+65,41,Truttikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+66,1705,Neuheim,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+67,172,Fehraltorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+68,248,Uitikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+69,12,Rifferswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+70,223,Neftenbach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+71,63,Lufingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+72,72,Winkel,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+73,65,Oberembrach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+74,131,Adliswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+75,178,Russikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+76,68,Rorbas,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+77,197,Schwerzenbach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+78,136,Langnau am Albis,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+79,194,Greifensee,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+80,4601,Neunforn,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+81,195,Maur,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+82,88,Neerach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+83,218,Ellikon an der Thur,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+84,60,Höri,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+85,173,Hittnau,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+86,71,Wil (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+87,182,Wildberg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+88,4551,Aadorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+89,6,Kappel am Albis,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+90,4,Hausen am Albis,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+91,14,Wettswil am Albis,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+92,85,Dänikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+93,26,Dorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+94,93,Oberweningen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+95,115,Gossau (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+96,52,Bassersdorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+97,112,Bubikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+98,242,Birmensdorf (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+99,27,Feuerthalen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+100,54,Dietlikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+101,215,Dättlikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+102,10,Obfelden,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+103,192,Egg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+104,21,Adlikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+105,153,Hombrechtikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+106,70,Wasterkingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+107,8,Maschwanden,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+108,25,Dachsen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+109,37,Ossingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+110,89,Niederglatt,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+111,82,Boppelsen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+112,29,Flurlingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+113,3,Bonstetten,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+114,141,Thalwil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+115,193,Fällanden,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+116,2,Affoltern am Albis,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+117,97,Rümlang,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+118,83,Buchs (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+119,221,Hettlingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+120,177,Pfäffikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+121,199,Volketswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+122,198,Uster,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+123,102,Weiach,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+124,297,Bauma,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+125,159,Uetikon am See,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+126,24,Buch am Irchel,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+127,111,Bäretswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+128,1323,Wollerau,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+129,1704,Menzingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+130,99,Schöfflisdorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+131,32,Humlikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+132,155,Männedorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+133,90,Niederhasli,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+134,119,Seegräben,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+135,87,Hüttikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+136,5,Hedingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+137,113,Dürnten,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+138,91,Niederweningen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+139,38,Rheinau,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+140,138,Richterswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+141,1701,Baar,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+142,226,Schlatt (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+143,220,Hagenbuch,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+144,228,Turbenthal,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+145,13,Stallikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+146,36,Oberstammheim,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+147,42,Unterstammheim,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+148,44,Waltalingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+149,39,Thalheim an der Thur,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+150,86,Dielsdorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+151,291,Andelfingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+152,137,Oberrieden,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+153,81,Bachs,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+154,31,Henggart,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+155,196,Mönchaltorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+156,1301,Einsiedeln,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+157,61,Hüntwangen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+158,229,Wiesendangen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+159,212,Bertschikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+160,243,Dietikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+161,176,Lindau,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+162,4726,Fischingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+163,230,Winterthur,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+164,247,Schlieren,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+165,135,Kilchberg (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+166,139,Rüschlikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+167,244,Geroldswil,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+168,96,Regensdorf,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+169,43,Volken,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+170,154,Küsnacht (ZH),486,Elektrizitätswerke des Kantons Zürich (EKZ)
+171,181,Wila,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+172,180,Weisslingen,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+173,59,Hochfelden,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+174,160,Zumikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+175,211,Altikon,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+176,1321,Feusisberg,486,Elektrizitätswerke des Kantons Zürich (EKZ)
+177,22,Benken (ZH),290,"Politische Gemeinde Benken ZH, Elektrizitätsversorgung"
+178,30,,367,"Gemeinde Andelfingen, Stromversorgung"
+179,291,Andelfingen,367,"Gemeinde Andelfingen, Stromversorgung"
+180,35,Marthalen,285,Elektrizitätsgenossenschaft Marthalen
+181,38,Rheinau,336,Elektrizitätsversorgung Rheinau
+182,54,Dietlikon,587,"Politische Gemeinde Dietlikon, Gemeindewerke"
+183,56,Embrach,429,Elektrizitätswerk Embrach
+184,58,Glattfelden,634,Genossenschaft Licht- und Kraftwerke Glattfelden
+185,62,Kloten,621,Industrielle Betriebe Kloten AG
+186,63,Lufingen,226,Elektrizitäts - Genossenschaft Lufingen
+187,66,Opfikon,508,Energie Opfikon AG
+188,69,Wallisellen,59,die werke versorgung wallisellen ag
+189,92,Oberglatt,655,"Politische Gemeinde Oberglatt ZH, Elektrizitätsversorgung"
+190,94,Otelfingen,268,Elektrizitätsgenossenschaft Otelfingen
+191,97,Rümlang,460,Elektrizitätswerk Rümlang Genossenschaft
+192,102,Weiach,245,EGW Weiach Elektrizitätsgenossenschaft
+193,112,Bubikon,258,Elektrizitätsgenossenschaft Bubikon
+194,113,Dürnten,592,Gemeindewerke Rüti ZH
+195,118,Rüti (ZH),592,Gemeindewerke Rüti ZH
+196,115,Gossau (ZH),424,Energie Gossau AG
+197,116,Grüningen,437,Energie Grüningen AG
+198,120,Wald (ZH),554,EW WALD AG
+199,121,Wetzikon (ZH),595,Stadtwerke Wetzikon
+200,151,Erlenbach (ZH),513,Werke am Zürichsee (Erlenbach)
+201,152,Herrliberg,440,"Gemeinde Herrliberg, Elektrizitätsversorgung"
+202,154,Küsnacht (ZH),444,Werke am Zürichsee (Küsnacht)
+203,155,Männedorf,626,"Gemeinde Männedorf, Energieversorung"
+204,159,Uetikon am See,514,Infrastruktur Zürichsee AG
+205,156,Meilen,514,Infrastruktur Zürichsee AG
+206,157,Oetwil am See,401,Elektrizitätswerk der Gemeinde Oetwil am See
+207,158,Stäfa,593,"Energie und Wasser, Gemeindewerke Stäfa"
+208,159,Uetikon am See,512,Energie Uetikon AG
+209,161,Zollikon,596,Werke am Zürichsee (Zollikon)
+210,172,Fehraltorf,433,"Gemeinde Fehraltorf, Elektrizität"
+211,177,Pfäffikon,591,Gemeindewerke Pfäffikon ZH
+212,191,Dübendorf,607,Glattwerk AG
+213,193,Fällanden,432,"Politische Gemeinde Fällanden, Wasser, Abwasser, Strom"
+214,198,Uster,518,ENERGIE USTER AG
+215,200,Wangen-Brüttisellen,586,"Werke Wangen-Brüttisellen, Elektrizitätswerk"
+216,219,Elsau,789,Elektrizitätsgenossenschaft Rümikon EGR
+217,219,Elsau,457,Genossenschaft Elektrizitätswerk Räterschen EWR
+218,225,Rickenbach (ZH),459,Elektrizitätswerk Rickenbach
+219,230,Winterthur,735,Stadtwerk Winterthur
+220,3661,Cazis,565,Elektrizitätswerk der Stadt Zürich
+221,3669,Tschappina,565,Elektrizitätswerk der Stadt Zürich
+222,3673,Domleschg,565,Elektrizitätswerk der Stadt Zürich
+223,261,Zürich,565,Elektrizitätswerk der Stadt Zürich
+224,3670,Urmein,565,Elektrizitätswerk der Stadt Zürich
+225,3663,Masein,565,Elektrizitätswerk der Stadt Zürich
+226,3503,Mutten,565,Elektrizitätswerk der Stadt Zürich
+227,3633,Fürstenau,565,Elektrizitätswerk der Stadt Zürich
+228,3637,Rothenbrunnen,565,Elektrizitätswerk der Stadt Zürich
+229,3662,Flerden,565,Elektrizitätswerk der Stadt Zürich
+230,301,Aarberg,516,EWA Energie Wasser Aarberg AG
+231,302,Bargen (BE),361,"Gemeinde Bargen BE, Elektrizitätsversorgung"
+232,306,Lyss,509,Energie Seeland AG
+233,303,Grossaffoltern,509,Energie Seeland AG
+234,384,Busswil bei Büren,509,Energie Seeland AG
+235,748,Schwadernau,509,Energie Seeland AG
+236,2530,Recherswil,36,BKW Energie AG
+237,761,Därstetten,36,BKW Energie AG
+238,6757,Saignelégier,36,BKW Energie AG
+239,975,Farnern,36,BKW Energie AG
+240,704,Roches (BE),36,BKW Energie AG
+241,907,Signau,36,BKW Energie AG
+242,992,Wangen an der Aare,36,BKW Energie AG
+243,769,Wimmis,36,BKW Energie AG
+244,628,Zäziwil,36,BKW Energie AG
+245,6715,Mervelier,36,BKW Energie AG
+246,948,Forst-Längenbühl,36,BKW Energie AG
+247,386,Dotzigen,36,BKW Energie AG
+248,852,Guggisberg,36,BKW Energie AG
+249,793,St. Stephan,36,BKW Energie AG
+250,6789,Fahy,36,BKW Energie AG
+251,869,Kaufdorf,36,BKW Energie AG
+252,995,Wiedlisbach,36,BKW Energie AG
+253,2535,Drei Höfe,36,BKW Energie AG
+254,754,Walperswil,36,BKW Energie AG
+255,6806,Vendlincourt,36,BKW Energie AG
+256,861,Belp,36,BKW Energie AG
+257,667,Laupen,36,BKW Energie AG
+258,960,Wyssachen,36,BKW Energie AG
+259,567,Reichenbach im Kandertal,36,BKW Energie AG
+260,762,Diemtigen,36,BKW Energie AG
+261,352,Bolligen,36,BKW Energie AG
+262,946,Wachseldorn,36,BKW Energie AG
+263,304,Kallnach,36,BKW Energie AG
+264,6783,Courchavon,36,BKW Energie AG
+265,706,Saicourt,36,BKW Energie AG
+266,579,Habkern,36,BKW Energie AG
+267,737,Hermrigen,36,BKW Energie AG
+268,987,Rumisberg,36,BKW Energie AG
+269,323,Bannwil,36,BKW Energie AG
+270,2784,Dittingen,36,BKW Energie AG
+271,909,Trubschachen,36,BKW Energie AG
+272,756,Twann-Tüscherz,36,BKW Energie AG
+273,407,Heimiswil,36,BKW Energie AG
+274,6778,Bure,36,BKW Energie AG
+275,925,Fahrni,36,BKW Energie AG
+276,884,Toffen,36,BKW Energie AG
+277,940,Teuffenthal (BE),36,BKW Energie AG
+278,879,Riggisberg,36,BKW Energie AG
+279,935,Oberlangenegg,36,BKW Energie AG
+280,952,Dürrenroth,36,BKW Energie AG
+281,492,Erlach,36,BKW Energie AG
+282,6810,La Baroche,36,BKW Energie AG
+283,6710,Courtételle,36,BKW Energie AG
+284,904,Röthenbach im Emmental,36,BKW Energie AG
+285,982,Niederönz,36,BKW Energie AG
+286,372,Evilard,36,BKW Energie AG
+287,747,Scheuren,36,BKW Energie AG
+288,325,Busswil bei Melchnau,36,BKW Energie AG
+289,735,Epsach,36,BKW Energie AG
+290,885,Uttigen,36,BKW Energie AG
+291,883,Seftigen,36,BKW Energie AG
+292,794,Zweisimmen,36,BKW Energie AG
+293,6771,Alle,36,BKW Energie AG
+294,2781,Blauen,36,BKW Energie AG
+295,622,Oppligen,36,BKW Energie AG
+296,6713,Ederswiler,36,BKW Energie AG
+297,701,Perrefitte,36,BKW Energie AG
+298,713,Tavannes,36,BKW Energie AG
+299,410,Höchstetten,36,BKW Energie AG
+300,326,Gondiswil,36,BKW Energie AG
+301,2407,Oensingen,36,BKW Energie AG
+302,6781,Coeuve,36,BKW Energie AG
+303,589,Oberried am Brienzersee,36,BKW Energie AG
+304,853,Rüschegg,36,BKW Energie AG
+305,947,Zwieselberg,36,BKW Energie AG
+306,301,Aarberg,36,BKW Energie AG
+307,6782,Cornol,36,BKW Energie AG
+308,691,Crémines,36,BKW Energie AG
+309,2511,Aeschi (SO),36,BKW Energie AG
+310,951,Affoltern im Emmental,36,BKW Energie AG
+311,886,Wattenwil,36,BKW Energie AG
+312,993,Wangenried,36,BKW Energie AG
+313,6773,Beurnevésin,36,BKW Energie AG
+314,6716,Mettembert,36,BKW Energie AG
+315,687,Corcelles (BE),36,BKW Energie AG
+316,931,Homberg,36,BKW Energie AG
+317,989,Thörigen,36,BKW Energie AG
+318,605,Bowil,36,BKW Energie AG
+319,2787,Laufen,36,BKW Energie AG
+320,6711,Delémont,36,BKW Energie AG
+321,6748,Les Genevez (JU),36,BKW Energie AG
+322,431,Corgémont,36,BKW Energie AG
+323,590,Ringgenberg (BE),36,BKW Energie AG
+324,763,Erlenbach im Simmental,36,BKW Energie AG
+325,363,Ostermundigen,36,BKW Energie AG
+326,357,Oberbalm,36,BKW Energie AG
+327,564,Kandergrund,36,BKW Energie AG
+328,612,Konolfingen,36,BKW Energie AG
+329,6718,Movelier,36,BKW Energie AG
+330,872,Kirchdorf (BE),36,BKW Energie AG
+331,784,Innertkirchen,36,BKW Energie AG
+332,670,Neuenegg,36,BKW Energie AG
+333,2528,Obergerlafingen,36,BKW Energie AG
+334,6759,Soubey,36,BKW Energie AG
+335,572,Bönigen,36,BKW Energie AG
+336,6745,Les Enfers,36,BKW Energie AG
+337,575,Därligen,36,BKW Energie AG
+338,906,Schangnau,36,BKW Energie AG
+339,863,Burgistein,36,BKW Energie AG
+340,6807,Basse-Allaine,36,BKW Energie AG
+341,2516,Deitingen,36,BKW Energie AG
+342,591,Saxeten,36,BKW Energie AG
+343,332,Madiswil,36,BKW Energie AG
+344,592,Schwanden bei Brienz,36,BKW Energie AG
+345,782,Guttannen,36,BKW Energie AG
+346,6750,Lajoux (JU),36,BKW Energie AG
+347,2555,Rüttenen,36,BKW Energie AG
+348,755,Worben,36,BKW Energie AG
+349,921,Amsoldingen,36,BKW Energie AG
+350,938,Sigriswil,36,BKW Energie AG
+351,6703,Bourrignon,36,BKW Energie AG
+352,717,Valbirse,36,BKW Energie AG
+353,927,Heiligenschwendi,36,BKW Energie AG
+354,406,Hasle bei Burgdorf,36,BKW Energie AG
+355,749,Studen (BE),36,BKW Energie AG
+356,2554,Riedholz,36,BKW Energie AG
+357,692,Eschert,36,BKW Energie AG
+358,944,Uetendorf,36,BKW Energie AG
+359,941,Thierachern,36,BKW Energie AG
+360,870,Kehrsatz,36,BKW Energie AG
+361,2793,Zwingen,36,BKW Energie AG
+362,932,Horrenbach-Buchen,36,BKW Energie AG
+363,630,Allmendingen,36,BKW Energie AG
+364,681,Belprahon,36,BKW Energie AG
+365,711,Sorvilier,36,BKW Energie AG
+366,6790,Fontenais,36,BKW Energie AG
+367,2544,Feldbrunnen-St. Niklaus,36,BKW Energie AG
+368,311,Schüpfen,36,BKW Energie AG
+369,6721,Rossemaison,36,BKW Energie AG
+370,2527,Luterbach,36,BKW Energie AG
+371,566,Krattigen,36,BKW Energie AG
+372,6785,Courtedoux,36,BKW Energie AG
+373,888,Wald (BE),36,BKW Energie AG
+374,449,Sauge,36,BKW Energie AG
+375,2541,Balm bei Günsberg,36,BKW Energie AG
+376,740,Ligerz,36,BKW Energie AG
+377,495,Gampelen,36,BKW Energie AG
+378,905,Rüderswil,36,BKW Energie AG
+379,627,Worb,36,BKW Energie AG
+380,2551,Lommiswil,36,BKW Energie AG
+381,751,Täuffelen,36,BKW Energie AG
+382,606,Brenzikofen,36,BKW Energie AG
+383,312,Seedorf (BE),36,BKW Energie AG
+384,2543,Bettlach,36,BKW Energie AG
+385,929,Hilterfingen,36,BKW Energie AG
+386,958,Trachselwald,36,BKW Energie AG
+387,726,Plateau de Diesse,36,BKW Energie AG
+388,305,Kappelen,36,BKW Energie AG
+389,977,Heimenhausen,36,BKW Energie AG
+390,943,Uebeschi,36,BKW Energie AG
+391,956,Rüegsau,36,BKW Energie AG
+392,6708,Courrendlin,36,BKW Energie AG
+393,501,Tschugg,36,BKW Energie AG
+394,6724,Soyhières,36,BKW Energie AG
+395,744,Orpund,36,BKW Energie AG
+396,307,Meikirch,36,BKW Energie AG
+397,690,Court,36,BKW Energie AG
+398,6751,Montfaucon,36,BKW Energie AG
+399,498,Müntschemier,36,BKW Energie AG
+400,665,Gurbrü,36,BKW Energie AG
+401,2525,Kriegstetten,36,BKW Energie AG
+402,924,Eriz,36,BKW Energie AG
+403,444,Sonceboz-Sombeval,36,BKW Energie AG
+404,632,Wichtrach,36,BKW Energie AG
+405,6730,Val Terbi,36,BKW Energie AG
+406,748,Schwadernau,36,BKW Energie AG
+407,945,Unterlangenegg,36,BKW Energie AG
+408,448,Villeret,36,BKW Energie AG
+409,450,Péry-La Heutte,36,BKW Energie AG
+410,867,Gurzelen,36,BKW Energie AG
+411,734,Bühl,36,BKW Energie AG
+412,770,Stocken-Höfen,36,BKW Energie AG
+413,362,Ittigen,36,BKW Energie AG
+414,361,Zollikofen,36,BKW Energie AG
+415,582,Iseltwald,36,BKW Energie AG
+416,791,Boltigen,36,BKW Energie AG
+417,6702,Boécourt,36,BKW Energie AG
+418,842,Lauenen,36,BKW Energie AG
+419,671,Wileroltigen,36,BKW Energie AG
+420,552,Utzenstorf,36,BKW Energie AG
+421,2534,Zuchwil,36,BKW Energie AG
+422,571,Beatenberg,36,BKW Energie AG
+423,959,Walterswil (BE),36,BKW Energie AG
+424,983,Oberbipp,36,BKW Energie AG
+425,613,Landiswil,36,BKW Energie AG
+426,2548,Hubersdorf,36,BKW Energie AG
+427,309,Radelfingen,36,BKW Energie AG
+428,2545,Flumenthal,36,BKW Energie AG
+429,2519,Gerlafingen,36,BKW Energie AG
+430,750,Sutz-Lattrigen,36,BKW Energie AG
+431,662,Ferenbalm,36,BKW Energie AG
+432,554,Wiler bei Utzenstorf,36,BKW Energie AG
+433,6793,Lugnez,36,BKW Energie AG
+434,694,Grandval,36,BKW Energie AG
+435,742,Mörigen,36,BKW Energie AG
+436,6784,Courgenay,36,BKW Energie AG
+437,2547,Günsberg,36,BKW Energie AG
+438,6787,Damphreux,36,BKW Energie AG
+439,551,Urtenen-Schönbühl,36,BKW Energie AG
+440,6719,Pleigne,36,BKW Energie AG
+441,6729,Haute-Sorne,36,BKW Energie AG
+442,703,Reconvilier,36,BKW Energie AG
+443,2792,Wahlen,36,BKW Energie AG
+444,585,Leissigen,36,BKW Energie AG
+445,577,Gsteigwiler,36,BKW Energie AG
+446,666,Kriechenwil,36,BKW Energie AG
+447,6808,Clos du Doubs,36,BKW Energie AG
+448,908,Trub,36,BKW Energie AG
+449,493,Finsterhennen,36,BKW Energie AG
+450,707,Saules (BE),36,BKW Energie AG
+451,408,Hellsau,36,BKW Energie AG
+452,2791,Röschenz,36,BKW Energie AG
+453,979,Herzogenbuchsee,36,BKW Energie AG
+454,358,Stettlen,36,BKW Energie AG
+455,342,Thunstetten,36,BKW Energie AG
+456,2789,Nenzlingen,36,BKW Energie AG
+457,6758,Saint-Brais,36,BKW Energie AG
+458,6704,Châtillon (JU),36,BKW Energie AG
+459,354,Kirchlindach,36,BKW Energie AG
+460,738,Jens,36,BKW Energie AG
+461,2556,Selzach,36,BKW Energie AG
+462,6809,Haute-Ajoie,36,BKW Energie AG
+463,6722,Saulcy,36,BKW Energie AG
+464,424,Wynigen,36,BKW Energie AG
+465,335,Oeschenbach,36,BKW Energie AG
+466,491,Brüttelen,36,BKW Energie AG
+467,903,Lauperswil,36,BKW Energie AG
+468,767,Reutigen,36,BKW Energie AG
+469,973,Bettenhausen,36,BKW Energie AG
+470,359,Vechigen,36,BKW Energie AG
+471,928,Heimberg,36,BKW Energie AG
+472,588,Niederried b. Interlaken,36,BKW Energie AG
+473,936,Pohlern,36,BKW Energie AG
+474,981,Niederbipp,36,BKW Energie AG
+475,6774,Boncourt,36,BKW Energie AG
+476,955,Lützelflüh,36,BKW Energie AG
+477,739,Ipsach,36,BKW Energie AG
+478,310,Rapperswil (BE),36,BKW Energie AG
+479,338,Rohrbach,36,BKW Energie AG
+480,356,Muri bei Bern,36,BKW Energie AG
+481,609,Häutligen,36,BKW Energie AG
+482,875,Mühledorf (BE),36,BKW Energie AG
+483,620,Oberthal,36,BKW Energie AG
+484,937,Schwendibach,36,BKW Energie AG
+485,854,Wahlern,36,BKW Energie AG
+486,851,Albligen,36,BKW Energie AG
+487,699,Monible,36,BKW Energie AG
+488,684,Châtelat,36,BKW Energie AG
+489,786,Schattenhalb,36,BKW Energie AG
+490,682,Bévilard,36,BKW Energie AG
+491,697,Malleray,36,BKW Energie AG
+492,712,Souboz,36,BKW Energie AG
+493,783,Hasliberg,36,BKW Energie AG
+494,781,Gadmen,36,BKW Energie AG
+495,991,Walliswil bei Wangen,36,BKW Energie AG
+496,556,Zielebach,36,BKW Energie AG
+497,865,Gelterfingen,36,BKW Energie AG
+498,878,Noflen,36,BKW Energie AG
+499,702,Pontenet,36,BKW Energie AG
+500,710,Sornetan,36,BKW Energie AG
+501,353,Bremgarten bei Bern,36,BKW Energie AG
+502,341,Schwarzhäusern,36,BKW Energie AG
+503,768,Spiez,36,BKW Energie AG
+504,625,Tägertschi,36,BKW Energie AG
+505,792,Lenk,36,BKW Energie AG
+506,668,Mühleberg,36,BKW Energie AG
+507,874,Lohnstorf,36,BKW Energie AG
+508,436,La Heutte,36,BKW Energie AG
+509,876,Mühlethurnen,36,BKW Energie AG
+510,866,Gerzensee,36,BKW Energie AG
+511,708,Schelten,36,BKW Energie AG
+512,439,Péry,36,BKW Energie AG
+513,623,Rubigen,36,BKW Energie AG
+514,902,Langnau im Emmental,36,BKW Energie AG
+515,617,Niederhünigen,36,BKW Energie AG
+516,615,Mirchel,36,BKW Energie AG
+517,322,Auswil,36,BKW Energie AG
+518,563,Frutigen,36,BKW Energie AG
+519,546,Münchenbuchsee,36,BKW Energie AG
+520,447,Vauffelin,36,BKW Energie AG
+521,440,Plagne,36,BKW Energie AG
+522,580,Hofstetten bei Brienz,36,BKW Energie AG
+523,438,Orvin,36,BKW Energie AG
+524,971,Attiswil,36,BKW Energie AG
+525,6705,Corban,36,BKW Energie AG
+526,6714,Glovelier,36,BKW Energie AG
+527,442,Romont (BE),36,BKW Energie AG
+528,611,Kiesen,36,BKW Energie AG
+529,502,Vinelz,36,BKW Energie AG
+530,6803,Rocourt,36,BKW Energie AG
+531,881,Rümligen,36,BKW Energie AG
+532,624,Schlosswil,36,BKW Energie AG
+533,722,Lamboing,36,BKW Energie AG
+534,725,Prêles,36,BKW Energie AG
+535,6720,Rebeuvelier,36,BKW Energie AG
+536,6728,Vellerat,36,BKW Energie AG
+537,753,Twann,36,BKW Energie AG
+538,604,Bleiken b. Oberdiessbach,36,BKW Energie AG
+539,6726,Vermes,36,BKW Energie AG
+540,752,Tüscherz-Alfermée,36,BKW Energie AG
+541,6717,Montsevelier,36,BKW Energie AG
+542,721,Diesse,36,BKW Energie AG
+543,2514,Bolken,36,BKW Energie AG
+544,2553,Oberdorf (SO),36,BKW Energie AG
+545,6727,Vicques,36,BKW Energie AG
+546,862,Belpberg,36,BKW Energie AG
+547,2513,Biberist,36,BKW Energie AG
+548,855,Schwarzenburg,36,BKW Energie AG
+549,724,Nods,36,BKW Energie AG
+550,6800,Porrentruy,36,BKW Energie AG
+551,785,Meiringen,36,BKW Energie AG
+552,901,Eggiwil,36,BKW Energie AG
+553,6709,Courroux,36,BKW Energie AG
+554,610,Herbligen,36,BKW Energie AG
+555,6776,Bressaucourt,36,BKW Energie AG
+556,939,Steffisburg,36,BKW Energie AG
+557,6775,Bonfol,36,BKW Energie AG
+558,2790,Roggenburg,36,BKW Energie AG
+559,6725,Undervelier,36,BKW Energie AG
+560,6707,Courfaivre,36,BKW Energie AG
+561,6701,Bassecourt,36,BKW Energie AG
+562,877,Niedermuhlern,36,BKW Energie AG
+563,497,Lüscherz,36,BKW Energie AG
+564,536,Diemerswil,36,BKW Energie AG
+565,741,Merzligen,36,BKW Energie AG
+566,683,Champoz,36,BKW Energie AG
+567,880,Rüeggisberg,36,BKW Energie AG
+568,976,Graben,36,BKW Energie AG
+569,868,Jaberg,36,BKW Energie AG
+570,360,Wohlen bei Bern,36,BKW Energie AG
+571,663,Frauenkappelen,36,BKW Energie AG
+572,988,Seeberg,36,BKW Energie AG
+573,957,Sumiswald,36,BKW Energie AG
+574,340,Rütschelen,36,BKW Energie AG
+575,716,Petit-Val,36,BKW Energie AG
+576,324,Bleienbach,36,BKW Energie AG
+577,980,Inkwil,36,BKW Energie AG
+578,709,Seehof,36,BKW Energie AG
+579,843,Saanen,36,BKW Energie AG
+580,422,Rüti bei Lyssach,36,BKW Energie AG
+581,990,Walliswil bei Niederbipp,36,BKW Energie AG
+582,715,Rebévelier,36,BKW Energie AG
+583,500,Treiten,36,BKW Energie AG
+584,421,Rumendingen,36,BKW Energie AG
+585,576,Grindelwald,36,BKW Energie AG
+586,336,Reisiswil,36,BKW Energie AG
+587,561,Adelboden,36,BKW Energie AG
+588,629,Oberhünigen,36,BKW Energie AG
+589,871,Kienersrüti,36,BKW Energie AG
+590,6811,Damphreux-Lugnez,36,BKW Energie AG
+591,2549,Kammersrohr,36,BKW Energie AG
+592,626,Walkringen,36,BKW Energie AG
+593,6792,Grandfontaine,36,BKW Energie AG
+594,355,Köniz,36,BKW Energie AG
+595,405,Ersigen,36,BKW Energie AG
+596,972,Berken,36,BKW Energie AG
+597,923,Buchholterberg,36,BKW Energie AG
+598,533,Bätterkinden,36,BKW Energie AG
+599,889,Thurnen,36,BKW Energie AG
+600,736,Hagneck,36,BKW Energie AG
+601,562,Aeschi bei Spiez,36,BKW Energie AG
+602,696,Loveresse,36,BKW Energie AG
+603,607,Freimettigen,36,BKW Energie AG
+604,2430,Welschenrohr-Gänsbrunnen,36,BKW Energie AG
+605,631,Trimstein,36,BKW Energie AG
+606,664,Golaten,36,BKW Energie AG
+607,390,Meinisberg,36,BKW Energie AG
+608,2542,Bellach,36,BKW Energie AG
+609,308,Niederried bei Kallnach,36,BKW Energie AG
+610,873,Kirchenthurnen,36,BKW Energie AG
+611,339,Rohrbachgraben,36,BKW Energie AG
+612,930,Höfen,36,BKW Energie AG
+613,494,Gals,36,BKW Energie AG
+614,985,Ochlenberg,36,BKW Energie AG
+615,764,Niederstocken,36,BKW Energie AG
+616,765,Oberstocken,36,BKW Energie AG
+617,389,Meienried,36,BKW Energie AG
+618,942,Thun,36,BKW Energie AG
+619,402,Alchenstorf,36,BKW Energie AG
+620,532,Bangerten,132,"Genossenschaft Elektra, Jegenstorf"
+621,411,Kernenried,132,"Genossenschaft Elektra, Jegenstorf"
+622,2457,Messen,132,"Genossenschaft Elektra, Jegenstorf"
+623,541,Iffwil,132,"Genossenschaft Elektra, Jegenstorf"
+624,548,Ruppoldsried,132,"Genossenschaft Elektra, Jegenstorf"
+625,551,Urtenen-Schönbühl,132,"Genossenschaft Elektra, Jegenstorf"
+626,2465,Buchegg,132,"Genossenschaft Elektra, Jegenstorf"
+627,420,Rüdtligen-Alchenflüh,132,"Genossenschaft Elektra, Jegenstorf"
+628,2463,Unterramsern,132,"Genossenschaft Elektra, Jegenstorf"
+629,414,Krauchthal,132,"Genossenschaft Elektra, Jegenstorf"
+630,409,Hindelbank,132,"Genossenschaft Elektra, Jegenstorf"
+631,535,Deisswil b. Münchenbuch.,132,"Genossenschaft Elektra, Jegenstorf"
+632,534,Büren zum Hof,132,"Genossenschaft Elektra, Jegenstorf"
+633,538,Fraubrunnen,132,"Genossenschaft Elektra, Jegenstorf"
+634,555,Zauggenried,132,"Genossenschaft Elektra, Jegenstorf"
+635,553,Wiggiswil,132,"Genossenschaft Elektra, Jegenstorf"
+636,557,Zuzwil (BE),132,"Genossenschaft Elektra, Jegenstorf"
+637,543,Mattstetten,132,"Genossenschaft Elektra, Jegenstorf"
+638,542,Limpach,132,"Genossenschaft Elektra, Jegenstorf"
+639,537,Etzelkofen,132,"Genossenschaft Elektra, Jegenstorf"
+640,2526,Lohn-Ammannsegg,132,"Genossenschaft Elektra, Jegenstorf"
+641,544,Moosseedorf,132,"Genossenschaft Elektra, Jegenstorf"
+642,550,Scheunen,132,"Genossenschaft Elektra, Jegenstorf"
+643,547,Münchringen,132,"Genossenschaft Elektra, Jegenstorf"
+644,401,Aefligen,132,"Genossenschaft Elektra, Jegenstorf"
+645,531,Ballmoos,132,"Genossenschaft Elektra, Jegenstorf"
+646,545,Mülchi,132,"Genossenschaft Elektra, Jegenstorf"
+647,539,Grafenried,132,"Genossenschaft Elektra, Jegenstorf"
+648,2442,Aetingen,132,"Genossenschaft Elektra, Jegenstorf"
+649,2446,Brügglen,132,"Genossenschaft Elektra, Jegenstorf"
+650,549,Schalunen,132,"Genossenschaft Elektra, Jegenstorf"
+651,352,Bolligen,132,"Genossenschaft Elektra, Jegenstorf"
+652,310,Rapperswil (BE),132,"Genossenschaft Elektra, Jegenstorf"
+653,403,Bäriswil,132,"Genossenschaft Elektra, Jegenstorf"
+654,415,Lyssach,132,"Genossenschaft Elektra, Jegenstorf"
+655,533,Bätterkinden,132,"Genossenschaft Elektra, Jegenstorf"
+656,416,Mötschwil,132,"Genossenschaft Elektra, Jegenstorf"
+657,2460,Oberramsern,132,"Genossenschaft Elektra, Jegenstorf"
+658,2443,Balm bei Messen,132,"Genossenschaft Elektra, Jegenstorf"
+659,2447,Brunnenthal,132,"Genossenschaft Elektra, Jegenstorf"
+660,540,Jegenstorf,132,"Genossenschaft Elektra, Jegenstorf"
+661,310,Rapperswil (BE),603,Genossenschaft Elektra Rapperswil
+662,312,Seedorf (BE),346,"Einwohnergemeinde Seedorf, Elektrizitätsversorgung"
+663,321,Aarwangen,248,"Einwohnergemeinde Aarwangen, Elektrizitätsversorgung"
+664,533,Bätterkinden,640,onyx Energie AG
+665,339,Rohrbachgraben,640,onyx Energie AG
+666,987,Rumisberg,640,onyx Energie AG
+667,983,Oberbipp,640,onyx Energie AG
+668,959,Walterswil (BE),640,onyx Energie AG
+669,340,Rütschelen,640,onyx Energie AG
+670,988,Seeberg,640,onyx Energie AG
+671,980,Inkwil,640,onyx Energie AG
+672,960,Wyssachen,640,onyx Energie AG
+673,989,Thörigen,640,onyx Energie AG
+674,335,Oeschenbach,640,onyx Energie AG
+675,972,Berken,640,onyx Energie AG
+676,992,Wangen an der Aare,640,onyx Energie AG
+677,408,Hellsau,640,onyx Energie AG
+678,324,Bleienbach,640,onyx Energie AG
+679,985,Ochlenberg,640,onyx Energie AG
+680,2531,Steinhof,640,onyx Energie AG
+681,995,Wiedlisbach,640,onyx Energie AG
+682,338,Rohrbach,640,onyx Energie AG
+683,405,Ersigen,640,onyx Energie AG
+684,976,Graben,640,onyx Energie AG
+685,328,Kleindietwil,640,onyx Energie AG
+686,330,Leimiswil,640,onyx Energie AG
+687,554,Wiler bei Utzenstorf,640,onyx Energie AG
+688,334,Obersteckholz,640,onyx Energie AG
+689,342,Thunstetten,640,onyx Energie AG
+690,325,Busswil bei Melchnau,640,onyx Energie AG
+691,343,Untersteckholz,640,onyx Energie AG
+692,410,Höchstetten,640,onyx Energie AG
+693,978,Hermiswil,640,onyx Energie AG
+694,975,Farnern,640,onyx Energie AG
+695,982,Niederönz,640,onyx Energie AG
+696,979,Herzogenbuchsee,640,onyx Energie AG
+697,981,Niederbipp,640,onyx Energie AG
+698,402,Alchenstorf,640,onyx Energie AG
+699,326,Gondiswil,640,onyx Energie AG
+700,971,Attiswil,640,onyx Energie AG
+701,322,Auswil,640,onyx Energie AG
+702,991,Walliswil bei Wangen,640,onyx Energie AG
+703,952,Dürrenroth,640,onyx Energie AG
+704,973,Bettenhausen,640,onyx Energie AG
+705,951,Affoltern im Emmental,640,onyx Energie AG
+706,341,Schwarzhäusern,640,onyx Energie AG
+707,977,Heimenhausen,640,onyx Energie AG
+708,417,Niederösch,640,onyx Energie AG
+709,990,Walliswil bei Niederbipp,640,onyx Energie AG
+710,993,Wangenried,640,onyx Energie AG
+711,419,Oberösch,640,onyx Energie AG
+712,332,Madiswil,640,onyx Energie AG
+713,552,Utzenstorf,640,onyx Energie AG
+714,336,Reisiswil,640,onyx Energie AG
+715,424,Wynigen,640,onyx Energie AG
+716,323,Bannwil,640,onyx Energie AG
+717,996,Wolfisberg,640,onyx Energie AG
+718,974,Bollodingen,640,onyx Energie AG
+719,421,Rumendingen,640,onyx Energie AG
+720,329,Langenthal,622,IB Langenthal AG
+721,331,Lotzwil,322,"Gemeindebetriebe Lotzwil, Elektrizitätsversorgung"
+722,332,Madiswil,324,"Einwohnergemeinde Madiswil, Elektrizitätsversorgung"
+723,333,Melchnau,772,"Einwohnergemeinde Melchnau, Elektrizitätsversorgung"
+724,337,Roggwil (BE),576,"Einwohnergemeinde Roggwil, Elektrizitätswerk"
+725,344,Ursenbach,357,"Einwohnergemeinde Ursenbach, Elektrizitätsversorgung"
+726,345,Wynau,580,Werkbetriebe Wynau (WBW)
+727,351,Bern,519,Energie Wasser Bern
+728,371,Biel/Bienne,510,Energie Service Biel/Bienne (ESB)
+729,381,Arch,108,"Einwohnergemeinde Arch, Elektrizitätsversorgung"
+730,382,Büetigen,78,"Einwohnergemeinde Büetigen, Elektroversorgung"
+731,383,Büren an der Aare,526,Energieversorgung Büren AG
+732,385,Diessbach bei Büren,362,"Einwohnergemeinde Diessbach bei Büren, Elektrizitätsversorgung"
+733,387,Lengnau (BE),79,"Einwohnergemeinde Lengnau, Finanzverwaltung, Elektrizität-, Wasser-, Abwasser-, Abfallentsorgung"
+734,388,Leuzigen,319,Elektrizitätsversorgung Leuzigen
+735,2601,Solothurn,664,Regio Energie Solothurn
+736,2534,Zuchwil,664,Regio Energie Solothurn
+737,2550,Langendorf,664,Regio Energie Solothurn
+738,2464,Lüsslingen-Nennigkofen,664,Regio Energie Solothurn
+739,2551,Lommiswil,664,Regio Energie Solothurn
+740,2532,Subingen,664,Regio Energie Solothurn
+741,2455,Lüterkofen-Ichertswil,664,Regio Energie Solothurn
+742,388,Leuzigen,664,Regio Energie Solothurn
+743,391,Oberwil bei Büren,172,"Gemeinde Oberwil bei Büren, Energieversorgung"
+744,392,Pieterlen,530,"Einwohnergemeinde Pieterlen, Stromverkauf"
+745,393,Rüti bei Büren,82,"Einwohnergemeinde, Rüti bei Büren, Stromversorgung"
+746,394,Wengi,813,GEBNET AG
+747,2453,Kyburg-Buchegg,813,GEBNET AG
+748,2445,Biezwil,813,GEBNET AG
+749,2458,Mühledorf (SO),813,GEBNET AG
+750,2465,Buchegg,813,GEBNET AG
+751,2462,Tscheppach,813,GEBNET AG
+752,388,Leuzigen,813,GEBNET AG
+753,2450,Hessigkofen,813,GEBNET AG
+754,2452,Küttigkofen,813,GEBNET AG
+755,2449,Gossliwil,813,GEBNET AG
+756,2456,Lüterswil-Gächliwil,813,GEBNET AG
+757,2444,Bibern (SO),813,GEBNET AG
+758,2441,Aetigkofen,813,GEBNET AG
+759,404,Burgdorf,636,Localnet AG
+760,955,Lützelflüh,184,Elektra Schwanden i.E. Genossenschaft
+761,406,Hasle bei Burgdorf,184,Elektra Schwanden i.E. Genossenschaft
+762,905,Rüderswil,184,Elektra Schwanden i.E. Genossenschaft
+763,412,Kirchberg (BE),504,EnerCom Kirchberg AG
+764,413,Koppigen,601,Genossenschaft Elektra Koppigen-Willadingen
+765,423,Willadingen,601,Genossenschaft Elektra Koppigen-Willadingen
+766,418,Oberburg,515,Energie- und Wasserversorgung Oberburg
+767,445,Sonvilier,716,Société des Forces Électriques de La Goule SA
+768,6753,Muriaux,716,Société des Forces Électriques de La Goule SA
+769,6754,Le Noirmont,716,Société des Forces Électriques de La Goule SA
+770,441,Renan (BE),716,Société des Forces Électriques de La Goule SA
+771,6436,Le Locle,716,Société des Forces Électriques de La Goule SA
+772,6741,Le Bémont (JU),716,Société des Forces Électriques de La Goule SA
+773,437,Mont-Tramelan,716,Société des Forces Électriques de La Goule SA
+774,6744,La Chaux-des-Breuleux,716,Société des Forces Électriques de La Goule SA
+775,6431,Les Brenets,716,Société des Forces Électriques de La Goule SA
+776,6743,Les Breuleux,716,Société des Forces Électriques de La Goule SA
+777,435,La Ferrière,716,Société des Forces Électriques de La Goule SA
+778,434,Courtelary,716,Société des Forces Électriques de La Goule SA
+779,6742,Les Bois,716,Société des Forces Électriques de La Goule SA
+780,432,Cormoret,716,Société des Forces Électriques de La Goule SA
+781,6757,Saignelégier,716,Société des Forces Électriques de La Goule SA
+782,433,Cortébert,716,Société des Forces Électriques de La Goule SA
+783,448,Villeret,716,Société des Forces Électriques de La Goule SA
+784,443,Saint-Imier,716,Société des Forces Électriques de La Goule SA
+785,443,Saint-Imier,705,Commune de Saint-Imier
+786,446,Tramelan,707,"Commune de Tramelan, électricité"
+787,496,Ins,517,"Einwohnergemeinde Ins, Elektrizitätsversorgung"
+788,499,Siselen,347,"Einwohnergemeinde Siselen, Elektrizitätsversorgung"
+789,546,Münchenbuchsee,80,Energie Münchenbuchsee AG
+790,2519,Gerlafingen,4,AEK Energie AG
+791,2545,Flumenthal,4,AEK Energie AG
+792,2534,Zuchwil,4,AEK Energie AG
+793,2548,Hubersdorf,4,AEK Energie AG
+794,2511,Aeschi (SO),4,AEK Energie AG
+795,556,Zielebach,4,AEK Energie AG
+796,2535,Drei Höfe,4,AEK Energie AG
+797,2556,Selzach,4,AEK Energie AG
+798,2549,Kammersrohr,4,AEK Energie AG
+799,2555,Rüttenen,4,AEK Energie AG
+800,2552,Niederwil (SO),4,AEK Energie AG
+801,2464,Lüsslingen-Nennigkofen,4,AEK Energie AG
+802,2407,Oensingen,4,AEK Energie AG
+803,2547,Günsberg,4,AEK Energie AG
+804,2430,Welschenrohr-Gänsbrunnen,4,AEK Energie AG
+805,2542,Bellach,4,AEK Energie AG
+806,2544,Feldbrunnen-St. Niklaus,4,AEK Energie AG
+807,2454,Lüsslingen,4,AEK Energie AG
+808,2527,Luterbach,4,AEK Energie AG
+809,2528,Obergerlafingen,4,AEK Energie AG
+810,2522,Hersiwil,4,AEK Energie AG
+811,2521,Heinrichswil-Winistorf,4,AEK Energie AG
+812,2532,Subingen,4,AEK Energie AG
+813,2429,Welschenrohr,4,AEK Energie AG
+814,2541,Balm bei Günsberg,4,AEK Energie AG
+815,2516,Deitingen,4,AEK Energie AG
+816,2550,Langendorf,4,AEK Energie AG
+817,2455,Lüterkofen-Ichertswil,4,AEK Energie AG
+818,2551,Lommiswil,4,AEK Energie AG
+819,2513,Biberist,4,AEK Energie AG
+820,2525,Kriegstetten,4,AEK Energie AG
+821,2423,Gänsbrunnen,4,AEK Energie AG
+822,2554,Riedholz,4,AEK Energie AG
+823,2514,Bolken,4,AEK Energie AG
+824,2553,Oberdorf (SO),4,AEK Energie AG
+825,2530,Recherswil,4,AEK Energie AG
+826,2543,Bettlach,4,AEK Energie AG
+827,561,Adelboden,632,Licht- und Wasserwerk Adelboden AG
+828,565,Kandersteg,635,Licht- und Wasserwerk AG Kandersteg
+829,573,Brienz (BE),77,"Einwohnergemeinde Brienz, Elektrizitätsversorgung"
+830,574,Brienzwiler,597,"Gemeinde Brienzwiler, Elekrizität"
+831,584,Lauterbrunnen,627,Jungfraubahn AG
+832,586,Lütschental,627,Jungfraubahn AG
+833,576,Grindelwald,627,Jungfraubahn AG
+834,578,Gündlischwand,627,Jungfraubahn AG
+835,576,Grindelwald,436,Elektrizitätswerk Grindelwald AG
+836,590,Ringgenberg (BE),563,EWR Energie AG
+837,589,Oberried am Brienzersee,563,EWR Energie AG
+838,592,Schwanden bei Brienz,563,EWR Energie AG
+839,786,Schattenhalb,563,EWR Energie AG
+840,580,Hofstetten bei Brienz,563,EWR Energie AG
+841,785,Meiringen,563,EWR Energie AG
+842,588,Niederried b. Interlaken,563,EWR Energie AG
+843,783,Hasliberg,563,EWR Energie AG
+844,587,Matten bei Interlaken,620,Industrielle Betriebe Interlaken (IBI) AG
+845,593,Unterseen,620,Industrielle Betriebe Interlaken (IBI) AG
+846,581,Interlaken,620,Industrielle Betriebe Interlaken (IBI) AG
+847,584,Lauterbrunnen,560,EWL Genossenschaft
+848,577,Gsteigwiler,578,"Einwohnergemeinde Wilderswil, Elektrizitätsversorgung"
+849,594,Wilderswil,578,"Einwohnergemeinde Wilderswil, Elektrizitätsversorgung"
+850,923,Buchholterberg,105,ELEKTRA ENERGIE Genossenschaft
+851,619,Oberdiessbach,105,ELEKTRA ENERGIE Genossenschaft
+852,605,Bowil,105,ELEKTRA ENERGIE Genossenschaft
+853,904,Röthenbach im Emmental,105,ELEKTRA ENERGIE Genossenschaft
+854,614,Linden,105,ELEKTRA ENERGIE Genossenschaft
+855,606,Brenzikofen,105,ELEKTRA ENERGIE Genossenschaft
+856,945,Unterlangenegg,105,ELEKTRA ENERGIE Genossenschaft
+857,629,Oberhünigen,105,ELEKTRA ENERGIE Genossenschaft
+858,601,Aeschlen,105,ELEKTRA ENERGIE Genossenschaft
+859,602,Arni (BE),109,Arni Energie AG
+860,603,Biglen,75,"Einwohnergemeinde Biglen, Stromversorgung"
+861,608,Grosshöchstetten,312,Energie Grosshöchstetten AG
+862,616,Münsingen,625,InfraWerkeMünsingen (IWM)
+863,866,Gerzensee,625,InfraWerkeMünsingen (IWM)
+864,625,Tägertschi,625,InfraWerkeMünsingen (IWM)
+865,632,Wichtrach,625,InfraWerkeMünsingen (IWM)
+866,627,Worb,633,Licht- und Kraftgenossenschaft Richigen
+867,632,Wichtrach,303,Elektrizitätsversorgung der Gemeinde Wichtrach
+868,2186,Cottens (FR),609,Groupe E SA
+869,2121,Haut-Intyamon,609,Groupe E SA
+870,2152,Sâles,609,Groupe E SA
+871,2225,Senèdes,609,Groupe E SA
+872,2244,Büchslen,609,Groupe E SA
+873,2067,Le Châtelard,609,Groupe E SA
+874,2234,La Brillaz,609,Groupe E SA
+875,2179,Chésopelloz,609,Groupe E SA
+876,6416,Milvignes,609,Groupe E SA
+877,2138,Jaun,609,Groupe E SA
+878,5451,Avenches,609,Groupe E SA
+879,2054,Estavayer,609,Groupe E SA
+880,2055,Cheyres-Châbles,609,Groupe E SA
+881,6453,Enges,609,Groupe E SA
+882,2274,Muntelier,609,Groupe E SA
+883,2016,Fétigny,609,Groupe E SA
+884,2197,Givisiez,609,Groupe E SA
+885,2189,Ependes (FR),609,Groupe E SA
+886,2308,Ueberstorf,609,Groupe E SA
+887,2053,Belmont-Broye,609,Groupe E SA
+888,5816,Corcelles-près-Payerne,609,Groupe E SA
+889,669,Münchenwiler,609,Groupe E SA
+890,6511,Les Verrières,609,Groupe E SA
+891,2206,Marly,609,Groupe E SA
+892,5817,Grandcour,609,Groupe E SA
+893,2111,Villaz-Saint-Pierre,609,Groupe E SA
+894,2112,Vuarmarens,609,Groupe E SA
+895,2228,Villars-sur-Glâne,609,Groupe E SA
+896,2147,Pont-la-Ville,609,Groupe E SA
+897,2116,La Folliaz,609,Groupe E SA
+898,2328,Granges (Veveyse),609,Groupe E SA
+899,2281,Haut-Vully,609,Groupe E SA
+900,2305,Schmitten (FR),609,Groupe E SA
+901,2223,Le Glèbe,609,Groupe E SA
+902,2184,Corpataux-Magnedens,609,Groupe E SA
+903,2280,Bas-Vully,609,Groupe E SA
+904,2029,Montagny (FR),609,Groupe E SA
+905,2115,Torny,609,Groupe E SA
+906,2047,Villeneuve (FR),609,Groupe E SA
+907,2298,Oberschrot,609,Groupe E SA
+908,2296,Heitenried,609,Groupe E SA
+909,6413,Rochefort,609,Groupe E SA
+910,2310,Zumholz,609,Groupe E SA
+911,2160,Vuadens,609,Groupe E SA
+912,2231,Vuisternens-en-Ogoz,609,Groupe E SA
+913,6407,Corcelles-Cormondrèche,609,Groupe E SA
+914,2294,Giffers,609,Groupe E SA
+915,2208,Matran,609,Groupe E SA
+916,2097,Rue,609,Groupe E SA
+917,2233,Hauterive (FR),609,Groupe E SA
+918,6485,Valangin,609,Groupe E SA
+919,2196,Fribourg,609,Groupe E SA
+920,6461,La Tène,609,Groupe E SA
+921,6423,La Sagne,609,Groupe E SA
+922,5787,Ecoteaux,609,Groupe E SA
+923,2222,Rossens (FR),609,Groupe E SA
+924,6412,Peseux,609,Groupe E SA
+925,2122,Pont-en-Ogoz,609,Groupe E SA
+926,2192,Farvagny,609,Groupe E SA
+927,2275,Murten,609,Groupe E SA
+928,2198,Granges-Paccot,609,Groupe E SA
+929,2099,Siviriez,609,Groupe E SA
+930,2254,Courtepin,609,Groupe E SA
+931,2301,Rechthalten,609,Groupe E SA
+932,6432,La Brévine,609,Groupe E SA
+933,2022,Gletterens,609,Groupe E SA
+934,2304,St. Ursen,609,Groupe E SA
+935,2040,Russy,609,Groupe E SA
+936,6479,Fontaines (NE),609,Groupe E SA
+937,2050,Les Montets,609,Groupe E SA
+938,6474,Coffrane,609,Groupe E SA
+939,6472,Cernier,609,Groupe E SA
+940,6477,Fenin-Vilars-Saules,609,Groupe E SA
+941,2024,Léchelles,609,Groupe E SA
+942,2135,Gruyères,609,Groupe E SA
+943,2337,Le Flon,609,Groupe E SA
+944,2124,Broc,609,Groupe E SA
+945,2258,Fräschels,609,Groupe E SA
+946,665,Gurbrü,609,Groupe E SA
+947,5463,Villars-le-Grand,609,Groupe E SA
+948,5452,Bellerive (VD),609,Groupe E SA
+949,2293,Düdingen,609,Groupe E SA
+950,2140,Marsens,609,Groupe E SA
+951,851,Albligen,609,Groupe E SA
+952,2017,Font,609,Groupe E SA
+953,5841,Château-d'Oex,609,Groupe E SA
+954,2009,Cheiry,609,Groupe E SA
+955,6402,Bevaix,609,Groupe E SA
+956,2283,Wallenried,609,Groupe E SA
+957,6411,Montalchez,609,Groupe E SA
+958,2243,Barberêche,609,Groupe E SA
+959,2338,La Verrerie,609,Groupe E SA
+960,6476,Engollon,609,Groupe E SA
+961,2279,Villarepos,609,Groupe E SA
+962,6481,Les Hauts-Geneveys,609,Groupe E SA
+963,6475,Dombresson,609,Groupe E SA
+964,6409,Fresens,609,Groupe E SA
+965,6415,Vaumarcus,609,Groupe E SA
+966,6414,Saint-Aubin-Sauges,609,Groupe E SA
+967,6410,Gorgier,609,Groupe E SA
+968,6483,Le Pâquier (NE),609,Groupe E SA
+969,2321,Attalens,609,Groupe E SA
+970,6473,Chézard-Saint-Martin,609,Groupe E SA
+971,6482,Montmollin,609,Groupe E SA
+972,2102,Ursy,609,Groupe E SA
+973,6471,Boudevilliers,609,Groupe E SA
+974,6480,Les Geneveys-s-Coffrane,609,Groupe E SA
+975,6478,Fontainemelon,609,Groupe E SA
+976,6484,Savagnier,609,Groupe E SA
+977,6486,Villiers,609,Groupe E SA
+978,2276,Ried bei Kerzers,609,Groupe E SA
+979,5461,Oleyres,609,Groupe E SA
+980,2175,Belfaux,609,Groupe E SA
+981,2117,Villaz,609,Groupe E SA
+982,2162,Bas-Intyamon,609,Groupe E SA
+983,6417,La Grande Béroche,609,Groupe E SA
+984,2302,St. Antoni,609,Groupe E SA
+985,2238,Bois-d'Amont,609,Groupe E SA
+986,2237,Prez,609,Groupe E SA
+987,2284,Mont-Vully,609,Groupe E SA
+988,2291,Alterswil,609,Groupe E SA
+989,2295,Bösingen,609,Groupe E SA
+990,2185,Corserey,609,Groupe E SA
+991,2033,Morens (FR),609,Groupe E SA
+992,2221,Prez-vers-Noréaz,609,Groupe E SA
+993,2034,Murist,609,Groupe E SA
+994,2004,Bussy (FR),609,Groupe E SA
+995,2049,Vuissens,609,Groupe E SA
+996,2213,Noréaz,609,Groupe E SA
+997,2172,Autafond,609,Groupe E SA
+998,2236,Gibloux,609,Groupe E SA
+999,2171,Arconciel,609,Groupe E SA
+1000,2183,Corminboeuf,609,Groupe E SA
+1001,2113,Vuisternens-dev-Romont,609,Groupe E SA
+1002,6512,Val-de-Travers,609,Groupe E SA
+1003,2303,St. Silvester,609,Groupe E SA
+1004,2052,Vernay,609,Groupe E SA
+1005,5460,Mur (VD),609,Groupe E SA
+1006,5459,Montmagny,609,Groupe E SA
+1007,2015,Estavayer-le-Lac,609,Groupe E SA
+1008,2299,Plaffeien,609,Groupe E SA
+1009,6451,Cornaux,609,Groupe E SA
+1010,2045,Vallon,609,Groupe E SA
+1011,2013,Domdidier,609,Groupe E SA
+1012,2014,Dompierre (FR),609,Groupe E SA
+1013,2063,Billens-Hennens,609,Groupe E SA
+1014,2039,Rueyres-les-Prés,609,Groupe E SA
+1015,5453,Chabrey,609,Groupe E SA
+1016,6406,Colombier (NE),609,Groupe E SA
+1017,2251,Courlevon,609,Groupe E SA
+1018,6405,Brot-Dessous,609,Groupe E SA
+1019,5455,Constantine,609,Groupe E SA
+1020,5462,Vallamand,609,Groupe E SA
+1021,2277,Salvenach,609,Groupe E SA
+1022,2264,Jeuss,609,Groupe E SA
+1023,2270,Lurtigen,609,Groupe E SA
+1024,5822,Payerne,609,Groupe E SA
+1025,6437,Les Ponts-de-Martel,609,Groupe E SA
+1026,5843,Rougemont,609,Groupe E SA
+1027,6452,Cressier (NE),609,Groupe E SA
+1028,2005,Châbles,609,Groupe E SA
+1029,2010,Cheyres,609,Groupe E SA
+1030,2265,Kerzers,609,Groupe E SA
+1031,2306,Tafers,609,Groupe E SA
+1032,2272,Misery-Courtion,609,Groupe E SA
+1033,2260,Gempenach,609,Groupe E SA
+1034,2043,Sévaz,609,Groupe E SA
+1035,5790,Maracon,609,Groupe E SA
+1036,2087,Mézières (FR),609,Groupe E SA
+1037,6433,Brot-Plamboz,609,Groupe E SA
+1038,2027,Ménières,609,Groupe E SA
+1039,5842,Rossinière,609,Groupe E SA
+1040,2200,Grolley,609,Groupe E SA
+1041,2262,Gurmels,609,Groupe E SA
+1042,5464,Vully-les-Lacs,609,Groupe E SA
+1043,5813,Chevroux,609,Groupe E SA
+1044,2131,Echarlens,609,Groupe E SA
+1045,2114,Villorsonnens,609,Groupe E SA
+1046,2134,Grandvillard,609,Groupe E SA
+1047,2235,La Sonnaz,609,Groupe E SA
+1048,2173,Autigny,609,Groupe E SA
+1049,2137,Hauteville,609,Groupe E SA
+1050,2025,Lully (FR),609,Groupe E SA
+1051,2145,Le Pâquier (FR),609,Groupe E SA
+1052,2335,Saint-Martin (FR),609,Groupe E SA
+1053,2066,Chapelle (Glâne),609,Groupe E SA
+1054,6435,La Chaux-du-Milieu,609,Groupe E SA
+1055,6434,Le Cerneux-Péquignot,609,Groupe E SA
+1056,2174,Avry,609,Groupe E SA
+1057,2261,Greng,609,Groupe E SA
+1058,2309,Wünnewil-Flamatt,609,Groupe E SA
+1059,2061,Auboranges,609,Groupe E SA
+1060,2089,Montet (Glâne),609,Groupe E SA
+1061,2155,Vaulruz,609,Groupe E SA
+1062,6487,Val-de-Ruz,609,Groupe E SA
+1063,2079,Grangettes,609,Groupe E SA
+1064,2292,Brünisried,609,Groupe E SA
+1065,5821,Missy,609,Groupe E SA
+1066,2086,Massonnens,609,Groupe E SA
+1067,2226,Treyvaux,609,Groupe E SA
+1068,2211,Neyruz (FR),609,Groupe E SA
+1069,2325,Châtel-Saint-Denis,609,Groupe E SA
+1070,443,Saint-Imier,609,Groupe E SA
+1071,2041,Saint-Aubin (FR),609,Groupe E SA
+1072,2194,Ferpicloz,609,Groupe E SA
+1073,2333,Remaufens,609,Groupe E SA
+1074,2038,Prévondavaux,609,Groupe E SA
+1075,2177,Chénens,609,Groupe E SA
+1076,2259,Galmiz,609,Groupe E SA
+1077,2153,Sorens,609,Groupe E SA
+1078,5827,Trey,609,Groupe E SA
+1079,5458,Faoug,609,Groupe E SA
+1080,2230,Villarsel-sur-Marly,609,Groupe E SA
+1081,2051,Delley-Portalban,609,Groupe E SA
+1082,2300,Plasselb,609,Groupe E SA
+1083,2257,Cressier (FR),609,Groupe E SA
+1084,5456,Cudrefin,609,Groupe E SA
+1085,2336,Semsales,609,Groupe E SA
+1086,2044,Surpierre,609,Groupe E SA
+1087,2323,Bossonnens,609,Groupe E SA
+1088,2307,Tentlingen,609,Groupe E SA
+1089,2266,Kleinbösingen,609,Groupe E SA
+1090,2149,La Roche,609,Groupe E SA
+1091,2216,Pierrafortscha,609,Groupe E SA
+1092,661,Clavaleyres,609,Groupe E SA
+1093,2220,Le Mouret,609,Groupe E SA
+1094,2072,Ecublens (FR),609,Groupe E SA
+1095,2125,Bulle,609,Groupe E SA
+1096,2129,Corbières,609,Groupe E SA
+1097,6458,Neuchâtel,609,Groupe E SA
+1098,2250,Courgevaux,609,Groupe E SA
+1099,6504,La Côte-aux-Fées,609,Groupe E SA
+1100,2008,Châtillon (FR),609,Groupe E SA
+1101,2068,Châtonnaye,609,Groupe E SA
+1102,2096,Romont (FR),609,Groupe E SA
+1103,2278,Ulmiz,609,Groupe E SA
+1104,6456,Lignières,609,Groupe E SA
+1105,2011,Cugy (FR),609,Groupe E SA
+1106,2217,Ponthaux,609,Groupe E SA
+1107,2035,Nuvilly,609,Groupe E SA
+1108,723,La Neuveville,702,Municipalité de La Neuveville
+1109,724,Nods,706,"Commune de Nods, Electricité"
+1110,731,Aegerten,524,"Einwohnergemeinde Aegerten, Elektroversorgung"
+1111,732,Bellmund,74,"Einwohnergemeinde Bellmund, Elektrizitätsversorgung"
+1112,733,Brügg,292,"Einwohnergemeinde Brügg, Elektrizitätsversorgung"
+1113,743,Nidau,734,"Einwohnergemeinde Nidau, Elektrizitätsversorgung"
+1114,745,Port,250,"Einwohnergemeinde Port, Elektrizitätversorgung"
+1115,746,Safnern,577,"Einwohnergemeinde Safnern, Elektroversorgung"
+1116,762,Diemtigen,282,"Elektrizitätsgenossenschaft Zwischenflüh u. Umgebung, Diemtigtal"
+1117,762,Diemtigen,274,"Elektrizitätsgenossenschaft Schwenden, Diemtigtal"
+1118,762,Diemtigen,259,Elektrizitäts-Genossenschaft Diemtigen
+1119,766,Oberwil im Simmental,267,Elektrizitäts-Genossenschaft (EGO) Oberwil i.S.
+1120,785,Meiringen,7,Alpen Energie Dorfgemeinde Meiringen
+1121,786,Schattenhalb,7,Alpen Energie Dorfgemeinde Meiringen
+1122,793,St. Stephan,349,Elektrizitätsversorgung Ried-St. Stephan AG
+1123,794,Zweisimmen,349,Elektrizitätsversorgung Ried-St. Stephan AG
+1124,841,Gsteig,260,Elektrizitätsgenossenschaft Gsteig
+1125,870,Kehrsatz,525,Energie Belp AG
+1126,861,Belp,525,Energie Belp AG
+1127,623,Rubigen,525,Energie Belp AG
+1128,884,Toffen,525,Energie Belp AG
+1129,862,Belpberg,525,Energie Belp AG
+1130,879,Riggisberg,338,Energie Versorgung Riggisberg (EVR) AG
+1131,901,Eggiwil,351,Elektrizitätsversorgung Stettler Fritz AG
+1132,903,Lauperswil,129,Elektra Emmenmatt Genossenschaft
+1133,903,Lauperswil,284,Elektrizitätsgenossenschaft Schüpbach
+1134,907,Signau,284,Elektrizitätsgenossenschaft Schüpbach
+1135,903,Lauperswil,264,Elektrizitätsgenossenschaft Moosegg
+1136,905,Rüderswil,180,Elektra Rüderswil Genossenschaft
+1137,906,Schangnau,273,Elektrizitätsgenossenschaft Schangnau
+1138,1006,Marbach (LU),273,Elektrizitätsgenossenschaft Schangnau
+1139,1010,Escholzmatt-Marbach,273,Elektrizitätsgenossenschaft Schangnau
+1140,922,Blumenstein,76,Energieversorgung Blumenstein AG (EVB)
+1141,940,Teuffenthal (BE),122,"Genossenschaft ""Elektra"" Buchen-Teuffenthal (EBT)"
+1142,932,Horrenbach-Buchen,122,"Genossenschaft ""Elektra"" Buchen-Teuffenthal (EBT)"
+1143,934,Oberhofen am Thunersee,252,Energie Oberhofen AG
+1144,939,Steffisburg,638,NetZulg AG
+1145,942,Thun,511,Energie Thun AG
+1146,953,Eriswil,297,"Gemeinde Eriswil, Elektrizitätsversorgung"
+1147,954,Huttwil,619,Industrielle Betriebe Huttwil AG
+1148,957,Sumiswald,507,Energie AG Sumiswald
+1149,979,Herzogenbuchsee,559,EWK Herzogenbuchsee AG
+1150,981,Niederbipp,329,"Einwohnergemeinde Niederbipp, Elektrizitätsversorgung"
+1151,988,Seeberg,185,Elektra Seeberg-Grasswil-Riedtwil Genossenschaft
+1152,1007,Romoos,37,CKW AG
+1153,1142,Roggliswil,37,CKW AG
+1154,1130,Gettnau,37,CKW AG
+1155,1057,Honau,37,CKW AG
+1156,1094,Nottwil,37,CKW AG
+1157,1063,Meggen,37,CKW AG
+1158,1092,Neudorf,37,CKW AG
+1159,1005,Hasle (LU),37,CKW AG
+1160,1054,Ebikon,37,CKW AG
+1161,1064,Meierskappel,37,CKW AG
+1162,1139,Pfaffnau,37,CKW AG
+1163,1097,Rickenbach (LU),37,CKW AG
+1164,1083,Buttisholz,37,CKW AG
+1165,1140,Reiden,37,CKW AG
+1166,1091,Mauensee,37,CKW AG
+1167,1022,Altwis,37,CKW AG
+1168,1032,Hohenrain,37,CKW AG
+1169,1146,Wauwil,37,CKW AG
+1170,1030,Hitzkirch,37,CKW AG
+1171,1103,Sursee,37,CKW AG
+1172,1086,Grosswangen,37,CKW AG
+1173,1129,Fischbach,37,CKW AG
+1174,1059,Kriens,37,CKW AG
+1175,1008,Schüpfheim,37,CKW AG
+1176,1039,Römerswil,37,CKW AG
+1177,1125,Dagmersellen,37,CKW AG
+1178,1123,Altishofen,37,CKW AG
+1179,1033,Inwil,37,CKW AG
+1180,1121,Alberswil,37,CKW AG
+1181,1102,Sempach,37,CKW AG
+1182,1143,Schötz,37,CKW AG
+1183,1150,Zell (LU),37,CKW AG
+1184,1082,Büron,37,CKW AG
+1185,1131,Grossdietwil,37,CKW AG
+1186,1128,Ettiswil,37,CKW AG
+1187,1137,Nebikon,37,CKW AG
+1188,1040,Rothenburg,37,CKW AG
+1189,1065,Root,37,CKW AG
+1190,1127,Egolzwil,37,CKW AG
+1191,1001,Doppleschwand,37,CKW AG
+1192,1010,Escholzmatt-Marbach,37,CKW AG
+1193,1099,Schenkon,37,CKW AG
+1194,1053,Dierikon,37,CKW AG
+1195,1037,Rain,37,CKW AG
+1196,1002,Entlebuch,37,CKW AG
+1197,1095,Oberkirch,37,CKW AG
+1198,1055,Gisikon,37,CKW AG
+1199,1061,Luzern,37,CKW AG
+1200,1025,Ermensee,37,CKW AG
+1201,1138,Ohmstal,37,CKW AG
+1202,1021,Aesch (LU),37,CKW AG
+1203,1126,Ebersecken,37,CKW AG
+1204,1151,Willisau,37,CKW AG
+1205,1096,Pfeffikon,37,CKW AG
+1206,1122,Altbüron,37,CKW AG
+1207,1136,Menznau,37,CKW AG
+1208,1100,Schlierbach,37,CKW AG
+1209,1084,Eich,37,CKW AG
+1210,1024,Emmen,37,CKW AG
+1211,1081,Beromünster,37,CKW AG
+1212,1004,Flühli,37,CKW AG
+1213,1009,Werthenstein,37,CKW AG
+1214,1107,Wolhusen,37,CKW AG
+1215,1132,Hergiswil bei Willisau,37,CKW AG
+1216,1147,Wikon,37,CKW AG
+1217,1023,Ballwil,37,CKW AG
+1218,1058,Horw,37,CKW AG
+1219,1006,Marbach (LU),37,CKW AG
+1220,1067,Udligenswil,37,CKW AG
+1221,1003,Escholzmatt,37,CKW AG
+1222,1041,Schongau,37,CKW AG
+1223,1060,Littau,37,CKW AG
+1224,1098,Ruswil,37,CKW AG
+1225,1089,Knutwil,37,CKW AG
+1226,1088,Hildisrieden,37,CKW AG
+1227,1026,Eschenbach (LU),37,CKW AG
+1228,1051,Adligenswil,37,CKW AG
+1229,1085,Geuensee,37,CKW AG
+1230,1093,Neuenkirch,37,CKW AG
+1231,1104,Triengen,37,CKW AG
+1232,1052,Buchrain,37,CKW AG
+1233,1706,Oberägeri,788,WWZ Netze AG
+1234,1704,Menzingen,788,WWZ Netze AG
+1235,1031,Hochdorf,788,WWZ Netze AG
+1236,1701,Baar,788,WWZ Netze AG
+1237,1703,Hünenberg,788,WWZ Netze AG
+1238,1711,Zug,788,WWZ Netze AG
+1239,1705,Neuheim,788,WWZ Netze AG
+1240,1710,Walchwil,788,WWZ Netze AG
+1241,1707,Risch,788,WWZ Netze AG
+1242,1709,Unterägeri,788,WWZ Netze AG
+1243,1702,Cham,788,WWZ Netze AG
+1244,1031,Hochdorf,787,WWZ Hochdorf AG
+1245,1370,Rothenthurm,466,EWS AG
+1246,1361,Alpthal,466,EWS AG
+1247,1069,Weggis,466,EWS AG
+1248,1366,Morschach,466,EWS AG
+1249,1374,Steinerberg,466,EWS AG
+1250,1362,Arth,466,EWS AG
+1251,1068,Vitznau,466,EWS AG
+1252,1331,Küssnacht (SZ),466,EWS AG
+1253,1364,Ingenbohl,466,EWS AG
+1254,1368,Oberiberg,466,EWS AG
+1255,1056,Greppen,466,EWS AG
+1256,1311,Gersau,466,EWS AG
+1257,1066,Schwarzenberg,561,ewl Kabelnetz AG
+1258,1062,Malters,561,ewl Kabelnetz AG
+1259,1061,Luzern,561,ewl Kabelnetz AG
+1260,1059,Kriens,561,ewl Kabelnetz AG
+1261,1060,Littau,561,ewl Kabelnetz AG
+1262,1062,Malters,738,Steiner Energie AG
+1263,1132,Hergiswil bei Willisau,144,Elektra Hergiswil-Dorf Genossenschaft
+1264,1151,Willisau,144,Elektra Hergiswil-Dorf Genossenschaft
+1265,1132,Hergiswil bei Willisau,175,Elektra Opfersei Genossenschaft
+1266,1135,Luthern,156,Elektra Luthern Genossenschaft
+1267,1145,Ufhusen,192,ELEKTRA UFHUSEN Genossenschaft
+1268,1220,Wassen,366,EWA-energieUri AG
+1269,1213,Schattdorf,366,EWA-energieUri AG
+1270,1217,Sisikon,366,EWA-energieUri AG
+1271,1204,Bauen,366,EWA-energieUri AG
+1272,1219,Unterschächen,366,EWA-energieUri AG
+1273,1203,Attinghausen,366,EWA-energieUri AG
+1274,1364,Ingenbohl,366,EWA-energieUri AG
+1275,1215,Seelisberg,366,EWA-energieUri AG
+1276,1369,Riemenstalden,366,EWA-energieUri AG
+1277,1214,Seedorf (UR),366,EWA-energieUri AG
+1278,1216,Silenen,366,EWA-energieUri AG
+1279,1201,Altdorf (UR),366,EWA-energieUri AG
+1280,1207,Flüelen,366,EWA-energieUri AG
+1281,1218,Spiringen,366,EWA-energieUri AG
+1282,1205,Bürglen (UR),366,EWA-energieUri AG
+1283,1366,Morschach,366,EWA-energieUri AG
+1284,1211,Isenthal,366,EWA-energieUri AG
+1285,1209,Gurtnellen,366,EWA-energieUri AG
+1286,1210,Hospental,477,Elektrizitätswerk Ursern
+1287,1212,Realp,477,Elektrizitätswerk Ursern
+1288,1202,Andermatt,477,Elektrizitätswerk Ursern
+1289,1206,Erstfeld,588,Gemeindewerke Erstfeld
+1290,1208,Göschenen,382,Elektrizitätswerk Göschenen
+1291,1301,Einsiedeln,838,EKZ Einsiedeln AG
+1292,1322,Freienbach,547,EW Höfe AG
+1293,1323,Wollerau,547,EW Höfe AG
+1294,1321,Feusisberg,547,EW Höfe AG
+1295,1321,Feusisberg,464,Elektrizitätswerk Schindellegi
+1296,1341,Altendorf,286,Elektrizitätsversorgung Altendorf AG
+1297,1342,Galgenen,242,"Gemeinde Galgenen, Elektrizitätsversorgung"
+1298,1343,Innerthal,315,Elektrizitätsversorgung Innerthal
+1299,1344,Lachen,549,EW Lachen AG
+1300,1345,Reichenburg,458,Gemeinde Reichenburg
+1301,1346,Schübelbach,345,"Gemeinde Schübelbach, Elektroversorgung"
+1302,1347,Tuggen,474,"Gemeinde Tuggen, Elektrizitätswerk"
+1303,1348,Vorderthal,583,"Gemeinde Vorderthal, Elektrizitätswerkversorgung"
+1304,1349,Wangen (SZ),420,"Gemeinde Wangen SZ, Elektrizitätswerk"
+1305,1349,Wangen (SZ),555,EW Wirth AG
+1306,1362,Arth,585,Gemeindewerke Arth Elektrizitäts- und Wasserwerk
+1307,1367,Muotathal,425,ebs Energie AG
+1308,1365,Lauerz,425,ebs Energie AG
+1309,1363,Illgau,425,ebs Energie AG
+1310,1372,Schwyz,425,ebs Energie AG
+1311,1371,Sattel,425,ebs Energie AG
+1312,1375,Unteriberg,425,ebs Energie AG
+1313,1373,Steinen,425,ebs Energie AG
+1314,1367,Muotathal,855,Elektrogenossenschaft Bisisthal
+1315,1407,Sarnen,454,Elektrizitätswerk Obwalden
+1316,1402,Engelberg,454,Elektrizitätswerk Obwalden
+1317,1406,Sachseln,454,Elektrizitätswerk Obwalden
+1318,1403,Giswil,454,Elektrizitätswerk Obwalden
+1319,1405,Lungern,454,Elektrizitätswerk Obwalden
+1320,1401,Alpnach,454,Elektrizitätswerk Obwalden
+1321,1404,Kerns,454,Elektrizitätswerk Obwalden
+1322,1501,Beckenried,584,Gemeindewerk Beckenried
+1323,1510,Stansstad,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1324,1511,Wolfenschiessen,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1325,1508,Oberdorf (NW),628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1326,1509,Stans,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1327,1506,Ennetmoos,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1328,1502,Buochs,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1329,1503,Dallenwil,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1330,1507,Hergiswil (NW),628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1331,1504,Emmetten,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1332,1505,Ennetbürgen,628,Kantonales Elektrizitätswerk Nidwalden (EWN)
+1333,1625,Riedern,785,Technische Betriebe Glarus
+1334,1607,Ennenda,785,Technische Betriebe Glarus
+1335,1609,Glarus,785,Technische Betriebe Glarus
+1336,1620,Netstal,785,Technische Betriebe Glarus
+1337,1632,Glarus,785,Technische Betriebe Glarus
+1338,1631,Glarus Süd,785,Technische Betriebe Glarus
+1339,1701,Baar,253,Elektrizitätsgenossenschaft Allenwinden und Umgebung (EGA)
+1340,1703,Hünenberg,489,EGH Elektro-Genossenschaft Hünenberg
+1341,1708,Steinhausen,774,Wasser- & Elektrizitätswerk Steinhausen
+1342,5935,Villars-Epeney,669,Romande Energie SA
+1343,5478,Cottens (VD),669,Romande Energie SA
+1344,5494,Pampigny,669,Romande Energie SA
+1345,5436,Saint-Oyens,669,Romande Energie SA
+1346,5556,Fiez,669,Romande Energie SA
+1347,5481,Dizy,669,Romande Energie SA
+1348,5652,Villars-sous-Yens,669,Romande Energie SA
+1349,5533,Poliez-Pittet,669,Romande Energie SA
+1350,5423,Ballens,669,Romande Energie SA
+1351,5746,Bavois,669,Romande Energie SA
+1352,5471,Bettens,669,Romande Energie SA
+1353,5855,Dully,669,Romande Energie SA
+1354,5513,Bioley-Orjulaz,669,Romande Energie SA
+1355,5429,Longirod,669,Romande Energie SA
+1356,5708,Chavannes-des-Bois,669,Romande Energie SA
+1357,5483,Ferreyres,669,Romande Energie SA
+1358,5713,Crans (VD),669,Romande Energie SA
+1359,5907,Chavannes-le-Chêne,669,Romande Energie SA
+1360,5672,Forel-sur-Lucens,669,Romande Energie SA
+1361,5668,Cremin,669,Romande Energie SA
+1362,5640,Lussy-sur-Morges,669,Romande Energie SA
+1363,5666,Chesalles-sur-Moudon,669,Romande Energie SA
+1364,5662,Brenles,669,Romande Energie SA
+1365,5421,Apples,669,Romande Energie SA
+1366,5743,Arnex-sur-Orbe,669,Romande Energie SA
+1367,5530,Pailly,669,Romande Energie SA
+1368,5681,Oulens-sur-Lucens,669,Romande Energie SA
+1369,5415,Yvorne,669,Romande Energie SA
+1370,5803,Vulliens,669,Romande Energie SA
+1371,5472,Bournens,669,Romande Energie SA
+1372,5428,Gimel,669,Romande Energie SA
+1373,5486,L'Isle,669,Romande Energie SA
+1374,5912,Démoret,669,Romande Energie SA
+1375,5413,Roche (VD),669,Romande Energie SA
+1376,5515,Bretigny-sur-Morrens,669,Romande Energie SA
+1377,6152,Collombey-Muraz,669,Romande Energie SA
+1378,5686,Sarzens,669,Romande Energie SA
+1379,5910,Cronay,669,Romande Energie SA
+1380,5644,Reverolle,669,Romande Energie SA
+1381,5476,Chevilly,669,Romande Energie SA
+1382,5751,Corcelles-sur-Chavornay,669,Romande Energie SA
+1383,5915,Essert-Pittet,669,Romande Energie SA
+1384,5557,Fontaines-sur-Grandson,669,Romande Energie SA
+1385,5403,Chessel,669,Romande Energie SA
+1386,5519,Eclagnens,669,Romande Energie SA
+1387,5525,Goumoens-le-Jux,669,Romande Energie SA
+1388,5524,Goumoens-la-Ville,669,Romande Energie SA
+1389,5752,Croy,669,Romande Energie SA
+1390,5424,Berolle,669,Romande Energie SA
+1391,5786,Les Cullayes,669,Romande Energie SA
+1392,5624,Bussigny,669,Romande Energie SA
+1393,5716,Eysins,669,Romande Energie SA
+1394,5628,Chigny,669,Romande Energie SA
+1395,5474,La Chaux (Cossonay),669,Romande Energie SA
+1396,5661,Boulens,669,Romande Energie SA
+1397,5487,Lussery-Villars,669,Romande Energie SA
+1398,5630,Colombier (VD),669,Romande Energie SA
+1399,5641,Monnaz,669,Romande Energie SA
+1400,5656,Hautemorges,669,Romande Energie SA
+1401,5647,Saint-Saphorin-s-Morges,669,Romande Energie SA
+1402,5892,Blonay - Saint-Légier,669,Romande Energie SA
+1403,5755,Lignerolle,669,Romande Energie SA
+1404,5645,Romanel-sur-Morges,669,Romande Energie SA
+1405,5852,Bursinel,669,Romande Energie SA
+1406,5688,Syens,669,Romande Energie SA
+1407,5749,Chavornay,669,Romande Energie SA
+1408,5854,Burtigny,669,Romande Energie SA
+1409,5853,Bursins,669,Romande Energie SA
+1410,5918,Gressy,669,Romande Energie SA
+1411,5745,Baulmes,669,Romande Energie SA
+1412,5750,Les Clées,669,Romande Energie SA
+1413,5622,Bremblens,669,Romande Energie SA
+1414,5919,Mathod,669,Romande Energie SA
+1415,5858,Luins,669,Romande Energie SA
+1416,5680,Ogens,669,Romande Energie SA
+1417,5655,Yens,669,Romande Energie SA
+1418,5634,Echichens,669,Romande Energie SA
+1419,5931,Treycovagnes,669,Romande Energie SA
+1420,5922,Montagny-près-Yverdon,669,Romande Energie SA
+1421,5541,Goumoëns,669,Romande Energie SA
+1422,5760,Rances,669,Romande Energie SA
+1423,5720,Givrins,669,Romande Energie SA
+1424,5908,Chêne-Pâquier,669,Romande Energie SA
+1425,5924,Orges,669,Romande Energie SA
+1426,5605,Grandvaux,669,Romande Energie SA
+1427,5608,Riex,669,Romande Energie SA
+1428,5603,Epesses,669,Romande Energie SA
+1429,5612,Villette (Lavaux),669,Romande Energie SA
+1430,5602,Cully,669,Romande Energie SA
+1431,5496,Penthaz,669,Romande Energie SA
+1432,5830,Villarzel,669,Romande Energie SA
+1433,5742,Agiez,669,Romande Energie SA
+1434,5629,Clarmont,669,Romande Energie SA
+1435,5499,Senarclens,669,Romande Energie SA
+1436,5701,Arnex-sur-Nyon,669,Romande Energie SA
+1437,5479,Cuarnens,669,Romande Energie SA
+1438,5683,Prévonloup,669,Romande Energie SA
+1439,5798,Ropraz,669,Romande Energie SA
+1440,5514,Bottens,669,Romande Energie SA
+1441,5927,Prahins,669,Romande Energie SA
+1442,5633,Echandens,669,Romande Energie SA
+1443,5741,L'Abergement,669,Romande Energie SA
+1444,5882,Chardonne,669,Romande Energie SA
+1445,5860,Perroy,669,Romande Energie SA
+1446,5521,Etagnières,669,Romande Energie SA
+1447,5484,Gollion,669,Romande Energie SA
+1448,5712,Coppet,669,Romande Energie SA
+1449,5552,Bullet,669,Romande Energie SA
+1450,5684,Rossenges,669,Romande Energie SA
+1451,5885,Jongny,669,Romande Energie SA
+1452,5730,Trélex,669,Romande Energie SA
+1453,5729,Tannay,669,Romande Energie SA
+1454,5933,Valeyres-sous-Montagny,669,Romande Energie SA
+1455,5651,Villars-Sainte-Croix,669,Romande Energie SA
+1456,5665,Chavannes-sur-Moudon,669,Romande Energie SA
+1457,5631,Denens,669,Romande Energie SA
+1458,5704,Begnins,669,Romande Energie SA
+1459,5551,Bonvillars,669,Romande Energie SA
+1460,5692,Vucherens,669,Romande Energie SA
+1461,5806,Jorat-Mézières,669,Romande Energie SA
+1462,5706,Borex,669,Romande Energie SA
+1463,5491,Mont-la-Ville,669,Romande Energie SA
+1464,5792,Montpreveyres,669,Romande Energie SA
+1465,5531,Penthéréaz,669,Romande Energie SA
+1466,5763,Valeyres-sous-Rances,669,Romande Energie SA
+1467,5632,Denges,669,Romande Energie SA
+1468,5488,Mauraz,669,Romande Energie SA
+1469,5520,Essertines-sur-Yverdon,669,Romande Energie SA
+1470,5500,Sévery,669,Romande Energie SA
+1471,5493,Orny,669,Romande Energie SA
+1472,5675,Lucens,669,Romande Energie SA
+1473,5909,Cheseaux-Noréaz,669,Romande Energie SA
+1474,5558,Fontanezier,669,Romande Energie SA
+1475,5570,Villars-Burquin,669,Romande Energie SA
+1476,5527,Morrens (VD),669,Romande Energie SA
+1477,5569,Vaugondry,669,Romande Energie SA
+1478,5674,Lovatens,669,Romande Energie SA
+1479,5567,Romairon,669,Romande Energie SA
+1480,5799,Servion,669,Romande Energie SA
+1481,5702,Arzier-Le Muids,669,Romande Energie SA
+1482,5592,Romanel-sur-Lausanne,669,Romande Energie SA
+1483,5431,Mollens (VD),669,Romande Energie SA
+1484,5731,Le Vaud,669,Romande Energie SA
+1485,5522,Fey,669,Romande Energie SA
+1486,5812,Champtauroz,669,Romande Energie SA
+1487,5679,Neyruz-sur-Moudon,669,Romande Energie SA
+1488,5664,Chapelle-sur-Moudon,669,Romande Energie SA
+1489,5676,Martherenges,669,Romande Energie SA
+1490,5689,Thierrens,669,Romande Energie SA
+1491,5667,Correvon,669,Romande Energie SA
+1492,5670,Denezy,669,Romande Energie SA
+1493,5936,Villars-sous-Champvent,669,Romande Energie SA
+1494,5705,Bogis-Bossey,669,Romande Energie SA
+1495,5906,Chanéaz,669,Romande Energie SA
+1496,5802,Vuibroye,669,Romande Energie SA
+1497,5794,Oron-le-Châtel,669,Romande Energie SA
+1498,5783,Châtillens,669,Romande Energie SA
+1499,5793,Oron-la-Ville,669,Romande Energie SA
+1500,5784,Chesalles-sur-Oron,669,Romande Energie SA
+1501,5682,Peyres-Possens,669,Romande Energie SA
+1502,5685,Saint-Cierges,669,Romande Energie SA
+1503,5781,Bussigny-sur-Oron,669,Romande Energie SA
+1504,5801,Les Thioleyres,669,Romande Energie SA
+1505,5489,Mex (VD),669,Romande Energie SA
+1506,5916,Essert-sous-Champvent,669,Romande Energie SA
+1507,5723,Mies,669,Romande Energie SA
+1508,5818,Granges-près-Marnand,669,Romande Energie SA
+1509,5815,Combremont-le-Petit,669,Romande Energie SA
+1510,5820,Marnand,669,Romande Energie SA
+1511,5811,Cerniaz (VD),669,Romande Energie SA
+1512,5824,Sassel,669,Romande Energie SA
+1513,5536,Sugnens,669,Romande Energie SA
+1514,5517,Dommartin,669,Romande Energie SA
+1515,5528,Naz,669,Romande Energie SA
+1516,5532,Poliez-le-Grand,669,Romande Energie SA
+1517,5921,Molondin,669,Romande Energie SA
+1518,5826,Seigneux,669,Romande Energie SA
+1519,5814,Combremont-le-Grand,669,Romande Energie SA
+1520,5829,Villars-Bramard,669,Romande Energie SA
+1521,5714,Crassier,669,Romande Energie SA
+1522,5709,Chéserex,669,Romande Energie SA
+1523,5819,Henniez,669,Romande Energie SA
+1524,5687,Sottens,669,Romande Energie SA
+1525,2038,Prévondavaux,669,Romande Energie SA
+1526,5563,Mutrux,669,Romande Energie SA
+1527,5796,Peney-le-Jorat,669,Romande Energie SA
+1528,5538,Villars-Tiercelin,669,Romande Energie SA
+1529,5691,Villars-Mendraz,669,Romande Energie SA
+1530,5677,Montaubion-Chardonney,669,Romande Energie SA
+1531,5430,Marchissy,669,Romande Energie SA
+1532,5719,Gingins,669,Romande Energie SA
+1533,5722,Grens,669,Romande Energie SA
+1534,5726,La Rippe,669,Romande Energie SA
+1535,5562,Mauborget,669,Romande Energie SA
+1536,5671,Dompierre (VD),669,Romande Energie SA
+1537,5789,Ferlens (VD),669,Romande Energie SA
+1538,5782,Carrouge (VD),669,Romande Energie SA
+1539,5555,Corcelles-près-Concise,669,Romande Energie SA
+1540,5902,Belmont-sur-Yverdon,669,Romande Energie SA
+1541,2049,Vuissens,669,Romande Energie SA
+1542,5650,Vaux-sur-Morges,669,Romande Energie SA
+1543,5788,Essertes,669,Romande Energie SA
+1544,5934,Valeyres-sous-Ursins,669,Romande Energie SA
+1545,5529,Oulens-sous-Echallens,669,Romande Energie SA
+1546,5791,Mézières (VD),669,Romande Energie SA
+1547,5937,Vugelles-La Mothe,669,Romande Energie SA
+1548,5495,Penthalaz,669,Romande Energie SA
+1549,5559,Giez,669,Romande Energie SA
+1550,5503,Vufflens-la-Ville,669,Romande Energie SA
+1551,5561,Grandson,669,Romande Energie SA
+1552,5673,Hermenches,669,Romande Energie SA
+1553,5762,Sergey,669,Romande Energie SA
+1554,5925,Orzens,669,Romande Energie SA
+1555,5609,Rivaz,669,Romande Energie SA
+1556,5623,Buchillon,669,Romande Energie SA
+1557,5856,Essertines-sur-Rolle,669,Romande Energie SA
+1558,5756,Montcherand,669,Romande Energie SA
+1559,5914,Ependes (VD),669,Romande Energie SA
+1560,5785,Corcelles-le-Jorat,669,Romande Energie SA
+1561,5800,Les Tavernes,669,Romande Energie SA
+1562,5795,Palézieux,669,Romande Energie SA
+1563,5669,Curtilles,669,Romande Energie SA
+1564,5654,Vullierens,669,Romande Energie SA
+1565,5601,Chexbres,669,Romande Energie SA
+1566,5639,Lully (VD),669,Romande Energie SA
+1567,5863,Vinzel,669,Romande Energie SA
+1568,5637,Lavigny,669,Romande Energie SA
+1569,5862,Tartegnin,669,Romande Energie SA
+1570,5539,Vuarrens,669,Romande Energie SA
+1571,5480,Daillens,669,Romande Energie SA
+1572,6156,Troistorrents,669,Romande Energie SA
+1573,5401,Aigle,669,Romande Energie SA
+1574,5828,Treytorrens (Payerne),669,Romande Energie SA
+1575,5638,Lonay,669,Romande Energie SA
+1576,5516,Cugy (VD),669,Romande Energie SA
+1577,5534,Rueyres,669,Romande Energie SA
+1578,5757,Orbe,669,Romande Energie SA
+1579,5482,Eclépens,669,Romande Energie SA
+1580,5642,Morges,669,Romande Energie SA
+1581,5663,Bussy-sur-Moudon,669,Romande Energie SA
+1582,5407,Leysin,669,Romande Energie SA
+1583,5728,Signy-Avenex,669,Romande Energie SA
+1584,5554,Concise,669,Romande Energie SA
+1585,5621,Aclens,669,Romande Energie SA
+1586,5928,Rovray,669,Romande Energie SA
+1587,6610,Céligny,669,Romande Energie SA
+1588,5913,Donneloye,669,Romande Energie SA
+1589,5560,Grandevent,669,Romande Energie SA
+1590,5497,Pompaples,669,Romande Energie SA
+1591,5926,Pomy,669,Romande Energie SA
+1592,5711,Commugny,669,Romande Energie SA
+1593,5646,Saint-Prex,669,Romande Energie SA
+1594,5804,Jorat-Menthue,669,Romande Energie SA
+1595,5523,Froideville,669,Romande Energie SA
+1596,5501,Sullens,669,Romande Energie SA
+1597,5890,Vevey,669,Romande Energie SA
+1598,6159,Vouvry,669,Romande Energie SA
+1599,5653,Vufflens-le-Château,669,Romande Energie SA
+1600,5540,Montilliez,669,Romande Energie SA
+1601,5831,Valbroye,669,Romande Energie SA
+1602,5678,Moudon,669,Romande Energie SA
+1603,5761,Romainmôtier-Envy,669,Romande Energie SA
+1604,5857,Gilly,669,Romande Energie SA
+1605,5411,Ormont-Dessus,669,Romande Energie SA
+1606,5747,Bofflens,669,Romande Energie SA
+1607,5409,Ollon,669,Romande Energie SA
+1608,5717,Founex,669,Romande Energie SA
+1609,5535,Saint-Barthélemy (VD),669,Romande Energie SA
+1610,5566,Provence,669,Romande Energie SA
+1611,5939,Yvonand,669,Romande Energie SA
+1612,5537,Villars-le-Terroir,669,Romande Energie SA
+1613,5758,La Praz,669,Romande Energie SA
+1614,5929,Suchy,669,Romande Energie SA
+1615,5764,Vallorbe,669,Romande Energie SA
+1616,5649,Tolochenaz,669,Romande Energie SA
+1617,5923,Oppens,669,Romande Energie SA
+1618,6158,Vionnaz,669,Romande Energie SA
+1619,5553,Champagne,669,Romande Energie SA
+1620,5568,Sainte-Croix,669,Romande Energie SA
+1621,5607,Puidoux,669,Romande Energie SA
+1622,5410,Ormont-Dessous,669,Romande Energie SA
+1623,5404,Corbeyrier,669,Romande Energie SA
+1624,5932,Ursins,669,Romande Energie SA
+1625,5625,Bussy-Chardonney,669,Romande Energie SA
+1626,5564,Novalles,669,Romande Energie SA
+1627,5754,Juriens,669,Romande Energie SA
+1628,5604,Forel (Lavaux),669,Romande Energie SA
+1629,5891,Veytaux,669,Romande Energie SA
+1630,5412,Rennaz,669,Romande Energie SA
+1631,5405,Gryon,669,Romande Energie SA
+1632,5498,La Sarraz,669,Romande Energie SA
+1633,5512,Bercher,669,Romande Energie SA
+1634,5571,Tévenon,669,Romande Energie SA
+1635,5408,Noville,669,Romande Energie SA
+1636,5911,Cuarny,669,Romande Energie SA
+1637,5511,Assens,669,Romande Energie SA
+1638,5606,Lutry,669,Romande Energie SA
+1639,5883,Corseaux,669,Romande Energie SA
+1640,5434,Saint-George,669,Romande Energie SA
+1641,5475,Chavannes-le-Veyron,669,Romande Energie SA
+1642,5492,Montricher,669,Romande Energie SA
+1643,5707,Chavannes-de-Bogis,669,Romande Energie SA
+1644,5490,Moiry,669,Romande Energie SA
+1645,5485,Grancy,669,Romande Energie SA
+1646,5930,Suscévaz,669,Romande Energie SA
+1647,5690,Villars-le-Comte,669,Romande Energie SA
+1648,5766,Vuiteboeuf,669,Romande Energie SA
+1649,5905,Champvent,669,Romande Energie SA
+1650,5903,Bioley-Magnoux,669,Romande Energie SA
+1651,5565,Onnens (VD),669,Romande Energie SA
+1652,5805,Oron,669,Romande Energie SA
+1653,5582,Cheseaux-sur-Lausanne,669,Romande Energie SA
+1654,5611,Savigny,669,Romande Energie SA
+1655,5693,Montanaire,669,Romande Energie SA
+1656,5425,Bière,669,Romande Energie SA
+1657,5881,Blonay,669,Romande Energie SA
+1658,5473,Boussens,669,Romande Energie SA
+1659,5904,Chamblon,669,Romande Energie SA
+1660,5718,Genolier,669,Romande Energie SA
+1661,5414,Villeneuve (VD),669,Romande Energie SA
+1662,6151,Champéry,669,Romande Energie SA
+1663,5861,Rolle,669,Romande Energie SA
+1664,5748,Bretonnières,669,Romande Energie SA
+1665,5889,La Tour-de-Peilz,669,Romande Energie SA
+1666,5643,Préverenges,669,Romande Energie SA
+1667,5888,Saint-Légier-La Chiésaz,669,Romande Energie SA
+1668,5759,Premier,669,Romande Energie SA
+1669,5402,Bex,669,Romande Energie SA
+1670,5477,Cossonay,669,Romande Energie SA
+1671,5613,Bourg-en-Lavaux,669,Romande Energie SA
+1672,5703,Bassins,669,Romande Energie SA
+1673,5859,Mont-sur-Rolle,669,Romande Energie SA
+1674,5886,Montreux,669,Romande Energie SA
+1675,6157,Val-d'Illiez,669,Romande Energie SA
+1676,6155,Saint-Gingolph,669,Romande Energie SA
+1677,6154,Port-Valais,669,Romande Energie SA
+1678,5727,Saint-Cergue,669,Romande Energie SA
+1679,5518,Echallens,669,Romande Energie SA
+1680,5437,Saubraz,669,Romande Energie SA
+1681,5884,Corsier-sur-Vevey,669,Romande Energie SA
+1682,5610,Saint-Saphorin (Lavaux),669,Romande Energie SA
+1683,2129,Corbières,610,Gruyère Energie S.A.
+1684,2126,Cerniat (FR),610,Gruyère Energie S.A.
+1685,2131,Echarlens,610,Gruyère Energie S.A.
+1686,2130,Crésuz,610,Gruyère Energie S.A.
+1687,2123,Botterens,610,Gruyère Energie S.A.
+1688,2148,Riaz,610,Gruyère Energie S.A.
+1689,2127,Charmey,610,Gruyère Energie S.A.
+1690,2163,Val-de-Charmey,610,Gruyère Energie S.A.
+1691,2143,Morlon,610,Gruyère Energie S.A.
+1692,2125,Bulle,610,Gruyère Energie S.A.
+1693,2128,Châtel-sur-Montsalvens,610,Gruyère Energie S.A.
+1694,2159,Villarvolard,610,Gruyère Energie S.A.
+1695,2138,Jaun,548,EW Jaun Energie AG
+1696,2271,Meyriez,623,Industrielle Betriebe Murten
+1697,2275,Murten,623,Industrielle Betriebe Murten
+1698,2274,Muntelier,623,Industrielle Betriebe Murten
+1699,2401,Egerkingen,535,Elektrizitätsversorgung Egerkingen
+1700,2402,Härkingen,611,HEnergie Härkingen HEH
+1701,2403,Kestenholz,150,Energie Kestenholz
+1702,2404,Neuendorf,164,Elektra Neuendorf
+1703,2405,Niederbuchsiten,166,Elektra Niederbuchsiten (ENI)
+1704,2406,Oberbuchsiten,572,Elektrizitätsversorgung Oberbuchsiten
+1705,2408,Wolfwil,199,Elektra Wolfwil
+1706,2427,Matzendorf,190,Genossenschaft Elektra Thal
+1707,2424,Herbetswil,190,Genossenschaft Elektra Thal
+1708,2426,Laupersdorf,190,Genossenschaft Elektra Thal
+1709,2421,Aedermannsdorf,190,Genossenschaft Elektra Thal
+1710,2583,Schönenwerd,11,Aare Versorgungs AG (AVAG)
+1711,2572,Däniken,11,Aare Versorgungs AG (AVAG)
+1712,2422,Balsthal,11,Aare Versorgungs AG (AVAG)
+1713,2491,Hauenstein-Ifenthal,11,Aare Versorgungs AG (AVAG)
+1714,2502,Wisen (SO),11,Aare Versorgungs AG (AVAG)
+1715,2585,Walterswil (SO),11,Aare Versorgungs AG (AVAG)
+1716,2497,Obergösgen,11,Aare Versorgungs AG (AVAG)
+1717,2582,Rickenbach (SO),11,Aare Versorgungs AG (AVAG)
+1718,2586,Wangen bei Olten,11,Aare Versorgungs AG (AVAG)
+1719,2495,Niedergösgen,11,Aare Versorgungs AG (AVAG)
+1720,2501,Winznau,11,Aare Versorgungs AG (AVAG)
+1721,2499,Stüsslingen,11,Aare Versorgungs AG (AVAG)
+1722,2573,Dulliken,11,Aare Versorgungs AG (AVAG)
+1723,2493,Lostorf,11,Aare Versorgungs AG (AVAG)
+1724,2584,Starrkirch-Wil,11,Aare Versorgungs AG (AVAG)
+1725,2576,Gretzenbach,11,Aare Versorgungs AG (AVAG)
+1726,2500,Trimbach,11,Aare Versorgungs AG (AVAG)
+1727,2425,Holderbank (SO),600,Elektra Genossenschaft Holderbank
+1728,2428,Mümliswil-Ramiswil,162,Elektra Mümliswil-Ramiswil Genossenschaft
+1729,2445,Biezwil,119,Elektra Biezwil
+1730,2455,Lüterkofen-Ichertswil,154,Elektra Lüterkofen-Ichertswil
+1731,2456,Lüterswil-Gächliwil,155,Elektra Lüterswil-Gächliwil
+1732,2461,Schnottwil,183,"Einwohnergemeinde Schnottwil, Elektrizitätsversorgung"
+1733,2774,Schönenbuch,70,Primeo Netz AG
+1734,2480,Seewen,70,Primeo Netz AG
+1735,2616,Fehren,70,Primeo Netz AG
+1736,2471,Bättwil,70,Primeo Netz AG
+1737,2611,Bärschwil,70,Primeo Netz AG
+1738,2764,Biel-Benken,70,Primeo Netz AG
+1739,2617,Grindel,70,Primeo Netz AG
+1740,2621,Nunningen,70,Primeo Netz AG
+1741,2785,Duggingen,70,Primeo Netz AG
+1742,2775,Therwil,70,Primeo Netz AG
+1743,2767,Bottmingen,70,Primeo Netz AG
+1744,2615,Erschwil,70,Primeo Netz AG
+1745,2889,Lauwil,70,Primeo Netz AG
+1746,2472,Büren (SO),70,Primeo Netz AG
+1747,2613,Breitenbach,70,Primeo Netz AG
+1748,2768,Ettingen,70,Primeo Netz AG
+1749,2831,Pratteln,70,Primeo Netz AG
+1750,2614,Büsserach,70,Primeo Netz AG
+1751,2761,Aesch (BL),70,Primeo Netz AG
+1752,2788,Liesberg,70,Primeo Netz AG
+1753,2481,Witterswil,70,Primeo Netz AG
+1754,2771,Oberwil (BL),70,Primeo Netz AG
+1755,2612,Beinwil (SO),70,Primeo Netz AG
+1756,2478,Nuglar-St. Pantaleon,70,Primeo Netz AG
+1757,2476,Hofstetten-Flüh,70,Primeo Netz AG
+1758,2782,Brislach,70,Primeo Netz AG
+1759,2473,Dornach,70,Primeo Netz AG
+1760,2620,Meltingen,70,Primeo Netz AG
+1761,2766,Birsfelden,70,Primeo Netz AG
+1762,2787,Laufen,70,Primeo Netz AG
+1763,2477,Metzerlen-Mariastein,70,Primeo Netz AG
+1764,2475,Hochwald,70,Primeo Netz AG
+1765,2765,Binningen,70,Primeo Netz AG
+1766,2786,Grellingen,70,Primeo Netz AG
+1767,2619,Kleinlützel,70,Primeo Netz AG
+1768,2769,Münchenstein,70,Primeo Netz AG
+1769,2770,Muttenz,70,Primeo Netz AG
+1770,2773,Reinach (BL),70,Primeo Netz AG
+1771,2763,Arlesheim,70,Primeo Netz AG
+1772,2783,Burg im Leimental,70,Primeo Netz AG
+1773,2883,Bretzwil,70,Primeo Netz AG
+1774,2479,Rodersdorf,70,Primeo Netz AG
+1775,2830,Lupsingen,70,Primeo Netz AG
+1776,2762,Allschwil,70,Primeo Netz AG
+1777,2772,Pfeffingen,70,Primeo Netz AG
+1778,2474,Gempen,70,Primeo Netz AG
+1779,2622,Zullwil,70,Primeo Netz AG
+1780,2618,Himmelried,70,Primeo Netz AG
+1781,4198,Hendschiken,5,AEW Energie AG
+1782,4233,Kallern,5,AEW Energie AG
+1783,4120,Veltheim (AG),5,AEW Energie AG
+1784,4252,Kaiseraugst,5,AEW Energie AG
+1785,4255,Mumpf,5,AEW Energie AG
+1786,4124,Bözberg,5,AEW Energie AG
+1787,4138,Leutwil,5,AEW Energie AG
+1788,4037,Oberrohrdorf,5,AEW Energie AG
+1789,4035,Niederrohrdorf,5,AEW Energie AG
+1790,4261,Wallbach,5,AEW Energie AG
+1791,4140,Oberkulm,5,AEW Energie AG
+1792,4044,Untersiggenthal,5,AEW Energie AG
+1793,4304,Döttingen,5,AEW Energie AG
+1794,4078,Uezwil,5,AEW Energie AG
+1795,4139,Menziken,5,AEW Energie AG
+1796,4115,Schinznach-Dorf,5,AEW Energie AG
+1797,4137,Leimbach (AG),5,AEW Energie AG
+1798,4164,Gansingen,5,AEW Energie AG
+1799,4262,Wegenstetten,5,AEW Energie AG
+1800,4302,Böbikon,5,AEW Energie AG
+1801,4070,Hilfikon,5,AEW Energie AG
+1802,4310,Koblenz,5,AEW Energie AG
+1803,2492,Kienberg,5,AEW Energie AG
+1804,4260,Stein (AG),5,AEW Energie AG
+1805,4306,Fisibach,5,AEW Energie AG
+1806,4065,Dottikon,5,AEW Energie AG
+1807,4305,Endingen,5,AEW Energie AG
+1808,4042,Turgi,5,AEW Energie AG
+1809,4091,Auenstein,5,AEW Energie AG
+1810,4166,Herznach,5,AEW Energie AG
+1811,4112,Rüfenach,5,AEW Energie AG
+1812,4133,Burg (AG),5,AEW Energie AG
+1813,4143,Schmiedrued,5,AEW Energie AG
+1814,4202,Meisterschwanden,5,AEW Energie AG
+1815,4185,Böztal,5,AEW Energie AG
+1816,4197,Hallwil,5,AEW Energie AG
+1817,4186,Herznach-Ueken,5,AEW Energie AG
+1818,4323,Bad Zurzach,5,AEW Energie AG
+1819,4205,Othmarsingen,5,AEW Energie AG
+1820,4163,Frick,5,AEW Energie AG
+1821,4076,Sarmenstorf,5,AEW Energie AG
+1822,4324,Zurzach,5,AEW Energie AG
+1823,4175,Oeschgen,5,AEW Energie AG
+1824,4167,Hornussen,5,AEW Energie AG
+1825,4251,Hellikon,5,AEW Energie AG
+1826,4096,Effingen,5,AEW Energie AG
+1827,4286,Uerkheim,5,AEW Energie AG
+1828,4172,Münchwilen (AG),5,AEW Energie AG
+1829,4094,Bözen,5,AEW Energie AG
+1830,4117,Thalheim (AG),5,AEW Energie AG
+1831,4274,Brittnau,5,AEW Energie AG
+1832,4312,Lengnau (AG),5,AEW Energie AG
+1833,4125,Schinznach,5,AEW Energie AG
+1834,4106,Mönthal,5,AEW Energie AG
+1835,4023,Bergdietikon,5,AEW Energie AG
+1836,4283,Safenwil,5,AEW Energie AG
+1837,4077,Tägerig,5,AEW Energie AG
+1838,4193,Brunegg,5,AEW Energie AG
+1839,4254,Möhlin,5,AEW Energie AG
+1840,4146,Unterkulm,5,AEW Energie AG
+1841,4253,Magden,5,AEW Energie AG
+1842,4093,Birrhard,5,AEW Energie AG
+1843,4068,Hägglingen,5,AEW Energie AG
+1844,4110,Remigen,5,AEW Energie AG
+1845,4192,Boniswil,5,AEW Energie AG
+1846,4240,Waltenschwil,5,AEW Energie AG
+1847,4032,Mägenwil,5,AEW Energie AG
+1848,4196,Fahrwangen,5,AEW Energie AG
+1849,4264,Zuzgen,5,AEW Energie AG
+1850,4317,Rümikon,5,AEW Energie AG
+1851,4191,Ammerswil,5,AEW Energie AG
+1852,4161,Eiken,5,AEW Energie AG
+1853,4315,Rekingen (AG),5,AEW Energie AG
+1854,4199,Holderbank (AG),5,AEW Energie AG
+1855,4309,Klingnau,5,AEW Energie AG
+1856,4258,Rheinfelden,5,AEW Energie AG
+1857,4063,Bremgarten (AG),5,AEW Energie AG
+1858,4307,Full-Reuenthal,5,AEW Energie AG
+1859,4303,Böttstein,5,AEW Energie AG
+1860,4320,Tegerfelden,5,AEW Energie AG
+1861,4259,Schupfart,5,AEW Energie AG
+1862,4108,Oberbözberg,5,AEW Energie AG
+1863,4142,Schlossrued,5,AEW Energie AG
+1864,4208,Seengen,5,AEW Energie AG
+1865,4313,Leuggern,5,AEW Energie AG
+1866,4041,Stetten (AG),5,AEW Energie AG
+1867,4256,Obermumpf,5,AEW Energie AG
+1868,4318,Schneisingen,5,AEW Energie AG
+1869,4109,Oberflachs,5,AEW Energie AG
+1870,4098,Gallenkirch,5,AEW Energie AG
+1871,4103,Linn,5,AEW Energie AG
+1872,4119,Unterbözberg,5,AEW Energie AG
+1873,2574,Eppenberg-Wöschnau,615,Eniwa AG
+1874,4277,Moosleerau,615,Eniwa AG
+1875,4002,Biberstein,615,Eniwa AG
+1876,4013,Unterentfelden,615,Eniwa AG
+1877,4005,Erlinsbach (AG),615,Eniwa AG
+1878,4011,Rohr (AG),615,Eniwa AG
+1879,4284,Staffelbach,615,Eniwa AG
+1880,4136,Holziken,615,Eniwa AG
+1881,4272,Attelwil,615,Eniwa AG
+1882,4273,Bottenwil,615,Eniwa AG
+1883,2503,Erlinsbach (SO),615,Eniwa AG
+1884,4007,Hirschthal,615,Eniwa AG
+1885,4001,Aarau,615,Eniwa AG
+1886,4003,Buchs (AG),615,Eniwa AG
+1887,4288,Wiliberg,615,Eniwa AG
+1888,4275,Kirchleerau,615,Eniwa AG
+1889,4004,Densbüren,615,Eniwa AG
+1890,2498,Rohr (SO),615,Eniwa AG
+1891,4008,Küttigen,615,Eniwa AG
+1892,4281,Reitnau,615,Eniwa AG
+1893,2513,Biberist,536,EV Energieversorgung Biberist
+1894,2517,Derendingen,249,EWD
+1895,2518,Etziken,598,Genossenschaft Elektra Äusseres Wasseramt EAW
+1896,2523,Horriwil,598,Genossenschaft Elektra Äusseres Wasseramt EAW
+1897,2535,Drei Höfe,598,Genossenschaft Elektra Äusseres Wasseramt EAW
+1898,2524,Hüniken,598,Genossenschaft Elektra Äusseres Wasseramt EAW
+1899,2511,Aeschi (SO),598,Genossenschaft Elektra Äusseres Wasseramt EAW
+1900,2520,Halten,173,Genossenschaft ELEKTRA OEKINGEN HALTEN
+1901,2529,Oekingen,173,Genossenschaft ELEKTRA OEKINGEN HALTEN
+1902,2526,Lohn-Ammannsegg,321,Elektrizitätsversorgung Lohn-Ammannsegg
+1903,2546,Grenchen,731,SWG
+1904,2421,Aedermannsdorf,731,SWG
+1905,2578,Gunzgen,534,eug Elektra Untergäu Genossenschaft
+1906,2580,Kappel (SO),534,eug Elektra Untergäu Genossenschaft
+1907,2579,Hägendorf,534,eug Elektra Untergäu Genossenschaft
+1908,2571,Boningen,534,eug Elektra Untergäu Genossenschaft
+1909,2575,Fulenbach,310,Elektra Fulenbach (EFU)
+1910,2576,Gretzenbach,834,Elektra Gretzenbach AG
+1911,2581,Olten,729,Städtische Betriebe Olten (SBO)
+1912,2703,Riehen,624,IWB Industrielle Werke Basel
+1913,2702,Bettingen,624,IWB Industrielle Werke Basel
+1914,2701,Basel,624,IWB Industrielle Werke Basel
+1915,2853,Maisprach,113,EBL (Genossenschaft Elektra Baselland)
+1916,2860,Rünenberg,113,EBL (Genossenschaft Elektra Baselland)
+1917,2841,Anwil,113,EBL (Genossenschaft Elektra Baselland)
+1918,2825,Füllinsdorf,113,EBL (Genossenschaft Elektra Baselland)
+1919,2847,Häfelfingen,113,EBL (Genossenschaft Elektra Baselland)
+1920,2869,Zunzgen,113,EBL (Genossenschaft Elektra Baselland)
+1921,2867,Wittinsburg,113,EBL (Genossenschaft Elektra Baselland)
+1922,2863,Tenniken,113,EBL (Genossenschaft Elektra Baselland)
+1923,2851,Kilchberg (BL),113,EBL (Genossenschaft Elektra Baselland)
+1924,2856,Ormalingen,113,EBL (Genossenschaft Elektra Baselland)
+1925,2855,Oltingen,113,EBL (Genossenschaft Elektra Baselland)
+1926,2890,Liedertswil,113,EBL (Genossenschaft Elektra Baselland)
+1927,2895,Waldenburg,113,EBL (Genossenschaft Elektra Baselland)
+1928,2888,Langenbruck,113,EBL (Genossenschaft Elektra Baselland)
+1929,2861,Sissach,113,EBL (Genossenschaft Elektra Baselland)
+1930,2868,Zeglingen,113,EBL (Genossenschaft Elektra Baselland)
+1931,2832,Ramlinsburg,113,EBL (Genossenschaft Elektra Baselland)
+1932,2846,Gelterkinden,113,EBL (Genossenschaft Elektra Baselland)
+1933,2826,Giebenach,113,EBL (Genossenschaft Elektra Baselland)
+1934,2866,Wintersingen,113,EBL (Genossenschaft Elektra Baselland)
+1935,2882,Bennwil,113,EBL (Genossenschaft Elektra Baselland)
+1936,2833,Seltisberg,113,EBL (Genossenschaft Elektra Baselland)
+1937,2894,Titterten,113,EBL (Genossenschaft Elektra Baselland)
+1938,2857,Rickenbach (BL),113,EBL (Genossenschaft Elektra Baselland)
+1939,2824,Frenkendorf,113,EBL (Genossenschaft Elektra Baselland)
+1940,2886,Hölstein,113,EBL (Genossenschaft Elektra Baselland)
+1941,2834,Ziefen,113,EBL (Genossenschaft Elektra Baselland)
+1942,2843,Buckten,113,EBL (Genossenschaft Elektra Baselland)
+1943,2862,Tecknau,113,EBL (Genossenschaft Elektra Baselland)
+1944,2850,Känerkinden,113,EBL (Genossenschaft Elektra Baselland)
+1945,2893,Reigoldswil,113,EBL (Genossenschaft Elektra Baselland)
+1946,2842,Böckten,113,EBL (Genossenschaft Elektra Baselland)
+1947,2849,Itingen,113,EBL (Genossenschaft Elektra Baselland)
+1948,2823,Bubendorf,113,EBL (Genossenschaft Elektra Baselland)
+1949,2828,Lausen,113,EBL (Genossenschaft Elektra Baselland)
+1950,2852,Läufelfingen,113,EBL (Genossenschaft Elektra Baselland)
+1951,2848,Hemmiken,113,EBL (Genossenschaft Elektra Baselland)
+1952,2831,Pratteln,113,EBL (Genossenschaft Elektra Baselland)
+1953,2885,Eptingen,113,EBL (Genossenschaft Elektra Baselland)
+1954,2865,Wenslingen,113,EBL (Genossenschaft Elektra Baselland)
+1955,2844,Buus,113,EBL (Genossenschaft Elektra Baselland)
+1956,2892,Oberdorf (BL),113,EBL (Genossenschaft Elektra Baselland)
+1957,2864,Thürnen,113,EBL (Genossenschaft Elektra Baselland)
+1958,2845,Diepflingen,113,EBL (Genossenschaft Elektra Baselland)
+1959,2881,Arboldswil,113,EBL (Genossenschaft Elektra Baselland)
+1960,2822,Augst,113,EBL (Genossenschaft Elektra Baselland)
+1961,2891,Niederdorf,113,EBL (Genossenschaft Elektra Baselland)
+1962,2884,Diegten,113,EBL (Genossenschaft Elektra Baselland)
+1963,2829,Liestal,113,EBL (Genossenschaft Elektra Baselland)
+1964,2887,Lampenberg,113,EBL (Genossenschaft Elektra Baselland)
+1965,2858,Rothenfluh,113,EBL (Genossenschaft Elektra Baselland)
+1966,2854,Nusshof,113,EBL (Genossenschaft Elektra Baselland)
+1967,2859,Rümlingen,113,EBL (Genossenschaft Elektra Baselland)
+1968,2821,Arisdorf,113,EBL (Genossenschaft Elektra Baselland)
+1969,2827,Hersberg,113,EBL (Genossenschaft Elektra Baselland)
+1970,2822,Augst,110,Genossenschaft Elektra Augst
+1971,2849,Itingen,147,Genossenschaft Elektra Itingen
+1972,2853,Maisprach,158,"Elektra Maisprach, Genossenschaft"
+1973,2861,Sissach,187,Genossenschaft Elektra Sissach
+1974,2893,Reigoldswil,176,Elektra Reigoldswil Genossenschaft
+1975,2974,Wilchingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1976,2903,Löhningen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1977,2936,Merishausen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1978,2919,Stetten (SH),426,Elektrizitätswerk des Kantons Schaffhausen AG
+1979,2973,Trasadingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1980,2972,Oberhallau,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1981,2953,Siblingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1982,2963,Ramsen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1983,2951,Beggingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1984,2917,Lohn (SH),426,Elektrizitätswerk des Kantons Schaffhausen AG
+1985,2915,Dörflingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1986,2939,Schaffhausen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1987,2961,Buch (SH),426,Elektrizitätswerk des Kantons Schaffhausen AG
+1988,2971,Hallau,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1989,9998,,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1990,2952,Schleitheim,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1991,2931,Bargen (SH),426,Elektrizitätswerk des Kantons Schaffhausen AG
+1992,2920,Thayngen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1993,2964,Stein am Rhein,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1994,2938,Rüdlingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1995,2937,Neuhausen am Rheinfall,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1996,2904,Neunkirch,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1997,2933,Buchberg,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1998,2932,Beringen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+1999,2962,Hemishofen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+2000,2914,Büttenhardt,426,Elektrizitätswerk des Kantons Schaffhausen AG
+2001,2901,Gächlingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+2002,2902,Guntmadingen,426,Elektrizitätswerk des Kantons Schaffhausen AG
+2003,2939,Schaffhausen,732,"Bereich Verwaltung, SH POWER"
+2004,2971,Hallau,778,"Gemeinde Hallau, Elektrizitätswerk"
+2005,3021,Bühler,727,St. Gallisch-Appenzellische Kraftwerke AG
+2006,3002,Hundwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2007,3104,Schlatt-Haslen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2008,4911,Bürglen (TG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2009,3313,Kaltbrunn,727,St. Gallisch-Appenzellische Kraftwerke AG
+2010,3024,Teufen (AR),727,St. Gallisch-Appenzellische Kraftwerke AG
+2011,3204,Wittenbach,727,St. Gallisch-Appenzellische Kraftwerke AG
+2012,3443,Gossau (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2013,3102,Gonten,727,St. Gallisch-Appenzellische Kraftwerke AG
+2014,3403,Ganterschwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2015,3006,Urnäsch,727,St. Gallisch-Appenzellische Kraftwerke AG
+2016,3374,Lichtensteig,727,St. Gallisch-Appenzellische Kraftwerke AG
+2017,3295,Quarten,727,St. Gallisch-Appenzellische Kraftwerke AG
+2018,3391,Bütschwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2019,3342,Eschenbach (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2020,3202,Muolen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2021,4511,Zihlschlacht-Sitterdorf,727,St. Gallisch-Appenzellische Kraftwerke AG
+2022,3037,Walzenhausen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2023,3023,Speicher,727,St. Gallisch-Appenzellische Kraftwerke AG
+2024,3212,Eggersriet,727,St. Gallisch-Appenzellische Kraftwerke AG
+2025,3105,Schwende,727,St. Gallisch-Appenzellische Kraftwerke AG
+2026,3005,Stein (AR),727,St. Gallisch-Appenzellische Kraftwerke AG
+2027,3237,Thal,727,St. Gallisch-Appenzellische Kraftwerke AG
+2028,3407,Oberuzwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2029,3297,Vilters-Wangs,727,St. Gallisch-Appenzellische Kraftwerke AG
+2030,3401,Degersheim,727,St. Gallisch-Appenzellische Kraftwerke AG
+2031,3338,Schmerikon,727,St. Gallisch-Appenzellische Kraftwerke AG
+2032,3025,Trogen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2033,3274,Sennwald,727,St. Gallisch-Appenzellische Kraftwerke AG
+2034,3360,Nesslau,727,St. Gallisch-Appenzellische Kraftwerke AG
+2035,3405,Jonschwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2036,3444,Waldkirch,727,St. Gallisch-Appenzellische Kraftwerke AG
+2037,3359,Wildhaus-Alt St. Johann,727,St. Gallisch-Appenzellische Kraftwerke AG
+2038,3292,Flums,727,St. Gallisch-Appenzellische Kraftwerke AG
+2039,3001,Herisau,727,St. Gallisch-Appenzellische Kraftwerke AG
+2040,3408,Uzwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2041,3424,Oberbüren,727,St. Gallisch-Appenzellische Kraftwerke AG
+2042,3358,Nesslau-Krummenau,727,St. Gallisch-Appenzellische Kraftwerke AG
+2043,3101,Appenzell,727,St. Gallisch-Appenzellische Kraftwerke AG
+2044,3356,Stein (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2045,3339,Uznach,727,St. Gallisch-Appenzellische Kraftwerke AG
+2046,3034,Rehetobel,727,St. Gallisch-Appenzellische Kraftwerke AG
+2047,3378,,727,St. Gallisch-Appenzellische Kraftwerke AG
+2048,3422,Niederbüren,727,St. Gallisch-Appenzellische Kraftwerke AG
+2049,3375,Oberhelfenschwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2050,3341,Gommiswald,727,St. Gallisch-Appenzellische Kraftwerke AG
+2051,3022,Gais,727,St. Gallisch-Appenzellische Kraftwerke AG
+2052,3036,Wald (AR),727,St. Gallisch-Appenzellische Kraftwerke AG
+2053,3316,Weesen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2054,3393,Lütisburg,727,St. Gallisch-Appenzellische Kraftwerke AG
+2055,3236,St. Margrethen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2056,3251,Altstätten,727,St. Gallisch-Appenzellische Kraftwerke AG
+2057,3351,Alt St. Johann,727,St. Gallisch-Appenzellische Kraftwerke AG
+2058,3004,Schwellbrunn,727,St. Gallisch-Appenzellische Kraftwerke AG
+2059,3201,Häggenschwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2060,3213,Goldach,727,St. Gallisch-Appenzellische Kraftwerke AG
+2061,3256,Rüthi (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2062,3357,Wildhaus,727,St. Gallisch-Appenzellische Kraftwerke AG
+2063,3291,Bad Ragaz,727,St. Gallisch-Appenzellische Kraftwerke AG
+2064,3372,Hemberg,727,St. Gallisch-Appenzellische Kraftwerke AG
+2065,3421,Bronschhofen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2066,3007,Waldstatt,727,St. Gallisch-Appenzellische Kraftwerke AG
+2067,3394,Mosnang,727,St. Gallisch-Appenzellische Kraftwerke AG
+2068,3033,Lutzenberg,727,St. Gallisch-Appenzellische Kraftwerke AG
+2069,3379,Wattwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2070,3334,Gommiswald,727,St. Gallisch-Appenzellische Kraftwerke AG
+2071,3314,Rieden,727,St. Gallisch-Appenzellische Kraftwerke AG
+2072,3216,Rorschacherberg,727,St. Gallisch-Appenzellische Kraftwerke AG
+2073,3296,Sargans,727,St. Gallisch-Appenzellische Kraftwerke AG
+2074,3311,Amden,727,St. Gallisch-Appenzellische Kraftwerke AG
+2075,3331,Ernetschwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2076,3273,Grabs,727,St. Gallisch-Appenzellische Kraftwerke AG
+2077,3373,Krinau,727,St. Gallisch-Appenzellische Kraftwerke AG
+2078,3395,Bütschwil-Ganterschwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2079,3031,Grub (AR),727,St. Gallisch-Appenzellische Kraftwerke AG
+2080,3272,Gams,727,St. Gallisch-Appenzellische Kraftwerke AG
+2081,3377,Wattwil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2082,3402,Flawil,727,St. Gallisch-Appenzellische Kraftwerke AG
+2083,3271,Buchs (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2084,3293,Mels,727,St. Gallisch-Appenzellische Kraftwerke AG
+2085,3352,Ebnat-Kappel,727,St. Gallisch-Appenzellische Kraftwerke AG
+2086,3254,Oberriet (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2087,3298,Walenstadt,727,St. Gallisch-Appenzellische Kraftwerke AG
+2088,3396,Neckertal,727,St. Gallisch-Appenzellische Kraftwerke AG
+2089,3392,Kirchberg (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2090,3426,Zuzwil (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2091,3332,Eschenbach (SG),727,St. Gallisch-Appenzellische Kraftwerke AG
+2092,3333,Goldingen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2093,3337,St. Gallenkappel,727,St. Gallisch-Appenzellische Kraftwerke AG
+2094,3294,Pfäfers,727,St. Gallisch-Appenzellische Kraftwerke AG
+2095,3235,Rheineck,727,St. Gallisch-Appenzellische Kraftwerke AG
+2096,3219,Untereggen,727,St. Gallisch-Appenzellische Kraftwerke AG
+2097,3001,Herisau,674,Schweizerische Südostbahn AG
+2098,3204,Wittenbach,674,Schweizerische Südostbahn AG
+2099,3002,Hundwil,673,Säntis Schwebebahn AG
+2100,3352,Ebnat-Kappel,673,Säntis Schwebebahn AG
+2101,3105,Schwende,673,Säntis Schwebebahn AG
+2102,3003,Schönengrund,612,Hydrantenkorporation & Elektraversorgung Schönengrund
+2103,3004,Schwellbrunn,497,Elektrokorporation Wald - St. Peterzell
+2104,3378,,497,Elektrokorporation Wald - St. Peterzell
+2105,3003,Schönengrund,497,Elektrokorporation Wald - St. Peterzell
+2106,3396,Neckertal,497,Elektrokorporation Wald - St. Peterzell
+2107,3006,Urnäsch,476,Elektrizitätswerk Urnäsch AG
+2108,3025,Trogen,488,Elektro Speicher-Trogen AG
+2109,3023,Speicher,488,Elektro Speicher-Trogen AG
+2110,3031,Grub (AR),313,"Gemeinde Grub, Elektra"
+2111,3032,Heiden,439,Elektrizitätswerk Heiden AG
+2112,3035,Reute (AR),496,Elektra-Korporation Schachen-Reute
+2113,3035,Reute (AR),495,"Elektra-Korporation Reute, Elektrische Energie"
+2114,3111,Oberegg,495,"Elektra-Korporation Reute, Elektrische Energie"
+2115,3255,Rebstein,335,"Politische Gemeinde Rebstein, Elektrizitätsversorgung"
+2116,3035,Reute (AR),335,"Politische Gemeinde Rebstein, Elektrizitätsversorgung"
+2117,3037,Walzenhausen,197,Elektra Walzenhausen
+2118,3233,Berneck,197,Elektra Walzenhausen
+2119,3111,Oberegg,197,Elektra Walzenhausen
+2120,3236,St. Margrethen,197,Elektra Walzenhausen
+2121,3111,Oberegg,98,Elektra Korporation EKW
+2122,3033,Lutzenberg,98,Elektra Korporation EKW
+2123,3037,Walzenhausen,98,Elektra Korporation EKW
+2124,3032,Heiden,98,Elektra Korporation EKW
+2125,3038,Wolfhalden,98,Elektra Korporation EKW
+2126,3104,Schlatt-Haslen,566,"Feuerschaugemeinde Appenzell, Energie- und Wasserversorgung"
+2127,3103,Rüte,566,"Feuerschaugemeinde Appenzell, Energie- und Wasserversorgung"
+2128,3105,Schwende,566,"Feuerschaugemeinde Appenzell, Energie- und Wasserversorgung"
+2129,3102,Gonten,566,"Feuerschaugemeinde Appenzell, Energie- und Wasserversorgung"
+2130,3101,Appenzell,566,"Feuerschaugemeinde Appenzell, Energie- und Wasserversorgung"
+2131,3112,Schwende-Rüte,566,"Feuerschaugemeinde Appenzell, Energie- und Wasserversorgung"
+2132,3111,Oberegg,168,Elektra Oberegg
+2133,3201,Häggenschwil,314,"Politische Gemeinde, Häggenschwil, Elektrizitätsversorgung"
+2134,3201,Häggenschwil,266,Elektrizitätsgenossenschaft Muolen
+2135,3202,Muolen,266,Elektrizitätsgenossenschaft Muolen
+2136,3203,St. Gallen,672,St.Galler Stadtwerke
+2137,3204,Wittenbach,672,St.Galler Stadtwerke
+2138,3204,Wittenbach,360,"Politische Gemeinde Wittenbach, Elektrizitätsversorgung"
+2139,3211,Berg (SG),114,"Elektra Berg SG, Stromversorgung"
+2140,3217,Steinach,114,"Elektra Berg SG, Stromversorgung"
+2141,3212,Eggersriet,126,"Politische Gemeinde Eggersriet, Elektra"
+2142,3212,Eggersriet,193,Elektra- und Wasserkorporation Grub SG
+2143,3213,Goldach,748,Technische Betriebe Goldach
+2144,3214,Mörschwil,326,"Politische Gemeinde Mörschwil, Elektrizitätsversorgung"
+2145,3218,Tübach,326,"Politische Gemeinde Mörschwil, Elektrizitätsversorgung"
+2146,3215,Rorschach,753,"Technische Betriebe, Stadt Rorschach"
+2147,3216,Rorschacherberg,339,"Politische Gemeinde Rorschacherberg, Elektrizitätsversorgung"
+2148,3237,Thal,339,"Politische Gemeinde Rorschacherberg, Elektrizitätsversorgung"
+2149,3213,Goldach,339,"Politische Gemeinde Rorschacherberg, Elektrizitätsversorgung"
+2150,3217,Steinach,350,"Politische Gemeinde Steinach, Elektrizitätsversorgung"
+2151,3218,Tübach,191,"Politische Gemeinde Tübach, Elektrizitätsversorgung"
+2152,3219,Untereggen,195,Elektra Untereggen
+2153,3231,Au (SG),288,"Politische Gemeinde Au SG, Elektrizitätswerk"
+2154,3232,Balgach,643,"Gemeinde Balgach, Elektrizitätsversorgung"
+2155,3233,Berneck,644,"Elektra Berneck, Stromversorgung"
+2156,3111,Oberegg,644,"Elektra Berneck, Stromversorgung"
+2157,3234,Diepoldsau,569,"Politische Gemeinde Diepoldsau, Elektrizitätsversorgung"
+2158,3235,Rheineck,786,"Werke Rheineck, Elektrizitätsversorgung"
+2159,3236,St. Margrethen,754,"Technische Betriebe, Politische Gemeinde St. Margrethen"
+2160,3237,Thal,797,"Elektrizitäts- und Wasser- Versorgung, Politische Gemeinde Thal"
+2161,3238,Widnau,294,"Politische Gemeinde Widnau, Elektra / Stromversorgung"
+2162,3251,Altstätten,728,Technische Betriebe Altstätten
+2163,3252,Eichberg,128,"Gemeinde Eichberg, Elektra"
+2164,3253,Marbach (SG),325,"Politische Gemeinde Marbach SG, Elektrizitätsversorgung"
+2165,3254,Oberriet (SG),332,"Politische Gemeinde Oberriet SG, Elektrizitätsversorgung"
+2166,3256,Rüthi (SG),181,"Politische Gemeinde Rüthi, Elektrizitätsversorgung"
+2167,3271,Buchs (SG),777,Elektrizitäts- und Wasserwerk der Stadt Buchs (EWB)
+2168,3272,Gams,134,Elektra Gams Genossenschaft
+2169,3273,Grabs,435,"Technische Betriebe Grabs, Energie, Strom, Wasser"
+2170,3274,Sennwald,467,Elektrizitätswerk Sennwald Genossenschaft
+2171,3251,Altstätten,467,Elektrizitätswerk Sennwald Genossenschaft
+2172,3275,Sevelen,225,Gemeinde Sevelen
+2173,3276,Wartau,494,"Strom- und Wasserversorgung, Dorfkorporation Oberschan"
+2174,3276,Wartau,67,Dorf- und Elektrokorporation Trübbach
+2175,3276,Wartau,498,Dorfkorporation Weite
+2176,3276,Wartau,368,"Elektrizitätswerk, Dorfkorporation Azmoos"
+2177,3292,Flums,542,EVU Flums AG
+2178,3292,Flums,421,Murg Flums Energie
+2179,3295,Quarten,421,Murg Flums Energie
+2180,3292,Flums,637,"Martin Zeller AG, Elektrizitätswerk"
+2181,3293,Mels,243,"Politische Gemeinde Mels, Elektrizitäts- & Wasserwerk"
+2182,3295,Quarten,455,"Elektrizitätswerk, Ortsgemeinde Quarten"
+2183,3297,Vilters-Wangs,480,"Politische Gemeinde Vilters-Wangs, Elektrizitätswerk Vilters-Wangs"
+2184,3293,Mels,480,"Politische Gemeinde Vilters-Wangs, Elektrizitätswerk Vilters-Wangs"
+2185,3298,Walenstadt,775,Wasser- und Elektrizitätswerk Walenstadt
+2186,3312,Benken (SG),289,"Politische Gemeinde Benken SG, Elektrizitätsversorgung"
+2187,3313,Kaltbrunn,317,Elektrizitätsversorgung Kaltbrunn AG
+2188,3315,Schänis,532,EVS Energieversorgung Schänis AG
+2189,3338,Schmerikon,552,Elektrizitätswerk Schmerikon AG
+2190,3339,Uznach,478,Elektrizitätswerk Uznach AG
+2191,3331,Ernetschwil,478,Elektrizitätswerk Uznach AG
+2192,3340,Rapperswil-Jona,443,Elektrizitätswerk Jona-Rapperswil AG
+2193,3352,Ebnat-Kappel,64,Dorfkorporation Ebnat-Kappel
+2194,3377,Wattwil,64,Dorfkorporation Ebnat-Kappel
+2195,3352,Ebnat-Kappel,499,Elektrokorporation Wintersberg-Bendel Schwand
+2196,3352,Ebnat-Kappel,224,Elektrokorporation Blomberg-Brandholz
+2197,3372,Hemberg,143,Elektra Hemberg
+2198,3358,Nesslau-Krummenau,143,Elektra Hemberg
+2199,3401,Degersheim,263,Elektrogenossenschaft Moos-Dieselbach
+2200,3378,,263,Elektrogenossenschaft Moos-Dieselbach
+2201,3393,Lütisburg,263,Elektrogenossenschaft Moos-Dieselbach
+2202,3396,Neckertal,263,Elektrogenossenschaft Moos-Dieselbach
+2203,3378,,63,Dorfkorporation Dicken
+2204,3392,Kirchberg (SG),506,rwt Regionalwerk Toggenburg AG
+2205,3391,Bütschwil,506,rwt Regionalwerk Toggenburg AG
+2206,3395,Bütschwil-Ganterschwil,506,rwt Regionalwerk Toggenburg AG
+2207,3393,Lütisburg,506,rwt Regionalwerk Toggenburg AG
+2208,3391,Bütschwil,157,Elektra Lütisburg
+2209,3393,Lütisburg,157,Elektra Lütisburg
+2210,3405,Jonschwil,157,Elektra Lütisburg
+2211,3394,Mosnang,157,Elektra Lütisburg
+2212,3394,Mosnang,65,"Dorfkorporation Mosnang, Elektrizitäts- und Wasserversorgung"
+2213,3401,Degersheim,68,Dorfkorporation Wolfertswil
+2214,3402,Flawil,68,Dorfkorporation Wolfertswil
+2215,3402,Flawil,747,Technische Betriebe Flawil (TBF)
+2216,3405,Jonschwil,66,"Dorfkorporation Schwarzenbach SG, Elektrizität Wasser Gas TV"
+2217,3407,Oberuzwil,60,Dorfkorporation Bichwil
+2218,3422,Niederbüren,330,"Gemeinde Oberbüren, Elektra / Stromversorgung"
+2219,3407,Oberuzwil,330,"Gemeinde Oberbüren, Elektra / Stromversorgung"
+2220,3423,Niederhelfenschwil,330,"Gemeinde Oberbüren, Elektra / Stromversorgung"
+2221,3424,Oberbüren,330,"Gemeinde Oberbüren, Elektra / Stromversorgung"
+2222,3422,Niederbüren,167,"Elektra Niederbüren, Stromversorgung"
+2223,3443,Gossau (SG),167,"Elektra Niederbüren, Stromversorgung"
+2224,3422,Niederbüren,761,Technische Gemeindebetriebe Bischofszell
+2225,4495,Hohentannen,761,Technische Gemeindebetriebe Bischofszell
+2226,4486,Hauptwil-Gottshaus,761,Technische Gemeindebetriebe Bischofszell
+2227,4471,Bischofszell,761,Technische Gemeindebetriebe Bischofszell
+2228,4511,Zihlschlacht-Sitterdorf,761,Technische Gemeindebetriebe Bischofszell
+2229,3426,Zuzwil (SG),449,"Politische Gemeinde Niederhelfenschwil, Elektra / Stromversorgung"
+2230,3423,Niederhelfenschwil,449,"Politische Gemeinde Niederhelfenschwil, Elektra / Stromversorgung"
+2231,3424,Oberbüren,257,Elektrizitätsgenossenschaft Brübach-Laupen
+2232,3426,Zuzwil (SG),485,"Politische Gemeinde Zuzwil, Elektrizitätswerk"
+2233,3444,Waldkirch,756,"Politische Gemeinde Waldkirch, Abteilung Elektra"
+2234,3441,Andwil (SG),756,"Politische Gemeinde Waldkirch, Abteilung Elektra"
+2235,3441,Andwil (SG),107,Elektra Andwil Stromversorgung
+2236,3442,Gaiserwald,649,"Politische Gemeinde Gaiserwald, Elektrizitätsversorgung"
+2237,3444,Waldkirch,649,"Politische Gemeinde Gaiserwald, Elektrizitätsversorgung"
+2238,3443,Gossau (SG),737,Stadtwerke Gossau
+2239,3506,Vaz/Obervaz,479,"Politische Gemeinde Vaz/Obervaz, Elektrizitätswerk / -Versorgung"
+2240,3513,Lantsch/Lenz,527,"Gemeinde Lantsch/Lenz, Elektrizitätsversorgung"
+2241,3514,Schmitten (GR),780,"Gemeinde Schmitten, Stromversorgung"
+2242,3514,Schmitten (GR),846,Albula Netz AG
+2243,3521,Bergün/Bravuogn,846,Albula Netz AG
+2244,3544,Bergün Filisur,846,Albula Netz AG
+2245,3522,Filisur,846,Albula Netz AG
+2246,3542,Albula/Alvra,846,Albula Netz AG
+2247,3551,Brusio,19,"Comune di Brusio, Erogazione d'Energia Elettrica"
+2248,3561,Poschiavo,618,"Comune di Poschiavo, Azienda elettrica"
+2249,3984,Schlans,662,Repower AG
+2250,3882,Küblis,662,Repower AG
+2251,3988,Obersaxen Mundaun,662,Repower AG
+2252,3951,Fläsch,662,Repower AG
+2253,3982,Disentis/Mustér,662,Repower AG
+2254,3955,Landquart,662,Repower AG
+2255,3893,St. Antönien,662,Repower AG
+2256,3619,Ilanz/Glion,662,Repower AG
+2257,3862,Furna,662,Repower AG
+2258,3987,Trun,662,Repower AG
+2259,3863,Jenaz,662,Repower AG
+2260,3947,Zizers,662,Repower AG
+2261,3789,Sils im Engadin/Segl,662,Repower AG
+2262,3579,Riein,662,Repower AG
+2263,3593,Duvin,662,Repower AG
+2264,3781,Bever,662,Repower AG
+2265,3583,Schnaus,662,Repower AG
+2266,3883,Saas,662,Repower AG
+2267,3577,Luven,662,Repower AG
+2268,3578,Pitasch,662,Repower AG
+2269,3783,Madulain,662,Repower AG
+2270,3598,St. Martin,662,Repower AG
+2271,3574,Ilanz,662,Repower AG
+2272,3614,Rueun,662,Repower AG
+2273,3672,Safiental,662,Repower AG
+2274,3615,Siat,662,Repower AG
+2275,3613,Pigniu,662,Repower AG
+2276,3584,Sevgein,662,Repower AG
+2277,3580,Ruschein,662,Repower AG
+2278,3596,Morissen,662,Repower AG
+2279,3594,Degen,662,Repower AG
+2280,3599,Suraua,662,Repower AG
+2281,3604,Vignogn,662,Repower AG
+2282,3962,Schiers,662,Repower AG
+2283,3592,Cumbel,662,Repower AG
+2284,3572,Falera,662,Repower AG
+2285,3575,Laax,662,Repower AG
+2286,3790,Silvaplana,662,Repower AG
+2287,3605,Vella,662,Repower AG
+2288,3871,Klosters,662,Repower AG
+2289,3612,Obersaxen,662,Repower AG
+2290,3981,Breil/Brigels,662,Repower AG
+2291,3788,S-chanf,662,Repower AG
+2292,3961,Grüsch,662,Repower AG
+2293,3611,Andiast,662,Repower AG
+2294,3616,Waltensburg/Vuorz,662,Repower AG
+2295,3972,Seewis im Prättigau,662,Repower AG
+2296,3881,Conters im Prättigau,662,Repower AG
+2297,3954,Malans,662,Repower AG
+2298,3784,Pontresina,662,Repower AG
+2299,3618,Lumnezia,662,Repower AG
+2300,3985,Sumvitg,662,Repower AG
+2301,3581,Sagogn,662,Repower AG
+2302,3891,Luzein,662,Repower AG
+2303,3576,Ladir,662,Repower AG
+2304,3785,La Punt Chamues-ch,662,Repower AG
+2305,3586,Valendas,662,Repower AG
+2306,3861,Fideris,662,Repower AG
+2307,3571,Castrisch,662,Repower AG
+2308,3617,Mundaun,662,Repower AG
+2309,3582,Schluein,662,Repower AG
+2310,3791,Zuoz,662,Repower AG
+2311,3734,Trin,613,Axpo Hydro Surselva AG
+2312,3575,Laax,613,Axpo Hydro Surselva AG
+2313,3722,Domat/Ems,613,Axpo Hydro Surselva AG
+2314,3732,Flims,613,Axpo Hydro Surselva AG
+2315,3721,Bonaduz,613,Axpo Hydro Surselva AG
+2316,3603,Vals,417,Elektrizitätswerk Vals (EW Vals)
+2317,3638,Scharans,408,"Gemeinde Scharans, Elektrizitätswerk"
+2318,3640,Sils im Domleschg,821,"Gemeinde Sils im Domleschg, Elektrizitätswerk"
+2319,3663,Masein,811,ewz
+2320,3503,Mutten,811,ewz
+2321,3636,Rodels,811,ewz
+2322,3661,Cazis,811,ewz
+2323,3671,Tomils,811,ewz
+2324,3637,Rothenbrunnen,811,ewz
+2325,3673,Domleschg,811,ewz
+2326,3635,Pratval,811,ewz
+2327,3670,Urmein,811,ewz
+2328,3633,Fürstenau,811,ewz
+2329,3666,Sarn,811,ewz
+2330,3664,Portein,811,ewz
+2331,3665,Präz,811,ewz
+2332,3667,Tartar,811,ewz
+2333,3631,Almens,811,ewz
+2334,3634,Paspels,811,ewz
+2335,3669,Tschappina,811,ewz
+2336,3662,Flerden,811,ewz
+2337,3668,Thusis,822,"Gemeinde Thusis, Energieversorgung"
+2338,3681,Avers,531,"Gemeinde Andeer, Elektrizitätswesen"
+2339,3701,Andeer,531,"Gemeinde Andeer, Elektrizitätswesen"
+2340,3713,Ferrera,531,"Gemeinde Andeer, Elektrizitätswesen"
+2341,3707,Lohn (GR),531,"Gemeinde Andeer, Elektrizitätswesen"
+2342,3708,Mathon,531,"Gemeinde Andeer, Elektrizitätswesen"
+2343,3703,Casti-Wergenstein,531,"Gemeinde Andeer, Elektrizitätswesen"
+2344,3705,Donat,531,"Gemeinde Andeer, Elektrizitätswesen"
+2345,3712,Zillis-Reischen,531,"Gemeinde Andeer, Elektrizitätswesen"
+2346,3711,Rongellen,531,"Gemeinde Andeer, Elektrizitätswesen"
+2347,3715,Muntogna da Schons,531,"Gemeinde Andeer, Elektrizitätswesen"
+2348,3695,Sufers,824,"Gemeinde Sufers, Stromverkauf"
+2349,3731,Felsberg,471,Rhiienergie AG (rhiienergie)
+2350,3733,Tamins,471,Rhiienergie AG (rhiienergie)
+2351,3721,Bonaduz,471,Rhiienergie AG (rhiienergie)
+2352,3722,Domat/Ems,471,Rhiienergie AG (rhiienergie)
+2353,3723,Rhäzüns,471,Rhiienergie AG (rhiienergie)
+2354,3732,Flims,567,Flims Trin Energie AG
+2355,3734,Trin,567,Flims Trin Energie AG
+2356,3734,Trin,448,Elektrizitätswerk Mulin der Gemeinde Trin
+2357,3762,Scuol,72,EE Energia Engiadina
+2358,3764,Valsot,72,EE Energia Engiadina
+2359,3751,Ramosch,72,EE Energia Engiadina
+2360,3743,Lavin,72,EE Energia Engiadina
+2361,3746,Zernez,72,EE Energia Engiadina
+2362,3753,Tschlin,72,EE Energia Engiadina
+2363,3745,Tarasp,72,EE Energia Engiadina
+2364,3763,Sent,72,EE Energia Engiadina
+2365,3744,Susch,72,EE Energia Engiadina
+2366,3742,Guarda,72,EE Energia Engiadina
+2367,3741,Ardez,72,EE Energia Engiadina
+2368,3761,Ftan,72,EE Energia Engiadina
+2369,3746,Zernez,57,Gemeinde Zernez
+2370,3752,Samnaun,462,"Elektroinstallation, EW - Samnaun"
+2371,3775,Stampa,817,"Comune di Bregaglia, Azienda Elettrica"
+2372,3776,Vicosoprano,817,"Comune di Bregaglia, Azienda Elettrica"
+2373,3774,Soglio,817,"Comune di Bregaglia, Azienda Elettrica"
+2374,3773,Castasegna,817,"Comune di Bregaglia, Azienda Elettrica"
+2375,3771,Bondo,817,"Comune di Bregaglia, Azienda Elettrica"
+2376,3792,Bregaglia,817,"Comune di Bregaglia, Azienda Elettrica"
+2377,3775,Stampa,29,Azienda Elettrica Stampa
+2378,3951,Fläsch,663,Repower Klosters AG
+2379,3781,Bever,663,Repower Klosters AG
+2380,3893,St. Antönien,663,Repower Klosters AG
+2381,3746,Zernez,663,Repower Klosters AG
+2382,3972,Seewis im Prättigau,663,Repower Klosters AG
+2383,3891,Luzein,663,Repower Klosters AG
+2384,3789,Sils im Engadin/Segl,663,Repower Klosters AG
+2385,3955,Landquart,663,Repower Klosters AG
+2386,3871,Klosters,663,Repower Klosters AG
+2387,3943,Mastrils,663,Repower Klosters AG
+2388,3942,Igis,663,Repower Klosters AG
+2389,3863,Jenaz,663,Repower Klosters AG
+2390,3947,Zizers,663,Repower Klosters AG
+2391,3783,Madulain,663,Repower Klosters AG
+2392,3791,Zuoz,663,Repower Klosters AG
+2393,3862,Furna,663,Repower Klosters AG
+2394,3785,La Punt Chamues-ch,663,Repower Klosters AG
+2395,3861,Fideris,663,Repower Klosters AG
+2396,3962,Schiers,663,Repower Klosters AG
+2397,3883,Saas,663,Repower Klosters AG
+2398,3881,Conters im Prättigau,663,Repower Klosters AG
+2399,3784,Pontresina,663,Repower Klosters AG
+2400,3790,Silvaplana,663,Repower Klosters AG
+2401,3961,Grüsch,663,Repower Klosters AG
+2402,3954,Malans,663,Repower Klosters AG
+2403,3953,Maienfeld,663,Repower Klosters AG
+2404,3973,Valzeina,663,Repower Klosters AG
+2405,3971,Fanas,663,Repower Klosters AG
+2406,3786,Samedan,663,Repower Klosters AG
+2407,3882,Küblis,663,Repower Klosters AG
+2408,3788,S-chanf,663,Repower Klosters AG
+2409,3782,Celerina/Schlarigna,468,St. Moritz Energie
+2410,3787,St. Moritz,468,St. Moritz Energie
+2411,3786,Samedan,406,Energia Samedan
+2412,3788,S-chanf,857,Gemeinde S-chanf Energia S-chanf
+2413,3789,Sils im Engadin/Segl,25,Azienda Elettrica Grevasalvas
+2414,3804,Buseno,13,"Comune di Buseno, Azienda Elettrica"
+2415,3810,Santa Maria in Calanca,833,Società Elettrica Sopracenerina SA (Ticino)
+2416,3835,San Vittore,833,Società Elettrica Sopracenerina SA (Ticino)
+2417,3832,Grono,833,Società Elettrica Sopracenerina SA (Ticino)
+2418,3834,Roveredo (GR),833,Società Elettrica Sopracenerina SA (Ticino)
+2419,3805,Castaneda,833,Società Elettrica Sopracenerina SA (Ticino)
+2420,3837,Calanca,809,Consorzio Energia Elettrica Calanca
+2421,3803,Braggio,809,Consorzio Energia Elettrica Calanca
+2422,3806,Cauco,809,Consorzio Energia Elettrica Calanca
+2423,3808,Rossa,809,Consorzio Energia Elettrica Calanca
+2424,3811,Selma,809,Consorzio Energia Elettrica Calanca
+2425,3801,Arvigo,809,Consorzio Energia Elettrica Calanca
+2426,3821,Lostallo,27,Azienda Elettrica Lostallo
+2427,3832,Grono,858,Media Mesolcina Energia
+2428,3823,Soazza,858,Media Mesolcina Energia
+2429,3821,Lostallo,858,Media Mesolcina Energia
+2430,3822,Mesocco,21,"Comune Politico di Mesocco, Azienda Elettrica"
+2431,3823,Soazza,23,Azienda Elettrica Comunale Soazza
+2432,3831,Cama,14,"Comune di Cama, Azienda Elettrica Comunale"
+2433,3836,Verdabbio,14,"Comune di Cama, Azienda Elettrica Comunale"
+2434,3832,Grono,14,"Comune di Cama, Azienda Elettrica Comunale"
+2435,3833,Leggia,26,Azienda Elettrica Comunale Leggia
+2436,3832,Grono,26,Azienda Elettrica Comunale Leggia
+2437,3835,San Vittore,808,"Società Semplice Tra I Comuni, Concedenti Elin, Prestazioni di Servizio"
+2438,3847,Val Müstair,659,Provedimaint electric Val Müstair (PEM)
+2439,3851,Davos,557,EWD Elektrizitätswerk Davos AG
+2440,3921,Arosa,617,IBC Energie Wasser Chur (IBC)
+2441,3932,Tschiertschen-Praden,617,IBC Energie Wasser Chur (IBC)
+2442,3901,Chur,617,IBC Energie Wasser Chur (IBC)
+2443,3923,Castiel,617,IBC Energie Wasser Chur (IBC)
+2444,3926,Maladers,617,IBC Energie Wasser Chur (IBC)
+2445,3941,Haldenstein,617,IBC Energie Wasser Chur (IBC)
+2446,3922,Calfreisen,617,IBC Energie Wasser Chur (IBC)
+2447,3911,Churwalden,660,Rabiosa Energie
+2448,3912,Malix,660,Rabiosa Energie
+2449,3913,Parpan,660,Rabiosa Energie
+2450,3924,Langwies,10,Arosa Energie
+2451,3927,Molinis,10,Arosa Energie
+2452,3921,Arosa,10,Arosa Energie
+2453,3925,Lüen,10,Arosa Energie
+2454,3929,Peist,10,Arosa Energie
+2455,3932,Tschiertschen-Praden,10,Arosa Energie
+2456,3931,St. Peter-Pagig,10,Arosa Energie
+2457,3932,Tschiertschen-Praden,416,"Politische Gemeinde Tschiertschen, Elektrizitätswerk"
+2458,3941,Haldenstein,384,Elektrizitätswerk der Gemeinde Haldenstein
+2459,3945,Trimmis,574,Trimmiser Industrielle Betriebe (TIB)
+2460,3952,Jenins,442,"Politische Gemeinde Jenins, Energieversorgung"
+2461,3953,Maienfeld,6,AG Elektrizitätswerk Maienfeld
+2462,3951,Fläsch,6,AG Elektrizitätswerk Maienfeld
+2463,3983,Medel (Lucmagn),641,"Ovra Electrica Medel, Elektrizitätswerk"
+2464,3986,Tujetsch,505,energia alpina
+2465,4006,Gränichen,749,TB Gränichen Energie AG
+2466,4009,Muhen,582,"Einwohnergemeinde Muhen, Elektrizitaetsversorgung"
+2467,4010,Oberentfelden,752,"Gemeinde Oberentfelden, Elektrizitätsversorgung"
+2468,4182,Wölflinswil,839,Energie Oberes Fricktal AG
+2469,4173,Oberhof,839,Energie Oberes Fricktal AG
+2470,4181,Wittnau,839,Energie Oberes Fricktal AG
+2471,4165,Gipf-Oberfrick,839,Energie Oberes Fricktal AG
+2472,4012,Suhr,755,TBS Strom AG
+2473,4021,Baden,667,Regionalwerke AG Baden
+2474,4026,Ennetbaden,667,Regionalwerke AG Baden
+2475,4022,Bellikon,88,Gemeinde Bellikon
+2476,4024,Birmenstorf (AG),746,"Einwohnergemeinde Birmenstorf AG, Elektrizitätsversorgung"
+2477,4049,Ehrendingen,127,Genossenschaft Elektra Ehrendingen
+2478,4028,Freienwil,127,Genossenschaft Elektra Ehrendingen
+2479,4029,Gebenstorf,311,EV Gebenstorf AG
+2480,4030,Killwangen,238,"Gemeinde Killwangen, Elektrizitätsversorgung"
+2481,4031,Künten,211,Elektra-Genossenschaft Künten
+2482,4033,Mellingen,447,"Gemeinde Mellingen, Elektrizitätsversorgung"
+2483,4034,Neuenhof,590,Elektrizität Wasser Neuenhof ewn
+2484,4037,Oberrohrdorf,171,Genossenschaft ELEKTRA Oberrohrdorf
+2485,4044,Untersiggenthal,275,Elektrizitäts-Genossenschaft Siggenthal
+2486,4038,Obersiggenthal,275,Elektrizitäts-Genossenschaft Siggenthal
+2487,4039,Remetschwil,123,genossenschaft elektra busslingen
+2488,4039,Remetschwil,92,"ELEKTRA REMETSCHWIL, Genossenschaft"
+2489,4040,Spreitenbach,348,"Gemeinde Spreitenbach, Elektrizitätsversorgung"
+2490,4045,Wettingen,804,Energie Wettingen AG
+2491,4046,Wohlenschwil,482,"Einwohnergemeinde Wohlenschwil, Elektrizitätsversorgung"
+2492,4047,Würenlingen,483,"Einwohnergemeinde Würenlingen, Elektrizitätsversorgung"
+2493,4048,Würenlos,759,Technische Betriebe Würenlos
+2494,4061,Arni (AG),204,Elektra Genossenschaft Arni-Islisberg
+2495,4084,Islisberg,204,Elektra Genossenschaft Arni-Islisberg
+2496,4062,Berikon,236,"Gemeinde Berikon, Elektrizitätsversorgung"
+2497,4069,Hermetschwil-Staffeln,145,Elektrizitätsgenossenschaft Hermetschwil-Staffeln
+2498,4063,Bremgarten (AG),145,Elektrizitätsgenossenschaft Hermetschwil-Staffeln
+2499,4064,Büttikon,293,"Gemeinde Büttikon, Abt. Elektrizitätsversorgung"
+2500,4080,Villmergen,594,Gemeindewerke Villmergen
+2501,4065,Dottikon,594,Gemeindewerke Villmergen
+2502,4070,Hilfikon,594,Gemeindewerke Villmergen
+2503,4066,Eggenwil,125,"Gemeinde Eggenwil, Elektrizitätsversorgung"
+2504,4067,Fischbach-Göslikon,90,"Elektra-Genossenschaft, Fischbach-Göslikon"
+2505,4071,Jonen,261,Elektrizitätsgenossenschaft Jonen
+2506,4072,Niederwil (AG),450,"Einwohner- & Ortsbürgergemeinde Niederwil AG, Elektrizitätsversorgung"
+2507,4073,Oberlunkhofen,170,Elektra Genossenschaft Oberlunkhofen
+2508,4074,Oberwil-Lieli,81,"Gemeinde Oberwil-Lieli, Elektrizitätsversorgung"
+2509,4075,Rudolfstetten-Friedlisb.,271,Elektra Rudolfstetten-Friedlisberg AG
+2510,4079,Unterlunkhofen,196,"Einwohnergemeinde Unterlunkhofen, Elektrizitätsversorgung"
+2511,4081,Widen,96,Elektra Widen Betriebs AG
+2512,4082,Wohlen (AG),614,IB Wohlen AG
+2513,4083,Zufikon,201,"Einwohnergemeinde Zufikon, Elektrizitätsversorgung"
+2514,4114,Schinznach-Bad,616,IBB Strom AG
+2515,4113,Scherz,616,IBB Strom AG
+2516,4097,Elfingen,616,IBB Strom AG
+2517,4118,Umiken,616,IBB Strom AG
+2518,4099,Habsburg,616,IBB Strom AG
+2519,4095,Brugg,616,IBB Strom AG
+2520,4112,Rüfenach,616,IBB Strom AG
+2521,4122,Villnachern,616,IBB Strom AG
+2522,4185,Böztal,616,IBB Strom AG
+2523,4104,Lupfig,616,IBB Strom AG
+2524,4100,Hausen (AG),616,IBB Strom AG
+2525,4092,Birr,616,IBB Strom AG
+2526,4094,Bözen,291,Elektrizitätsversorgung Bözen
+2527,4097,Elfingen,237,Elektrizitäts - Versorgung Elfingen
+2528,4113,Scherz,237,Elektrizitäts - Versorgung Elfingen
+2529,4100,Hausen (AG),237,Elektrizitäts - Versorgung Elfingen
+2530,4104,Lupfig,237,Elektrizitäts - Versorgung Elfingen
+2531,4095,Brugg,237,Elektrizitäts - Versorgung Elfingen
+2532,4114,Schinznach-Bad,237,Elektrizitäts - Versorgung Elfingen
+2533,4112,Rüfenach,237,Elektrizitäts - Versorgung Elfingen
+2534,4092,Birr,237,Elektrizitäts - Versorgung Elfingen
+2535,4099,Habsburg,237,Elektrizitäts - Versorgung Elfingen
+2536,4174,Oberhofen (AG),160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2537,4171,Mettau,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2538,4307,Full-Reuenthal,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2539,4162,Etzgen,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2540,4176,Schwaderloch,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2541,4101,Hottwil,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2542,4180,Wil (AG),160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2543,4184,Mettauertal,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2544,4105,Mandach,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2545,4313,Leuggern,160,Elektra Mettauertal und Umgebung Genossenschaft (EMU)
+2546,4107,Mülligen,232,Elektrizitäts - Genossenschaft Mülligen
+2547,4111,Riniken,269,Elektrizitäts-Genossenschaft Riniken (EGR)
+2548,4117,Thalheim (AG),355,"Gemeinde Thalheim, Elektrizitätsversorgung"
+2549,4121,Villigen,358,"Einwohnergemeinde Villigen, Elektrizitätsversorgung"
+2550,4122,Villnachern,278,Elektrizitätsgenossenschaft Villnachern
+2551,4123,Windisch,579,"Einwohnergemeinde Windisch, Elektrizitätsversorgung"
+2552,4131,Beinwil am See,745,Technische Betriebe Beinwil am See
+2553,4147,Zetzwil,564,EWS Energie AG
+2554,4135,Gontenschwil,564,EWS Energie AG
+2555,4132,Birrwil,564,EWS Energie AG
+2556,4141,Reinach (AG),564,EWS Energie AG
+2557,4139,Menziken,564,EWS Energie AG
+2558,4131,Beinwil am See,564,EWS Energie AG
+2559,4134,Dürrenäsch,427,"Einwohnergemeinde Dürrenäsch, Elektrizitätsversorgung"
+2560,4144,Schöftland,344,"Gemeinde Schöftland, Elektrizitätsversorgung"
+2561,4145,Teufenthal (AG),354,"Gemeinde Teufenthal, Elektrizitätsversorgung"
+2562,4146,Unterkulm,240,Elektrizitäts - Versorgung Unterkulm
+2563,4164,Gansingen,207,Elektra-Genossenschaft Gansingen
+2564,4165,Gipf-Oberfrick,169,Elektra Gipf-Oberfrick
+2565,4169,Kaisten,316,"Gemeinde Kaisten, Elektrizitätsversorgung"
+2566,4170,Laufenburg,730,"Einwohnergemeinde Laufenburg, Städt. Elektrizitätsversorung"
+2567,4178,Sulz (AG),730,"Einwohnergemeinde Laufenburg, Städt. Elektrizitätsversorung"
+2568,4173,Oberhof,826,Elektra Genossenschaft Oberhof
+2569,4177,Sisseln,188,"Einwohnergemeinde Sisseln, Strom"
+2570,4178,Sulz (AG),353,Elektrizitätsversorgung Sulz
+2571,4179,Ueken,356,"Gemeinde Ueken, Elektrizitätsversorgung"
+2572,4181,Wittnau,816,Elektra Gemeinde Wittnau
+2573,4182,Wölflinswil,796,Elektra Wölflinswil
+2574,4173,Oberhof,796,Elektra Wölflinswil
+2575,4183,Zeihen,241,"Einwohnergemeinde Zeihen, Elektra, Elektrizitätsversorgung"
+2576,4194,Dintikon,306,"Einwohnergemeinde Dintikon, Elektrizitätswerk"
+2577,4209,Seon,83,Technische Betriebe Seon AG
+2578,4195,Egliswil,83,Technische Betriebe Seon AG
+2579,4200,Hunzenschwil,750,Energie Hunzenschwil AG (ENH)
+2580,4201,Lenzburg,741,SWL Energie AG
+2581,4203,Möriken-Wildegg,666,RTB Regionale Technische Betriebe
+2582,4204,Niederlenz,666,RTB Regionale Technische Betriebe
+2583,4206,Rupperswil,340,"Gemeinde Rupperswil, Elektrizitätsversorgung"
+2584,4207,Schafisheim,463,"Einwohnergemeinde Schafisheim, Elektrizitätsversorgung"
+2585,4210,Staufen,364,"Gemeinde Staufen, Elektrizitätswerk"
+2586,4221,Abtwil,86,ELEKTRA Genossenschaft Abtwil
+2587,4222,Aristau,228,Elektrizitätsgenossenschaft Aristau
+2588,4223,Auw,111,Elektra Genossenschaft Auw
+2589,4224,Beinwil (Freiamt),121,Elektra Brunnwil
+2590,4224,Beinwil (Freiamt),806,Elektrizitätsgenossenschaft Beinwil/Freiamt
+2591,4232,Geltwil,806,Elektrizitätsgenossenschaft Beinwil/Freiamt
+2592,4226,Besenbüren,115,"Gemeinde Besenbüren, Elektrizitätsversorgung"
+2593,4227,Bettwil,116,"Einwohnergemeinde Bettwil, Elektrizitätsversorgung"
+2594,4228,Boswil,229,Elektrizitäts-Genossenschaft Boswil-Bünzen
+2595,4229,Bünzen,229,Elektrizitäts-Genossenschaft Boswil-Bünzen
+2596,4229,Bünzen,95,Elektra - Genossenschaft Waldhäusern
+2597,4224,Beinwil (Freiamt),73,Energie Freiamt AG
+2598,4239,Sins,73,Energie Freiamt AG
+2599,4237,Oberrüti,73,Energie Freiamt AG
+2600,4231,Dietwil,73,Energie Freiamt AG
+2601,4227,Bettwil,73,Energie Freiamt AG
+2602,4230,Buttwil,73,Energie Freiamt AG
+2603,4228,Boswil,73,Energie Freiamt AG
+2604,4236,Muri (AG),73,Energie Freiamt AG
+2605,4232,Geltwil,135,Elektrizitätsversorgung Geltwil
+2606,4225,Benzenschwil,254,Elektrizitäts-Genossenschaft Benzenschwil
+2607,4234,Merenschwand,254,Elektrizitäts-Genossenschaft Benzenschwil
+2608,4234,Merenschwand,262,Elektrizitäts-Genossenschaft Merenschwand
+2609,4235,Mühlau,265,Elektrizitätsgenossenschaft Mühlau
+2610,4237,Oberrüti,491,Elektro-Genossenschaft Oberrüti
+2611,4238,Rottenschwil,93,Elektra - Genossenschaft Rottenschwil - Werd
+2612,4239,Sins,227,Elektrizitäts-Genossenschaft Aettenschwil
+2613,4239,Sins,186,Elektrizitätsgenossenschaft Sins
+2614,4001,Aarau,186,Elektrizitätsgenossenschaft Sins
+2615,4257,Olsberg,212,ELEKTRAGENOSSENSCHAFT OLSBERG
+2616,4263,Zeiningen,537,"Einwohnergemeinde Zeiningen, Elektrizitätsversorgung"
+2617,4271,Aarburg,743,tba energie ag
+2618,4274,Brittnau,371,Elektrizitätswerk Brittnau
+2619,4276,Kölliken,251,EWK Energie AG
+2620,4279,Murgenthal,328,"Gemeinde Murgenthal, Elektrizitätsversorgung"
+2621,4280,Oftringen,247,EW Oftringen AG
+2622,4282,Rothrist,551,EW Rothrist AG
+2623,4287,Vordemwald,551,EW Rothrist AG
+2624,4289,Zofingen,740,StWZ Energie AG
+2625,4285,Strengelbach,740,StWZ Energie AG
+2626,4285,Strengelbach,352,"StWZ Energie AG, Netz Strengelbach"
+2627,4287,Vordemwald,359,Elektrizitätsversorgung Vordemwald
+2628,4301,Baldingen,87,Elektra Genossenschaft Baldingen
+2629,4324,Zurzach,87,Elektra Genossenschaft Baldingen
+2630,4303,Böttstein,256,Elektra Böttstein
+2631,4324,Zurzach,149,Elektra Genossenschaft Kaiserstuhl
+2632,4308,Kaiserstuhl,149,Elektra Genossenschaft Kaiserstuhl
+2633,4309,Klingnau,239,Elektrizitäts - Versorgung Klingnau
+2634,4311,Leibstadt,152,Elektra Genossenschaft Leibstadt
+2635,4314,Mellikon,91,Elektragenossenschaft Mellikon
+2636,4316,Rietheim,178,Elektra Genossenschaft Rietheim
+2637,4324,Zurzach,178,Elektra Genossenschaft Rietheim
+2638,4318,Schneisingen,138,Genossenschaft Elektra Schneisingen
+2639,4319,Siglistorf,213,Elektra-Genossenschaft Siglistorf
+2640,4322,Wislikofen,280,Elektra-Genossenschaft Siglistorf-Wislikofen-Mellstorf
+2641,4324,Zurzach,280,Elektra-Genossenschaft Siglistorf-Wislikofen-Mellstorf
+2642,4319,Siglistorf,280,Elektra-Genossenschaft Siglistorf-Wislikofen-Mellstorf
+2643,4401,Arbon,736,Arbon Energie AG
+2644,4406,Dozwil,558,Genossenschaft Elektrizitäts- und Wasserwerk Dozwil
+2645,4411,Egnach,218,Elektra-Korporation Hegi
+2646,4431,Roggwil (TG),89,Elektra Betenwil-Baumannshaus
+2647,4411,Egnach,89,Elektra Betenwil-Baumannshaus
+2648,4411,Egnach,206,Genossenschaft Elektra Egnach
+2649,4411,Egnach,189,Elektra Steinebrunn
+2650,4411,Egnach,233,Elektrizitäts - Genossenschaft Winden
+2651,4411,Egnach,165,Genossenschaft Elektra Neukirch-Egnach
+2652,4416,Hefenhofen,209,Elektra-Genossenschaft Hefenhofen
+2653,4416,Hefenhofen,545,EW Elektra Auenhofen
+2654,4416,Hefenhofen,141,Genossenschaft Elektra Hatswil
+2655,4416,Hefenhofen,205,Elektragenossenschaft Brüschwil Sonnenberg
+2656,4421,Horn,231,Elektra Horn AG
+2657,4426,Kesswil,137,Elektra Kesswil
+2658,4431,Roggwil (TG),133,Elektra Freidorf-Watt
+2659,4431,Roggwil (TG),179,Genossenschaft Elektra Roggwil-Freidorf
+2660,4436,Romanshorn,606,Genossenschaft EW Romanshorn
+2661,4451,Uttwil,606,Genossenschaft EW Romanshorn
+2662,4441,Salmsach,606,Genossenschaft EW Romanshorn
+2663,4441,Salmsach,182,Genossenschaft Elektra Salmsach
+2664,4446,Sommeri,276,Elektra-Genossenschaft Sommeri
+2665,4461,Amriswil,744,Regio Energie Amriswil (REA)
+2666,4476,Erlen,100,Elektrakorporation Engishofen
+2667,4476,Erlen,646,"Gemeinde Erlen, Elektrizitätsversorgung"
+2668,4486,Hauptwil-Gottshaus,762,"Technische Gemeindebetriebe Hauptwil-Gottshaus, Elektrizitätsversorgung"
+2669,4486,Hauptwil-Gottshaus,94,Elektra - Genossenschaft St. Pelagiberg
+2670,4495,Hohentannen,385,"Politische Gemeinde Hohentannen, Stromversorgung"
+2671,4501,Kradolf-Schönenberg,365,"Politische Gemeinde Kradolf-Schönenberg, Elektrizität"
+2672,4506,Sulgen,411,"Gemeinde Sulgen, Elektrizitätsversorgung"
+2673,4511,Zihlschlacht-Sitterdorf,200,Elektra Zihlschlacht-Riet
+2674,4511,Zihlschlacht-Sitterdorf,658,"Politische Gemeinde Zihlschlacht-Sitterdirf, Elektrizität"
+2675,4536,Basadingen-Schlattingen,376,"Politische Gemeinde Basadingen-Schalittingen, Elektrizität"
+2676,4545,Diessenhofen,305,"Gemeinde Diessenhofen, Elektrizitätsversorgung"
+2677,4546,Schlatt (TG),343,"Politische Gemeinde Schlatt, Elektrizitätversorgung"
+2678,4551,Aadorf,208,Elektra-Genossenschaft Guntershausen
+2679,4551,Aadorf,202,Elektra-/Wasser Korporation Aawangen
+2680,4551,Aadorf,223,Elektra Wittenwil und Umgebung
+2681,4551,Aadorf,544,Elektrizitätswerk Aadorf
+2682,4551,Aadorf,142,Elektra Häuslenen
+2683,4551,Aadorf,130,Elektra Ettenhausen
+2684,4561,Felben-Wellhausen,308,"Politische Gemeinde Felben-Wellhausen, Elektrizitätsversorgung"
+2685,4566,Frauenfeld,784,Thurplus
+2686,4571,Gachnang,648,"Politische Gemeinde Gachnang, Elektrizitätversorgung"
+2687,4571,Gachnang,807,Werkbetriebe Kefikon
+2688,212,Bertschikon,807,Werkbetriebe Kefikon
+2689,4590,Hüttlingen,651,"Politische Gemeinde Hüttlingen, Elektrizitätswerk"
+2690,4591,Matzingen,783,Werkbetrieb der Dorfgemeinde Matzingen
+2691,4601,Neunforn,399,"Politische Gemeinde Neunforn, Elektrizitätsversorgung"
+2692,4606,Stettfurt,410,"Gemeinde Stettfurt, Elektrizitätswerk"
+2693,4611,Thundorf,766,"Gemeinde Thundorf, Elektrizitätswerk"
+2694,4616,Uesslingen-Buch,781,WEKT Wasser- & Elektrokorporation Trüttlikon
+2695,4616,Uesslingen-Buch,528,"Politische Gemeinde Uesslingen-Buch, Elektrizitätswerk"
+2696,4621,Warth-Weiningen,575,"Gemeinde Warth-Weiningen, Elektrizitätsversorgung"
+2697,4641,Altnau,642,"Politische Gemeinde Altnau, Elektrizitätsversorgung"
+2698,4643,Bottighofen,124,"Politische Gemeinde Bottighofen, Elektrizitätsversorgung"
+2699,4646,Ermatingen,430,"Einheitsgemeinde Ermatingen, Elektrizitätsversorgung"
+2700,4651,Gottlieben,791,"Politische Gemeinde Gottlieben, Elektrizitätsversorgung"
+2701,4656,Güttingen,217,Elektra-Korporation Güttingerhöfe
+2702,4656,Güttingen,383,"Gemeinde Güttingen, Elektrizitätswerk"
+2703,4666,Kemmental,570,"Technische Betriebe Kemmental, Stromverkauf"
+2704,4671,Kreuzlingen,751,"Energie Kreuzlingen, Stadt Kreuzlingen"
+2705,4681,Langrickenbach,387,Elektrizitaetswerk Langrickenbach Im Baumgarten
+2706,4683,Lengwil,388,"Politische Gemeinde Lengwil, Elektrizitätswerk"
+2707,4691,Münsterlingen,654,"Polit. Gemeinde Münsterlingen, Elektra"
+2708,4696,Tägerwilen,470,"Politische Gemeinde Tägerwilen, Elektrizitätswerk"
+2709,4701,Wäldi,656,"Politische Gemeinde Wäldi, Werkbetrieb"
+2710,4701,Wäldi,776,Wasser- und Elektragenossenschaft Wäldi
+2711,4711,Affeltrangen,764,"Technische Werke der Politischen Gemeinde Affeltrangen, Abwasserentsorgung"
+2712,4716,Bettwiesen,645,"Politische Gemeinde Bettwiesen, Elektra"
+2713,4721,Bichelsee-Balterswil,112,Genossenschaft Werk Bichelsee-Balterswil
+2714,4723,Braunau,769,"Politische Gemeinde Braunau, Elektrizitätsversorgung"
+2715,4724,Eschlikon,768,"Gemeinde Eschlikon, Elektrizitätswerk"
+2716,4726,Fischingen,279,Genossenschaft Elektra Vogelsang
+2717,4726,Fischingen,131,Elektra Fischingen
+2718,4726,Fischingen,69,e & w Dussnang
+2719,4726,Fischingen,856,Genossenschaft Energie Fischingen
+2720,3392,Kirchberg (SG),856,Genossenschaft Energie Fischingen
+2721,4741,Lommis,423,"Gemeinde Lommis, Elektrizitätsversorgung"
+2722,4746,Münchwilen (TG),244,Genossenschaft EW Münchwilen (EWM)
+2723,4751,Rickenbach (TG),304,"Politische Gemeinde Rickenbach (TG), Elektrizitätsversorgung"
+2724,4921,Bussnang,103,Elektra-Korporation Stehrenberg-Lanterswil-Toos
+2725,4756,Schönholzerswilen,103,Elektra-Korporation Stehrenberg-Lanterswil-Toos
+2726,4756,Schönholzerswilen,604,Elektra-Genossenschaft Schönholzerswilen
+2727,4761,Sirnach,819,Elektra Hub-Busswil
+2728,4761,Sirnach,553,EW Sirnach AG
+2729,4776,Tobel-Tägerschen,767,"Politische Gemeinde Tobel-Tägerschen, Elektrizitätsversorgung"
+2730,4781,Wängi,763,"Munizipalgemeinde Wängi, Elektrititätswerk"
+2731,4781,Wängi,148,Elektra Jakobstal
+2732,4786,Wilen (TG),657,"Politische Gemeinde Wilen b. Wil, Elektrizitätsversorgung"
+2733,4791,Wuppenau,234,"Gemeinde Wuppenau, Elektrizitätsversorgung"
+2734,4801,Berlingen,378,"Politische Gemeinde Berlingen, Elektizitätsversorgung"
+2735,4806,Eschenz,805,"Politische Gemeinde Eschenz, Elektrizitätswerk"
+2736,4811,Herdern,650,"Politische Gemeinde Herdern Abwasser, Wasser- & Elektragen. Technische Werke"
+2737,4816,Homburg,815,Elektra-Genossenschaft Homburg
+2738,4821,Hüttwilen,386,"Politische Gemeinde Hüttwilen, Elektrizitätswerk"
+2739,4826,Mammern,393,"Politische Gemeinde Mammern, Elektrizität"
+2740,4831,Müllheim,653,"Einheitsgemeinde Müllheim, Elektrizitätsversorgung"
+2741,4841,Pfyn,403,Politische Gemeinde Pfyn
+2742,4846,Raperswilen,456,"Einheitsgemeinde Raperswilen, Elektrizität"
+2743,4851,Salenstein,375,"Gemeinde Salenstein, Stromversorgung"
+2744,4864,Steckborn,733,Politische Gemeinde Steckborn
+2745,4871,Wagenhausen,422,"Gemeinde Wagenhausen, Elektrizitätsversorgung"
+2746,4881,Amlikon-Bissegg,782,"Gemeinde Amlikon-Bissegg, Stromversorgung"
+2747,4891,Berg (TG),760,"Technische Gemeindebetriebe Berg, Gas-Strom-Und Wasserverteilung"
+2748,4901,Birwinken,765,"Politische Gemeinde Birwinken, Elektrizitätsversorgung"
+2749,4911,Bürglen (TG),372,Elektrizitätswerk Bürglen AG
+2750,4921,Bussnang,380,"Politische Gemeinde Bussnang, Elektrizitätsversorgung"
+2751,4941,Märstetten,652,"Politische Gemeinde Märstetten, Elektrizitätsversorgung"
+2752,4946,Weinfelden,757,Technische Betriebe Weinfelden AG
+2753,4951,Wigoltingen,216,Elektrakorporation Engwang-Hof
+2754,4951,Wigoltingen,481,"Politische Gemeinde Wigoltingen, Elektrizitätswerk"
+2755,4951,Wigoltingen,214,Elektrakorporation Dangwang
+2756,4951,Wigoltingen,222,Elektrakorporation Wagerswil Wagerswil
+2757,5018,Sant'Antonio,33,Azienda Multiservizi Bellinzona (AMB)
+2758,5006,Gnosca,33,Azienda Multiservizi Bellinzona (AMB)
+2759,5101,Contone,33,Azienda Multiservizi Bellinzona (AMB)
+2760,5007,Gorduno,33,Azienda Multiservizi Bellinzona (AMB)
+2761,5017,Sant'Antonino,33,Azienda Multiservizi Bellinzona (AMB)
+2762,5012,Moleno,33,Azienda Multiservizi Bellinzona (AMB)
+2763,5001,Arbedo-Castione,33,Azienda Multiservizi Bellinzona (AMB)
+2764,5002,Bellinzona,33,Azienda Multiservizi Bellinzona (AMB)
+2765,5014,Pianezzo,33,Azienda Multiservizi Bellinzona (AMB)
+2766,5003,Cadenazzo,33,Azienda Multiservizi Bellinzona (AMB)
+2767,5010,Lumino,33,Azienda Multiservizi Bellinzona (AMB)
+2768,5019,Sementina,33,Azienda Multiservizi Bellinzona (AMB)
+2769,5015,Preonzo,33,Azienda Multiservizi Bellinzona (AMB)
+2770,5004,Camorino,33,Azienda Multiservizi Bellinzona (AMB)
+2771,5282,Claro,33,Azienda Multiservizi Bellinzona (AMB)
+2772,5008,Gudo,33,Azienda Multiservizi Bellinzona (AMB)
+2773,5013,Monte Carasso,33,Azienda Multiservizi Bellinzona (AMB)
+2774,5005,Giubiasco,33,Azienda Multiservizi Bellinzona (AMB)
+2775,5012,Moleno,712,Società Elettrica Sopracenerina SA (Ticino)
+2776,5015,Preonzo,712,Società Elettrica Sopracenerina SA (Ticino)
+2777,5396,Terre di Pedemonte,712,Società Elettrica Sopracenerina SA (Ticino)
+2778,5137,Isorno,712,Società Elettrica Sopracenerina SA (Ticino)
+2779,5282,Claro,712,Società Elettrica Sopracenerina SA (Ticino)
+2780,5049,Blenio,712,Società Elettrica Sopracenerina SA (Ticino)
+2781,5106,Gerra (Gambarogno),712,Società Elettrica Sopracenerina SA (Ticino)
+2782,5109,Gresso,712,Società Elettrica Sopracenerina SA (Ticino)
+2783,5121,Orselina,712,Società Elettrica Sopracenerina SA (Ticino)
+2784,5399,Verzasca,712,Società Elettrica Sopracenerina SA (Ticino)
+2785,5119,Mosogno,712,Società Elettrica Sopracenerina SA (Ticino)
+2786,5008,Gudo,712,Società Elettrica Sopracenerina SA (Ticino)
+2787,5132,Vergeletto,712,Società Elettrica Sopracenerina SA (Ticino)
+2788,5133,Verscio,712,Società Elettrica Sopracenerina SA (Ticino)
+2789,5096,Brione sopra Minusio,712,Società Elettrica Sopracenerina SA (Ticino)
+2790,5099,Cavigliano,712,Società Elettrica Sopracenerina SA (Ticino)
+2791,5072,Faido,712,Società Elettrica Sopracenerina SA (Ticino)
+2792,5397,Centovalli,712,Società Elettrica Sopracenerina SA (Ticino)
+2793,5128,Sant'Abbondio,712,Società Elettrica Sopracenerina SA (Ticino)
+2794,5130,Tegna,712,Società Elettrica Sopracenerina SA (Ticino)
+2795,5123,Piazzogna,712,Società Elettrica Sopracenerina SA (Ticino)
+2796,5127,San Nazzaro,712,Società Elettrica Sopracenerina SA (Ticino)
+2797,5081,Sobrio,712,Società Elettrica Sopracenerina SA (Ticino)
+2798,5116,Magadino,712,Società Elettrica Sopracenerina SA (Ticino)
+2799,5075,Osco,712,Società Elettrica Sopracenerina SA (Ticino)
+2800,5062,Anzonico,712,Società Elettrica Sopracenerina SA (Ticino)
+2801,5134,Vira (Gambarogno),712,Società Elettrica Sopracenerina SA (Ticino)
+2802,5098,Caviano,712,Società Elettrica Sopracenerina SA (Ticino)
+2803,5110,Indemini,712,Società Elettrica Sopracenerina SA (Ticino)
+2804,5122,Palagnedra,712,Società Elettrica Sopracenerina SA (Ticino)
+2805,5068,Cavagnago,712,Società Elettrica Sopracenerina SA (Ticino)
+2806,5070,Chironico,712,Società Elettrica Sopracenerina SA (Ticino)
+2807,5111,Intragna,712,Società Elettrica Sopracenerina SA (Ticino)
+2808,5094,Borgnone,712,Società Elettrica Sopracenerina SA (Ticino)
+2809,5066,Calpiogna,712,Società Elettrica Sopracenerina SA (Ticino)
+2810,5067,Campello,712,Società Elettrica Sopracenerina SA (Ticino)
+2811,5129,Sonogno,712,Società Elettrica Sopracenerina SA (Ticino)
+2812,5307,Campo (Vallemaggia),712,Società Elettrica Sopracenerina SA (Ticino)
+2813,5048,Acquarossa,712,Società Elettrica Sopracenerina SA (Ticino)
+2814,5105,Frasco,712,Società Elettrica Sopracenerina SA (Ticino)
+2815,5102,Corippo,712,Società Elettrica Sopracenerina SA (Ticino)
+2816,5064,Bodio,712,Società Elettrica Sopracenerina SA (Ticino)
+2817,5317,Maggia,712,Società Elettrica Sopracenerina SA (Ticino)
+2818,5284,Iragna,712,Società Elettrica Sopracenerina SA (Ticino)
+2819,5286,Osogna,712,Società Elettrica Sopracenerina SA (Ticino)
+2820,5283,Cresciano,712,Società Elettrica Sopracenerina SA (Ticino)
+2821,5287,Riviera,712,Società Elettrica Sopracenerina SA (Ticino)
+2822,5285,Lodrino,712,Società Elettrica Sopracenerina SA (Ticino)
+2823,5135,Vogorno,712,Società Elettrica Sopracenerina SA (Ticino)
+2824,5040,Ludiano,712,Società Elettrica Sopracenerina SA (Ticino)
+2825,5095,Brione (Verzasca),712,Società Elettrica Sopracenerina SA (Ticino)
+2826,5398,Gambarogno,712,Società Elettrica Sopracenerina SA (Ticino)
+2827,5046,Semione,712,Società Elettrica Sopracenerina SA (Ticino)
+2828,5041,Malvaglia,712,Società Elettrica Sopracenerina SA (Ticino)
+2829,5309,Cerentino,712,Società Elettrica Sopracenerina SA (Ticino)
+2830,5315,Linescio,712,Società Elettrica Sopracenerina SA (Ticino)
+2831,5304,Bosco/Gurin,712,Società Elettrica Sopracenerina SA (Ticino)
+2832,5078,Prato (Leventina),712,Società Elettrica Sopracenerina SA (Ticino)
+2833,3810,Santa Maria in Calanca,712,Società Elettrica Sopracenerina SA (Ticino)
+2834,5131,Tenero-Contra,712,Società Elettrica Sopracenerina SA (Ticino)
+2835,5136,Onsernone,712,Società Elettrica Sopracenerina SA (Ticino)
+2836,5115,Losone,712,Società Elettrica Sopracenerina SA (Ticino)
+2837,5125,Ronco sopra Ascona,712,Società Elettrica Sopracenerina SA (Ticino)
+2838,3832,Grono,712,Società Elettrica Sopracenerina SA (Ticino)
+2839,5324,Avegno Gordevio,712,Società Elettrica Sopracenerina SA (Ticino)
+2840,5113,Locarno,712,Società Elettrica Sopracenerina SA (Ticino)
+2841,5112,Lavertezzo,712,Società Elettrica Sopracenerina SA (Ticino)
+2842,5118,Minusio,712,Società Elettrica Sopracenerina SA (Ticino)
+2843,5323,Lavizzara,712,Società Elettrica Sopracenerina SA (Ticino)
+2844,3835,San Vittore,712,Società Elettrica Sopracenerina SA (Ticino)
+2845,5310,Cevio,712,Società Elettrica Sopracenerina SA (Ticino)
+2846,3805,Castaneda,712,Società Elettrica Sopracenerina SA (Ticino)
+2847,5073,Giornico,712,Società Elettrica Sopracenerina SA (Ticino)
+2848,5097,Brissago,712,Società Elettrica Sopracenerina SA (Ticino)
+2849,5076,Personico,712,Società Elettrica Sopracenerina SA (Ticino)
+2850,5281,Biasca,712,Società Elettrica Sopracenerina SA (Ticino)
+2851,5117,Mergoscia,712,Società Elettrica Sopracenerina SA (Ticino)
+2852,5071,Dalpe,712,Società Elettrica Sopracenerina SA (Ticino)
+2853,3834,Roveredo (GR),712,Società Elettrica Sopracenerina SA (Ticino)
+2854,5138,Cugnasco-Gerra,712,Società Elettrica Sopracenerina SA (Ticino)
+2855,5108,Gordola,712,Società Elettrica Sopracenerina SA (Ticino)
+2856,5077,Pollegio,712,Società Elettrica Sopracenerina SA (Ticino)
+2857,5120,Muralto,712,Società Elettrica Sopracenerina SA (Ticino)
+2858,5050,Serravalle,712,Società Elettrica Sopracenerina SA (Ticino)
+2859,5079,Quinto,712,Società Elettrica Sopracenerina SA (Ticino)
+2860,5226,Capriasca,28,AZIENDA ELETTRICA DI MASSAGNO (AEM) SA
+2861,5196,Massagno,28,AZIENDA ELETTRICA DI MASSAGNO (AEM) SA
+2862,5224,Sonvico,28,AZIENDA ELETTRICA DI MASSAGNO (AEM) SA
+2863,5011,Medeglia,28,AZIENDA ELETTRICA DI MASSAGNO (AEM) SA
+2864,5009,Isone,28,AZIENDA ELETTRICA DI MASSAGNO (AEM) SA
+2865,5061,Airolo,16,"Aziende Elettrica, Comune di Airolo"
+2866,5063,Bedretto,17,"Azienda Elettrica Comunale Bedretto, Commercio Energia Elettrica"
+2867,5091,Ascona,20,"Comune di Ascona, Azienda Elettrica Comunale"
+2868,5233,Vico Morcote,31,Aziende Industriali di Lugano (AIL) SA
+2869,5199,Mezzovico-Vira,31,Aziende Industriali di Lugano (AIL) SA
+2870,5169,Carabietta,31,Aziende Industriali di Lugano (AIL) SA
+2871,5202,Monteggio,31,Aziende Industriali di Lugano (AIL) SA
+2872,5224,Sonvico,31,Aziende Industriali di Lugano (AIL) SA
+2873,5174,Cimadera,31,Aziende Industriali di Lugano (AIL) SA
+2874,5155,Bogno,31,Aziende Industriali di Lugano (AIL) SA
+2875,5173,Certara,31,Aziende Industriali di Lugano (AIL) SA
+2876,5170,Carona,31,Aziende Industriali di Lugano (AIL) SA
+2877,5213,Ponte Tresa,31,Aziende Industriali di Lugano (AIL) SA
+2878,5222,Sessa,31,Aziende Industriali di Lugano (AIL) SA
+2879,5176,Comano,31,Aziende Industriali di Lugano (AIL) SA
+2880,5227,Torricella-Taverne,31,Aziende Industriali di Lugano (AIL) SA
+2881,5162,Cadempino,31,Aziende Industriali di Lugano (AIL) SA
+2882,5151,Bioggio,31,Aziende Industriali di Lugano (AIL) SA
+2883,5205,Muzzano,31,Aziende Industriali di Lugano (AIL) SA
+2884,5263,Riva San Vitale,31,Aziende Industriali di Lugano (AIL) SA
+2885,5167,Canobbio,31,Aziende Industriali di Lugano (AIL) SA
+2886,5198,Melide,31,Aziende Industriali di Lugano (AIL) SA
+2887,5163,Cadro,31,Aziende Industriali di Lugano (AIL) SA
+2888,5229,Valcolla,31,Aziende Industriali di Lugano (AIL) SA
+2889,5207,Novaggio,31,Aziende Industriali di Lugano (AIL) SA
+2890,5194,Manno,31,Aziende Industriali di Lugano (AIL) SA
+2891,5189,Lamone,31,Aziende Industriali di Lugano (AIL) SA
+2892,5200,Miglieglia,31,Aziende Industriali di Lugano (AIL) SA
+2893,5237,Alto Malcantone,31,Aziende Industriali di Lugano (AIL) SA
+2894,5186,Grancia,31,Aziende Industriali di Lugano (AIL) SA
+2895,5208,Origlio,31,Aziende Industriali di Lugano (AIL) SA
+2896,5206,Neggio,31,Aziende Industriali di Lugano (AIL) SA
+2897,5260,Novazzano,31,Aziende Industriali di Lugano (AIL) SA
+2898,5160,Brusino Arsizio,31,Aziende Industriali di Lugano (AIL) SA
+2899,5192,Lugano,31,Aziende Industriali di Lugano (AIL) SA
+2900,5141,Agno,31,Aziende Industriali di Lugano (AIL) SA
+2901,5214,Porza,31,Aziende Industriali di Lugano (AIL) SA
+2902,5178,Croglio,31,Aziende Industriali di Lugano (AIL) SA
+2903,5240,Val Mara,31,Aziende Industriali di Lugano (AIL) SA
+2904,5239,Tresa,31,Aziende Industriali di Lugano (AIL) SA
+2905,5171,Caslano,31,Aziende Industriali di Lugano (AIL) SA
+2906,5149,Bedigliora,31,Aziende Industriali di Lugano (AIL) SA
+2907,5212,Ponte Capriasca,31,Aziende Industriali di Lugano (AIL) SA
+2908,5246,Caneggio,31,Aziende Industriali di Lugano (AIL) SA
+2909,5245,Cabbio,31,Aziende Industriali di Lugano (AIL) SA
+2910,5244,Bruzella,31,Aziende Industriali di Lugano (AIL) SA
+2911,5258,Morbio Superiore,31,Aziende Industriali di Lugano (AIL) SA
+2912,5143,Aranno,31,Aziende Industriali di Lugano (AIL) SA
+2913,5251,Coldrerio,31,Aziende Industriali di Lugano (AIL) SA
+2914,5203,Morcote,31,Aziende Industriali di Lugano (AIL) SA
+2915,5259,Muggio,31,Aziende Industriali di Lugano (AIL) SA
+2916,5264,Sagno,31,Aziende Industriali di Lugano (AIL) SA
+2917,5231,Vezia,31,Aziende Industriali di Lugano (AIL) SA
+2918,5146,Astano,31,Aziende Industriali di Lugano (AIL) SA
+2919,5243,Besazio,31,Aziende Industriali di Lugano (AIL) SA
+2920,5255,Meride,31,Aziende Industriali di Lugano (AIL) SA
+2921,5236,Collina d'Oro,31,Aziende Industriali di Lugano (AIL) SA
+2922,5180,Cureglia,31,Aziende Industriali di Lugano (AIL) SA
+2923,5221,Savosa,31,Aziende Industriali di Lugano (AIL) SA
+2924,5154,Bissone,31,Aziende Industriali di Lugano (AIL) SA
+2925,5223,Sigirino,31,Aziende Industriali di Lugano (AIL) SA
+2926,5217,Rivera,31,Aziende Industriali di Lugano (AIL) SA
+2927,5230,Vernate,31,Aziende Industriali di Lugano (AIL) SA
+2928,5165,Camignolo,31,Aziende Industriali di Lugano (AIL) SA
+2929,5153,Bironico,31,Aziende Industriali di Lugano (AIL) SA
+2930,5219,Rovio,31,Aziende Industriali di Lugano (AIL) SA
+2931,5269,Breggia,31,Aziende Industriali di Lugano (AIL) SA
+2932,5225,Sorengo,31,Aziende Industriali di Lugano (AIL) SA
+2933,5181,Curio,31,Aziende Industriali di Lugano (AIL) SA
+2934,5161,Cademario,31,Aziende Industriali di Lugano (AIL) SA
+2935,5238,Monteceneri,31,Aziende Industriali di Lugano (AIL) SA
+2936,5249,Castel San Pietro,31,Aziende Industriali di Lugano (AIL) SA
+2937,5216,Pura,31,Aziende Industriali di Lugano (AIL) SA
+2938,5195,Maroggia,31,Aziende Industriali di Lugano (AIL) SA
+2939,5144,Arogno,31,Aziende Industriali di Lugano (AIL) SA
+2940,5187,Gravesano,31,Aziende Industriali di Lugano (AIL) SA
+2941,5197,Melano,31,Aziende Industriali di Lugano (AIL) SA
+2942,5148,Bedano,31,Aziende Industriali di Lugano (AIL) SA
+2943,5210,Paradiso,31,Aziende Industriali di Lugano (AIL) SA
+2944,5193,Magliaso,31,Aziende Industriali di Lugano (AIL) SA
+2945,5213,Ponte Tresa,22,Azienda Elettrica Comunale Ponte Tresa
+2946,5250,Chiasso,2,AGE SA
+2947,5268,Vacallo,2,AGE SA
+2948,5242,Balerna,2,AGE SA
+2949,5257,Morbio Inferiore,2,AGE SA
+2950,5254,Mendrisio,32,"Aziende Industriali Mendrisio, Sezione Elettricità"
+2951,5253,Ligornetto,32,"Aziende Industriali Mendrisio, Sezione Elettricità"
+2952,5266,Stabio,8,"Comune di Stabio, Elettrica"
+2953,5405,Gryon,568,Forces Motrices de l'Avançon SA
+2954,5406,Lavey-Morcles,568,Forces Motrices de l'Avançon SA
+2955,5409,Ollon,568,Forces Motrices de l'Avançon SA
+2956,5402,Bex,568,Forces Motrices de l'Avançon SA
+2957,5425,Bière,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2958,5426,Bougy-Villars,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2959,5422,Aubonne,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2960,5851,Allaman,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2961,5435,Saint-Livres,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2962,5432,Montherod,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2963,5433,Pizy,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2964,5427,Féchy,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2965,5636,Etoy,719,Société Electrique des Forces de l'Aubonne SA (SEFA)
+2966,5581,Belmont-sur-Lausanne,690,"Commune de Belmont, Electricité"
+2967,5583,Crissier,709,SIE SA
+2968,5627,Chavannes-près-Renens,709,SIE SA
+2969,5635,Ecublens (VD),709,SIE SA
+2970,5591,Renens (VD),709,SIE SA
+2971,5585,Jouxtens-Mézery,675,Direction des Services industriels
+2972,5586,Lausanne,675,Direction des Services industriels
+2973,5648,Saint-Sulpice (VD),675,Direction des Services industriels
+2974,6216,Mex (VS),675,Direction des Services industriels
+2975,6211,Collonges,675,Direction des Services industriels
+2976,5584,Epalinges,675,Direction des Services industriels
+2977,5589,Prilly,675,Direction des Services industriels
+2978,5587,Le Mont-sur-Lausanne,675,Direction des Services industriels
+2979,5590,Pully,698,"Service Industriel de la Commune, Pully"
+2980,5606,Lutry,700,"Commune de Lutry, Electricité"
+2981,5715,Duillier,723,Société Electrique Intercommunale de la Côte SA
+2982,5704,Begnins,723,Société Electrique Intercommunale de la Côte SA
+2983,5725,Prangins,723,Société Electrique Intercommunale de la Côte SA
+2984,5710,Coinsins,723,Société Electrique Intercommunale de la Côte SA
+2985,5732,Vich,723,Société Electrique Intercommunale de la Côte SA
+2986,5721,Gland,723,Société Electrique Intercommunale de la Côte SA
+2987,5724,Nyon,703,Services industriels de la Ville de Nyon
+2988,5764,Vallorbe,721,vo énergies distribution SA
+2989,5757,Orbe,721,vo énergies distribution SA
+2990,5756,Montcherand,721,vo énergies distribution SA
+2991,5755,Lignerolle,721,vo énergies distribution SA
+2992,5765,Vaulion,721,vo énergies distribution SA
+2993,5744,Ballaigues,721,vo énergies distribution SA
+2994,5756,Montcherand,717,Société des Usines de l'Orbe
+2995,5757,Orbe,717,Société des Usines de l'Orbe
+2996,5871,L'Abbaye,718,Société Electrique de la Vallée de Joux S.A.
+2997,5872,Le Chenit,718,Société Electrique de la Vallée de Joux S.A.
+2998,5764,Vallorbe,718,Société Electrique de la Vallée de Joux S.A.
+2999,5873,Le Lieu,718,Société Electrique de la Vallée de Joux S.A.
+3000,5938,Yverdon-les-Bains,631,"Service des Energies, Commune d'Yverdon-les-Bains"
+3001,6171,Betten,556,EnBAG Netze AG
+3002,6173,Bitsch,556,EnBAG Netze AG
+3003,6055,Blitzingen,556,EnBAG Netze AG
+3004,6064,Niederwald,556,EnBAG Netze AG
+3005,6178,Martisberg,556,EnBAG Netze AG
+3006,6010,Termen,556,EnBAG Netze AG
+3007,6073,Grafschaft,556,EnBAG Netze AG
+3008,6177,Grengiols,556,EnBAG Netze AG
+3009,6077,Goms,556,EnBAG Netze AG
+3010,6205,Bettmeralp,556,EnBAG Netze AG
+3011,6181,Riederalp,556,EnBAG Netze AG
+3012,6008,Ried-Brig,556,EnBAG Netze AG
+3013,6052,Bellwald,556,EnBAG Netze AG
+3014,6007,Naters,556,EnBAG Netze AG
+3015,6002,Brig-Glis,556,EnBAG Netze AG
+3016,6001,Birgisch,556,EnBAG Netze AG
+3017,6006,Mund,556,EnBAG Netze AG
+3018,6203,Mörel-Filet,556,EnBAG Netze AG
+3019,6172,Bister,556,EnBAG Netze AG
+3020,6198,Niedergesteln,771,VED Visp Energie Dienste AG
+3021,6193,Bürchen,771,VED Visp Energie Dienste AG
+3022,6297,Visp,771,VED Visp Energie Dienste AG
+3023,6281,Baltschieder,771,VED Visp Energie Dienste AG
+3024,6191,Ausserberg,771,VED Visp Energie Dienste AG
+3025,6286,Lalden,771,VED Visp Energie Dienste AG
+3026,6004,Eggerberg,771,VED Visp Energie Dienste AG
+3027,6009,Simplon,739,"Gemeinde Simplon Dorf, Elektrizitätsversorgung"
+3028,6011,Zwischbergen,818,"Gemeinde Gondo-Zwischenberg, Stromversorgung"
+3029,6141,Saxon,685,Genedis SA
+3030,6140,Saillon,685,Genedis SA
+3031,6135,Leytron,685,Genedis SA
+3032,6212,Dorénaz,685,Genedis SA
+3033,6139,Riddes,685,Genedis SA
+3034,6218,Salvan,685,Genedis SA
+3035,6134,Isérables,685,Genedis SA
+3036,6022,Chamoson,685,Genedis SA
+3037,6213,Evionnaz,685,Genedis SA
+3038,6217,Saint-Maurice,685,Genedis SA
+3039,6220,Vérossaz,685,Genedis SA
+3040,6142,Trient,685,Genedis SA
+3041,6214,Finhaut,685,Genedis SA
+3042,6219,Vernayaz,685,Genedis SA
+3043,6215,Massongex,685,Genedis SA
+3044,6021,Ardon,685,Genedis SA
+3045,6024,Nendaz,685,Genedis SA
+3046,6134,Isérables,671,SA d'Electricité d'Ardon
+3047,6220,Vérossaz,671,SA d'Electricité d'Ardon
+3048,6021,Ardon,671,SA d'Electricité d'Ardon
+3049,6022,Chamoson,671,SA d'Electricité d'Ardon
+3050,6140,Saillon,671,SA d'Electricité d'Ardon
+3051,6141,Saxon,671,SA d'Electricité d'Ardon
+3052,6135,Leytron,671,SA d'Electricité d'Ardon
+3053,6142,Trient,671,SA d'Electricité d'Ardon
+3054,6213,Evionnaz,671,SA d'Electricité d'Ardon
+3055,6212,Dorénaz,671,SA d'Electricité d'Ardon
+3056,6214,Finhaut,671,SA d'Electricité d'Ardon
+3057,6215,Massongex,671,SA d'Electricité d'Ardon
+3058,6139,Riddes,671,SA d'Electricité d'Ardon
+3059,6024,Nendaz,671,SA d'Electricité d'Ardon
+3060,6219,Vernayaz,671,SA d'Electricité d'Ardon
+3061,6218,Salvan,671,SA d'Electricité d'Ardon
+3062,6035,Sembrancher,689,SEDRE SA
+3063,6131,Bovernier,689,SEDRE SA
+3064,6036,Vollèges,689,SEDRE SA
+3065,6031,Bagnes,689,SEDRE SA
+3066,6037,Val de Bagnes,689,SEDRE SA
+3067,6032,Bourg-Saint-Pierre,47,"Commune de Bourg-St-Pierre, Service électrique"
+3068,6032,Bourg-Saint-Pierre,829,Forces Motrices du Grand-St-Bernard FGB
+3069,6032,Bourg-Saint-Pierre,840,DransGrid SA
+3070,6034,Orsières,840,DransGrid SA
+3071,6033,Liddes,840,DransGrid SA
+3072,6033,Liddes,677,"Commune de Liddes, Services Economiques, Distribution d'énergie"
+3073,6034,Orsières,44,Services Industriels d'Orsières
+3074,6035,Sembrancher,687,Services électrique de la Commune de Sembrancher
+3075,6036,Vollèges,688,Services électriques de Vollèges
+3076,6061,Lax,431,EW GOMS Holding AG
+3077,6057,Fiesch,431,EW GOMS Holding AG
+3078,6058,Fieschertal,431,EW GOMS Holding AG
+3079,6054,Binn,431,EW GOMS Holding AG
+3080,6056,Ernen,431,EW GOMS Holding AG
+3081,6054,Binn,255,Elektrizitätsgenossenschaft Binn
+3082,6075,Reckingen-Gluringen,452,Elektrizitätswerk Obergoms AG
+3083,6077,Goms,452,Elektrizitätswerk Obergoms AG
+3084,6074,Münster-Geschinen,452,Elektrizitätswerk Obergoms AG
+3085,6076,Obergoms,452,Elektrizitätswerk Obergoms AG
+3086,6076,Obergoms,546,EW Gletsch
+3087,6111,Leukerbad,665,RELL AG
+3088,6112,Oberems,665,RELL AG
+3089,6109,Inden,665,RELL AG
+3090,6110,Leuk,665,RELL AG
+3091,6116,Varen,665,RELL AG
+3092,6119,Turtmann-Unterems,665,RELL AG
+3093,6115,Unterems,665,RELL AG
+3094,6105,Erschmatt,665,RELL AG
+3095,6102,Albinen,665,RELL AG
+3096,6118,Gampel-Bratsch,665,RELL AG
+3097,6117,Guttet-Feschel,665,RELL AG
+3098,6114,Turtmann,665,RELL AG
+3099,6101,Agarn,665,RELL AG
+3100,6104,Ergisch,665,RELL AG
+3101,6113,Salgesch,710,Sierre - Energie SA
+3102,6241,Miège,710,Sierre - Energie SA
+3103,6238,Grône,710,Sierre - Energie SA
+3104,6250,Veyras,710,Sierre - Energie SA
+3105,6252,Anniviers,710,Sierre - Energie SA
+3106,6244,Randogne,710,Sierre - Energie SA
+3107,6253,Crans-Montana,710,Sierre - Energie SA
+3108,6232,Chalais,710,Sierre - Energie SA
+3109,6235,Chippis,710,Sierre - Energie SA
+3110,6243,Montana,710,Sierre - Energie SA
+3111,6249,Venthône,710,Sierre - Energie SA
+3112,6248,Sierre,710,Sierre - Energie SA
+3113,6242,Mollens (VS),710,Sierre - Energie SA
+3114,6131,Bovernier,681,Service électrique de Bovernier
+3115,6133,Fully,693,"Commune de Fully, Services industriels"
+3116,6136,Martigny,714,Société d' Electricité de Martigny-Bourg S.A.
+3117,6136,Martigny,798,Sinergy Infrastructure SA
+3118,6132,Charrat,798,Sinergy Infrastructure SA
+3119,6137,Martigny-Combe,798,Sinergy Infrastructure SA
+3120,6142,Trient,680,Service électricité de la commune de Trient
+3121,6151,Champéry,670,S.A. des Eaux et d' Electricité (SDEC)
+3122,6157,Val-d'Illiez,670,S.A. des Eaux et d' Electricité (SDEC)
+3123,6156,Troistorrents,725,Romande Energie SA (Champéry - Val-d'Illiez)
+3124,6157,Val-d'Illiez,725,Romande Energie SA (Champéry - Val-d'Illiez)
+3125,6151,Champéry,725,Romande Energie SA (Champéry - Val-d'Illiez)
+3126,6153,Monthey,701,Services Industriels Monthey
+3127,6156,Troistorrents,832,Romande Energie SA (Troistorrents)
+3128,6202,Wiler (Lötschen),541,EVTL Energieversorgung Talschaft Lötschen AG
+3129,6192,Blatten,541,EVTL Energieversorgung Talschaft Lötschen AG
+3130,6195,Ferden,541,EVTL Energieversorgung Talschaft Lötschen AG
+3131,6197,Kippel,541,EVTL Energieversorgung Talschaft Lötschen AG
+3132,6193,Bürchen,71,EDB Energie Dienste Bürchen AG
+3133,6194,Eischoll,381,"Burgergemeinde Eischoll, Elektrizitätswerk"
+3134,6198,Niedergesteln,503,ENAG Energiedienste Niedergesteln AG
+3135,6199,Raron,540,EVR Energieversorgung Raron AG
+3136,6201,Unterbäch,475,"Gemeinde Unterbäch VS, Elektrizitätswerk"
+3137,6204,Steg-Hohtenn,522,EDSH Energiedienst Steg-Hohtenn AG
+3138,6282,Eisten,581,"Munizipalgemeinde Eisten, Stromversorgung"
+3139,6283,Embd,790,Genossenschaft für die Stromversorgung Kalpetran GSK
+3140,6292,St. Niklaus,539,EVN Energieversorgung Nikolai AG
+3141,6283,Embd,539,EVN Energieversorgung Nikolai AG
+3142,6285,Grächen,538,EVG Grächen AG
+3143,6287,Randa,793,Elektrizitätswerk Randa AG
+3144,6288,Saas-Almagell,341,"Gemeinde Saas Almagell, Stromversorgung"
+3145,6289,Saas-Balen,272,Elektrizitätsgenossenschaft Saas-Balen (EGB)
+3146,6290,Saas-Fee,404,"Gemeinde Saas-Fee, Elektrizitätsversorgung"
+3147,6296,Törbel,543,EVWR Energiedienste Visp - Westlich Raron AG
+3148,6291,Saas-Grund,543,EVWR Energiedienste Visp - Westlich Raron AG
+3149,6293,Stalden (VS),543,EVWR Energiedienste Visp - Westlich Raron AG
+3150,6291,Saas-Grund,405,Genossenschaft Elektrizitätsversorgung Saas-Grund
+3151,6293,Stalden (VS),469,"Gemeinde Stalden, Elektrizitätsversorgung"
+3152,6294,Staldenried,409,EDSR Energiedienste Staldenried AG
+3153,6295,Täsch,472,"Gemeinde Täsch, Elektrizitätsversorgung"
+3154,6296,Törbel,415,"Gemeinde Törbel, Elektrizitätsversorgung"
+3155,6298,Visperterminen,795,Elektrizitätswerk-Genossenschaft Riedbach
+3156,6299,Zeneggen,281,Elektrizitätsgenossenschaft Zeneggen
+3157,6300,Zermatt,484,EWZ Elektrizitätswerk Zermatt AG
+3158,6451,Cornaux,691,Eli10 SA
+3159,6459,Saint-Blaise,691,Eli10 SA
+3160,6408,Cortaillod,691,Eli10 SA
+3161,6404,Boudry,691,Eli10 SA
+3162,6455,Le Landeron,691,Eli10 SA
+3163,6416,Milvignes,691,Eli10 SA
+3164,6412,Peseux,697,Services industriels de Peseux
+3165,6458,Neuchâtel,697,Services industriels de Peseux
+3166,6421,La Chaux-de-Fonds,773,Viteos SA
+3167,6458,Neuchâtel,773,Viteos SA
+3168,6436,Le Locle,773,Viteos SA
+3169,6454,Hauterive (NE),773,Viteos SA
+3170,6422,Les Planchettes,773,Viteos SA
+3171,6431,Les Brenets,773,Viteos SA
+3172,6431,Les Brenets,827,Société des Forces Electriques de la Goule (Les Brenets)
+3173,6451,Cornaux,41,"Commune de Cornaux, Electricité"
+3174,6455,Le Landeron,45,Commune du Landeron
+3175,6459,Saint-Blaise,683,Service Electrique de la commune de Saint-Blaise
+3176,6512,Val-de-Travers,722,Société Electrique du Val-de-Travers S.A.
+3177,6405,Brot-Dessous,722,Société Electrique du Val-de-Travers S.A.
+3178,6613,Chêne-Bourg,692,Services industriels de Genève
+3179,6608,Carouge (GE),692,Services industriels de Genève
+3180,6623,Le Grand-Saconnex,692,Services industriels de Genève
+3181,6641,Troinex,692,Services industriels de Genève
+3182,6642,Vandoeuvres,692,Services industriels de Genève
+3183,6621,Genève,692,Services industriels de Genève
+3184,6609,Cartigny,692,Services industriels de Genève
+3185,6606,Bellevue,692,Services industriels de Genève
+3186,6603,Avully,692,Services industriels de Genève
+3187,6644,Versoix,692,Services industriels de Genève
+3188,6616,Collonge-Bellerive,692,Services industriels de Genève
+3189,6604,Avusy,692,Services industriels de Genève
+3190,6624,Gy,692,Services industriels de Genève
+3191,6635,Presinge,692,Services industriels de Genève
+3192,6645,Veyrier,692,Services industriels de Genève
+3193,6634,Pregny-Chambésy,692,Services industriels de Genève
+3194,6631,Onex,692,Services industriels de Genève
+3195,6629,Meinier,692,Services industriels de Genève
+3196,6618,Confignon,692,Services industriels de Genève
+3197,6628,Lancy,692,Services industriels de Genève
+3198,6617,Cologny,692,Services industriels de Genève
+3199,6614,Choulex,692,Services industriels de Genève
+3200,6601,Aire-la-Ville,692,Services industriels de Genève
+3201,6615,Collex-Bossy,692,Services industriels de Genève
+3202,6605,Bardonnex,692,Services industriels de Genève
+3203,6611,Chancy,692,Services industriels de Genève
+3204,6612,Chêne-Bougeries,692,Services industriels de Genève
+3205,6636,Puplinge,692,Services industriels de Genève
+3206,6637,Russin,692,Services industriels de Genève
+3207,6639,Soral,692,Services industriels de Genève
+3208,6619,Corsier (GE),692,Services industriels de Genève
+3209,6607,Bernex,692,Services industriels de Genève
+3210,6630,Meyrin,692,Services industriels de Genève
+3211,6622,Genthod,692,Services industriels de Genève
+3212,6625,Hermance,692,Services industriels de Genève
+3213,6627,Laconnex,692,Services industriels de Genève
+3214,6602,Anières,692,Services industriels de Genève
+3215,6633,Plan-les-Ouates,692,Services industriels de Genève
+3216,6620,Dardagny,692,Services industriels de Genève
+3217,6632,Perly-Certoux,692,Services industriels de Genève
+3218,6626,Jussy,692,Services industriels de Genève
+3219,6640,Thônex,692,Services industriels de Genève
+3220,6643,Vernier,692,Services industriels de Genève
+3221,6638,Satigny,692,Services industriels de Genève
+3222,6706,Courchapoix,3,"Commune de Courchapoix, electricite"
+3223,6711,Delémont,695,Services industriels de Delémont
+3224,6712,Develier,684,"Commune de Develier, service éléctrique"
+3225,619,Oberdiessbach,331,"Einwohnergemeinde Oberdiessbach, Elektrizitätsversorgung"
+3226,1631,Glarus Süd,465,Technische Betriebe Glarus Süd
+3227,1610,Haslen,465,Technische Betriebe Glarus Süd
+3228,1615,Matt,465,Technische Betriebe Glarus Süd
+3229,1614,Luchsingen,465,Technische Betriebe Glarus Süd
+3230,1622,Niederurnen,465,Technische Betriebe Glarus Süd
+3231,1627,Schwanden (GL),465,Technische Betriebe Glarus Süd
+3232,1606,Engi,465,Technische Betriebe Glarus Süd
+3233,1605,Elm,465,Technische Betriebe Glarus Süd
+3234,1629,Sool,465,Technische Betriebe Glarus Süd
+3235,1628,Schwändi,465,Technische Betriebe Glarus Süd
+3236,1616,Mitlödi,465,Technische Betriebe Glarus Süd
+3237,1602,Bilten,379,Elektrizitätswerk der Gemeinde Bilten
+3238,1605,Elm,428,Elektrizitätswerk Elm
+3239,1607,Ennenda,246,Elektrizitäts- und Wasserversorgung
+3240,1608,Filzbach,309,Elektrizitätsversorgung Filzbach
+3241,1601,Betschwanden,390,Elektrizitätswerk der Gemeinde Linthal
+3242,1613,Linthal,390,Elektrizitätswerk der Gemeinde Linthal
+3243,1603,Braunwald,390,Elektrizitätswerk der Gemeinde Linthal
+3244,1614,Luchsingen,390,Elektrizitätswerk der Gemeinde Linthal
+3245,1626,Rüti (GL),390,Elektrizitätswerk der Gemeinde Linthal
+3246,1615,Matt,446,Elektrizitätswerk Matt
+3247,1617,Mollis,396,Elektrizitätswerk der Gemeinde Mollis
+3248,1618,Mühlehorn,327,Elektrizitätsversorgung Mühlehorn
+3249,1620,Netstal,298,Elektrizitätsversorgung der Gemeinde Netstal
+3250,1622,Niederurnen,779,Wasser- und Elektrizitätswerk Niederurnen
+3251,1623,Oberurnen,333,Elektrizitätsversorgung Oberurnen
+3252,1624,Obstalden,334,Elektrizitätsversorgung Obstalden
+3253,1625,Riedern,337,Elektrizitätsversorgung Riedern
+3254,6246,Saint-Léonard,630,L' Energie de Sion-Région SA
+3255,6240,Lens,630,L' Energie de Sion-Région SA
+3256,6088,Vernamiège,630,L' Energie de Sion-Région SA
+3257,6263,Grimisuat,630,L' Energie de Sion-Région SA
+3258,6086,Nax,630,L' Energie de Sion-Région SA
+3259,6025,Vétroz,630,L' Energie de Sion-Région SA
+3260,6239,Icogne,630,L' Energie de Sion-Région SA
+3261,6090,Mont-Noble,630,L' Energie de Sion-Région SA
+3262,6267,Veysonnaz,630,L' Energie de Sion-Région SA
+3263,6082,Ayent,630,L' Energie de Sion-Région SA
+3264,6089,Vex,630,L' Energie de Sion-Région SA
+3265,6264,Salins,630,L' Energie de Sion-Région SA
+3266,6023,Conthey,630,L' Energie de Sion-Région SA
+3267,6234,Chermignon,630,L' Energie de Sion-Région SA
+3268,6261,Arbaz,630,L' Energie de Sion-Région SA
+3269,6265,Savièse,630,L' Energie de Sion-Région SA
+3270,6081,Les Agettes,630,L' Energie de Sion-Région SA
+3271,6085,Mase,630,L' Energie de Sion-Région SA
+3272,6243,Montana,630,L' Energie de Sion-Région SA
+3273,6266,Sion,630,L' Energie de Sion-Région SA
+3274,6084,Hérémence,630,L' Energie de Sion-Région SA
+3275,6087,Saint-Martin (VS),630,L' Energie de Sion-Région SA
+3276,6253,Crans-Montana,630,L' Energie de Sion-Région SA
+3277,6083,Evolène,630,L' Energie de Sion-Région SA
+3278,1630,Glarus Nord,825,Technische Betriebe Glarus Nord (TBGN)
+3279,304,Kallnach,363,"Einwohnergemeinde Kallnach, Stromversorgung"
+3280,722,Lamboing,42,"Commune Mixte de Lamboing, Service Electricité"
+3281,726,Plateau de Diesse,42,"Commune Mixte de Lamboing, Service Electricité"
+3282,301,Aarberg,42,"Commune Mixte de Lamboing, Service Electricité"
+3283,2446,Brügglen,120,Elektra Brügglen
+3284,2449,Gossliwil,139,Elektra Gossliwil
+3285,2450,Hessigkofen,146,Elektra Hessigkofen
+3286,2452,Küttigkofen,151,Elektra Küttigkofen
+3287,2453,Kyburg-Buchegg,571,Gemeinde Kyburg-Buchegg
+3288,2454,Lüsslingen,153,Elektra Nennigkofen Genossenschaft
+3289,2458,Mühledorf (SO),161,Elektra Mühledorf
+3290,2459,Nennigkofen,602,Elektra Nennigkofen Genossenschaft
+3291,2464,Lüsslingen-Nennigkofen,602,Elektra Nennigkofen Genossenschaft
+3292,3360,Nesslau,34,Beleuchtungskorporation Schlatt-Gublen
+3293,3358,Nesslau-Krummenau,34,Beleuchtungskorporation Schlatt-Gublen
+3294,3379,Wattwil,492,Elektro-Genossenschaft Ulisbach
+3295,3377,Wattwil,492,Elektro-Genossenschaft Ulisbach
+3296,3391,Bütschwil,62,Dorfkorporation Bütschwil
+3297,3421,Bronschhofen,61,Dorfkorporation Bronschhofen Strom und Wasser
+3298,3427,Wil (SG),61,Dorfkorporation Bronschhofen Strom und Wasser
+3299,3672,Safiental,342,"Gemeinde Safiental, Stromversorgung"
+3300,3651,Safien,342,"Gemeinde Safiental, Stromversorgung"
+3301,3587,Versam,418,Elektrizitätswerk der Gemeinde Versam
+3302,3606,Vrin,445,Societad Ovra electrica Lumbrein
+3303,3595,Lumbrein,445,Societad Ovra electrica Lumbrein
+3304,3618,Lumnezia,445,Societad Ovra electrica Lumbrein
+3305,3652,Tenna,302,Elektrizitätsversorgung der Gemeinde Tenna
+3306,3751,Ramosch,52,Cumün da Ramosch
+3307,3753,Tschlin,56,Cumün da Tschlin
+3308,3925,Lüen,391,Elektrizitätswerk der Gemeinde Lüen
+3309,3927,Molinis,395,Elektrizitätswerk der Gemeinde Molinis
+3310,3929,Peist,402,Elektrizitätswerk der Gemeinde Peist
+3311,4321,Unterendingen,277,Elektrizitätsgenossenschaft Unterendingen
+3312,4305,Endingen,277,Elektrizitätsgenossenschaft Unterendingen
+3313,5072,Faido,48,Cooperativa Elettrica di Faido (CEF)
+3314,5074,Mairengo,48,Cooperativa Elettrica di Faido (CEF)
+3315,6217,Saint-Maurice,694,SES ENERGIES SA 
+3316,6416,Milvignes,38,Commune d'Auvernier
+3317,6401,Auvernier,38,Commune d'Auvernier
+3318,6416,Milvignes,39,Commune de Bôle
+3319,6403,Bôle,39,Commune de Bôle
+3320,6723,Soulce,679,"Commune mixte de Haute-Sorne, Service électrique de Soulce"
+3321,6729,Haute-Sorne,679,"Commune mixte de Haute-Sorne, Service électrique de Soulce"
+3322,3427,Wil (SG),758,Technische Betriebe Wil
+3323,3425,Wil (SG),758,Technische Betriebe Wil
+3324,3421,Bronschhofen,758,Technische Betriebe Wil
+3325,3427,Wil (SG),159,Elektra-Genossenschaft Maugwil-Uerental-Boxloo-Weid
+3326,3421,Bronschhofen,159,Elektra-Genossenschaft Maugwil-Uerental-Boxloo-Weid
+3327,3379,Wattwil,520,Thurwerke AG
+3328,3377,Wattwil,520,Thurwerke AG
+3329,3377,Wattwil,35,Beleuchtungskorporation Schmidberg
+3330,3379,Wattwil,35,Beleuchtungskorporation Schmidberg
+3331,3515,Surava,295,Gemeinde Albula/Alvra
+3332,3542,Albula/Alvra,295,Gemeinde Albula/Alvra
+3333,3502,Mon,295,Gemeinde Albula/Alvra
+3334,3501,Alvaschein,295,Gemeinde Albula/Alvra
+3335,3511,Alvaneu,295,Gemeinde Albula/Alvra
+3336,3512,Brienz/Brinzauls,295,Gemeinde Albula/Alvra
+3337,3504,Stierva,295,Gemeinde Albula/Alvra
+3338,3505,Tiefencastel,295,Gemeinde Albula/Alvra
+3339,3502,Mon,397,Elektrizitätswerk der Gemeinde Mon
+3340,3504,Stierva,301,Elektrizitätsversorgung der Gemeinde Stierva
+3341,3505,Tiefencastel,413,Elektrizitätswerk der Gemeinde Tiefencastel
+3342,3511,Alvaneu,287,Elektrizitätsversorgung Alvaneu
+3343,3512,Brienz/Brinzauls,500,Elektroversorgung der Gemeinde Brienz/Brinzauls
+3344,3515,Surava,412,Elektrizitätswerk der Gemeinde Surava
+3345,3543,Surses,369,Impianti elettrici Bivio società cooperativa
+3346,3531,Bivio,369,Impianti elettrici Bivio società cooperativa
+3347,3532,Cunter,296,Elektrizitätsversorgung der Gemeinde Cunter
+3348,3533,Marmorera,394,Elektrizitätswerk der Gemeinde Marmorera
+3349,3534,Mulegns,398,Elektrizitätswerk der Gemeinde Mulegns
+3350,3536,Riom-Parsonz,300,Elektrizitätsversorgung der Gemeinde Riom-Parsonz
+3351,3538,Salouf,461,Elektrizitätswerk Salouf
+3352,3539,Savognin,407,Elektrizitätswerk der Gemeinde Savognin
+3353,3540,Sur,573,Gemeinde Sur
+3354,3541,Tinizong-Rona,414,Elektrizitätswerk der Gemeinde Tinizong-Rona
+3355,3741,Ardez,58,Cumün d'Ardez
+3356,3742,Guarda,50,Cumün da Guarda
+3357,3743,Lavin,51,Cumün da Lavin
+3358,3744,Susch,54,Cumün da Susch
+3359,3745,Tarasp,55,Cumün da Tarasp
+3360,3761,Ftan,49,Cumün da Ftan
+3361,3763,Sent,53,Cumün da Sent
+3362,3946,Untervaz,502,"Gemeinde Untervaz, Elektroversorgung"
+3363,5624,Bussigny,40,Commune de Bussigny
+3364,3427,Wil (SG),842,Elektra Trungen
+3365,3543,Surses,845,"Gemeinde Surses, Elektrizitätsversorgung"
+3366,133,Horgen,589,"Gemeindewerke Horgen Elektrizität, Gas, Wasser und Fernwärmeversorgung"
+3367,295,Horgen,589,"Gemeindewerke Horgen Elektrizität, Gas, Wasser und Fernwärmeversorgung"
+3368,176,Lindau,389,EW Lindau AG
+3369,700,Moutier,676,"Service de l'Electricité, Municipalité de Moutier"
+3370,3394,Mosnang,501,Elektroversorgung Mühlrüti
+3371,3691,Hinterrhein,441,Elektrizitätswerk Hinterrhein
+3372,3714,Rheinwald,400,Gemeinde Rheinwald Elektrizitätsversorgung
+3373,3693,Nufenen,400,Gemeinde Rheinwald Elektrizitätsversorgung
+3374,3694,Splügen,823,Energieversorgungsstelle Splügen
+3375,3926,Maladers,392,Elektrizitätswerk der Gemeinde Maladers
+3376,6132,Charrat,682,Service électrique de la commune de Charrat
+3377,3544,Bergün Filisur,377,Elektrizitätswerk der Gemeinde Bergün Filisur
+3378,3521,Bergün/Bravuogn,377,Elektrizitätswerk der Gemeinde Bergün Filisur
+3379,4027,Fislisbach,599,Genossenschaft ELEKTRA Fislisbach
+3380,4911,Bürglen (TG),529,"Politische Gemeinde Bürglen TG, Elektrizitätsversorgung"
+3381,5588,Paudex,696,"Commune de Paudex, Electricité"
+3382,5592,Romanel-sur-Lausanne,699,Services industriels de Romanel-sur-Lausanne
+3383,6240,Lens,853,OIKEN SA
+3384,6263,Grimisuat,853,OIKEN SA
+3385,6090,Mont-Noble,853,OIKEN SA
+3386,6082,Ayent,853,OIKEN SA
+3387,6023,Conthey,853,OIKEN SA
+3388,6249,Venthône,853,OIKEN SA
+3389,6246,Saint-Léonard,853,OIKEN SA
+3390,6087,Saint-Martin (VS),853,OIKEN SA
+3391,6083,Evolène,853,OIKEN SA
+3392,6254,Noble-Contrée,853,OIKEN SA
+3393,6084,Hérémence,853,OIKEN SA
+3394,6266,Sion,853,OIKEN SA
+3395,6241,Miège,853,OIKEN SA
+3396,6250,Veyras,853,OIKEN SA
+3397,6267,Veysonnaz,853,OIKEN SA
+3398,6113,Salgesch,853,OIKEN SA
+3399,6265,Savièse,853,OIKEN SA
+3400,6252,Anniviers,853,OIKEN SA
+3401,6248,Sierre,853,OIKEN SA
+3402,6253,Crans-Montana,853,OIKEN SA
+3403,6232,Chalais,853,OIKEN SA
+3404,6089,Vex,853,OIKEN SA
+3405,6025,Vétroz,853,OIKEN SA
+3406,6238,Grône,853,OIKEN SA
+3407,6239,Icogne,853,OIKEN SA
+3408,6261,Arbaz,853,OIKEN SA
+3409,6235,Chippis,853,OIKEN SA
+3410,6137,Martigny-Combe,678,Service d'électricité Martigny-Combe
+3411,6408,Cortaillod,704,Services Techniques de la Commune de Cortaillod
+3412,3421,Bronschhofen,194,Elektra und Wasserversorgung Rossrüti
+3413,4591,Matzingen,215,Elektra-Korporation Dingenhart
+3414,3360,Nesslau,493,Elektrokorporation Lutenwil
+3415,3358,Nesslau-Krummenau,493,Elektrokorporation Lutenwil
+3416,4451,Uttwil,814,EKT Energie AG
+3417,4471,Bischofszell,814,EKT Energie AG
+3418,3423,Niederhelfenschwil,814,EKT Energie AG
+3419,4501,Kradolf-Schönenberg,814,EKT Energie AG
+3420,4501,Kradolf-Schönenberg,85,EKT AG
+3421,4471,Bischofszell,85,EKT AG
+3422,4451,Uttwil,85,EKT AG
+3423,3423,Niederhelfenschwil,85,EKT AG
+3424,3522,Filisur,647,Politische Gemeinde Filisur
+3425,3332,Eschenbach (SG),490,Elektrogenossenschaft Lütschbach und Umgebung
+3426,4170,Laufenburg,521,Energiedienst Holding AG
+3427,4168,Ittenthal,521,Energiedienst Holding AG
+3428,4178,Sulz (AG),521,Energiedienst Holding AG
+3429,4169,Kaisten,521,Energiedienst Holding AG
+3430,3931,St. Peter-Pagig,299,Elektrizitätsversorgung der Gemeinde St.Peter-Pagig
+3431,6032,Bourg-Saint-Pierre,828,Compagnie des Forces Motrices d'Orsières - FMO SA
+3432,6034,Orsières,828,Compagnie des Forces Motrices d'Orsières - FMO SA
+3433,6033,Liddes,828,Compagnie des Forces Motrices d'Orsières - FMO SA
+3434,1619,Näfels,550,EW Näfels
+3435,6156,Troistorrents,46,Compagnie Industrielle de Monthey SA
+3436,4951,Wigoltingen,850,Elektrizitätsgenossenschaft Gehrau-Häusern
+3437,4721,Bichelsee-Balterswil,118,Elektra Bichelsee
+3438,2441,Aetigkofen,106,Elektra Aetigkofen
+3439,2444,Bibern (SO),117,Elektra Bibern
+3440,151,Erlenbach (ZH),10701,Werke am Zürichsee AG (Erlenbach)
+3441,154,Küsnacht (ZH),10740,Werke am Zürichsee AG (Küsnacht)
+3442,161,Zollikon,10741,Werke am Zürichsee AG (Zollikon)
+3443,4611,Thundorf,10773,LST Energie AG
+3444,4606,Stettfurt,10773,LST Energie AG
+3445,4741,Lommis,10773,LST Energie AG
+3446,3810,Santa Maria in Calanca,10775,Società Elettrica Sopracenerina SA (Mesolcina)
+3447,3805,Castaneda,10775,Società Elettrica Sopracenerina SA (Mesolcina)
+3448,3834,Roveredo (GR),10775,Società Elettrica Sopracenerina SA (Mesolcina)
+3449,3835,San Vittore,10775,Società Elettrica Sopracenerina SA (Mesolcina)
+3450,3832,Grono,10775,Società Elettrica Sopracenerina SA (Mesolcina)
+3451,6153,Monthey,10839,Monthey Energies SA
+3452,1705,Neuheim,10851,WWZ Netze AG
+3453,1709,Unterägeri,10851,WWZ Netze AG
+3454,1031,Hochdorf,10851,WWZ Netze AG
+3455,1711,Zug,10851,WWZ Netze AG
+3456,1706,Oberägeri,10851,WWZ Netze AG
+3457,1704,Menzingen,10851,WWZ Netze AG
+3458,1707,Risch,10851,WWZ Netze AG
+3459,1703,Hünenberg,10851,WWZ Netze AG
+3460,1701,Baar,10851,WWZ Netze AG
+3461,1710,Walchwil,10851,WWZ Netze AG
+3462,1702,Cham,10851,WWZ Netze AG

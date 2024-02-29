@@ -4,6 +4,8 @@
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
+# Azimuth = 0 means north direction, 90 = East etc
+
 set Patches default {0.. 144}; #Skydome patches
 set SurfaceTypes default {'Flat_roof', 'Facades'};
 set Surface default {1};
@@ -39,6 +41,8 @@ param Rotation{s in Surface, (az,ti) in ConfigOfSurface[s],pt in Patches} :=
 #--------------------------------------------------------------------------------------------------------------------#
 #---Panel Arrangement and Mutual Shading
 #--------------------------------------------------------------------------------------------------------------------#
+# To minimize inter modular shadowing, PV modules have to leave some space between rows.
+# How much space one panel occupies is indicated by the PVA_module_coverage value.
 param Design_lim_angle default 20; #[3]: OPTIMIZATION OF ROW-ARRANGEMENT IN PV SYSTEMS, SHADING LOSS EVALUATIONS ACCORDING TO MODULE POSITIONING AND CONNEXIONS
 param PVA_module_height{u in UnitsOfType['PV']} default 1.0; #	[2]:  Mitsubishi Electric Module PV-MLU255HC
 param PVA_module_width{u in UnitsOfType['PV']} default 1.6;# 1.6[2] 

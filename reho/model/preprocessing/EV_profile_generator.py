@@ -6,6 +6,31 @@ import numpy as np
 
 
 def generate_EV_plugged_out_profiles_district(cluster):
+    """
+    Computes hourly electric vehicle (EV) profiles for each typical day considering weekdays and weekends. Data are taken from
+    `UK Department for Transport 2013 <https://www.gov.uk/government/collections/energy-and-environment-statistics#publications>`_
+    and `SFSO 2015 <https://www.bfs.admin.ch/asset/fr/1840478>`_. The EV occupancy profiles are used to
+    optimize EV electricity demand profiles with the evehicle.mod ampl model.
+
+
+
+    Parameters
+    ----------
+    cluster : dict
+        Define location district, number of periods, and number of timesteps.
+
+    Returns
+    -------
+    EV_plugged_out : array
+        Hourly profile of the share of vehicles being plugged out of the district LV grid.
+    EV_plugging_in : array
+        Hourly profile of the share of vehicles connecting to the district LV grid.
+
+    Notes
+    -----
+    - EV_plugged_out, EV_plugging_in
+
+    """
     #TODO IMPLEMENTATION of flexible period duration
     File_ID = WD.get_cluster_file_ID(cluster)
 
@@ -16,10 +41,10 @@ def generate_EV_plugged_out_profiles_district(cluster):
 
 
     if use_weekdays:
-        timestamp = np.loadtxt(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3), skiprows=1)
+        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3), skiprows=1)
         timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
     else:
-        df = pd.read_csv(os.path.join(path_to_clustering_results, 'timestamp_' + File_ID + '.dat'), delimiter = '\t')
+        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter = '\t')
         timestamp = df.fillna(1) #only weekdays
 
     # Federal Office of Statistic, Comportement de la population en matiere de transports, 2015

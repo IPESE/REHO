@@ -5,8 +5,17 @@ from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import pairwise_distances
 
 class ClusterClass:
+    """
+    This class executes the data reduction for meteorological data.
 
-    def __init__(self, data, Iter=None,  option=None, pd = None, outliers = None):
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Input data (.dat file)
+
+    """
+
+    def __init__(self, data, Iter=None,  option=None, pd=None, outliers=None):
         super().__init__()
         if Iter == None:
             self.Iter = [3]

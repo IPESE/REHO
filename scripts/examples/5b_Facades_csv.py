@@ -5,8 +5,8 @@ if __name__ == '__main__':
 
     # Set building parameters with roof orientations and facades loaded from csv files
     reader = QBuildingsReader(load_facades=True, load_roofs=True)
-    qbuildings_data = reader.read_csv(buildings_filename='buildings_example.csv', nb_buildings=2,
-                                      facades_filename='facades_example.csv', roofs_filename='roofs_example.csv')
+    qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2,
+                                      facades_filename='../template/data/facades.csv', roofs_filename='../template/data/roofs.csv')
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}

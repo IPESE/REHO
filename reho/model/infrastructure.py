@@ -203,7 +203,7 @@ class infrastructure:
         self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
         # Grids------------------------------------------------------------
-        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst']
+        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection']
         lca_impact_demand = [key + "_demand_cst" for key in self.lca_kpis]
         lca_impact_supply = [key + "_supply_cst" for key in self.lca_kpis]
         for g in self.grids:
@@ -598,5 +598,7 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
             grids[name]['GWP_demand_cst'] = parameters['GWP_demand_cst']
         if 'GWP_supply_cst' in parameters:
             grids[name]['GWP_supply_cst'] = parameters['GWP_supply_cst']
+        if 'Cost_connection' in parameters:
+            grids[name]['Cost_connection'] = parameters['Cost_connection']
 
     return grids

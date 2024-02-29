@@ -44,7 +44,7 @@ set Obj_fct := Lca_kpi union {'TOTEX', 'OPEX', 'CAPEX', 'GWP'};
 param beta_duals{o in Obj_fct} default 0;
 
 minimize SP_obj_fct:
-beta_duals['OPEX'] * Costs_op + beta_duals['CAPEX'] * tau*(Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
+beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau*(Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
 sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties;
 
 

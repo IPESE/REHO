@@ -589,7 +589,7 @@ subject to TOTAL_design_c11{h in House}:
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid connection costs
 #--------------------------------------------------------------------------------------------------------------------#
-param monthly_grid_connection_cost{l in ResourceBalances} default 0; # CHF/kW/month
+param Cost_connection{l in ResourceBalances} default 0; # CHF/kW/month
 
 var peak_exchange_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
 var Costs_grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
@@ -599,7 +599,7 @@ subject to peak_exchange_calculation{l in ResourceBalances, h in HousesOfLayer[l
 peak_exchange_House[l,h] >= (Grid_supply[l,h,p,t]+Grid_demand[l,h,p,t]);
 
 subject to grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]}:
-Costs_grid_connection_House[l,h] = 12*monthly_grid_connection_cost[l]*peak_exchange_House[l,h];
+Costs_grid_connection_House[l,h] = 12*Cost_connection[l]*peak_exchange_House[l,h];
 
 subject to grid_connection_total:
 Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];

@@ -350,10 +350,6 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     - The name of the units, which will be used as keys, do not matter but the *UnitOfType* must be along a defined
       list of possibilities.
     """
-
-    unit_data = file_reader(file)
-    unit_data = unit_data.set_index("Unit")
-
     def transform_into_list(column):
         for idx, row in column.items():
             try:
@@ -364,6 +360,16 @@ def prepare_units_array(file, exclude_units=[], grids=None):
                 unit_data.at[idx, column.name] = ['']
             unit_data.at[idx, column.name] = new_value
 
+    def check_validity(row):
+        if len(row['StreamsOfUnit']) > 1 and len(row['stream_Tin']) == 1:
+            row['stream_Tin'] = [row['stream_Tin'][0] for el in row['StreamsOfUnit']]
+        if len(row['StreamsOfUnit']) > 1 and len(row['stream_Tout']) == 1:
+            row['stream_Tout'] = [row['stream_Tout'][0] for el in row['StreamsOfUnit']]
+        return row
+
+    unit_data = file_reader(file)
+    unit_data = unit_data.set_index("Unit")
+
     list_of_columns = ['UnitOfLayer', 'UnitOfService', 'StreamsOfUnit', 'Units_flowrate_in', 'Units_flowrate_out',
                        'stream_Tin', 'stream_Tout']
     try:
@@ -372,13 +378,6 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     except KeyError:
         raise KeyError('There is a name in the columns of your csv. Make sure the columns correspond to the default'
                        ' files in data/infrastructure.')
-
-    def check_validity(row):
-        if len(row['StreamsOfUnit']) > 1 and len(row['stream_Tin']) == 1:
-            row['stream_Tin'] = [row['stream_Tin'][0] for el in row['StreamsOfUnit']]
-        if len(row['StreamsOfUnit']) > 1 and len(row['stream_Tout']) == 1:
-            row['stream_Tout'] = [row['stream_Tout'][0] for el in row['StreamsOfUnit']]
-        return row
 
     unit_data = unit_data.apply(check_validity, axis=1)
     unit_data['HP_parameters'] = unit_data['HP_parameters'].astype(str)
@@ -465,10 +464,15 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 
     building_units = prepare_units_array(building_data, exclude_units, grids)
 
+    storage_to_exclude = ['BESS_IP', 'PTES_S_IP', 'PTES_C_IP', 'H2S_storage', 'H2_compression',
+                          'SOEFC', 'FC']
+    exclude_units = exclude_units + storage_to_exclude
     if storage_data is True:
-        building_units = np.concatenate([building_units, prepare_units_array(os.path.join(path_to_infrastructure, "storage_units.csv"))])
+        default_storage_units = os.path.join(path_to_infrastructure, "storage_units.csv")
+        building_units = np.concatenate([building_units, prepare_units_array(default_storage_units, exclude_units=exclude_units)])
     elif storage_data:
-        building_units = np.concatenate([building_units, prepare_units_array(storage_data)])
+        building_units = np.concatenate([building_units, prepare_units_array(storage_data, exclude_units=exclude_units)])
+
     if district_data is True:
         district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids)
     elif district_data:
@@ -528,29 +532,23 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
     grid_data = file_reader(file)
     grid_data = grid_data.set_index("Grid")
 
-    # list of all grids implemented in the model
-    electricity = create_grid('Electricity', 1, 1, grid_data)
-    natural_gas = create_grid('NaturalGas', 1, 0, grid_data)
-    oil = create_grid('Oil', 1, 0, grid_data)
-    wood = create_grid('Wood', 1, 0, grid_data)
-    data = create_grid('Data', 0, 1, grid_data)
-    hydrogen = create_grid('Hydrogen', 1, 1, grid_data)
-    biogas = create_grid('Biogas', 1, 0, grid_data)
-    heat = create_grid('Heat', 1, 1, grid_data)
-    all_grids = {'Electricity': electricity, 'NaturalGas': natural_gas, 'Oil': oil, 'Wood': wood, 'Data': data, 'Hydrogen': hydrogen, 'Biogas': biogas, 'Heat': heat}
-
-    # list of available grids for the given optimisation
+    grid_to_exclude = ['Data']
     grids = dict()
-    for name, parameters in available_grids.items():
-        if name in all_grids:
-            grids[name] = all_grids[name]
-        if 'Cost_demand_cst' in parameters:
-            grids[name]['Cost_demand_cst'] = parameters['Cost_demand_cst']
-        if 'Cost_supply_cst' in parameters:
-            grids[name]['Cost_supply_cst'] = parameters['Cost_supply_cst']
-        if 'GWP_demand_cst' in parameters:
-            grids[name]['GWP_demand_cst'] = parameters['GWP_demand_cst']
-        if 'GWP_supply_cst' in parameters:
-            grids[name]['GWP_supply_cst'] = parameters['GWP_supply_cst']
+    for idx, row in grid_data.iterrows():
+        if idx in available_grids.keys():
+            grid_dict = row.to_dict()
+            grid_dict['name'] = idx
+            grid_dict['Grids_flowrate_in'] = 1e6 * grid_dict['Grids_flowrate_in']
+            grid_dict['Grids_flowrate_out'] = 1e6 * grid_dict['Grids_flowrate_out']
+            if 'Cost_demand_cst' in available_grids[idx]:
+                grid_dict[idx]['Cost_demand_cst'] = available_grids[idx]['Cost_demand_cst']
+            if 'Cost_supply_cst' in available_grids[idx]:
+                grid_dict[idx]['Cost_supply_cst'] = available_grids[idx]['Cost_supply_cst']
+            if 'GWP_demand_cst' in available_grids[idx]:
+                grid_dict[idx]['GWP_demand_cst'] = available_grids[idx]['GWP_demand_cst']
+            if 'GWP_supply_cst' in available_grids[idx]:
+                grid_dict[idx]['GWP_supply_cst'] = available_grids[idx]['GWP_supply_cst']
+            grids[idx] = grid_dict
 
     return grids
+

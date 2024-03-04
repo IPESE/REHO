@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'Heat': {"Cost_demand_cst": 0.001, "Cost_supply_cst": 0.005}})
+                                             'Heat': {"Cost_demand_cst": 0.05, "Cost_supply_cst": 0.15}})
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options

@@ -395,7 +395,7 @@ District units can be enabled with the boolean argument :code:`district_units`:
 
 .. code-block:: python
 
-    units = infrastructure.initialize_units(scenario, grids, building_data, district_data="district_units.csv", district_units=True)
+    units = infrastructure.initialize_units(scenario, grids, building_data, district_data="district_units.csv", district_data=True)
 
 Here "district_units.csv" contains the default parameters for district-size units.
 

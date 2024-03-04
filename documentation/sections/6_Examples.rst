@@ -83,6 +83,9 @@ Progressive integrated system
 .. literalinclude:: ../../scripts/examples/4a_Progressive_scenarios.py
    :language: python
 
+.. literalinclude:: ../../scripts/examples/4b_Progressive_scenarios_csv.py
+   :language: python
+
 Include photovoltaics on facades
 ====================================
 .. literalinclude:: ../../scripts/examples/5a_Facades.py

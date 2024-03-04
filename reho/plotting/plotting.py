@@ -50,7 +50,7 @@ def handle_zero_rows(df):
     return df.loc[~is_zero_row]
 
 
-def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, premium_version=False,
+def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, premium_version=False,
                 additional_costs={}, scaling_factor=1):
     """
     This function prepares the dataframes that will be needed for the plot_performance and plot_actors
@@ -77,10 +77,6 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, include_avoided=False, p
         elif tup == ('revenues', 'Electricity'):
             new_indices[i] = ('revenues', 'Electrical_grid_feed_in')
     data_opex.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
-
-    if include_avoided:
-        data_opex.loc[('costs', 'Electrical_grid'), :] = data_opex.loc[('costs', 'Electrical_grid')] + data_opex.loc[
-            ('avoided', 'PV')]
 
     if premium_version:
         data_opex.loc[('avoided', 'solar_premium'), :] = data_opex.loc[('avoided', 'PV_SC')] * (0.279 - 0.1645) / 0.279
@@ -297,8 +293,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         return fig
 
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', include_avoided=False,
-                premium_version=False, per_m2=False, additional_costs={},
+def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=False, per_m2=False, additional_costs={},
                 filename=None, export_format='html', scaling_factor=1, return_df=False):
     sc = list(results.keys())[0]
     id = list(results[sc].keys())[0]
@@ -328,8 +323,7 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', inc
         change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
         change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
 
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, include_avoided=include_avoided,
-                                                 premium_version=premium_version, additional_costs=additional_costs,
+    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, premium_version=premium_version, additional_costs=additional_costs,
                                                  scaling_factor=scaling_factor)
 
     costs = pd.concat([data_capex, data_opex.xs('costs', level='type')],

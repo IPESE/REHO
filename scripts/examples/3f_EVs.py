@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids, district_units=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     method = {'building-scale': True}

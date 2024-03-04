@@ -649,15 +649,14 @@ class compact_optimization:
         # Set specific constraints
         ampl.getConstraint('disallow_exchanges_1').drop()
         ampl.getConstraint('disallow_exchanges_2').drop()
+        ampl.getConstraint('no_ElectricalHeater_without_HP').drop()
 
-        if 'PV' in self.infrastructure_compact.UnitsOfType: # Check if HP DHN is used
+        if 'PV' in self.infrastructure_compact.UnitsOfType:
             ampl.getConstraint('enforce_PV_max').drop()
-        if 'HeatPump' in self.infrastructure_compact.UnitsOfType: # Check if HP DHN is used
+        if 'HeatPump' in self.infrastructure_compact.UnitsOfType:
             ampl.getConstraint('enforce_DHN').drop()
             if not any("DHN" in unit for unit in self.infrastructure_compact.UnitsOfType['HeatPump']):
                 ampl.getConstraint('DHN_heat').drop()
-        else:
-            ampl.getConstraint('TOTAL_design_c11').drop()
         if 'Air_Conditioner' in self.infrastructure_compact.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_compact.units]:
             ampl.getConstraint('AC_c3').drop()
         if 'EV' in self.infrastructure_compact.UnitTypes:

@@ -5,35 +5,46 @@ from itertools import groupby
 import warnings
 import time
 import gc
-import reho.model.preprocessing.electricity_profile_parser as el_parser
 import pandas as pd
 
 
 class district_decomposition:
+    """
+    Applies the decomposition method.
+
+    Store district attributes, scenario, method, attributes for the decomposition, and initiate an attribute
+    that will store results.
+
+    Parameters
+    ----------
+    qbuildings_data : dict
+        Contains 3 layers: A dictionary of the buildings characteristics such as surface area, class, egid, a DataFrame for Roofs characteristics and a DataFrame for Facades characteristics.
+    units : dict
+        Units characteristics.
+    grids : dict
+        Grids characteristics.
+    parameters : dict, optional
+        Parameters set in the script (usually energy tariffs).
+    set_indexed : dict, optional
+        The indexes used in the model.
+    cluster : dict, optional
+        Define location district, number of periods, and number of timesteps.
+    method : dict, optional
+        The different methods to run the optimization (refer to :ref:`tbl-methods`).
+    solver : str, optional
+        Chosen solver for AMPL (gurobi, cplex, highs, cbc, etc.).
+    DW_params : dict, optional
+        Hyperparameters of the decomposition and other useful information.
+
+    Notes
+    -----
+    - The REHO class inherits this class, so the inputs are similar.
+    - ``qbuildings_data`` contains by default only the buildings data. The roofs and facades are added solely with the use of methods: *use_pv_orientation* and *use_facades*.
+    """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
                  cluster=None, method=None, solver=None, DW_params=None):
-        """
-        Description
-        -----------
-        - Initialize the district_decomposition class. The REHO class inherits this class, so the inputs are similar.
-        - Store district attributes, scenario, method, attributes for the decomposition and initiate attribute
-            that will store results.
 
-        Inputs
-        ------
-        qbuildings_data : dictionary,  Buildings characteristics such as surface area, class, egid, ...
-        units : units characteristics
-        grids : grids characteristics
-        exclude_units : List of the unit not considered
-        parameters : dictionary,  Parameters set in the script (usually energy tariffs)
-        set_indexed :dictionary,  The indexes used in the model
-        cluster : dictionary,  Define location district, number of periods and number of timesteps
-        method : dictionary, The different method to run the optimization (decomposed, PV orientations, parallel computation,...)
-        solver: string, chosen solver for AMPL (gurobi, cplex, highs, cbc...)
-        DW_params : dictionary, hyperparameters of the decomposition and other useful information
-
-        """
         # ampl solver
         self.solver = solver
 
@@ -59,11 +70,9 @@ class district_decomposition:
             self.parameters = parameters
 
         # Heat gains from electricity and people, domestic hot water demand, domestic electricity demand
-        self.parameters['HeatGains'], self.parameters['DHW_flowrate'], domestic_elec = DGF.profiles_from_sia2024(self.buildings_data, self.File_ID, self.cluster, self.method['include_stochasticity'], self.method['sd_stochasticity'])
-        if self.method["read_electricity_profiles"] is not None:
-            self.parameters['Domestic_electricity'] = el_parser.read_typical_profiles(self.method["read_electricity_profiles"], self.File_ID)
-        else:
-            self.parameters['Domestic_electricity'] = domestic_elec
+        self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
+            DGF.build_eud_profiles(self.buildings_data, self.File_ID, self.cluster, self.method['include_stochasticity'],
+                                   self.method['sd_stochasticity'], self.method['use_custom_profiles'])
 
         if set_indexed is None:
             self.set_indexed = {}
@@ -78,7 +87,7 @@ class district_decomposition:
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
-                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init',
+                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
                          "list_constraints_MP": []
                          }
@@ -160,7 +169,7 @@ class district_decomposition:
             SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
             SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
 
-        for scenario_cst in SP_scenario['specific']:
+        for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
                 SP_scenario['specific'].remove(scenario_cst)
                 SP_scenario_init['specific'].remove(scenario_cst)
@@ -319,7 +328,10 @@ class district_decomposition:
             modules.load()
             ampl_MP = AMPL()
         else:
-            ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+            try:
+                ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+            except:
+                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('show_stats', 2)
@@ -365,7 +377,7 @@ class district_decomposition:
             ampl_MP.cd(path_to_units)
             ampl_MP.read('DHN.mod')
 
-        ampl_MP.cd(path_to_clustering_results)
+        ampl_MP.cd(path_to_clustering)
         ampl_MP.readData('frequency_' + self.File_ID + '.dat')
         ampl_MP.cd(path_to_ampl_model)
 
@@ -444,7 +456,7 @@ class district_decomposition:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'Lca_kpi']:
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
@@ -632,9 +644,9 @@ class district_decomposition:
 
         parameters_SP = {}
         parameters_SP['Cost_supply_network'] = pi
-        parameters_SP['Cost_demand_network'] = pi * 0.999
+        parameters_SP['Cost_demand_network'] = pi * (1-1e-9)
         parameters_SP['Cost_supply'] = pi_h
-        parameters_SP['Cost_demand'] = pi_h * 0.999
+        parameters_SP['Cost_demand'] = pi_h * (1-1e-9)
         parameters_SP['GWP_supply'] = pi_GWP
         # set emissions of feed in to 0 -> changed in  postcompute
         parameters_SP['GWP_demand'] = pi_GWP.mul(0)
@@ -1116,9 +1128,10 @@ class district_decomposition:
                 if isinstance(self.parameters[key], (int, float)):
                     parameters_SP[key] = self.parameters[key]
                 elif self.parameters[key].shape[0] >= self.DW_params['timesteps']:  # if demands profiles (heat gains / DHW / electricity) are set for more than 1 building
-                    nb_buildings = round(self.parameters[key].shape[0]/self.DW_params['timesteps'])
-                    profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
-                    parameters_SP[key] = profile_building_x[ID]
+                    if len(self.infrastructure.houses) < self.DW_params['timesteps']:
+                        nb_buildings = round(self.parameters[key].shape[0]/self.DW_params['timesteps'])
+                        profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
+                        parameters_SP[key] = profile_building_x[ID]
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
 

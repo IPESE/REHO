@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # roof orientations and PV on facades can be considered
     reader = QBuildingsReader(load_facades=True, load_roofs=True)
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(3658, nb_buildings=5)
+    qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}

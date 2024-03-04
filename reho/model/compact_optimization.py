@@ -3,27 +3,45 @@ from amplpy import AMPL, Environment
 import itertools as itertools
 import reho.model.preprocessing.data_generation as DGF
 import reho.model.preprocessing.weather as WD
-import reho.model.preprocessing.skydome_input_parser as SkyDome
-import reho.model.preprocessing.emission_matrix_parser as emission
+import reho.model.preprocessing.skydome as SkyDome
+import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.EV_profile_generator as EV_gen
 from reho.model.preprocessing.QBuildings import *
 
 
 class compact_optimization:
-    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
-        """
-        :param district: Instance of class district, Contains relevant structure in district such as Units or grids
-        :param buildings_data: Dictionary containing relevant Building data
-        :param parameters: Dictionary containing 'new' parameter for the AMPL model if incomplete uses data from buildings_data
-        :param set_indexed: Dictionary containing new data which are indexed sets in AMPL model
-        :param cluster: Dictionary containing information about clustering
-        :param scenario: Dictionary, containing the objective function, EMOO constraints, additional constraints
-        :param method: Dictionary, containing different options for methodology choices
-        :param solver: String, chosen solver for AMPL (gurobi, cplex, highs, cbc...)
-        :param qbuildings_data: Dictionary, containing input data for the buildings
+    """
+            Collects all the data input and sends it an AMPL model, solves the optimization.
 
-        :return:
-        """
+            Parameters
+            ----------
+            district : district
+                Instance of the class district, contains relevant structure in the district such as Units or grids.
+            buildings_data : dict
+                Dictionary containing relevant Building data.
+            parameters : dict, optional
+                Dictionary containing 'new' parameters for the AMPL model. If incomplete, uses data from buildings_data.
+            set_indexed : dict, optional
+                Dictionary containing new data which are indexed sets in the AMPL model.
+            cluster : dict, optional
+                Dictionary containing information about clustering.
+            scenario : dict, optional
+                Dictionary containing the objective function, EMOO constraints, and additional constraints.
+            method : dict, optional
+                Dictionary containing different options for methodology choices.
+            solver : str, optional
+                Chosen solver for AMPL (gurobi, cplex, highs, cbc...).
+            qbuildings_data : dict, optional
+                Dictionary containing input data for the buildings.
+
+            See also
+            --------
+            reho.model.reho.reho
+            reho.model.district_decomposition.district_decomposition
+
+            """
+    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
+
         self.buildings_data_compact = buildings_data
         if method['use_facades']:
             self.facades_compact = qbuildings_data['facades_data']
@@ -118,7 +136,10 @@ class compact_optimization:
             modules.load()
             ampl = AMPL()
         else:
-            ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
+            try:
+                ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
+            except:
+                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
         # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS
@@ -227,14 +248,14 @@ class compact_optimization:
         # -Setting DATA
         # -----------------------------------------------------------------------------------------------------#
 
-        ampl.cd(path_to_clustering_results)
+        ampl.cd(path_to_clustering)
 
         File_ID = WD.get_cluster_file_ID(self.cluster_compact)
 
         ampl.readData('frequency_' + File_ID + '.dat')
         ampl.readData('index_' + File_ID + '.dat')
-        self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(path_to_clustering_results, 'T_' + File_ID + '.dat'))
-        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering_results, 'GHI_' + File_ID + '.dat'))
+        self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(path_to_clustering, 'T_' + File_ID + '.dat'))
+        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering, 'GHI_' + File_ID + '.dat'))
 
         ampl.cd(path_to_ampl_model)
         return ampl
@@ -285,7 +306,7 @@ class compact_optimization:
 
     def set_emissions_profiles(self, File_ID):
 
-        df_em = emission.select_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a')
+        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a')
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})
@@ -418,7 +439,8 @@ class compact_optimization:
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
-        df_irr = SkyDome.irradiation_to_df(ampl, total_irradiation_csv, File_ID)
+        total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
+        df_irr = SkyDome.irradiation_to_df(ampl, total_irradiation, File_ID)
         self.parameters_to_ampl['Irr'] = df_irr
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])
@@ -687,8 +709,8 @@ def initialize_default_methods(method):
 
     if 'use_dynamic_emission_profiles' not in method:
         method['use_dynamic_emission_profiles'] = False
-    if 'read_electricity_profiles' not in method:
-        method['read_electricity_profiles'] = None
+    if 'use_custom_profiles' not in method:
+        method['use_custom_profiles'] = False
 
     if 'include_all_solutions' not in method:
         method['include_all_solutions'] = False

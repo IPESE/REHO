@@ -4,6 +4,9 @@ import numpy as np
 from reho.paths import *
 from matplotlib import pyplot as plt
 
+__doc__ = """
+*Reconstructs a yearly profile from the clustering periods.*
+"""
 
 def yearly_profile(df_cluster, df):
 
@@ -35,7 +38,7 @@ def build_profiles(timeserie, timeserie_2, location, bui_list):
         SH_needs = SH_needs + timeserie.xs(bui + "_c_lt") + timeserie.xs(bui + "_c_mt") + timeserie.xs(bui + "_h_lt")
         DHW_needs = DHW_needs + timeserie.xs("WaterTankDHW_" + bui + "_c_ht")
 
-    thisfile = os.path.join(path_to_clustering_results, 'index_' + location + '_10_24_T_I.dat')
+    thisfile = os.path.join(path_to_clustering, 'index_' + location + '_10_24_T_I.dat')
     df = np.loadtxt(thisfile, skiprows=1, max_rows=8760)
     df = pd.DataFrame(df).set_index(0)
 
@@ -127,7 +130,7 @@ if __name__ =='__main__':
     if generate_profiles:
         filename = pd.read_pickle("EV_demand_profile.pickle")
 
-        thisfile = os.path.join(path_to_clustering_results, 'index_Geneva_10_24_T_I_W.dat')
+        thisfile = os.path.join(path_to_clustering, 'index_Geneva_10_24_T_I_W.dat')
         df = np.loadtxt(thisfile, skiprows=1, max_rows=8760)
         df = pd.DataFrame(df).set_index(0)
 

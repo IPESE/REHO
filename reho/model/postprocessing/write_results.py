@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 
+__doc__ = """
+*Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.*
+"""
+
 def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
     def set_df_performance(df, ampl, scenario):
@@ -97,7 +101,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Annuals = pd.concat([df12, df3456, df789], sort=False)
         df_Annuals.index.names = ['Layer', 'Hub']
 
-        # Correct DHW
+        # Correction of DHW layer
         hubs = [s for s in df_Annuals.index.levels[1] if s.startswith("Building")]
         for h in hubs:
             df_Annuals.loc[('DHW', h), 'Demand_MWh'] = df_Annuals.loc[('DHW', 'WaterTankDHW_' + h), 'Supply_MWh']
@@ -504,7 +508,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
             df5 = get_parameter_in_pandas(ampl, 'EV_displacement', multi_index=True)
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-            df_Unit_t = pd.concat([df_Unit_t, df4, df5], axis=1)
+            df6 = get_parameter_in_pandas(ampl, 'EV_V2V', multi_index=True)
+            df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
+            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6], axis=1)
     df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
     units_districts = district.UnitsOfDistrict

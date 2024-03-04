@@ -306,30 +306,10 @@ pip-selfcheck.json
 
 # Documentation
 documentation/_build
+documentation/sections/_autosummary
 
 # Data
-reho/data/buildings/*
-!reho/data/QBuildings/data/single_building.csv
-!reho/data/QBuildings/data/multiple_buildings.csv
 
-reho/data/electricity/*
-!reho/data/electricity/typical_profiles.csv
-!reho/data/electricity/annual_profiles.csv
-
-reho/data/emissions/*
-!reho/data/emissions/electricity_matrix_2019_reduced.csv
-
-reho/data/QBuildings/*
-!reho/data/QBuildings/db/Suisse.ini
-!reho/data/QBuildings/db/Geneva.ini
-
-reho/data/weather/clustering_results/*
-!reho/data/weather/clustering_results/frequency_Geneva_10_24_T_I_W.dat
-!reho/data/weather/clustering_results/GHI_Geneva_10_24_T_I_W.dat
-!reho/data/weather/clustering_results/index_Geneva_10_24_T_I_W.dat
-!reho/data/weather/clustering_results/T_Geneva_10_24_T_I_W.dat
-!reho/data/weather/clustering_results/timestamp_Geneva_10_24_T_I_W.dat
-!reho/data/weather/clustering_results/westfacades_irr_Geneva_10_24_T_I_W.txtscripts
 reho/data/weather/hour/*
 !reho/data/weather/hour/Geneva-hour.dat
 !reho/data/weather/hour/Disentis-hour.dat
@@ -341,4 +321,4 @@ reho/data/weather/hour/*
 # Scripts
 scripts/*
 !scripts/examples/
-scripts/examples/results
+!scripts/template/

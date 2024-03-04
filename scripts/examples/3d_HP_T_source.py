@@ -1,5 +1,6 @@
 from reho.model.reho import *
 
+# Heat pump can have different sources such as air, lake, geothermal
 
 if __name__ == '__main__':
     # Set building parameters

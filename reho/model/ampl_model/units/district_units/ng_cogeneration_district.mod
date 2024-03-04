@@ -45,10 +45,4 @@ Units_supply['Electricity',u,p,t] >= Units_Mult[u]*NG_Cogeneration_partload_min[
 #subject to NG_Cogeneration_c3{h in House,ui in UnitsOfType['NG_Cogeneration'] inter UnitsOfHouse[h],uj in UnitsOfType['WaterTankSH'] inter UnitsOfHouse[h]}:
 #Units_Mult[uj] >= if Th_supply_0[h] > 50 then 0.037*Units_Mult[ui]*(NG_Cogeneration_Q_efficiency_nom[ui]/NG_Cogeneration_E_efficiency_nom[ui]) else 0;					#-	
 
-subject to closed_circuit_dhn1{p in Period,t in Time[p]}:
-   Network_supply['Heat',p,t] = 0;
-
-subject to closed_circuit_dhn2{p in Period,t in Time[p]}:
-   Network_demand['Heat',p,t] = 0;
-
 #-----------------------------------------------------------------------------------------------------------------------

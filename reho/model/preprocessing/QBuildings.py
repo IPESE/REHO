@@ -621,7 +621,7 @@ def neighbourhood_angles(buildings, facades):
 
         df_angles = pd.concat((df_angles, df_BUI))
 
-    df_angles.to_csv('angles.csv')
+    df_angles.to_csv('data/angles.csv')
 
     return df_angles
 
@@ -629,8 +629,8 @@ def neighbourhood_angles(buildings, facades):
 def return_shadows_district(buildings, facades):
     df_shadows = pd.DataFrame()
 
-    if os.path.exists('angles.csv'):
-        df_angles = pd.read_csv('angles.csv')
+    if os.path.exists('data/angles.csv'):
+        df_angles = pd.read_csv('data/angles.csv')
     else:
         df_angles = neighbourhood_angles(buildings, facades)
 
@@ -647,7 +647,7 @@ def return_shadows_district(buildings, facades):
         df_shadows = pd.concat((df_shadows, df_id_building))
 
     df_shadows["id_building"] = df_shadows["id_building"].astype(str)
-    df_shadows.to_csv('shadows.csv')
+    df_shadows.to_csv('data/shadows.csv')
 
     return df_shadows
 
@@ -655,8 +655,8 @@ def return_shadows_district(buildings, facades):
 def return_shadows_id_building(id_building, df_district):
     id_building = int(id_building)
 
-    if os.path.isfile('shadows.csv'):
-        df = file_reader('shadows.csv', index_col=0)
+    if os.path.isfile('data/shadows.csv'):
+        df = file_reader('data/shadows.csv', index_col=0)
     else:
         df = df_district
     df = df.xs(id_building)

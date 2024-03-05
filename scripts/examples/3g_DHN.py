@@ -1,5 +1,5 @@
 from reho.model.reho import *
-
+from reho.plotting import plotting
 
 if __name__ == '__main__':
 
@@ -17,12 +17,12 @@ if __name__ == '__main__':
     scenario['name'] = 'totex'
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = ['HeatPump_DHN']
-
+    scenario["specific"] = ["enforce_DHN"]
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'Heat': {"Cost_demand_cst": 0.05, "Cost_supply_cst": 0.15}})
-    units = infrastructure.initialize_units(scenario, grids)
+                                             'Heat': {"Cost_demand_cst": 0.01, "Cost_supply_cst": 0.15}})
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     # you can specify if the DHN is based on CO2. If not, a water DHN is assumed
@@ -36,6 +36,9 @@ if __name__ == '__main__':
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.get_DHN_costs()  # run one optimization forcing DHN to find costs DHN connection per house
     reho.single_optimization()  # run optimization with DHN costs
+
+    plotting.plot_performance(reho.results).show()
+    plotting.plot_sankey(reho.results["totex"][0]).show()
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='3g')

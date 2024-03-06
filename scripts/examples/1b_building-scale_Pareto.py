@@ -1,39 +1,43 @@
-from model.reho import *
-from model.preprocessing.QBuildings import QBuildingsReader
+from reho.model.reho import *
+from reho.plotting import plotting
 
 
 if __name__ == '__main__':
 
-    # Set scenario
-    scenario = dict()
-    scenario['Objective'] = ['OPEX', 'CAPEX']   # for multi-objective optimization we need two objectives
-    scenario['nPareto'] = 2     # the number of points we want per objective (number of optimizations = nPareto * 2 + 2)
-    scenario['name'] = 'pareto'
-
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(3658, nb_buildings=2)
+    qbuildings_data = reader.read_db(3658, nb_buildings=1)
 
-    # Set specific parameters
-    parameters = {}
-
-    # Select clustering file
+    # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
-    # Choose energy system structure options
-    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration', 'DataHeat_DHW', 'OIL_Boiler', 'DHN_hex', 'HeatPump_DHN']
+    # Set scenario
+    scenario = dict()
+    scenario['Objective'] = ['OPEX', 'CAPEX']  # for multi-objective optimization two objectives are needed
+    scenario['nPareto'] = 2  # number of points per objective (total number of optimizations = nPareto * 2 + 2)
+    scenario['name'] = 'pareto'
+    scenario['exclude_units'] = ['NG_Cogeneration', 'OIL_Boiler', 'ThermalSolar']
     scenario['enforce_units'] = []
-
-    method = {'building-scale': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
+    # Set method options
+    method = {'building-scale': True}
+
     # Run optimization
-    reho_model = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method)
-    reho_model.generate_pareto_curve()  # instead of single_optimization() we run a multi-objective optimization
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho.generate_pareto_curve()  # multi-objective optimization
 
     # Save results
-    SR.save_results(reho_model, save=['pickle'], filename='1b')
+    reho.save_results(format=['pickle'], filename='1b')
+
+    # Performance plot : costs and gwp
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long').show()
+    plotting.plot_performance(reho.results, plot='gwp', indexed_on='Pareto_ID', label='EN_long').show()
+
+    # Sankey diagram
+    for key in reho.results['pareto'].keys():
+        plotting.plot_sankey(reho.results['pareto'][key], label='EN_long', color='ColorPastel').show()

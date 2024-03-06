@@ -1,0 +1,28 @@
+name: Feature proposal
+description: Propose a new feature to the model
+title: "[Feature]: <title>"
+labels: ["enhancement", "triage"]
+projects: ["octo-org/1", "octo-org/44"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        *Use the label P1, P2 and P3 to set up the priority.*
+  - type: textarea
+    id: the-idea
+    attributes:
+      label: Summary
+      description: Shortly present the feature and the motivation of its development.
+      value: "Your summary"
+  - type: textarea
+    id: the-design
+    attributes:
+      label: Detailed design
+      description: Provide a description of how you think it should be implemented.
+      value: "Your design"
+  - type: textarea
+    id: the-rest
+    attributes:
+      label: Notes and comments
+      description: If another note or comment should be added.
+      value: "Your notes"

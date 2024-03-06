@@ -1,0 +1,14 @@
+Unit;ref_unit;Units_Fmin;Units_Fmax;Cost_inv1;Cost_inv2;UnitOfType;UnitOfLayer;UnitOfService;StreamsOfUnit;Units_flowrate_in;Units_flowrate_out;HP_parameters;stream_Tin;stream_Tout;GWP_unit1;GWP_unit2;lifetime;land_use_1;land_use_2;mine_res_1;mine_res_2;water_res_1;water_res_2;energy_res_1;energy_res_2;Human_toxicity_1;Human_toxicity_2;water_pollutants_1;water_pollutants_2;metals_water_1;metals_water_2;pop_water_1;pop_water_2;metals_soil_1;metals_soil_2;pollutants_pm_1;pollutants_pm_2;Metal_air_1;Metal_air_2;ozone_depletion_1;ozone_depletion_2
+BESS_IP;kWh;0.1;100000;0;206;Battery_interperiod;Electricity;;;Electricity;Electricity;;0;0;0;65;16;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+PTES_S_IP;kWh;0.1;100000;0;17;PTES_storage;;;;;;;0;0;0;0;20;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+PTES_C_IP;kW;0.1;100000;0;574;PTES_conversion;Electricity/ HeatCascade;SH/ DHW;h_ht;;;;0;0;0;0;20;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+HC;kW;0.1;100000;0;0.001;HeatCurtailment;HeatCascade;SH/ DHW;c_lt;;;;0;0;0;0;25;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+CH4_storage;kWh;0.1;100000;0;4.6;CH4storage;Biogas;;;Biogas;Biogas;;0;0;0;0;60;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+H2S_storage;kWh;0.1;100000;0;13.5;H2Sstorage;;;;;;;0;0;0;0;60;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+H2_compression;kW;0.1;100000;0;1000;H2compression;Hydrogen/ Electricity;;;;;;0;0;0;0;10;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+SOEFC;kW;0.1;100000;0;1500;SOEFC;Electricity/ HeatCascade/ Hydrogen/ Biogas;SH;h_ht;Hydrogen/ Electricity/ Biogas;Electricity/ Hydrogen;;0;0;0;0;10;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+MTZ;kW;0.1;100000;0;368.5;Methanizer;Biogas/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen/ Electricity/ Biogas;Biogas;;0;0;0;0;20;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+FC;kW;0.1;100000;0;1500;FuelCell;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen;Biogas;;0;0;0;0;20;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+ETZ;kWh;0.1;100000;0;385;Electrolyzer;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Electricity;Hydrogen;;0;0;0;0;10;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+HS_IP;m3;0.1;100000;0;2000;WaterTankSH_interperiod;HeatCascade;SH;h_lt/ c_lt;;;;0/ 0;0/ 0;0;0;20;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+LHS;kWh;0.1;100000;0;52.8;SolidLiquidLHS;HeatCascade;SH;h_ht/ c_ht;;;;0/ 0;0/ 0;0;0;7.5;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0

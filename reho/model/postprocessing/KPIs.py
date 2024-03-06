@@ -421,7 +421,7 @@ def build_df_profiles_house(df_Results, infrastructure):
     df_profiles_house['T_in'] = df_Results["df_Buildings_t"]['T_in']
     df_profiles_house['Q_DHW'] = df_Results["df_Buildings_t"]['House_Q_DHW']
 
-    if 'NG_Cogeneration' in infrastructure.UnitTypes:
+    if 'NG_Cogeneration' in infrastructure.UnitTypes and not infrastructure.UnitsOfType["NG_Cogeneration"] == 'NG_Cogeneration_district':
         df_NG_Cogeneration = units_power_profiles_per_building(df_Results, infrastructure, 'NG_Cogeneration')
         df_profiles_house['NG_Cogeneration'] = df_NG_Cogeneration['Units_supply']
         df_profiles_house['onsite_el'] = df_profiles_house['PV'] + df_profiles_house['NG_Cogeneration']

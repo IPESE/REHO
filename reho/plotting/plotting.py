@@ -10,6 +10,7 @@ import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
 from matplotlib.legend_handler import HandlerTuple
 import locale, calendar
+from reho.model.compact_optimization import *
 
 
 __doc__ = """
@@ -1128,6 +1129,72 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
             return fig, pd.DataFrame()
         else:
             return fig
+
+
+def plot_composite_curve(results, cluster, plot=True, periods=["Yearly"]):
+    # process results data
+    df_heat = results["df_Buildings_t"][["House_Q_heating", "House_Q_cooling", "Th_supply"]]
+    df_heat_T = pd.DataFrame(np.round(df_heat['Th_supply'], 1).values, columns=["temperature"])
+    df_heat_T.index = df_heat.index
+    df_heat = pd.concat([df_heat, df_heat_T], axis=1)
+    df_heat = df_heat.set_index("temperature", append=True)
+    df_heat = df_heat.drop(columns="Th_supply")
+    df_heat = df_heat.groupby(["Period", "temperature"], level=[1, 3]).sum()
+
+    # get index typical periods
+    file_ID = WD.get_cluster_file_ID(cluster)
+    file_name = "index_" + file_ID + ".dat"
+    thisfile = os.path.join(path_to_clustering, file_name)
+    df = np.loadtxt(thisfile, skiprows=1, max_rows=8760)
+    df = pd.DataFrame(df).set_index(0)
+
+    # calculate monthly heat load profile, raw data
+    t = [1, 744, 672, 744, 720, 744, 720, 744, 744, 720, 744, 720, 744]
+    t = np.cumsum(t).tolist()
+    monthly_profile = {}
+    for i in range(len(t) - 1):
+        month_time = df.loc[t[i]:t[i + 1] - 1]
+        month_TP_rep = month_time.groupby(1).count() / 24
+        profile = pd.concat([df_heat.xs(p) * month_TP_rep[2].xs(p) for p in month_TP_rep.index])
+        profile = profile.groupby("temperature").sum()
+        monthly_profile[i] = profile
+    monthly_profile[12] = pd.concat([monthly_profile[i] for i in monthly_profile]).groupby("temperature").sum()
+
+    # calculate monthly heat load profile stacked
+    duration = [744, 672, 744, 720, 744, 720, 744, 744, 720, 744, 720, 744, 8760]
+    month = ["January", "February", "March", "April", "May", "June", "July", "August",
+             "September", "October", "November", "December", "Yearly"]
+    data = pd.DataFrame()
+    for i in monthly_profile:
+        profile = monthly_profile[i].assign(sum=monthly_profile[i].House_Q_heating.values.cumsum())
+        profile.columns = ["Heat", "Cooling", "Heat_stacked"]
+        profile = profile.assign(sum=profile.Cooling.values.cumsum())
+        profile.columns = ["Heat", "Cooling", "Heat_stacked", "Cooling_stacked"]
+        data_month = profile.Heat_stacked / duration[i] / 1000
+        data[month[i]] = data_month
+
+    # create Figures folder
+    try:
+        os.makedirs('Figures')
+    except:
+        pass
+
+    if plot:
+        for i in periods:
+            fig, ax = plt.subplots(figsize=(9, 6))
+            ax.plot(data[i] , data[i].index, color="indianred", label="Space heating")
+            plt.ylabel("Temperature [°C]", fontsize=18)
+            plt.xlabel("Heat [MW]", fontsize=18)
+            plt.title("Composite curve for the city of Sierre: " + i, fontsize=20)
+            plt.legend(fontsize=16)
+            plt.xticks(fontsize=16)
+            plt.yticks(fontsize=16)
+            plt.savefig("Figures//" + i + ".png")
+            plt.show()
+    data = data.fillna(0)
+    return data
+
+
 
 
 def plot_resources(results, label='EN_long', color='ColorPastel',

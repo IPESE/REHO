@@ -17,6 +17,9 @@ authors:
   - name: Cédric Terrier
     orcid: 0000-0002-9100-6680
     affiliation: 1
+  - name: François Maréchal
+    orcid: 0000-0003-1752-5690
+    affiliation: 1
 affiliations:
  - name: Industrial Process and Energy Systems Engineering, École Polytechnique Fédérale de Lausanne, Switzerland
    index: 1
@@ -42,11 +45,11 @@ Optimizing a district-level energy system is a complex and computationally inten
 
 In the field of district energy systems design, diverse open-source decision support tools exist, but only partially meet the challenges that studying energy communities represent:
 
-- @NRELEnergyPlus2024 (and any of its extensions such as @orehounigCESARPDynamicUrban2022) are simulation models, lacking an optimization feature
-- @pfenningerCalliopeMultiscaleEnergy2018 and @wetterModelicaBuildingsLibrary2014 do not support multi-objective optimization
-- some tools focus on a specific energy carrier: electricity (@sandwellCLOVERModellingFramework2023, @RlinstitutOffgridders2024), heating (@THERMOSThermalEnergy2021), hydrogen (@coppittersRHEIARobustDesign2022); while they are certainly relevant to specific areas of study, they do not adequately grasp the holistic nature of the problem
-- @howellsOSeMOSYSOpenSource2011, @lundEnergyPLANAdvancedAnalysis2021 or @limpensEnergyScopeTDNovel2019 focus on national energy systems and do not model buildings and their interactions with sufficient granularity (e.g., no heat cascade and distinction of temperature sets)
-- eventually, @fonsecaArchitecturebuildingsystemsCityEnergyAnalystCityEnergyAnalyst2024 or @krienOemofSolph2024 (and its extensions such as @klemmSpreadsheetEnergySystem2023) provide interesting frameworks for buildings energy systems optimization, but their district upscaling feature do not allow to explore the overarching implications of building-level decisions, so that their investigations predominantly hinge on a "almighty district-level perspective" without distinction of the different stakeholders.
+- `EnergyPlus` [@NRELEnergyPlus2024] (and any of its extensions such as `CESAR-P` [@orehounigCESARPDynamicUrban2022]) are simulation models, lacking an optimization feature
+- `Calliope` [@pfenningerCalliopeMultiscaleEnergy2018] and `ModelicaBuildings` [@wetterModelicaBuildingsLibrary2014] do not support multi-objective optimization
+- some tools focus on a specific energy carrier: electricity (`Clover` [@sandwellCLOVERModellingFramework2023], `Offgridders` [@RlinstitutOffgridders2024]), heating (`THERMOS` [@THERMOSThermalEnergy2021]), hydrogen (`RHEIA` [@coppittersRHEIARobustDesign2022]); while they are certainly relevant to specific areas of study, they do not adequately grasp the holistic nature of the problem
+- `OSeMOSYS` [@howellsOSeMOSYSOpenSource2011], `EnergyPLAN` [@lundEnergyPLANAdvancedAnalysis2021] or `EnergyScope` [@limpensEnergyScopeTDNovel2019] focus on national energy systems and do not model buildings and their interactions with sufficient granularity (e.g., no heat cascade and distinction of temperature sets)
+- eventually, `CityEnergyAnalyst` [@fonsecaArchitecturebuildingsystemsCityEnergyAnalystCityEnergyAnalyst2024] or `oemof-solph` [@krienOemofSolph2024] (and its extensions such as `SESMG` [@klemmSpreadsheetEnergySystem2023]) provide interesting frameworks for buildings energy systems optimization, but their district upscaling feature do not allow to explore the overarching implications of building-level decisions, so that their investigations predominantly hinge on a "almighty district-level perspective" without distinction of the different stakeholders.
 
 
 This gap has motivated the development of Renewable Energy Hub Optimizer (REHO), a comprehensive decision support tool for energy system planning at the district-level, considering simultaneously diverse end use demands, multi-energy integration, and local actors interactions.

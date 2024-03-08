@@ -1173,12 +1173,6 @@ def plot_composite_curve(results, cluster, plot=True, periods=["Yearly"]):
         data_month = profile.Heat_stacked / duration[i] / 1000
         data[month[i]] = data_month
 
-    # create Figures folder
-    try:
-        os.makedirs('Figures')
-    except:
-        pass
-
     if plot:
         for i in periods:
             fig, ax = plt.subplots(figsize=(9, 6))
@@ -1189,12 +1183,11 @@ def plot_composite_curve(results, cluster, plot=True, periods=["Yearly"]):
             plt.legend(fontsize=16)
             plt.xticks(fontsize=16)
             plt.yticks(fontsize=16)
-            plt.savefig("Figures//" + i + ".png")
+            plt.savefig('figures/' + i + '.png')
             plt.show()
     data = data.fillna(0)
+
     return data
-
-
 
 
 def plot_resources(results, label='EN_long', color='ColorPastel',

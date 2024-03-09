@@ -1,5 +1,5 @@
 ---
-title: 'REHO: A Decision Support Tool for District Energy Systems'
+title: 'REHO: A Decision Support Tool for Renewable Energy Communities'
 tags:
   - Python
   - Energy Communiy
@@ -30,7 +30,7 @@ bibliography: paper.bib
 
 # Summary
 
-The transition to sustainable energy systems in the face of growing renewable energy adoption and electrification is a complex and critical challenge. The Renewable Energy Hub Optimizer (REHO) emerges as a powerful decision support tool designed to investigate the deployment of energy conversion and storage technologies in this evolving landscape. REHO leverages a Mixed-Integer Linear Programming (MILP) framework combined with a Dantzig-Wolfe decomposition algorithm to simultaneously address the optimal design and operation of district energy systems, catering to multi-objective considerations across economic, environmental, and efficiency criteria.
+The transition to sustainable energy systems in the face of growing renewable energy adoption and electrification is a complex and critical challenge. The _Renewable Energy Hub Optimizer_ (REHO) emerges as a powerful decision support tool designed to investigate the deployment of energy conversion and storage technologies in this evolving landscape. REHO leverages a Mixed-Integer Linear Programming (MILP) framework combined with a Dantzig-Wolfe decomposition algorithm to simultaneously address the optimal design and operation of district energy systems, catering to multi-objective considerations across economic, environmental, and efficiency criteria.
 
 REHO is deployed as an open-source and collaborative Python library, available as a [PyPI package](https://pypi.org/project/REHO/) and supported by comprehensive [documentation](https://reho.readthedocs.io/en/main/). Documentation website includes step-by-step instructions, details about the mathematical background and model foundations, as well as a list of academic publications, conference proceedings, research projects, and other works related to REHO.
 
@@ -45,38 +45,45 @@ Optimizing a district-level energy system is a complex and computationally inten
 
 In the field of district energy systems design, diverse open-source decision support tools exist, but only partially meet the challenges that studying energy communities represent:
 
-- `EnergyPlus` [@NRELEnergyPlus2024] (and any of its extensions such as `CESAR-P` [@orehounigCESARPDynamicUrban2022]) are simulation models, lacking an optimization feature
-- `Calliope` [@pfenningerCalliopeMultiscaleEnergy2018] and `ModelicaBuildings` [@wetterModelicaBuildingsLibrary2014] do not support multi-objective optimization
-- some tools focus on a specific energy carrier: electricity (`Clover` [@sandwellCLOVERModellingFramework2023], `Offgridders` [@RlinstitutOffgridders2024]), heating (`THERMOS` [@THERMOSThermalEnergy2021]), hydrogen (`RHEIA` [@coppittersRHEIARobustDesign2022]); while they are certainly relevant to specific areas of study, they do not adequately grasp the holistic nature of the problem
-- `OSeMOSYS` [@howellsOSeMOSYSOpenSource2011], `EnergyPLAN` [@lundEnergyPLANAdvancedAnalysis2021] or `EnergyScope` [@limpensEnergyScopeTDNovel2019] focus on national energy systems and do not model buildings and their interactions with sufficient granularity (e.g., no heat cascade and distinction of temperature sets)
-- eventually, `CityEnergyAnalyst` [@fonsecaArchitecturebuildingsystemsCityEnergyAnalystCityEnergyAnalyst2024] or `oemof-solph` [@krienOemofSolph2024] (and its extensions such as `SESMG` [@klemmSpreadsheetEnergySystem2023]) provide interesting frameworks for buildings energy systems optimization, but their district upscaling feature do not allow to explore the overarching implications of building-level decisions, so that their investigations predominantly hinge on a "almighty district-level perspective" without distinction of the different stakeholders.
+- `EnergyPlus` [@nrelEnergyPlus2017], as well as extensions such as `CESAR-P` [@orehounigCESARPDynamicUrban2022], are simulation models, lacking an optimization feature.
+- `Calliope` [@pfenningerCalliopeMultiscaleEnergy2018] and `ModelicaBuildings` [@wetterModelicaBuildingsLibrary2014] do not support multi-objective optimization.
+- Some tools focus on a specific energy carrier; we can mention here `Clover` [@sandwellCLOVERModellingFramework2023] for electricity, `PyHeatDemand` [@justelPyHeatDemandProcessingTool2024] for heating,  or `RHEIA` [@coppittersRHEIARobustDesign2022] for hydrogen. While they are certainly relevant to specific areas of study, they do not adequately grasp the holistic nature of optimizing a multi-carriers energy system.
+- `OSeMOSYS` [@howellsOSeMOSYSOpenSource2011], `EnergyPLAN` [@lundEnergyPLANAdvancedAnalysis2021] or `EnergyScope` [@limpensEnergyScopeTDNovel2019] focus on national energy systems and do not model buildings and their interactions with sufficient granularity (e.g., no heat cascade and distinction of temperature sets).
+- Eventually, `CityEnergyAnalyst` [@fonsecaArchitecturebuildingsystemsCityEnergyAnalystCityEnergyAnalyst2024] or `oemof-solph` [@krienOemofSolph2024] -- and its extensions such as `SESMG` [@klemmSpreadsheetEnergySystem2023] --, provide interesting frameworks for buildings energy systems optimization, but their district upscaling feature do not allow to explore the overarching implications of building-level decisions, so that their investigations predominantly hinge on an absolute district-level perspectivem without distinction of the different stakeholders.
 
+This gap has motivated the development of _Renewable Energy Hub Optimizer (REHO)_, a comprehensive decision support tool for energy system planning at the district-level, considering simultaneously diverse end use demands, multi-energy integration, and local actors interactions.
 
-This gap has motivated the development of Renewable Energy Hub Optimizer (REHO), a comprehensive decision support tool for energy system planning at the district-level, considering simultaneously diverse end use demands, multi-energy integration, and local actors interactions.
-
-Initially developed to answer the needs of the IPESE research group, REHO is now made public, with a diverse target audience extending from academia and research projects, to decision-makers for municipalities, energy utilities and industrial partners.
+Initially developed within the _Industrial Process and Energy Systems Engineering_ research group (IPESE, EPFL), REHO is now made public, with a diverse target audience extending from academia and research projects, to decision-makers for municipalities, energy utilities and industrial sectors.
 
 # Model foundations
 
-The energy hub concept [@mohammadiEnergyHubModel2017] is used to model an energy community where multi-energy carriers can supply diverse end use demands through building units and district units optimally interconnected and operated. The input data necessary to characterize a district-level energy hub to be optimized with REHO are:
+The energy hub concept [@mohammadiEnergyHubModel2017] is used to model an energy community where multi-energy carriers can supply diverse end use demands through building units and district units optimally interconnected and operated.
+
+![District energy hub model in REHO..\label{fig:energy_hub}](energy_hub.pdf)
+
+\autoref{fig:energy_hub} displays the input data necessary to characterize a district-level energy hub to be optimized with REHO:
 
 - The geographic boundaries of the considered territory;
-- The end use demands, resulting from the building stock and local weather;
+- The end use demands, resulting from the building stock characteristics and local weather;
 - The technologies available and their specifications regarding cost, life cycle, efficiency;
 - The endogenous resources;
 - And the energy market prices for district imports and exports.
 
-REHO exploits the benefits of two programming languages to explore the solution space of such district-level energy hub. \autoref{fig:diagram} illustrates the tool architecture:
+The optimal solution minimizing the specified objective function will then be fully characterized by the decision variables defining the energy system configuration. These decision variables are the installed capacities of the building and district units among the available technologies, their operation throughout a typical year, and the resulting energy flows (buildings interactions and district imports/exports).
+
+### Implementation
+
+REHO exploits the benefits of two programming languages to explore the solution space defined by the district energy hub input data. \autoref{fig:diagram} illustrates the tool architecture:
 
 - The data management structure is written in Python and used for input parameters preprocessing, and decision variables postprocessing.
 - The optimization model is written in AMPL, encompassing objective functions, modelling equations, and constraints at building-level and district-level.
 
 ![Diagram of the REHO architecture.\label{fig:diagram}](diagram.pdf)
 
-#### Data reduction
+### Data reduction
 The task of optimally designing and scheduling energy systems with a high share of renewable energies is complex and computationally demanding. REHO includes machine learning techniques to cluster yearly input data. The model operates in the conventional way with typical periods $p$ of 24 timesteps $t$, but it can be freely adapted to a finer or coarser granularity as required.
 
-#### MILP formulation with decomposition
+### MILP formulation with decomposition
 A Dantzig-Wolfe decomposition is applied on the district-level problem to define a master problem (MP) and one sub-problem (SP) for each building. Linking constraints allow the problem to iteratively converge to the solution minimizing the global objective function: the MP sends optimal district-level prices to the SPs, which in turn send back optimal building-level design proposals.
 
 
@@ -107,17 +114,11 @@ As the electrification of diverse sectors gains momentum, the demands placed on 
 REHO enables the deployment of district heating and cooling networks, with consideration of several heat transfer fluids and distribution temperatures. Infrastructure costs are also incorporated, based on the topology of the considered neighborhood.
 
 #### Interoperability
-The interoperability of REHO boasts its capability to interface and exchange information with other tools, enables extensive studies. By providing the relevant input data regarding energy needs and endogenous resources, investigations on energy communities can be carried out in a wide range of territories. As a demonstration, it was combined with the QBuildings GIS database [@loustauQBuildingsComprehensiveGuide2023], allowing for the optimization of Switzerland’s entire building stock comprising 2.6 million entities spread over 17'844 districts -- where is district is defined as the batch of buildings deserved by the same MV/LV transformer.
-
-
-![Pareto front for a residential building.\label{fig:pareto}](pareto.png)
-
-![Sankey diagram for configuration 5.\label{fig:sankey}](sankey.png)
-
+The interoperability of REHO boasts its capability to interface and exchange information with other tools, enables extensive studies. By providing the relevant input data regarding energy needs and endogenous resources, investigations on energy communities can be carried out in a wide range of territories. As a demonstration, it was combined with the QBuildings GIS database [@loustauQBuildingsComprehensiveGuide2023], allowing for the optimization of Switzerland’s entire building stock comprising 2.6 million entities spread over 17'844 districts.
 
 # Acknowledgements
 
-Development of REHO was carried out within the Industrial Process and Energy Systems Engineering research group, EPFL. The authors acknowledge the support from the Services Industriels de Genève (SIG), Switzerland, and the support of the Swiss Federal Office of Energy (SFOE).
-The authors also express their gratitude to Paul Stadler and Luise Middelhauve, whose PhD theses have laid the foundations for the model.
+The development of REHO was carried out within the _Industrial Process and Energy Systems Engineering_ research group (IPESE), EPFL. The authors acknowledge the financial support from the _Services Industriels de Genève_ (SIG), Switzerland, and from the _Swiss Federal Office of Energy_ (SFOE).
+The authors also express their gratitude to Paul Stadler and Luise Middelhauve, whose PhD theses have laid the foundations of the model.
 
 # References

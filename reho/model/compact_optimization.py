@@ -104,6 +104,7 @@ class compact_optimization:
             self.set_PV_models(ampl, File_ID)
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
         ampl = self.set_scenario(ampl)
+        temp = ampl.getParameter('PVA_module_size')
 
         return ampl
 
@@ -136,10 +137,11 @@ class compact_optimization:
             modules.load()
             ampl = AMPL()
         else:
-            try:
-                ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
-            except:
-                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+            if path_to_ampl:
+                ampl = AMPL(Environment(path_to_ampl))
+            else:
+                raise EnvironmentError("No valid path to AMPL was found.\n"
+                                       " Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
         # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS

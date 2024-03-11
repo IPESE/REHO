@@ -44,6 +44,11 @@ Python
 You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
 As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_.
 
+.. warning:: VScode
+
+    If you are a VScode user, you may have path issues, either when importing the REHO module or by providing a path.
+    Follow the instructions from `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_.
+
 AMPL
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -78,11 +83,17 @@ If `geopandas` fails to install, you might need to run:
 
    pip install geopandas
 
-5. Choose the file scripts > examples > 3a_Read_csv.py and run the script.
+5. Create a *.env* file that indicates the path to AMPL. An example is provided in the repository, named *example.env*
+
+.. code-block:: bash
+
+    AMPL_PATH = "C:/Users/User/AMPL"
+
+6. Choose the file scripts > examples > 3a_Read_csv.py and run the script.
 If your installation is correct, you should receive the final message “Process finished with exit code 0”.
 Sometimes, when running the model for the first time, you need to explicitly tell PyCharm to connect to the AMPL server by typing ampl in the PyCharm Terminal tab.
 
-6. Create a new folder for your future work with REHO. Right click on the folder scripts in and create a New > Directory. You will use this folder to write and save your first scripts.
+7. Create a new folder for your future work with REHO. Right click on the folder scripts in and create a New > Directory. You will use this folder to write and save your first scripts.
 
 
 Running REHO

@@ -196,6 +196,7 @@ class compact_optimization:
         if 'EV' in self.infrastructure_compact.UnitTypes:
             ampl.cd(path_to_district_units)
             ampl.read('evehicle.mod')
+            ampl.read('proxy_mobilitydemand.mod')
         # Storage Units
         ampl.cd(path_to_units_storage)
         if 'WaterTankSH' in self.infrastructure_compact.UnitTypes:

@@ -52,6 +52,8 @@ EV_E_stored_plug_in[u,p,t] = EV_efficiency * EV_E_stored[u,p,prev(t,Time[p])] * 
 subject to EV_EB_c3{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] =  EV_E_stored_plug_in[u,p,t] + EV_E_stored_plug_out[u,p,t];
 
+subject to EV_EB_c4{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
+Units_supply['Mobility',u,p,t] = 6 * EV_displacement[u,p,t] * Units_Use[u] * dt[p]; # km
 
 subject to EV_EB_upper_bound1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] <= EV_capacity * n_vehicles * Units_Use[u];

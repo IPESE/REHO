@@ -19,14 +19,18 @@ if __name__ == '__main__':
     scenario['enforce_units'] = ['EV_district']
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    grids = infrastructure.initialize_grids({'Electricity': {},
+                                             'NaturalGas': {},
+                                             'Mobility': {},
+                                             })
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     method = {'building-scale': True}
 
     # Set specific parameters
-    parameters = {'n_vehicles': 6}
+    parameters = {'n_vehicles': 6,
+                  'TransformerCapacity':np.array([1e6,0,1e6])}
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

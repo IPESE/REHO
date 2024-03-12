@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import os.path
 import pickle
 
 from scipy.stats import qmc
@@ -651,6 +652,23 @@ class reho(district_decomposition):
         self.pool.close()
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
+
+    def pathway(self,EMOO_list=[400],EMOO_type="GWP"):
+        Scn_ID=self.scenario["name"]
+        self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
+        self.single_optimization(Pareto_ID=0)
+        for i in range(1,len(EMOO_list)):
+            self.scenario['EMOO']['EMOO_' + EMOO_type] = EMOO_list[i]
+            existing_units = self.results[Scn_ID][i - 1]['df_Unit'][['Units_Mult']]
+            self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[[s for s in self.infrastructure.Units if h in s]]['Units_Mult'].to_list() for id, h in enumerate(self.infrastructure.houses)])
+            self.single_optimization(Pareto_ID=i)
+
+
+    def get_logistic(self,E_start=1e-2,E_stop=1e-3,y_start=2024,y_stop=2050,k=1,c=2035,n=2):
+        #k must be always positive, and c must be always between y_start and y_stop
+        y_span=np.linspace(start=y_start,stop=y_stop,num=n+1,endpoint=True)[1:]
+        EMOO_list=E_stop+(E_start-E_stop)/(1+np.exp(-k*(c-y_span)))
+        return EMOO_list,y_span
 
     def add_df_Results(self, ampl, Scn_ID, Pareto_ID, scenario):
         if self.method['building-scale'] or self.method['district-scale']:

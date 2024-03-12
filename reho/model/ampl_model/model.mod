@@ -101,6 +101,7 @@ param Units_Fmax{u in Units} default 0;
 param Units_Fmid{u in UnitsOfDiscreteCost} default 15; 
 param ForceUse{u in Units} default 0;		
 param ForceMult{u in Units} default 0;
+param Units_Ext{u in Units} default 0;
 
 #-VARIABLES
 var Units_Mult{u in Units} in UnitSizes[u] <= Units_Fmax[u];							#var 
@@ -115,11 +116,20 @@ var Units_Use_t{u in UnitsOfPartLoad,p in Period,t in Time[p]} binary default 0;
 var Units_Use_Mult_t{u in UnitsOfPartLoad,p in Period,t in Time[p]} >= 0;				#kW
 
 #-CONSTRAINTS
-subject to Unit_sizing_c1{u in Units}:
-Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
 
-subject to Unit_sizing_c2{u in Units}:
-Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
+
+subject to Units_sizing_c1{u in Units}:
+Units_Mult[u]-Units_Ext[u] >= Units_Use[u]*Units_Fmin[u];
+
+subject to Units_sizing_c2{u in Units}:
+Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
+
+# Old constraints, without existing units
+#subject to Unit_sizing_c1{u in Units}:
+#Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
+
+#subject to Unit_sizing_c2{u in Units}:
+#Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
 
 # Discrete units
 subject to Unit_sizing_c1_1interval{u in UnitsOfDiscreteCost}:
@@ -332,7 +342,11 @@ subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]}(GWP_supply[l,p,t]*Network_supply[l,p,t]-GWP_demand[l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
 
 subject to Annual_CO2_construction_unit{u in Units}:
-GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
+GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*GWP_unit2[u])/lifetime[u];
+
+# Old constraint, without existing unit
+#subject to Annual_CO2_construction_unit{u in Units}:
+#GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
 GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u]);
@@ -357,7 +371,11 @@ subject to LU_op_cst{k in Lca_kpi, l in ResourceBalances}:
 lca_op[k, l] = sum{p in PeriodStandard,t in Time[p]}(lca_kpi_supply[k,l,p,t]*Network_supply[l,p,t] - lca_kpi_demand[k,l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
 
 subject to LU_inv_cst{k in Lca_kpi, u in Units}:
-lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
+lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + (Units_Mult[u]-Units_Ext[u])*lca_kpi_2[k, u])/lifetime[u];
+
+# Old constraint, without existing units
+#subject to LU_inv_cst{k in Lca_kpi, u in Units}:
+#lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
 
 subject to LU_tot_cst{k in Lca_kpi}:
 lca_tot[k] = sum{u in Units} lca_units[k, u] + sum{l in ResourceBalances} lca_op[k, l];
@@ -395,8 +413,14 @@ var Costs_inv >= 0;
 var Costs_rep >= 0;
 
 #-CONSTRAINTS
+
+
 subject to Costs_Unit_capex{u in Units diff UnitsOfDiscreteCost}:
-Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
+Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
+
+# Old constraint, without existing unit
+#subject to Costs_Unit_capex{u in Units diff UnitsOfDiscreteCost}:
+#Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
 
 subject to Costs_Unit_capex_discrete{u in Units inter UnitsOfDiscreteCost}:
 Costs_Unit_inv[u] = Units_Use_1[u]*Cost_inv1[u] + Units_Mult_1[u]*Cost_inv2[u] + Units_Use_2[u]*Cost_inv1_2[u] + Units_Mult_2[u]*Cost_inv2_2[u];

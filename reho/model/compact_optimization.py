@@ -163,6 +163,8 @@ class compact_optimization:
         ampl.cd(path_to_ampl_model)
         ampl.read('model.mod')
 
+
+
         # Energy conversion Units
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_compact.UnitTypes:
@@ -191,6 +193,8 @@ class compact_optimization:
                 ampl.read('pv_orientation.mod')
             else:
                 ampl.read('pv.mod')
+        if 'Relaxation' in self.infrastructure_compact.UnitTypes:
+            ampl.read('Deep_mind_body_connection.mod')
 
         # district Units
         if 'EV' in self.infrastructure_compact.UnitTypes:
@@ -240,6 +244,10 @@ class compact_optimization:
             ampl.cd(path_to_units)
             ampl.read('heat_curtailment.mod')
             ampl.cd(path_to_ampl_model)
+
+        #existing_units = read_csv(os.path.join(path_to_infrastructure, "existing_units.csv")).reset_index()
+        #parameters_data = {row['Unit']: row['Units_Mult'] for _, row in existing_units.iterrows()}
+        #print(ampl.getParameter('Units_Ext').to_pandas())  # .setValues(parameters_data)
 
         return ampl
 

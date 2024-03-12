@@ -35,9 +35,6 @@ Installation
 
             git clone https://github.com/IPESE/REHO.git
 
-.. note::
-    The REHO repository can be forked or cloned depending on the intended use. As soon as the repository is cloned, don't forget to check out your own branch from the ``main`` latest version!
-
 Requirements
 ------------------
 
@@ -47,87 +44,96 @@ Python
 You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
 As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_.
 
-.. warning::
-    Using `Visual Studio Code <https://code.visualstudio.com/>`_ is possible, although this may require adjustments regarding paths handling (just make sure that the working directory corresponds to the location of the run script and not to the root project folder).
-
-
 AMPL
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solver.
 
 - The `AMPL Community Edition <https://ampl.com/ce/>`_ offers a free, full-powered AMPL license for personal, academic, and commercial-prototyping use.
-- The `HiGHS <https://highs.dev/>`_ solver is automatically installed via the `amplpy <https://amplpy.ampl.com/en/latest/>`_ library and REHO's requirements, and is chosen by default when performing an optimization.
-- However, using the `Gurobi <https://www.gurobi.com/>`_ solver reduces calculation time by a factor of 3, and its use is therefore recommended.
+- Gurobi is the default solver in REHO, but any LP solver is possible.
 
-Plenty of text editors exist which feature AMPL. We recommend using `Sublime Text <https://www.sublimetext.com/>`_, which provides the `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_.
+Plenty of text editors exist which feature AMPL. We recommend using `Sublime Text <https://www.sublimetext.com/>`_, which
+provides the `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_.
 
 Setup environment
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Requirements
-^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
+    As soon as the repository is cloned, don't forget to check out your own branch !
 
-The Python packages required by REHO can be installed with:
+
+1. Open PyCharm, open a project and browse to the folder of the repository REHO. Do not accept the automatic virtual environment creation.
+2. Go to File > Settings > Project: REHO to set up your Project Interpreter, click on the gear symbol and choose to add.
+3. Add a new virtual environment (venv) and select as base interpreter your python.exe file of your python installation. Confirm with OK.
+4. Install required Python packages. Open the Terminal tab (View > Tool Windows > Terminal) and type the command one by one:
 
 .. code-block:: bash
 
    pip install -r requirements.txt
+   pipwin install -r requirements_win.txt
 
-AMPL license path
-^^^^^^^^^^^^^^^^^^^^^^^
-
-You need to include a ``.env`` file at the project root folder. This one should contain the path to your AMPL license (cf. file ``example.env``):
+If `geopandas` fails to install, you might need to run:
 
 .. code-block:: bash
 
-   AMPL_PATH = "path_to_your_license"
+   pip install geopandas
 
-Git tracking
-^^^^^^^^^^^^^^^^^^^^^^^
+5. Choose the file scripts > examples > 3a_Read_csv.py and run the script.
+If your installation is correct, you should receive the final message “Process finished with exit code 0”.
+Sometimes, when running the model for the first time, you need to explicitly tell PyCharm to connect to the AMPL server by typing ampl in the PyCharm Terminal tab.
 
-The subfolders ``scripts/examples/`` and ``scripts/template/`` are both git-tracked.
-
-For your future work and own case-studies with REHO, you can create any additional subfolders in ``scripts/``. These will not be git-tracked.
-
-
-Checking proper installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Run the scripts ``scripts/template/run.py`` and then ``scripts/template/plot.py``
-
-If your installation is correct, you should:
-
-- Receive twice the final message *“Process finished with exit code 0”*.
-- See files appear in the newly created subfolders ``scripts/template/data/clustering/``, ``scripts/template/results/`` and ``scripts/template/figures/``.
-- Have an overview of the results in your web browser (3 tabs showing figures such as below).
-
-.. figure:: ../images/sankey.png
-   :width: 1000
-   :align: center
-   :name: sankey
-
-   Sankey diagram resulting from a basic REHO single-optimization.
+6. Create a new folder for your future work with REHO. Right click on the folder scripts in and create a New > Directory. You will use this folder to write and save your first scripts.
 
 
 Running REHO
-================
+============
 
-The following paragraphs describe the content of ``scripts/template/run.py`` and ``scripts/template/plot.py``. These latter should allow you to get started with the tool and conduct your first optimizations.
+This section only provides a brief overview of REHO's capabilities, based on a basic script example.
+This latter should allow you to get started with the tool and conduct your first optimizations.
 
-.. note::
-    Since the content of the ``scripts/template/`` subfolder is git-tracked, you should not modify these files directly, but rather copy their contents into any other subfolder of ``scripts/`` that you have yourself created. The content there (code, data, results, and figures) will be ignored by the git versioning.
+.. code-block:: python
 
-.. literalinclude:: ../../scripts/template/run.py
-   :language: python
+    from reho.model.reho import *
+    from reho.plotting import plotting
 
-.. literalinclude:: ../../scripts/template/plot.py
-   :language: python
+    # Set building parameters
+    reader = QBuildingsReader()
+    qbuildings_data = reader.read_csv(buildings_filename='buildings.csv', nb_buildings=3)
+
+    # Select weather data
+    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+
+    # Set scenario
+    scenario = dict()
+    scenario['Objective'] = 'TOTEX'
+    scenario['EMOO'] = {}
+    scenario['specific'] = []
+    scenario['name'] = 'totex'
+    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+    scenario['enforce_units'] = []
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
+
+    # Set method options
+    method = {'building-scale': True}
+
+    # Run optimization
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho.single_optimization()
+
+    # Save results
+    reho.save_results(format=['pickle'], filename='my_results')
+
+    # Plot energy flows
+    plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel').show()
+
 
 Set building parameters
 ---------------------------
 
-Each building needs to be characterized to estimate its energy demand, its renewable potential, and its sector coupling potential.
+Each building needs to be characterised to estimate its energy demand, its renewable potential, and its sector coupling potential.
 Such information about the buildings involved in the analysis can be provided to REHO in two ways:
 
 1. By connecting to the `QBuildings database <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ ;
@@ -151,8 +157,7 @@ REHO can connect to QBuildings and read the data it contains with the following 
 
 See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_db` for further description.
 
-.. warning::
-    Note that you need to be connected to EPFL network or VPN to access the database
+.. warning:: Note that you need to be connected to EPFL network or VPN to access the database
 
 CSV files
 ~~~~~~~~~~~~~~~~~
@@ -162,16 +167,16 @@ The buildings information can also be provided through a CSV file, with the call
 .. code-block:: python
 
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='data/buildings.csv', nb_buildings=2)
+    qbuildings_data = reader.read_csv(buildings_filename='my_buildings_file.csv', nb_buildings=2)
 
 See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_csv` for further description.
 
 .. warning::
 
-    To work properly, the *.csv* given should contain the same fields as the ones defined in QBuildings.
+    To work properly, the *.csv* given should contain the same fields as it came from QBuildings.
 
-    The order does not matter. It can be helpful to explore the files ``scripts/template/data/buildings.csv``,
-    ``scripts/template/data/roofs.csv`` and ``scripts/template/data/facades.csv``.
+    The order does not matter. It can be helpful to explore the *scripts/template/data/buildings.csv*,
+    *scripts/template/data/roofs.csv* and *scripts/template/data/facades.csv*.
 
     .. dropdown:: List of buildings parameters
         :icon: list-unordered
@@ -266,10 +271,10 @@ Yearly weather data has to be clustered to typical days. The :code:`cluster` dic
 
 Where:
 
-- 'Location' can be chosen among the files available in :code:`reho/data/weather/hour`. *(NB: A few locations are available as template; more are available on request.)*
-- 'Attributes' indicates the features among which the clustering is applied (I refers to Irradiance, T to Temperature, and W to Weekday).
-- 'Periods' relates to desired number of typical days.
-- 'PeriodDuration' the typical period duration (24h is the default choice, corresponding to a typical day).
+- 'Location' can be chosen among the files available in :code:`data/weather/hour`
+- 'Attributes' indicates the features among which the clustering is applied (I refers to Irradiance, T to Temperature, and W to Weekday)
+- 'Periods' relates to desired number of typical days
+- 'PeriodDuration' the typical period duration (24h is the default choice, corresponding to a typical day)
 
 Set scenario
 -----------------------
@@ -314,30 +319,21 @@ In :code:`scenario` the key :code:`specific` allows to provide a list of specifi
 Pareto curves
 ~~~~~~~~~~~~~
 
-To generate a Pareto front, 2 objective functions need to be specified:
+:code:`1b_building-scale_Pareto.py` and :code:`2b_district-scale_Pareto.py` show how to obtain an OPEX-CAPEX Pareto front,
+at building-scale or district-scale respectively.
 
 .. code-block:: python
 
-    scenario['Objective'] = ['OPEX', 'CAPEX']  # for multi-objective optimization two objectives are needed
+    scenario['nPareto'] = 2
 
-The number of intermediate points for each objective is specified with:
-
-.. code-block:: python
-
-    scenario['nPareto'] = 2  # number of points per objective
-
-The total number of optimizations will be ``2 + 2 * nPareto`` (2 extreme points plus 2 times a discretized interval of ``nPareto`` points.
-
-.. note::
-    The files ``1b_building-scale_Pareto.py`` and ``2b_district-scale_Pareto.py``in ``scripts/examples/`` can be run to obtain an OPEX-CAPEX Pareto front, at building-scale or district-scale respectively.
+The parameter :code:`nPareto` indicates the number of intermediate points for each objective.
+The total number of optimizations will be ``2 + 2 * nPareto`` (2 extreme points plus 2 times a discretized interval of :code:`nPareto` points.
 
 
 Initialize available units and grids
 -------------------------------------------
 
 Initializing the energy system structure is done with the :class:`reho.model.infrastructure.infrastructure` class.
-
-Default values for units and grids are proposed, but any parameters can be adapted through providing customized .csv files.
 
 Grids
 ~~~~~
@@ -346,18 +342,19 @@ Grids are initialized with:
 
 .. code-block:: python
 
-    grids = infrastructure.initialize_grids(file="reho/data/infratructure/grids.csv")
+    grids = infrastructure.initialize_grids(file="grids.csv")
 
 
-Where the file :code:`grids.csv` contains the default parameters for the different energy layers available.
+Where the file :code:`grids.csv` located in :code:`preprocessing/parameters/` directory contains the default parameters
+for the different energy layers available.
 
 To use custom prices, there are two options:
 
-1. Provide another .csv file to the :code:`initialize_grids()` function:
+1. Provide another CSV file to the :code:`initialize_grids()` function:
 
 .. code-block:: python
 
-    grids = infrastructure.initialize_grids(file="my_custom_grids.csv")
+    grids = infrastructure.initialize_grids(file="custom_grids.csv")
 
 2. Use the :code:`Cost_supply_cst` and :code:`Cost_demand_cst` parameters in the :code:`initialize_grids()` function:
 
@@ -379,26 +376,28 @@ Units are initialized with:
 
 .. code-block:: python
 
-    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+    scenario['exclude_units'] = ['Battery', 'HeatPump_Geothermal']
     scenario['enforce_units'] = ['HeatPump_Air']
-    units = infrastructure.initialize_units(scenario, grids, building_data="reho/data/infratructure/building_units.csv")
+    units = infrastructure.initialize_units(scenario, grids, building_data="building_units.csv")
 
 Where:
 
-- ``scenario['exclude_units']`` is a list containing the units excluded from the available technologies.
-- ``scenario['enforce_units']`` is a list containing the units forced to be installed.
-    - Your unit has to match the *Unit* column of ``building_units.csv``.
-    - If you do not want to exclude or enforce any unit, give empty lists.
+- 'exclude_units' is a list containing the units excluded from the available technologies
+- 'enforce_units' is a list containing the units forced to be installed
+    - You have to use the `UnitOfType` field from the function `infrastructure.return_building_units`
+    - If you don't want to exclude or enforce any unit, give empty lists.
 - :code:`grids` is the dictionary formerly returned by :code:`initialize_grids()`
-- ``building_units.csv`` contains the default parameters for units characteristics (specific cost, LCA indicators...).
+- "building_units.csv" located in :code:`preprocessing/parameters/` contains the default parameters for units characteristics (specific cost, LCA indicators...)
 
-District units can be enabled with the argument :code:`district_data`:
+
+
+District units can be enabled with the boolean argument :code:`district_units`:
 
 .. code-block:: python
 
-    units = infrastructure.initialize_units(scenario, grids, building_data, district_data="district_units.csv")
+    units = infrastructure.initialize_units(scenario, grids, building_data, district_data="district_units.csv", district_data=True)
 
-Here ``district_units.csv``" contains the default parameters for district-size units.
+Here "district_units.csv" contains the default parameters for district-size units.
 
 Set method options
 -----------------------
@@ -462,6 +461,7 @@ Optimization scope
 
 The value of REHO is to offer optimization of a specified territory at building-scale or district-scale.
 
+
 Conduct a building-scale optimization, by setting:
 
 .. code-block:: python
@@ -489,20 +489,13 @@ These lines of code will enable PV orientation and PV on facades:
     method = {'use_pv_orientation': True, 'use_facades': False, 'district-scale': True}
 
 
-.. warning::
-    As the roofs and facades data are required, ``load_roofs`` and ``load_facades`` have been set to `True` in the reader a priori.
+*N.B.: Note the roofs and facades are required hence the load_roofs and load_facades in the reader a priori.*
 
 
 Run optimization
 -----------------------
 
-The ``reho`` instance is initialized with:
-
-.. code-block:: python
-
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
-
-One or several optimization(s) can then be conducted:
+Once `reho` instance has been properly initialized as :code:`reho(qbuildings_data, units, grids, cluster, scenario, method, solver)`, optimization can be conducted.
 
 .. code-block:: python
 
@@ -513,52 +506,44 @@ One or several optimization(s) can then be conducted:
     reho.generate_pareto_curve()
 
 
-Save results
+Plot energy flows
 -----------------------
 
-At the end of the optimization process, the results are written in ``reho.results``, a dictionary indexed on ``Scn_ID`` and ``Pareto_ID``.
-
-These results can be saved as a `.pickle` or `.xlsx` file with:
+At the end of an optimization, the results are written in `reho.results`, a dictionary indexed on `Scn_ID` and `Pareto_ID`.
+You can directly use this dictionary to plot results:
 
 .. code-block:: python
 
-    reho.save_results(format=['pickle', 'xlsx'], filename='my_case_study')
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long').show()
+    plotting.plot_performance(reho.results, plot='gwp', indexed_on='Scn_ID', label='EN_long').show()
+    plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel').show()
 
+Refer to :mod:`reho.plotting.plotting` for more details.
 
-Read results
+Save and read results
 -----------------------
 
-Saved results can be accessed with:
+These results can be saved on a `pickle` or `xlsx` format with:
 
 .. code-block:: python
 
-    results = pd.read_pickle('my_case_study.pickle')
+    reho.save_results(format=['pickle', 'xlsx'], filename='my_results')
 
-And browsing through ``Scn_ID`` and ``Pareto_ID`` with:
+
+If you want to access them on a later stage, you can browse the results with:
 
 .. code-block:: python
 
+    results = pd.read_pickle('my_results.pickle')
     Scn_ID = list(results.keys())
     Pareto_ID = list(results[Scn_ID[0]].keys())
     df_Results = results[Scn_ID[0]][Pareto_ID[0]]
 
-Where ``df_Results`` corresponds to the output of one single-optimization, and is a dictionary containing the following dataframes: ``df_Performance``, ``df_Annuals``, ``df_Buildings``, ``df_Unit``, ``df_Unit_t``, ``df_Grid_t``, ``df_Buildings_t``, ``df_Time``, ``df_External``, ``df_Index``, ``df_KPIs``, ``df_Economics``.
 
-Refer to :mod:`reho.model.postprocessing.write_results.py` for more information about the content of these dataframes.
+`df_Results` corresponds to the output of one single-optimization, and is a dictionary containing the following dataframes:
+`df_Performance`, `df_Annuals`, `df_Buildings`, `df_Unit`, `df_Unit_t`, `df_Grid_t`, `df_Buildings_t`, `df_Time`, `df_External`, `df_Index`, `df_KPIs`, `df_Economics`.
 
-Plot results
------------------------
-
-REHO embeds predefined plotting functions to visualize results, such as:
-
-.. code-block:: python
-
-    # Performance plot : Costs and Global Warming Potential
-    plotting.plot_performance(results, plot='costs', indexed_on='Scn_ID', filename="figures/performance_costs").show()
-    plotting.plot_performance(results, plot='gwp', indexed_on='Scn_ID', filename="figures/performance_gwp").show()
-
-    # Sankey diagram
-    plotting.plot_sankey(results['totex'][0], label='EN_long', color='ColorPastel').show()
-
-Refer to :mod:`reho.plotting.plotting` for more details and other plotting functions.
-
+.. note::
+    For example, let's say you would like to know the size of the units which are installed.
+    A look into the main AMPL file `model.mod` reveals that the variable you are looking for is called `Units_Mult`.
+    You can then search for the variable in the `write_results.py` file and realize that it is located in the dataframe called `df_Unit`.

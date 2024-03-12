@@ -69,8 +69,8 @@ class QBuildingsReader:
             self.connection = self.db_engine.connect()  # test connection
             print('Connected to database')
 
-        except Exception as e:
-            print(f'Cannot connect to database engine: {e}')
+        except:
+            print('Cannot connect to database engine')
 
         if 'database' in project:
             print('\thost: {}\n\tport: {}\n\tdatabase: {}\n\tusername: {}'.format(

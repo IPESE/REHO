@@ -22,11 +22,11 @@ grids = infrastructure.initialize_grids()
 units = infrastructure.initialize_units(scenario, grids)
 
 # Set method options
-method = {'building-scale': True}
+method = {}
 
 # Run optimization
-reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
+reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
 reho.single_optimization()
 
 # Save results
-reho.save_results(format=['xlsx', 'pickle'], filename='my_case_study')
+reho.save_results(format=['pickle'], filename='my_case_study')

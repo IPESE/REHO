@@ -1,8 +1,4 @@
-on:
-  push:
-    branches:
-      - main
-      - documentation
+on: [push]
 
 jobs:
   paper:

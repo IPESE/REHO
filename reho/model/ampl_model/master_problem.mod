@@ -130,6 +130,7 @@ subject to TOTAL_line_c6{l in ResourceBalances, p in Period,t in Time[p]}:
 #-PARAMETERS
 param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
+param Units_Ext{u in Units} default 0;
 
 #-VARIABLES
 var Units_Mult{u in Units} <= Units_Fmax[u];                            #var
@@ -137,11 +138,20 @@ var Units_Use{u in Units} binary >= 0, default 0;                               
 
 
 #-CONSTRAINTS
-subject to Unit_sizing_c1{u in Units}:
-Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
 
-subject to Unit_sizing_c2{u in Units}:
-Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
+subject to Units_sizing_c1{u in Units}:
+Units_Mult[u]-Units_Ext[u] >= Units_Use[u]*Units_Fmin[u];
+
+subject to Units_sizing_c2{u in Units}:
+Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
+
+# Old constraints, without Units_Ext
+
+#subject to Unit_sizing_c1{u in Units}:
+#Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
+
+#subject to Unit_sizing_c2{u in Units}:
+#Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
 
 
 ######################################################################################################################
@@ -195,8 +205,14 @@ var Costs_tot;
 var DHN_inv_house{h in House} >= 0;
 
 #-CONSTRAINTS
-subject to Costs_Unit_capex{u in Units} :
- Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
+
+
+subject to Costs_Unit_capex{u in Units diff UnitsOfDiscreteCost}:
+Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
+
+# Old constraint, without Units_Ext
+#subject to Costs_Unit_capex{u in Units} :
+# Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
 
 subject to Costs_Unit_replacement:
 Costs_rep= tau* sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
@@ -241,7 +257,11 @@ var GWP_House_constr{h in House} >=0;
 var GWP_tot;
 
 subject to CO2_construction_unit{u in Units}:
-GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
+GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*GWP_unit2[u])/lifetime[u];
+
+# Old constraint, without Units_Ext
+#subject to CO2_construction_unit{u in Units}:
+#GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
 
 subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
@@ -281,7 +301,11 @@ var lca_tot_house{k in Lca_kpi, h in House} default 0;
 
 
 subject to LU_inv_cst{k in Lca_kpi, u in Units}:
-lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
+lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + (Units_Mult[u]-Units_Ext[u])*lca_kpi_2[k, u])/lifetime[u];
+
+#Old constraint, without Units_Ext
+#subject to LU_inv_cst{k in Lca_kpi, u in Units}:
+#lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
 
 subject to LCA_construction_house{k in Lca_kpi, h in House}:
 lca_house_units[k, h] = sum{f in FeasibleSolutions}(lambda[f,h] * lca_house_units_SPs[f,k,h]);

@@ -88,7 +88,7 @@ class QBuildingsReader:
         return
 
     def read_csv(self, buildings_filename='buildings.csv', nb_buildings=None,
-                 roofs_filename='roofs.csv', facades_filename='facades.csv'):
+                 roofs_filename='roofs.csv', facades_filename='facades.csv', district=None):
         """
         Read buildings-related data from CSV files and prepare it for the REHO model.
 

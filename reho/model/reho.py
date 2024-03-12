@@ -478,6 +478,10 @@ class reho(district_decomposition):
         if self.method['district-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
+        elif self.method['building-scale']:
+            self.DW_params['max_iter'] = 1
+            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
+
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,

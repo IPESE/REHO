@@ -87,3 +87,58 @@ def generate_EV_plugged_out_profiles_district(cluster):
     EV_plugging_in = np.array(EV_plugging_in)
 
     return EV_plugged_out, EV_plugging_in
+
+
+
+def generate_mobility_demand_profile(cluster):
+    """
+    Based on EV_profile_generator_structure
+
+    Returns:
+    -------
+    A dataframe with indexes ("Mobility", p,t)
+    """
+    # TODO IMPLEMENTATION of flexible period duration
+    File_ID = WD.get_cluster_file_ID(cluster)
+
+    if 'W' in File_ID.split('_'):
+        use_weekdays = True
+    else:
+        use_weekdays = False
+
+    if use_weekdays:
+        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3),
+                               skiprows=1)
+        timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
+    else:
+        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
+        timestamp = df.fillna(1)  # only weekdays
+
+    profiles_weekday = np.ones(24)*2  # test constant profile (2km each hour)
+    profiles_weekend = np.ones(24)*2  # test constant profile
+
+    mobility_demand = pd.DataFrame(columns = ['l','p','t','Domestic_energy'])
+
+    # iter over the typical periods => j'ai pas tout compris comment ça marche, je met un truc constant dans une 1er temps
+    # for j, day in enumerate(list(timestamp.Weekday)[:-2]):
+    #     if day == 0:
+    #         profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekend,"t" : range(1,25)})
+    #         profile['p'] = 0
+                                   
+    #     elif day == 1:
+    #         profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekday,"t" : range(1,25)})
+    #         profile['p'] = 1
+    #     else:
+    #         raise ("day type not possible")
+    for p in range(1,13):
+        profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekend,"t" : range(1,25)})
+        profile['p'] = p
+
+        mobility_demand = pd.concat([mobility_demand,profile])
+
+    # mobility_demand = mobility_demand + [0.0, 0.0]  # extreme hours
+    # mobility_demand = np.array(mobility_demand)
+    mobility_demand['l'] = "Mobility"
+    mobility_demand.set_index(['l','p','t'],inplace=True)
+    
+    return mobility_demand

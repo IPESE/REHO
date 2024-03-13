@@ -79,6 +79,8 @@ param Grid_usage_max_supply default 0;
 param Units_flowrate_in{l in ResourceBalances, u in Units}  >=0 default 0;
 param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 
+param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 default 0; # for mobility demand
+
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
 
@@ -92,10 +94,9 @@ var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >=
 
 
 # model constraints
-# param domestic_energy[l,p,t] default 0;
 
 subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #pi_c
-   Network_supply[l,p,t] - Network_demand[l,p,t]   =  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+   Network_supply[l,p,t] - Network_demand[l,p,t]   = Domestic_energy[l,p,t] +  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 
 subject to complicating_cst_GWP{l in ResourceBalances, p in Period, t in Time[p]}: #pi_g

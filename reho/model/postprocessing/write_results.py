@@ -170,6 +170,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_cd = get_parameter_in_pandas(ampl, 'Cost_demand_network', multi_index=True)
         df_es = get_parameter_in_pandas(ampl, 'GWP_supply', multi_index=True)
         df_ed = get_parameter_in_pandas(ampl, 'GWP_demand', multi_index=True)
+        # df_dd = get_parameter_in_pandas(ampl, 'Domestic_energy', multi_index=True)
+        # df_dd.columns = ['Domestic_demand']
 
         # Rename Network to Grid and therefore add Level 'Hub' = Network
         df3.columns = ['Grid_demand']
@@ -453,9 +455,10 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df4 = get_parameter_in_pandas(ampl, 'GWP_supply', multi_index=True)
     df5 = get_variable_in_pandas(df, 'Network_supply')
     df6 = get_variable_in_pandas(df, 'Network_demand')
+    df7 = get_parameter_in_pandas(ampl,"Domestic_energy",multi_index = True)
 
     if binary:
-        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1).sort_index()
+        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6,df7], axis=1).sort_index()
     else:
         df_District_t = pd.concat([df5, df6], axis=1)
     df_District_t.index.names = ['Layer', 'Period', 'Time']

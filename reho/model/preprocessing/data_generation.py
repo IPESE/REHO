@@ -54,7 +54,7 @@ def profile_reference_temperature(parameters_to_ampl, cluster):
     return np_temperature
 
 
-def build_eud_profiles(buildings_data, File_ID, cluster,
+def build_eud_profiles(buildings_data, File_ID, cluster, sia_file,
                        include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
     Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
@@ -142,7 +142,7 @@ def build_eud_profiles(buildings_data, File_ID, cluster,
         np_el_class = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
-            rooms = read_sia2024_rooms_sia380_1(class_380)
+            rooms = read_sia2024_rooms_sia380_1(class_380, sia_file)
             status = ''.join(filter(str.isalnum, status_buildings[i]))
             if class_380 == 'I' or class_380 == 'II':
                 area_net_floor = buildings_data[b]['ERA'] / 1.245
@@ -333,7 +333,7 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
         glass_fraction_building = 0
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
-            rooms = read_sia2024_rooms_sia380_1(class_380)
+            rooms = read_sia2024_rooms_sia380_1(class_380, csv_data["df_sia"])
             path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
             df = pd.read_excel(path_norms, sheet_name='data', engine='openpyxl', index_col=[0],
                                skiprows=[0, 2, 3, 4], header=[0])

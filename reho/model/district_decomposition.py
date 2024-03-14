@@ -62,7 +62,7 @@ class district_decomposition:
         self.csv_data["irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
         self.csv_data["df_area"] = pd.read_csv(path_to_areas, header=None)
         self.csv_data["df_cenpts"] = pd.read_csv(path_to_cenpts, header=None)
-        #self.csv_data["skydome"] = pd.read_csv(path_to_timestamp, index_col=[0])
+        self.csv_data["df_sia"] = pd.read_csv(path_sia, sep=';', index_col=[0], header=[0])        #self.csv_data["skydome"] = pd.read_csv(path_to_timestamp, index_col=[0])
 
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -77,7 +77,7 @@ class district_decomposition:
 
         # Heat gains from electricity and people, domestic hot water demand, domestic electricity demand
         self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
-            DGF.build_eud_profiles(self.buildings_data, self.File_ID, self.cluster, self.method['include_stochasticity'],
+            DGF.build_eud_profiles(self.buildings_data, self.File_ID, self.cluster, self.csv_data["df_sia"], self.method['include_stochasticity'],
                                    self.method['sd_stochasticity'], self.method['use_custom_profiles'])
 
         if set_indexed is None:
@@ -274,9 +274,9 @@ class district_decomposition:
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, self.csv_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.csv_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -667,9 +667,9 @@ class district_decomposition:
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, self.csv_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.csv_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
 
         ampl = REHO.build_model_without_solving()
 

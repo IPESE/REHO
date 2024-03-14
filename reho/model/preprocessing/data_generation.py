@@ -54,7 +54,7 @@ def profile_reference_temperature(parameters_to_ampl, cluster):
     return np_temperature
 
 
-def build_eud_profiles(buildings_data, File_ID, cluster, sia_file,
+def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
                        include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
     Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
@@ -116,9 +116,8 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file,
     df = pd.read_csv(timestamp_file, delimiter='\t')
     df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
-    path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
-    df_SIA = pd.read_excel(path_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl',
-                           index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+    #path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
+    df_SIA = sia2024_data #pd.read_excel(path_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
 
     np_gain_all = np.array([])
     np_dhw_all = np.array([])
@@ -334,9 +333,8 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
             rooms = read_sia2024_rooms_sia380_1(class_380, csv_data["df_sia"])
-            path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
-            df = pd.read_excel(path_norms, sheet_name='data', engine='openpyxl', index_col=[0],
-                               skiprows=[0, 2, 3, 4], header=[0])
+            #path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
+            df = csv_data["sia2024_data"]['data'] #pd.read_excel(path_norms, sheet_name='data', engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
             glass_fraction_2024 = df['Taux de surface vitrée']
             glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
             glass_fraction_building += glass_fraction_rooms * float(ratios[i])

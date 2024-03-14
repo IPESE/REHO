@@ -7,9 +7,9 @@ __doc__ = """
 *Characterizes the CO2 emissions related to electricity generated from the grid.*
 """
 
-def find_average_value(country, metric):
+def find_average_value(country, metric, emissions_matrix):
     # sort city to country
-    df = pd.read_csv(path_to_emissions_matrix, index_col = [0,1,2])
+    df = emissions_matrix #pd.read_csv(path_to_emissions_matrix, index_col = [0,1,2])
     df.columns = np.arange(1, 8761)
     df = df.xs((country, metric), level=(0,2))
 
@@ -19,7 +19,7 @@ def find_average_value(country, metric):
     return average
 
 
-def annual_to_typical_emissions(cluster, File_ID, country, metric):
+def annual_to_typical_emissions(cluster, File_ID, country, metric, emissions_matrix):
 
     # get relevant cluster information
     filename = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
@@ -29,7 +29,7 @@ def annual_to_typical_emissions(cluster, File_ID, country, metric):
     else:
         PeriodDuration = pd.DataFrame(np.concatenate([np.repeat(cluster['PeriodDuration'], cluster['Periods']), [1, 1]]), columns=["TimeEnd"])
         PeriodDuration.index = PeriodDuration.index + 1
-    df_emission = pd.read_csv(path_to_emissions_matrix, index_col=[0, 1, 2])
+    df_emission = emissions_matrix #pd.read_csv(path_to_emissions_matrix, index_col=[0, 1, 2])
     df_emission.columns = np.arange(1, 8761)
 
     # construct Multiindex
@@ -69,7 +69,7 @@ def annual_to_typical_emissions(cluster, File_ID, country, metric):
     return df_E
 
 
-def return_typical_emission_profiles(cluster, File_ID, metric):
+def return_typical_emission_profiles(cluster, File_ID, metric, emissions_matrix):
 
     country = 'CH'
     emission_file = os.path.join(path_to_clustering, metric + '_' + File_ID + '.dat')
@@ -77,7 +77,7 @@ def return_typical_emission_profiles(cluster, File_ID, metric):
     if os.path.exists(emission_file):
         df_E = pd.read_csv(emission_file, index_col=[0, 1, 2])
     else:
-        df_E = annual_to_typical_emissions(cluster, File_ID, country, metric)
+        df_E = annual_to_typical_emissions(cluster, File_ID, country, metric, emissions_matrix)
         df_E.to_csv(emission_file)
 
     return df_E

@@ -308,7 +308,7 @@ class compact_optimization:
 
     def set_emissions_profiles(self, File_ID):
 
-        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a')
+        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a', self.csv_data["emissions_matrix"])
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})

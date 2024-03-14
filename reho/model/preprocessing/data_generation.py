@@ -277,7 +277,7 @@ def create_random_var(sd_amplitude, sd_timeshift):
     return RV_scaling, SF
 
 
-def solar_gains_profile(ampl, buildings_data, File_ID):
+def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
     """
     Computes the solar heat gains from the irradiance.
 
@@ -313,7 +313,7 @@ def solar_gains_profile(ampl, buildings_data, File_ID):
     filename = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt')
     if not os.path.exists(filename):
         total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
-        df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, total_irradiation, frequency_dict)
+        df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, csv_data, total_irradiation, frequency_dict)
         np.savetxt(filename, irr_west)
     else:
         irr_west = pd.read_csv(filename, header=None)[0].values

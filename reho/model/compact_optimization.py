@@ -61,6 +61,8 @@ class compact_optimization:
         self.solver = solver
         self.parameters_to_ampl = dict()
 
+        self.csv_data = csv_data
+
         # print('Execute for building:', self.buildings_data_compact)
         # print('With parameters and sets:', self.parameters_compact, self.set_indexed_compact)
         # print('Cluster settings are:', self.cluster_compact)
@@ -319,7 +321,7 @@ class compact_optimization:
         #self.parameters_to_ampl['T_comfort_min'] = DGF.profile_reference_temperature(self.parameters_to_ampl, self.cluster_compact)
 
         # Heat gains from solar
-        self.parameters_to_ampl['SolarGains'] = DGF.solar_gains_profile(ampl, self.buildings_data_compact, File_ID)
+        self.parameters_to_ampl['SolarGains'] = DGF.solar_gains_profile(ampl, self.buildings_data_compact, File_ID, self.csv_data)
 
         # Set default EV plug out profile if EVs are allowed
         if "EV_plugged_out" not in self.parameters_to_ampl:
@@ -433,7 +435,7 @@ class compact_optimization:
     def set_PV_models(self, ampl, File_ID):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
-        df_dome = SkyDome.skydome_to_df()
+        df_dome = SkyDome.skydome_to_df(self.csv_data)
         self.parameters_to_ampl['Sin_a'] = df_dome.Sin_a.values
         self.parameters_to_ampl['Cos_a'] = df_dome.Cos_a.values
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
@@ -510,7 +512,7 @@ class compact_optimization:
                 df_shadows = self.shadows_compact[self.shadows_compact['id_building'] == self.buildings_data_compact[b]['id_building']]
                 facades = df_facades['Facades_ID']
                 np_facades = np.append(np_facades, facades)
-                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows)
+                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows, self.csv_data)
                 df_shadow = pd.concat([df_shadow], keys=[b], names=['House'])
                 df_limit_angle = pd.concat([df_limit_angle, df_shadow])
                 for fc in facades:

@@ -60,6 +60,8 @@ class district_decomposition:
 
         self.csv_data = dict()
         self.csv_data["irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
+        self.csv_data["df_area"] = pd.read_csv(path_to_areas, header=None)
+        self.csv_data["df_cenpts"] = pd.read_csv(path_to_cenpts, header=None)
         #self.csv_data["skydome"] = pd.read_csv(path_to_timestamp, index_col=[0])
 
         if cluster is None:

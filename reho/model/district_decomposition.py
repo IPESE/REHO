@@ -58,6 +58,10 @@ class district_decomposition:
         self.ERA = sum([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         self.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
 
+        self.csv_data = dict()
+        self.csv_data["irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
+        #self.csv_data["skydome"] = pd.read_csv(path_to_timestamp, index_col=[0])
+
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
         else:
@@ -268,9 +272,9 @@ class district_decomposition:
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, self.csv_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.csv_data)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -661,9 +665,9 @@ class district_decomposition:
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, self.csv_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.csv_data)
 
         ampl = REHO.build_model_without_solving()
 

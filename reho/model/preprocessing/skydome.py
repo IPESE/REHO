@@ -72,12 +72,12 @@ def skydome_to_df():
     return df_dome
 
 
-def irradiation_to_df(ampl, irradiation_csv, File_ID):
+def irradiation_to_df(ampl, irradiation, File_ID):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
 
-    df_IRR = pd.read_csv(irradiation_csv, index_col=[0])
+    df_IRR = irradiation #pd.read_csv(irradiation_csv, index_col=[0])
 
     #change column name from string to int
     df_IRR.columns = df_IRR.columns.astype(int)
@@ -121,11 +121,11 @@ def irradiation_to_df(ampl, irradiation_csv, File_ID):
     return df
 
 
-def irradiation_to_df_general(irradiation_csv):
+def irradiation_to_df_general(irradiation):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
-    df_IRR = pd.read_csv(irradiation_csv, index_col=[0])
+    df_IRR = irradiation #pd.read_csv(irradiation_csv, index_col=[0])
 
     #change column name from string to int
     df_IRR.columns = df_IRR.columns.astype(int)

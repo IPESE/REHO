@@ -40,7 +40,7 @@ class compact_optimization:
             reho.model.district_decomposition.district_decomposition
 
             """
-    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
+    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None, csv_data=None):
 
         self.buildings_data_compact = buildings_data
         if method['use_facades']:
@@ -439,8 +439,8 @@ class compact_optimization:
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
-        total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
-        df_irr = SkyDome.irradiation_to_df(ampl, total_irradiation, File_ID)
+        #total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
+        df_irr = SkyDome.irradiation_to_df(ampl, self.csv_data["irradiation"], File_ID)
         self.parameters_to_ampl['Irr'] = df_irr
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])

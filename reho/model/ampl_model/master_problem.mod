@@ -207,7 +207,7 @@ var DHN_inv_house{h in House} >= 0;
 #-CONSTRAINTS
 
 
-subject to Costs_Unit_capex{u in Units diff UnitsOfDiscreteCost}:
+subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
 
 # Old constraint, without Units_Ext

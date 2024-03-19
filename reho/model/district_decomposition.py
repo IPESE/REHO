@@ -456,7 +456,10 @@ class district_decomposition:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']:
+        additional = []
+        if "ReinforcementTrOfLayer" in self.infrastructure.__dict__.keys():
+            additional = ["ReinforcementTrOfLayer"]
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']+additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 

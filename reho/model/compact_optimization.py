@@ -275,10 +275,18 @@ class compact_optimization:
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_compact.Units_Parameters
         self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_compact.Units_Parameters_lca
         self.parameters_to_ampl['Streams_H'] = self.infrastructure_compact.Streams_H
-
+        # if "ReinforcementTrOfLayer" in self.infrastructure.__dict__.keys():
+        #     print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        print(self.infrastructure_compact.Set.keys())
+        str_reinf = "ReinforcementTrOfLayer['Electricity']"
+        #ampl.getSet("ReinforcementTrOfLayer")
+        # for i in ampl.getSet("ReinforcementTrOfLayer"):
+        #     print(i)
+        # ampl.set["ReinforcementTrOfLayer"]['Electricity']=[0,230,400]
+        #print(self.infrastructure_compact.__dict__.keys())
         for key in self.infrastructure_compact.HP_parameters:
             self.parameters_to_ampl[key] = self.infrastructure_compact.HP_parameters[key]
-
+        #print(self.infrastructure_compact.__dict__.keys())
         for s in self.infrastructure_compact.Set:
             if isinstance(self.infrastructure_compact.Set[s], np.ndarray):
                 ampl.getSet(str(s)).setValues(self.infrastructure_compact.Set[s])

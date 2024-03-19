@@ -65,11 +65,17 @@ class infrastructure:
         for l in self.Layers:
             self.HousesOfLayer[l] = np.array([])
 
+        # self.ReinforcementTrOfLayer={}
+        # for l in self.Layers:
+        #     self.ReinforcementTrOfLayer[l] = np.array([])
+
         self.StreamsOfBuilding = {}
         self.StreamsOfUnit = {}
         self.TemperatureSets = {}
         self.lca_kpis = []
+
         self.Set = {}
+
 
         # Parameter --------------------------------------------------------------------------------------------
         self.Units_flowrate = pd.DataFrame()
@@ -81,9 +87,10 @@ class infrastructure:
         self.Streams_H = pd.DataFrame()
 
         self.HP_parameters = {}
-
         self.generate_structure()
         self.generate_parameter()
+
+
     
 
     def generate_structure(self):
@@ -158,8 +165,15 @@ class infrastructure:
         self.Set['StreamsOfUnit'] = self.StreamsOfUnit
         self.Set['Lca_kpi'] = self.lca_kpis
 
+        if "ReinforcementTrOfLayer" in self.__dict__.keys():
+            print("AAAAAAAAAAAAAAAAAAAAAAAA")
+            self.Set['ReinforcementTrOfLayer']=self.ReinforcementTrOfLayer
+
+
     def generate_parameter(self):
         # Units Flows -----------------------------------------------------------
+
+
         for h in self.House:
 
             for u in self.houses[h]['units']:

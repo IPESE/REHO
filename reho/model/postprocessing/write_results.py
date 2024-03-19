@@ -31,11 +31,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df6 = get_variable_in_pandas(df, 'GWP_house_constr')
         df6 = df6.rename(columns={'GWP_house_constr': 'GWP_constr'})
 
+
         df71 = get_parameter_in_pandas(ampl, 'EMOO_CAPEX', multi_index=False)
         df72 = get_parameter_in_pandas(ampl, 'EMOO_OPEX', multi_index=False)
         df73 = get_parameter_in_pandas(ampl, 'EMOO_TOTEX', multi_index=False)
         df75 = get_parameter_in_pandas(ampl, 'EMOO_GWP', multi_index=False)
         df76 = get_parameter_in_pandas(ampl, 'EMOO_grid', multi_index=False)
+
 
         df_N1 = get_variable_in_pandas(df, 'Costs_op')  # without the comfort penalty costs
         df_N2 = get_variable_in_pandas(df, 'Costs_inv')

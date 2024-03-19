@@ -22,6 +22,7 @@ class infrastructure:
 
         self.units = units["building_units"]
         self.houses = {h: {'units': self.units, 'layers': grids} for h in qbuildings_data['buildings_data'].keys()}
+        print(self.houses.keys())
         self.grids = grids
         if "district_units" in units:
             self.district_units = units["district_units"]
@@ -65,9 +66,20 @@ class infrastructure:
         for l in self.Layers:
             self.HousesOfLayer[l] = np.array([])
 
-        # self.ReinforcementTrOfLayer={}
-        # for l in self.Layers:
-        #     self.ReinforcementTrOfLayer[l] = np.array([])
+        self.ReinforcementTrOfLayer={}
+        for l in grids.keys():
+            if 'ReinforcementTrOfLayer' in grids[l].keys():
+                self.ReinforcementTrOfLayer[l] = grids[l]['ReinforcementTrOfLayer']
+            else:
+                self.ReinforcementTrOfLayer[l] = np.array([0])
+
+        self.ReinforcementLineOfLayer = {}
+        for l in grids.keys():
+            if 'ReinforcementLineOfLayer' in grids[l].keys():
+                self.ReinforcementLineOfLayer[l] = grids[l]['ReinforcementLineOfLayer']
+            else:
+                self.ReinforcementLineOfLayer[l] = np.array([0])
+
 
         self.StreamsOfBuilding = {}
         self.StreamsOfUnit = {}
@@ -166,8 +178,10 @@ class infrastructure:
         self.Set['Lca_kpi'] = self.lca_kpis
 
         if "ReinforcementTrOfLayer" in self.__dict__.keys():
-            print("AAAAAAAAAAAAAAAAAAAAAAAA")
             self.Set['ReinforcementTrOfLayer']=self.ReinforcementTrOfLayer
+
+        if "ReinforcementLineOfLayer" in self.__dict__.keys():
+            self.Set['ReinforcementLineOfLayer']=self.ReinforcementLineOfLayer
 
 
     def generate_parameter(self):

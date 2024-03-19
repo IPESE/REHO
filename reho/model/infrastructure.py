@@ -22,7 +22,6 @@ class infrastructure:
 
         self.units = units["building_units"]
         self.houses = {h: {'units': self.units, 'layers': grids} for h in qbuildings_data['buildings_data'].keys()}
-        print(self.houses.keys())
         self.grids = grids
         if "district_units" in units:
             self.district_units = units["district_units"]

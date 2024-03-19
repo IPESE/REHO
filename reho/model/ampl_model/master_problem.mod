@@ -204,13 +204,22 @@ var Use_TransformerCapacityAdd{l in ResourceBalances} binary;
 param CostTransformer_inv1{l in ResourceBalances} default 20;
 param CostTransformer_inv2{l in ResourceBalances} default 20;
 
-
+# Lines additional capacities
+set ReinforcementLineOfLayer{ResourceBalances} default {};
+var LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
+var Use_LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
+param CostLine_inv1{l in ResourceBalances} default 20;
+param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
+param Line_Length{h in House,l in ResourceBalances} default 10;
 
 
 #-CONSTRAINTS
 
 subject to transformer_additional_capacity_c1{l in ResourceBalances}:
 Use_TransformerCapacityAdd[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacityAdd[l];
+
+subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
+Use_LineCapacityAdd[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacityAdd[l,hl];
 
 subject to Costs_Unit_capex{u in Units} :
  Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
@@ -364,10 +373,10 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;  #kW
 
 subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
+Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h] + LineCapacityAdd[l,h];
 
 subject to LineCapacity_demand{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
+Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h] + LineCapacityAdd[l,h];
 
 #--------------------------------------------------------------------------------------------------------------------#
 #---Transformer capacity constraints

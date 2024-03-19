@@ -407,7 +407,7 @@ var LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} in Reinforcem
 var Use_LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
 param CostLine_inv1{l in ResourceBalances} default 20;
 param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
-param Line_Length{l in ResourceBalances, h in House} default 10;
+param Line_Length{h in House,l in ResourceBalances} default 10;
 
 
 #-CONSTRAINTS
@@ -424,10 +424,8 @@ Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
 subject to Costs_Unit_capex_discrete{u in Units inter UnitsOfDiscreteCost}:
 Costs_Unit_inv[u] = Units_Use_1[u]*Cost_inv1[u] + Units_Mult_1[u]*Cost_inv2[u] + Units_Use_2[u]*Cost_inv1_2[u] + Units_Mult_2[u]*Cost_inv2_2[u];
 
-Total
-
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacityAdd[l,h]+CostLine_inv2[l]*LineCapacityAdd[l,h]*Line_Length[l];
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacityAdd[l,h]+CostLine_inv2[l]*LineCapacityAdd[l,h]*Line_Length[h,l]);
 
 subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	

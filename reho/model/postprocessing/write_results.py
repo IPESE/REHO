@@ -38,6 +38,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df75 = get_parameter_in_pandas(ampl, 'EMOO_GWP', multi_index=False)
         df76 = get_parameter_in_pandas(ampl, 'EMOO_grid', multi_index=False)
 
+        df78 = get_parameter_in_pandas(ampl, 'Line_Length', multi_index=False)
+        print(df78)
 
         df_N1 = get_variable_in_pandas(df, 'Costs_op')  # without the comfort penalty costs
         df_N2 = get_variable_in_pandas(df, 'Costs_inv')

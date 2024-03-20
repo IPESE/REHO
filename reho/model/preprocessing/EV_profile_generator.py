@@ -89,14 +89,16 @@ def generate_EV_plugged_out_profiles_district(cluster):
     return EV_plugged_out, EV_plugging_in
 
 
-
 def generate_mobility_demand_profile(cluster):
     """
     Based on EV_profile_generator_structure
 
+    This reads the Input data on the "Tableau de Bord" excel file on mobility.
+
     Returns:
     -------
-    A dataframe with indexes ("Mobility", p,t)
+    mobility_demand : A dataframe with indexes ("Mobility", p,t)
+    population : int 
     """
     # TODO IMPLEMENTATION of flexible period duration
     File_ID = WD.get_cluster_file_ID(cluster)
@@ -114,31 +116,42 @@ def generate_mobility_demand_profile(cluster):
         df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
         timestamp = df.fillna(1)  # only weekdays
 
-    profiles_weekday = np.ones(24)*2  # test constant profile (2km each hour)
-    profiles_weekend = np.ones(24)*2  # test constant profile
+    # mapping of the types of days
+    days_mapping = {0: "Weekend",
+                    1: "Weekday"
+                    }
 
-    mobility_demand = pd.DataFrame(columns = ['l','p','t','Domestic_energy'])
+    # read the profiles
+    profiles_input = pd.read_excel(os.path.join(path_to_mobility, "mobility_parameters.xlsx"),
+                                   sheet_name="Domestic_Demand")
+    population = 7.5 # to modify 
+    # profiles_weekday = np.ones(24)*10  # test constant profile (2km each hour)
+    # profiles_weekend = np.ones(24)*10  # test constant profile]
 
-    # iter over the typical periods => j'ai pas tout compris comment ça marche, je met un truc constant dans une 1er temps
-    # for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-    #     if day == 0:
-    #         profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekend,"t" : range(1,25)})
-    #         profile['p'] = 0
-                                   
-    #     elif day == 1:
-    #         profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekday,"t" : range(1,25)})
-    #         profile['p'] = 1
-    #     else:
-    #         raise ("day type not possible")
-    for p in range(1,13):
-        profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekend,"t" : range(1,25)})
-        profile['p'] = p
+    mobility_demand = pd.DataFrame(columns=['l', 'p', 't', 'Domestic_energy'])
 
-        mobility_demand = pd.concat([mobility_demand,profile])
+    # iter over the typical periods 
+    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
+        try:
+            profile = profiles_input[['Time', days_mapping[day]]].copy()
+        except:
+            raise ("day type not possible")
+        profile.rename(columns={"Time": "t", days_mapping[day]: "Domestic_energy"}, inplace=True)
+        profile['p'] = j + 1
 
-    # mobility_demand = mobility_demand + [0.0, 0.0]  # extreme hours
-    # mobility_demand = np.array(mobility_demand)
+        mobility_demand = pd.concat([mobility_demand, profile])
+
+    # for p in range(1,13):
+    #     profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekend,"t" : range(1,25)})
+    #     profile['p'] = p
+
+    #     mobility_demand = pd.concat([mobility_demand,profile])
+
+    # extreme hours
+    pd.concat([mobility_demand, pd.DataFrame({"p": 11, "t": 1, "Domestic_energy": 0},index=["extremehour1"])])
+    pd.concat([mobility_demand, pd.DataFrame({"p": 12, "t": 1, "Domestic_energy": 0},index=["extremehour2"])])
+
     mobility_demand['l'] = "Mobility"
-    mobility_demand.set_index(['l','p','t'],inplace=True)
-    
-    return mobility_demand
+    mobility_demand.set_index(['l', 'p', 't'], inplace=True)
+
+    return mobility_demand, population

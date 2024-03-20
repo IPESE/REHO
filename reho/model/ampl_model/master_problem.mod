@@ -96,7 +96,7 @@ var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >=
 # model constraints
 
 subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #pi_c
-   Network_supply[l,p,t] - Network_demand[l,p,t]   = Domestic_energy[l,p,t] +  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+   Network_supply[l,p,t] - Network_demand[l,p,t]   = (Domestic_energy[l,p,t] +   sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 
 subject to complicating_cst_GWP{l in ResourceBalances, p in Period, t in Time[p]}: #pi_g

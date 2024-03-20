@@ -361,9 +361,12 @@ class district_decomposition:
         if len(self.infrastructure.UnitsOfDistrict) > 0:
             ampl_MP.cd(path_to_district_units)
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('mobility.mod')
                 ampl_MP.read('evehicle.mod')
-                ampl_MP.read('proxy_mobilitydemand.mod')
+                # ampl_MP.read('proxy_mobilitydemand.mod')
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
+            if "Bike_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('bike.mod')
             if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_boiler_district.mod')
             if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
@@ -438,7 +441,7 @@ class district_decomposition:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
                     MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster)
-                    MP_parameters["Domestic_energy"] = EV_gen.generate_mobility_demand_profile(self.cluster)
+                    MP_parameters["Domestic_energy"], xx = EV_gen.generate_mobility_demand_profile(self.cluster)
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:

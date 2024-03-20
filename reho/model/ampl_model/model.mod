@@ -401,6 +401,7 @@ var Use_TransformerCapacityAdd{l in ResourceBalances} binary;
 param CostTransformer_inv1{l in ResourceBalances} default 20;
 param CostTransformer_inv2{l in ResourceBalances} default 70;
 
+
 # Lines additional capacities
 set ReinforcementLineOfLayer{ResourceBalances} default {};
 var LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];

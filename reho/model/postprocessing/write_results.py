@@ -32,6 +32,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df6 = df6.rename(columns={'GWP_house_constr': 'GWP_constr'})
 
 
+
+
         df71 = get_parameter_in_pandas(ampl, 'EMOO_CAPEX', multi_index=False)
         df72 = get_parameter_in_pandas(ampl, 'EMOO_OPEX', multi_index=False)
         df73 = get_parameter_in_pandas(ampl, 'EMOO_TOTEX', multi_index=False)
@@ -434,6 +436,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_District = pd.concat([df_House, df_District], axis=0)
     df_District.index.names = ['Hub']
     df_Results["df_District"] = df_District.sort_index()
+
+    df666 = get_variable_in_pandas(df, 'TransformerCapacityAdd')
+    print(df666)
 
     # df_beta
     df1 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_CAPEX_constraint', False)

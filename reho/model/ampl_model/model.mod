@@ -11,7 +11,7 @@ set Units;				# Set of units
 set House ordered;		# Set of houses (clusters)
 set Services;			# Set of services (2nd clusters)
 set Period;				# Set of periods (days)
-set PeriodStandard;		# Set of standard periods (not extreme) 
+set PeriodStandard;		# Set of standard periods (not extreme)
 set PeriodExtrem := {Period diff PeriodStandard};
 set Lca_kpi;
 set HP_Tsupply default {35,45,55};																	#-
@@ -22,7 +22,7 @@ param TimeEnd{p in Period};
 set Time{p in Period} := {TimeStart .. TimeEnd[p]} ordered;
 
 #-INDEX SETS (useful for inter-period energy balance appart from the extreme periods)
-set Year := {1..8760} circular; 
+set Year := {1..8760} circular;
 param PeriodOfYear{y in Year} default 1;
 param TimeOfYear{y in Year} default 1;
 
@@ -58,7 +58,7 @@ set ServicesOfStream{s in Streams} within Services := setof{se in Services,sl in
 #-STANDARD PHYSICAL VALUES
 param LHV_ng := 50018;						#kJ/kg
 param LKV_ng := 51757;						#kJ/kg
-param cp_water_kj := 4.18;					#KJ/kg K	
+param cp_water_kj := 4.18;					#KJ/kg K
 param rho_water := 1000;					#kg/m3
 param Pi := 4 * atan(1);					#-
 
@@ -76,10 +76,10 @@ param Streams_Tin{s in Streams,p in Period,t in Time[p]} default 90; 	#deg C
 param Streams_Tout{s in Streams,p in Period,t in Time[p]} default 80;  	#deg C
 param Streams_Hin{s in Streams}	default 0; 								#kJ/kg
 param Streams_Hout{s in Streams}default 0; 								#kJ/kg
-param Streams_Mcp{s in Streams,p in Period,t in Time[p]}:=  
-	if Streams_Tin[s,p,t]=Streams_Tout[s,p,t] then 
-		0 
-	else  
+param Streams_Mcp{s in Streams,p in Period,t in Time[p]}:=
+	if Streams_Tin[s,p,t]=Streams_Tout[s,p,t] then
+		0
+	else
 		(Streams_Hin[s]-Streams_Hout[s])/(Streams_Tin[s,p,t]-Streams_Tout[s,p,t])
 	; 																	#kJ/kg K
 
@@ -96,22 +96,22 @@ set UnitsOfDiscreteCost := setof{i in UnitsOfType['PV']} i;
 set UnitSizes{Units} default {};
 
 #-PARAMETERS
-param Units_Fmin{u in Units} default 0; 
+param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
-param Units_Fmid{u in UnitsOfDiscreteCost} default 15; 
-param ForceUse{u in Units} default 0;		
+param Units_Fmid{u in UnitsOfDiscreteCost} default 15;
+param ForceUse{u in Units} default 0;
 param ForceMult{u in Units} default 0;
 
 #-VARIABLES
-var Units_Mult{u in Units} in UnitSizes[u] <= Units_Fmax[u];							#var 
-var Units_Mult_1{u in UnitsOfDiscreteCost} in UnitSizes[u] <= Units_Fmax[u];	
-var Units_Mult_2{u in UnitsOfDiscreteCost} in UnitSizes[u] <= Units_Fmax[u];	
+var Units_Mult{u in Units} in UnitSizes[u] <= Units_Fmax[u];							#var
+var Units_Mult_1{u in UnitsOfDiscreteCost} in UnitSizes[u] <= Units_Fmax[u];
+var Units_Mult_2{u in UnitsOfDiscreteCost} in UnitSizes[u] <= Units_Fmax[u];
 
 var Units_Use{u in Units} binary >= 0, default 0;										#-
 var Units_Use_1{u in  UnitsOfDiscreteCost} binary >= 0, default 0;						#-
-var Units_Use_2{u in  UnitsOfDiscreteCost} binary >= 0, default 0;	
+var Units_Use_2{u in  UnitsOfDiscreteCost} binary >= 0, default 0;
 
-var Units_Use_t{u in UnitsOfPartLoad,p in Period,t in Time[p]} binary default 0;		#-								
+var Units_Use_t{u in UnitsOfPartLoad,p in Period,t in Time[p]} binary default 0;		#-
 var Units_Use_Mult_t{u in UnitsOfPartLoad,p in Period,t in Time[p]} >= 0;				#kW
 
 #-CONSTRAINTS
@@ -171,7 +171,7 @@ Units_Use[u] >= Units_Use_t[u,p,t];
 #-Filtering Layers and selecting only layers of type "ResourceBalance"
 set ResourceBalances := if (exists{t in LayerTypes} t = 'ResourceBalance') then ({l in LayersOfType["ResourceBalance"]}) else ({});
 
-#-Definition of units per layer and cluster  
+#-Definition of units per layer and cluster
 set MB_Units{l in ResourceBalances,h in HousesOfLayer[l]} := UnitsOfLayer[l] inter UnitsOfHouse[h];
 
 #-Defining liks between units
@@ -191,13 +191,13 @@ param Grids_flowrate_out{l in ResourceBalances, h in HousesOfLayer[l]}>=0 defaul
 
 #-VARIABLES
 #-Variable unit stream input and output
-var Units_supply{l in ResourceBalances, u in UnitsOfLayer[l], p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u]; 
+var Units_supply{l in ResourceBalances, u in UnitsOfLayer[l], p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in UnitsOfLayer[l], p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
-var Units_curtailment{l in ResourceBalances, u in UnitsOfLayer[l] , p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u]; 
-var Grid_supply{l in ResourceBalances, h in HousesOfLayer[l], p in Period, t in Time[p]} >= 0, <= Grids_flowrate_out[l,h]; 
+var Units_curtailment{l in ResourceBalances, u in UnitsOfLayer[l] , p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
+var Grid_supply{l in ResourceBalances, h in HousesOfLayer[l], p in Period, t in Time[p]} >= 0, <= Grids_flowrate_out[l,h];
 var Grid_demand{l in ResourceBalances, h in HousesOfLayer[l], p in Period, t in Time[p]} >= 0, <= Grids_flowrate_in[l,h];
-var Network_supply{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= sum{h in HousesOfLayer[l]} Grids_flowrate_out[l,h]; 
-var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= sum{h in HousesOfLayer[l]} Grids_flowrate_in[l,h]; 
+var Network_supply{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= sum{h in HousesOfLayer[l]} Grids_flowrate_out[l,h];
+var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= sum{h in HousesOfLayer[l]} Grids_flowrate_in[l,h];
 
 #-CONSTRAINTS
 subject to MB_electricity{h in House, p in Period, t in Time[p]}:
@@ -210,8 +210,8 @@ subject to MB_c2{l in ResourceBalances,p in Period,t in Time[p]}:
 	 Network_demand[l,p,t] + sum{i in HousesOfLayer[l]}(Grid_supply[l,i,p,t]) -sum {b in UnitsOfDistrict inter UnitsOfLayer[l]} Units_supply[l,b,p,t] =
 	  Network_supply[l,p,t] + sum{j in HousesOfLayer[l]}(Grid_demand[l,j,p,t]) -sum {r in UnitsOfDistrict inter UnitsOfLayer[l]} Units_demand[l,r,p,t] ;
 
-	
-	
+
+
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 #---HEAT CASCADE
@@ -221,14 +221,14 @@ subject to MB_c2{l in ResourceBalances,p in Period,t in Time[p]}:
 #-STREAMS
 #--------------------------------------------------------------------------------------------------------------------#
 #-SETS
-#--Hot streams 
+#--Hot streams
 set HC_Hot within {st in Streams} := {s in Streams: Streams_Hout[s] < Streams_Hin[s]};
 set HC_Hot_loc {h in House} within {st in Streams}:= {s in HC_Hot : s in StreamsOfHouse[h]};
 	check {h in House: card(Streams) > 0}: card(HC_Hot_loc[h]) > 0;
 set HC_Hot_loc_SQ {h in House,sq in Services} within {st in Streams}:= ({s in HC_Hot_loc[h] : s in StreamsOfService[sq]});
 	check {h in House,sq in Services: card(Streams) > 0}: card(HC_Hot_loc_SQ[h,sq]) > 0;
 
-#--Cold streams 
+#--Cold streams
 set HC_Cold within {st in Streams} := {s in Streams: Streams_Hout[s]>Streams_Hin[s]};
 set HC_Cold_loc {h in House} within {st in Streams}:= {s in HC_Cold : s in StreamsOfHouse[h]};
 	check {h in House: card(Streams) > 0}: card(HC_Cold_loc[h]) > 0;
@@ -247,7 +247,7 @@ var HC_Streams_Mult{sq in Services,s in StreamsOfService[sq],p in Period,t in Ti
 var Streams_Q{sq in Services,s in StreamsOfService[sq],p in Period,t in Time[p]}>=0,<=1e8;
 
 #-CONSTRAINTS
-subject to Streams_Q_def{sq in Services,s in StreamsOfService[sq],p in Period,t in Time[p]}: 
+subject to Streams_Q_def{sq in Services,s in StreamsOfService[sq],p in Period,t in Time[p]}:
 Streams_Q[sq,s,p,t] = Streams_Mcp[s,p,t] * HC_Streams_Mult[sq,s,p,t] * abs(Streams_Tin[s,p,t] - Streams_Tout[s,p,t]);
 
 
@@ -255,13 +255,13 @@ Streams_Q[sq,s,p,t] = Streams_Mcp[s,p,t] * HC_Streams_Mult[sq,s,p,t] * abs(Strea
 #-HEAT CASCADE
 #--------------------------------------------------------------------------------------------------------------------#
 #-SETS
-set HC_TempIntervals_SQ{h in House,sq in Services,p in Period,t in Time[p]} ordered by Reals := 
-setof {s in HC_Hot_loc_SQ[h,sq] union HC_Cold_loc_SQ[h,sq]} Streams_Tin_corr[s,p,t] union 
-setof {s in HC_Hot_loc_SQ[h,sq] union HC_Cold_loc_SQ[h,sq]} Streams_Tout_corr[s,p,t]; 
+set HC_TempIntervals_SQ{h in House,sq in Services,p in Period,t in Time[p]} ordered by Reals :=
+setof {s in HC_Hot_loc_SQ[h,sq] union HC_Cold_loc_SQ[h,sq]} Streams_Tin_corr[s,p,t] union
+setof {s in HC_Hot_loc_SQ[h,sq] union HC_Cold_loc_SQ[h,sq]} Streams_Tout_corr[s,p,t];
 
 #-PARAMETERS
-param Min_T{h in House,sq in Services,p in Period,t in Time[p]} := min{k in HC_TempIntervals_SQ[h,sq,p,t]} k; 
-param Max_T{h in House,sq in Services,p in Period,t in Time[p]} := max{k in HC_TempIntervals_SQ[h,sq,p,t]} k; 
+param Min_T{h in House,sq in Services,p in Period,t in Time[p]} := min{k in HC_TempIntervals_SQ[h,sq,p,t]} k;
+param Max_T{h in House,sq in Services,p in Period,t in Time[p]} := max{k in HC_TempIntervals_SQ[h,sq,p,t]} k;
 param epsilon := 1e-5;
 
 #-VARIABLES
@@ -269,18 +269,18 @@ var HC_Rk{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempInterva
 
 #-CONSTRAINTS
 subject to HC_heat_cascade{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}:
-sum{st in HC_Hot_loc_SQ[h,sq]:Streams_Tout_corr[st,p,t]>= k + epsilon} 
+sum{st in HC_Hot_loc_SQ[h,sq]:Streams_Tout_corr[st,p,t]>= k + epsilon}
      (Streams_Mcp[st,p,t]*HC_Streams_Mult[sq,st,p,t]*(Streams_Tin_corr[st,p,t]-Streams_Tout_corr[st,p,t])) -
-	 
-sum{st in HC_Cold_loc_SQ[h,sq]:Streams_Tin_corr[st,p,t]>= k + epsilon} 
+
+sum{st in HC_Cold_loc_SQ[h,sq]:Streams_Tin_corr[st,p,t]>= k + epsilon}
     (Streams_Mcp[st,p,t]*HC_Streams_Mult[sq,st,p,t]*(Streams_Tout_corr[st,p,t]-Streams_Tin_corr[st,p,t])) +
-	
+
 sum{st in HC_Hot_loc_SQ[h,sq]:Streams_Tout_corr[st,p,t]<= k and Streams_Tin_corr[st,p,t]>= k + epsilon}
      (Streams_Mcp[st,p,t]*HC_Streams_Mult[sq,st,p,t]*(Streams_Tin_corr[st,p,t] - k)) -
-	 
+
 sum{st in HC_Cold_loc_SQ[h,sq]:Streams_Tin_corr[st,p,t]<= k and Streams_Tout_corr[st,p,t]>= k + epsilon}
     (Streams_Mcp[st,p,t]*HC_Streams_Mult[sq,st,p,t]*(Streams_Tout_corr[st,p,t] - k ))
-	
+
 -HC_Rk[h,sq,p,t,k]=0;
 
 
@@ -311,7 +311,7 @@ sum{st in HC_Cold_loc_SQ[h,sq]: Streams_Tout_corr[st,p,t]>=k+epsilon} (Streams_M
 param ts := 3600;				#s
 param dt{Period} default 1;		#h
 param dp{Period} default 1;		#days
-param lifetime{u in Units} default 20;	
+param lifetime{u in Units} default 20;
 param GWP_supply_cst{l in ResourceBalances} default 0.100;
 param GWP_demand_cst{l in ResourceBalances} default 0.0; 						#-
 param GWP_supply{l in ResourceBalances,p in Period,t in Time[p]} default GWP_supply_cst[l];
@@ -321,14 +321,14 @@ param GWP_unit2{u in Units} default 0;
 var GWP_house_op{h in House};
 var GWP_op;
 var GWP_Unit_constr{u in Units} >= 0;
-var GWP_house_constr{h in House} >=0; 
-var GWP_constr>=0; 
+var GWP_house_constr{h in House} >=0;
+var GWP_constr>=0;
 
 
-subject to Annual_CO2_operation_house{h in House}: 
+subject to Annual_CO2_operation_house{h in House}:
 GWP_house_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]} (GWP_supply[l,p,t]*Grid_supply[l,h,p,t]-GWP_demand[l,p,t]*Grid_demand[l,h,p,t]) *dp[p]*dt[p];
 
-subject to Annual_CO2_operation: 
+subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]}(GWP_supply[l,p,t]*Network_supply[l,p,t]-GWP_demand[l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
 
 subject to Annual_CO2_construction_unit{u in Units}:
@@ -344,9 +344,9 @@ GWP_constr = sum{ u in Units} GWP_Unit_constr[u];
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
 param lca_kpi_2{k in Lca_kpi, u in Units} default 0;
 param lca_kpi_supply_cst{k in Lca_kpi, l in ResourceBalances} default 0.1;
-param lca_kpi_demand_cst{k in Lca_kpi, l in ResourceBalances} default 0.0; 
+param lca_kpi_demand_cst{k in Lca_kpi, l in ResourceBalances} default 0.0;
 param lca_kpi_supply{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_supply_cst[k,l];
-param lca_kpi_demand{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_demand_cst[k,l];	
+param lca_kpi_demand{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_demand_cst[k,l];
 
 var lca_op{k in Lca_kpi, l in ResourceBalances} default 0;
 var lca_units{k in Lca_kpi, u in Units} default 0;
@@ -377,7 +377,7 @@ lca_tot_house[k, h] = sum{u in UnitsOfHouse[h]} lca_units[k, u] + sum{l in Resou
 #-CAPITAL EXPENSES
 #--------------------------------------------------------------------------------------------------------------------#
 #-PARAMETERS
-param Costs_House_limit{h in House} default 0;						#CHF/yr 
+param Costs_House_limit{h in House} default 0;						#CHF/yr
 param Cost_inv1{u in Units} default 0;								#CHF
 param Cost_inv2{u in Units} default 0;								#CHF/...
 param Cost_inv1_2{u in UnitsOfDiscreteCost} default Cost_inv1[u]; 	#
@@ -428,13 +428,13 @@ subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacityAdd[l,h]+CostLine_inv2[l]*LineCapacityAdd[l,h]*Line_Length[h,l]);
 
 subject to Costs_House_replacement{h in House}:
-Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
+Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 subject to Costs_Grid_supply:
-Costs_inv =  sum{u in Units}(Costs_Unit_inv[u])+ sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacityAdd[l]+CostTransformer_inv2[l] * TransformerCapacityAdd[l]);
+Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]);#+ sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacityAdd[l]+CostTransformer_inv2[l] * TransformerCapacityAdd[l]);
 
 subject to Costs_replacement:
-Costs_rep =  sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
+Costs_rep =  sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 
 #--------------------------------------------------------------------------------------------------------------------#
@@ -455,12 +455,12 @@ var Costs_op;
 
 #-CONSTRAINTS
 subject to Costs_house_opex{h in House}:
-Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply[h,l,p,t]*Grid_supply[l,h,p,t] - Cost_demand[h,l,p,t]*Grid_demand[l,h,p,t])*dp[p]*dt[p]); 
+Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply[h,l,p,t]*Grid_supply[l,h,p,t] - Cost_demand[h,l,p,t]*Grid_demand[l,h,p,t])*dp[p]*dt[p]);
 
 subject to Costs_opex:
-Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t])*dp[p]*dt[p]); 
+Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t])*dp[p]*dt[p]);
 
-	
+
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 #---BUILDING MODEL
@@ -514,12 +514,12 @@ Costs_House_cft[h] = sum{p in PeriodStandard,t in Time[p]} T_penality[h]*(T_inf[
 #--------------------------------------------------------------------------------------------------------------------#
 #-PARAMETERS
 #-Design parameters
-param Tc_out_0 default 35;																																#deg C	: Warm nominal ambient temperature 
+param Tc_out_0 default 35;																																#deg C	: Warm nominal ambient temperature
 param Th_out_0 default if card(Period) > 1 then T_ext[card(Period)-1,1] else -6;															#deg C	: Cold nominal ambient temperature
-param Tc_supply_0{h in House} default 12;																												#deg C	: Warm nominal supply temperature 
-param Th_supply_0{h in House} default 65;																												#deg C	: Cold nominal supply temperature 	
-param Tc_return_0{h in House} default 17;																												#deg C	: Warm nominal return temperature 
-param Th_return_0{h in House} default 50;																												#deg C	: Cold nominal return temperature 	
+param Tc_supply_0{h in House} default 12;																												#deg C	: Warm nominal supply temperature
+param Th_supply_0{h in House} default 65;																												#deg C	: Cold nominal supply temperature
+param Tc_return_0{h in House} default 17;																												#deg C	: Warm nominal return temperature
+param Th_return_0{h in House} default 50;																												#deg C	: Cold nominal return temperature
 param Th_threshold{h in House} default 16;																												#deg C																																																						#m2
 param Qc_0{h in House} 		:= U_h[h]*ERA[h]*(Tc_out_0-T_comfort_min_0[h]);																						#kW
 param Qh_0{h in House} 		:= U_h[h]*ERA[h]*(T_comfort_min_0[h]-Th_out_0);																						#kW
@@ -541,23 +541,23 @@ param Tc_return{h in House,p in Period,t in Time[p]} 	:= T_comfort_min_0[h] - Qc
 param Tc_supply{h in House,p in Period,t in Time[p]} 	:= -Qc[h,p,t]/Mcp_0c[h] + Tc_return[h,p,t];
 
 #-SETS
-set Houseindex_heating ordered by Reals	:= {1,2,3,4,5};	
-set Houseindex_cooling ordered by Reals	:= {1,2,3,4,5};	
+set Houseindex_heating ordered by Reals	:= {1,2,3,4,5};
+set Houseindex_cooling ordered by Reals	:= {1,2,3,4,5};
 
-#-Non-standard requirements																					
+#-Non-standard requirements
 param House_Q_heating_max_d{h in House,p in Period,t in Time[p],i in Houseindex_heating} := Qh[h,p,t]+(i-3)*0.25*Qh_0[h]+epsilon;		#kW
 param House_Q_cooling_max_d{h in House,p in Period,t in Time[p],i in Houseindex_cooling} := Qc[h,p,t]+(i-3)*0.25*Qc_0[h]+epsilon;		#kW
-	
-													
+
+
 #-CONSTRAINTS
-#-heating 
+#-heating
 subject to House_streams_heating_c1{h in House,p in Period,t in Time[p]}:
 sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='SH' and Streams_Hin[st]=0}(Streams_Mcp[st,p,t]*HC_Streams_Mult[se,st,p,t]) <= Mcp_0h[h];
 
 subject to House_streams_heating_c2{h in House,p in Period,t in Time[p]}:
 sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='SH' and Streams_Hin[st]=0}(Streams_Q[se,st,p,t]) = House_Q_heating[h,p,t];
 
-#-cooling 
+#-cooling
 #subject to House_streams_cooling_c1{h in House,p in Period,t in Time[p]}:
 #sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='Cooling' and Streams_Hout[st]=0}(Streams_Mcp[st,p,t]*HC_Streams_Mult[se,st,p,t]) <= Mcp_0c[h];
 
@@ -575,7 +575,7 @@ subject to House_EB_cyclic1{h in House,p in Period,t in Time[p]:t=last(Time[p])}
 
 #-additional constraints
 subject to no_ElectricalHeater_without_HP{h in House}:
-2 * sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ElectricalHeater'] inter UnitsOfHouse[h]} Units_Use[ui]; 
+2 * sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ElectricalHeater'] inter UnitsOfHouse[h]} Units_Use[ui];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#

@@ -16,7 +16,13 @@
 # [6]	https://www.tcs.ch/fr/tests-conseils/conseils/mobilite-electrique/voiture-electrique-2021.php
 # [7]	https://www.tcs.ch/fr/tests-conseils/conseils/environnement-mobilite/recharge-electrique.php
 # ----------------------------------------- PARAMETERS ---------------------------------------
-# param max_n_vehicles default sum{h in House}(2);
+
+# Usage
+param n_EVperhab default 0.5;
+param n_EV_max := n_EVperhab * Population; 
+param ff_EV default 1.56;
+
+# Technical caracteriques
 param EV_eff_ch default 0.9;				#-	[1] both charging station efficiency and battery efficiency
 param EV_eff_di default 0.9;				#-	[1]
 param EV_limit_ch default 0.8;				#-	[2]
@@ -27,9 +33,7 @@ param EV_capacity default 70;		#kWh 	[5] and [6]
 param EV_plugged_out{p in Period, t in Time[p]} default 0.15;	# -
 param EV_plugging_in{p in Period, t in Time[p]} default 0.15;	# -
 param normalization_factor :=  max{p in PeriodStandard} ( sum{t in Time[p]}EV_plugging_in[p,t]);
-
-param n_EVperhab default 0.5;
-param n_EV_max := n_EVperhab * Population; 
+param EV_mobeff default 6; # km/kWh
 
 # param EV_displacement_init{p in Period} := 
 # 		if p in PeriodStandard then 23.8 * 1.56 / 6 / normalization_factor	# km/person/day * person/car / km/kWh / normalisation factor 	[4] p.30, 32 and [5] 
@@ -60,7 +64,7 @@ subject to EV_EB_c3{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] =  EV_E_stored_plug_in[u,p,t] + EV_E_stored_plug_out[u,p,t];
 
 subject to EV_EB_mobilitykm{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]) / 1.56 / 6 * EV_plugging_in[p,t] = EV_E_mob[u,p,t] ; # pkm * car/pers * kWh/km * share of EV coming back
+sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]) / ff_EV / EV_mobeff * EV_plugging_in[p,t] = EV_E_mob[u,p,t] ; # pkm * car/pers * kWh/km * share of EV coming back
 
 subject to EV_EB_upper_bound1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] <= EV_capacity * n_vehicles[u];

@@ -52,7 +52,7 @@ path_to_weather = os.path.join(path_to_data, 'weather')
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
 path_to_configurations = os.path.join(os.getcwd(), 'configurations')
-
+path_to_mobility = os.path.join(os.getcwd(), 'data', 'mobility')
 
 def path_handler(path_given):
     """To handle the path to csv file, absolute path or not"""

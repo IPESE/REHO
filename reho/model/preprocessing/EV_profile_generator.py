@@ -89,7 +89,7 @@ def generate_EV_plugged_out_profiles_district(cluster):
     return EV_plugged_out, EV_plugging_in
 
 
-def generate_mobility_demand_profile(cluster):
+def generate_mobility_demand_profile(cluster,population):
     """
     Based on EV_profile_generator_structure
 
@@ -122,9 +122,9 @@ def generate_mobility_demand_profile(cluster):
                     }
 
     # read the profiles
-    profiles_input = pd.read_excel(os.path.join(path_to_mobility, "mobility_parameters.xlsx"),
-                                   sheet_name="Domestic_Demand")
-    population = 7.5 # to modify 
+    profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"),index_col=0)
+    # population = 7.5 # to modify 
+    profiles_input *= population
     # profiles_weekday = np.ones(24)*10  # test constant profile (2km each hour)
     # profiles_weekend = np.ones(24)*10  # test constant profile]
 
@@ -133,10 +133,12 @@ def generate_mobility_demand_profile(cluster):
     # iter over the typical periods 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
         try:
-            profile = profiles_input[['Time', days_mapping[day]]].copy()
+            profile = profiles_input[[days_mapping[day]]].copy()
         except:
             raise ("day type not possible")
-        profile.rename(columns={"Time": "t", days_mapping[day]: "Domestic_energy"}, inplace=True)
+        profile.rename(columns={ days_mapping[day]: "Domestic_energy"}, inplace=True)
+        profile.index.name = 't'
+        profile.reset_index(inplace=True)
         profile['p'] = j + 1
 
         mobility_demand = pd.concat([mobility_demand, profile])

@@ -201,7 +201,9 @@ class compact_optimization:
         if 'Bike' in self.infrastructure_compact.UnitTypes:
             ampl.cd(path_to_district_units)
             ampl.read('bike.mod')
-            # ampl.read('proxy_mobilitydemand.mod')
+        if 'ICE' in self.infrastructure_compact.UnitTypes:
+            ampl.cd(path_to_district_units)
+            ampl.read('ice.mod')
         # Storage Units
         ampl.cd(path_to_units_storage)
         if 'WaterTankSH' in self.infrastructure_compact.UnitTypes:
@@ -332,7 +334,7 @@ class compact_optimization:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
                     self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact)
-                    self.parameters_to_ampl["Domestic_energy"], xx = EV_gen.generate_mobility_demand_profile(self.cluster_compact)
+                    self.parameters_to_ampl["Domestic_energy"], xx = EV_gen.generate_mobility_demand_profile(self.cluster_compact,self.parameters_compact['Population'])
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#

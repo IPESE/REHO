@@ -9,7 +9,7 @@
 
 
 # ----------------------------------------- PARAMETERS ---------------------------------------
-param max_speed default 13.3; # pkm per hour [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
+# param max_speed default 13.3; # pkm per hour [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
 param max_distperday default 20; # pkm moyenne mobilité douce : 2.8km per day [1] T 3.3.1.1
 param n_bikesperhab default 0.9;
 param max_n_bikes := n_bikesperhab * Population;
@@ -21,7 +21,7 @@ var share_bike >= 0;
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
 subject to Bikes_c1{u in UnitsOfType['Bike'],p in Period,t in Time[p]}:
-Units_supply['Mobility',u,p,t] <= max_speed * n_bikes;
+Units_supply['Mobility',u,p,t] <= Mode_Speed[u] * n_bikes;
 
 subject to Bikes_c2{u in UnitsOfType['Bike'],p in Period}:
 sum {i in Time[p]}(Units_supply['Mobility',u,p,i]) <= max_distperday * n_bikes ;

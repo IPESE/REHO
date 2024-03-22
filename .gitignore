@@ -317,8 +317,17 @@ reho/data/weather/hour/*
 !reho/data/weather/hour/Luzern-hour.dat
 !reho/data/weather/hour/Piotta-hour.dat
 !reho/data/weather/hour/Zuerich-Kloten-hour.dat
+reho/data/emissions/method 1Geneva_10_24_T_I_W.dat
+reho/data/emissions/GWP100aGeneva_10_24_T_I_W.dat
 
 # Scripts
 scripts/*
 !scripts/examples/
 !scripts/template/
+!scripts/solene/
+
+
+# Personnal
+reho/model/ampl_model/units/motivationbike.mod
+reho/REHO2024.code-workspace
+.vscode/launch.json

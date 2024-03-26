@@ -201,8 +201,10 @@ var DHN_inv_house{h in House} >= 0;
 set ReinforcementTrOfLayer{ResourceBalances} default {};
 var TransformerCapacityAdd{l in ResourceBalances} in ReinforcementTrOfLayer[l];
 var Use_TransformerCapacityAdd{l in ResourceBalances} binary;
-param CostTransformer_inv1{l in ResourceBalances} default 20;
-param CostTransformer_inv2{l in ResourceBalances} default 20;
+param CostTransformer_inv1{l in ResourceBalances}>=0 default 0;
+param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
+param GWP_Transformer1{l in ResourceBalances} default 0;
+param GWP_Transformer2{l in ResourceBalances} default 0;
 
 # Lines additional capacities
 #set ReinforcementLineOfLayer{ResourceBalances} default {};
@@ -211,7 +213,8 @@ param CostTransformer_inv2{l in ResourceBalances} default 20;
 #param CostLine_inv1{l in ResourceBalances} default 20;
 #param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
 #param Line_Length{h in House,l in ResourceBalances} default 10;
-
+#param GWP_Line1{l in ResourceBalances} default 0;
+#param GWP_Line2{l in ResourceBalances} default 0;
 
 #-CONSTRAINTS
 
@@ -273,7 +276,7 @@ subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
 
 subject to CO2_construction:
-GWP_constr = sum {u in Units} GWP_Unit_constr[u] + sum{h in House} GWP_House_constr[h];
+GWP_constr = sum {u in Units} (GWP_Unit_constr[u] + sum{h in House} GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacityAdd[l]+GWP_Transformer2[l] * TransformerCapacityAdd[l]);
 
 subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} (GWP_supply[l,p,t] * Network_supply_GWP[l,p,t] - GWP_demand[l,p,t] * Network_demand_GWP[l,p,t]);

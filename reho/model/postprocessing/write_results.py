@@ -160,15 +160,20 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df2 = get_variable_in_pandas(df, 'Use_LineCapacityAdd')
         df3 = get_parameter_in_pandas(ampl, 'CostLine_inv1', multi_index=False)
         df4 = get_parameter_in_pandas(ampl, 'CostLine_inv2', multi_index=False)
+        df5 = get_parameter_in_pandas(ampl, 'GWP_Line1', multi_index=False)
+        df6 = get_parameter_in_pandas(ampl, 'GWP_Line2', multi_index=False)
 
         df3.index.names = ['Layer']
         df4.index.names = ['Layer']
+        df5.index.names = ['Layer']
+        df6.index.names = ['Layer']
         df_12 = pd.concat([df1,df2],axis=1,sort=True)
         df_12.columns = ['CapacityAdd', 'UseCapacityAdd']
         df_12.index.names=['Layer','Hub']
         #df_Grid = pd.concat([df_12.swaplevel(), df34.swaplevel()], sort=True)
         df_Grid=df_12.swaplevel().sort_index()
         df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostLine_inv1']+df_Grid['CapacityAdd'] * df4['CostLine_inv2']
+        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacityAdd'] * df5['GWP_Line1'] + df_Grid['CapacityAdd'] * df6['GWP_Line2']
         print(df_Grid)
         return df_Grid
 
@@ -426,8 +431,13 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df2 = get_variable_in_pandas(df, 'Use_TransformerCapacityAdd')
     df3 = get_parameter_in_pandas(ampl, 'CostTransformer_inv1', multi_index=False)
     df4 = get_parameter_in_pandas(ampl, 'CostTransformer_inv2', multi_index=False)
+    df5 = get_parameter_in_pandas(ampl, 'GWP_Transformer1', multi_index=False)
+    df6 = get_parameter_in_pandas(ampl, 'GWP_Transformer2', multi_index=False)
+
     df3.index.names = ['Layer']
     df4.index.names = ['Layer']
+    df5.index.names = ['Layer']
+    df6.index.names = ['Layer']
 
     df12 = pd.concat([df1, df2], axis=1)
     df12.columns=['CapacityAdd', 'UseCapacityAdd']
@@ -435,9 +445,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df12['Hub']='Network'
     df12.set_index('Hub', append=True, inplace=True)
     df_Grid=df12.swaplevel().sort_index()
-    df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostTransformer_inv1'] + df_Grid['CapacityAdd'] * \
-                                   df4['CostTransformer_inv2']
-
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostTransformer_inv1'] + df_Grid['CapacityAdd'] * df4['CostTransformer_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacityAdd'] * df5['GWP_Transformer1'] + df_Grid['CapacityAdd'] * df6['GWP_Transformer2']
 
     df_Results['df_Grid'] = df_Grid
 

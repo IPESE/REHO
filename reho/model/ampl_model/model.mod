@@ -298,6 +298,26 @@ sum{st in HC_Hot_loc_SQ[h,sq]:Streams_Tout_corr[st,p,t] <= k-epsilon} (Streams_M
 subject to HC_upperbound_Balance{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]: k=Max_T[h,sq,p,t]}:
 sum{st in HC_Cold_loc_SQ[h,sq]: Streams_Tout_corr[st,p,t]>=k+epsilon} (Streams_Mcp[st,p,t]*HC_Streams_Mult[st,sq,p,t]*(Streams_Tout_corr[st,p,t] - k)) = 0;
 
+# Transformer additional capacity
+set ReinforcementTrOfLayer{ResourceBalances} default {};
+var TransformerCapacityAdd{l in ResourceBalances} in ReinforcementTrOfLayer[l];
+var Use_TransformerCapacityAdd{l in ResourceBalances} binary;
+param CostTransformer_inv1{l in ResourceBalances}>=0 default 0;
+param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
+param GWP_Transformer1{l in ResourceBalances} default 0;
+param GWP_Transformer2{l in ResourceBalances} default 0;
+
+
+# Lines additional capacities
+set ReinforcementLineOfLayer{ResourceBalances} default {};
+var LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
+var Use_LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
+param CostLine_inv1{l in ResourceBalances} default 0;
+param CostLine_inv2{l in ResourceBalances} default 0; # [CHF/kW/m]
+param Line_Length{h in House,l in ResourceBalances} default 10;
+param GWP_Line1{l in ResourceBalances} default 0;
+param GWP_Line2{l in ResourceBalances} default 0;
+
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -335,10 +355,10 @@ subject to Annual_CO2_construction_unit{u in Units}:
 GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
-GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u]);
+GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacityAdd[l,h]+GWP_Line2[l]*LineCapacityAdd[l,h]*Line_Length[h,l]);
 
 subject to Annual_CO2_construction:
-GWP_constr = sum{ u in Units} GWP_Unit_constr[u];
+GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacityAdd[l,h]+GWP_Line2[l]*LineCapacityAdd[l,h]*Line_Length[h,l]);
 
 
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
@@ -394,21 +414,6 @@ var Costs_House_rep{h in House} >= Costs_House_limit[h];
 var Costs_inv >= 0;
 var Costs_rep >= 0;
 
-# Transformer additional capacity
-set ReinforcementTrOfLayer{ResourceBalances} default {};
-var TransformerCapacityAdd{l in ResourceBalances} in ReinforcementTrOfLayer[l];
-var Use_TransformerCapacityAdd{l in ResourceBalances} binary;
-param CostTransformer_inv1{l in ResourceBalances} default 20;
-param CostTransformer_inv2{l in ResourceBalances} default 70;
-
-
-# Lines additional capacities
-set ReinforcementLineOfLayer{ResourceBalances} default {};
-var LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
-var Use_LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
-param CostLine_inv1{l in ResourceBalances} default 20;
-param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
-param Line_Length{h in House,l in ResourceBalances} default 10;
 
 
 #-CONSTRAINTS

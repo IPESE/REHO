@@ -840,7 +840,7 @@ class reho(district_decomposition):
         return df
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
-        df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.csv_data["emissions_matrix"])
+        df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.csv_data["timestamp"], self.csv_data["emissions_matrix"])
         self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
         self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_eco
         if self.method['building-scale']:

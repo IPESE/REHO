@@ -72,7 +72,7 @@ def skydome_to_df(csv_data):
     return df_dome
 
 
-def irradiation_to_df(ampl, irradiation, File_ID):
+def irradiation_to_df(ampl, irradiation, timestamp):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
@@ -88,8 +88,8 @@ def irradiation_to_df(ampl, irradiation, File_ID):
     df_IRR.index = pd.to_datetime(df_IRR.index)
 
     # get relevant cluster information
-    thisfile = os.path.join(path_to_clustering, 'timestamp_'+ File_ID +'.dat')
-    df = pd.read_csv(thisfile, delimiter='\t', parse_dates=[0])
+    #thisfile = os.path.join(path_to_clustering, 'timestamp_'+ File_ID +'.dat')
+    df = timestamp #pd.read_csv(thisfile, delimiter='\t', parse_dates=[0])
     PeriodDuration  = ampl.getParameter('TimeEnd').getValues().toPandas()
 
     # construct Multiindex
@@ -135,12 +135,12 @@ def irradiation_to_df_general(irradiation):
     return df_IRR
 
 
-def irradiation_to_typical_df(typical_days_string):
+def irradiation_to_typical_df(typical_days_string,irradiation):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
-    filename = os.path.join(path_to_skydome, 'total_irradiation.csv')
-    df_profiles = pd.read_csv(filename, sep=",", parse_dates=[1])
+    #filename = os.path.join(path_to_skydome, 'total_irradiation.csv')
+    df_profiles = irradiation #pd.read_csv(filename, sep=",", parse_dates=[1])
     df_profiles.set_index('time', inplace=True)
 
     df_profiles.index = pd.to_datetime(df_profiles.index)

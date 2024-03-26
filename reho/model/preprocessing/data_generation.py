@@ -9,15 +9,15 @@ __doc__ = """
 *Generates the buildings profiles : 1) Domestic hot water (DHW), 2) Domestic electricity, 3) Heat gains, 4) Solar gains.*
 """
 
-def annual_to_typical(cluster, annual_file, typical_file=None):
+def annual_to_typical(cluster, annual_file, timestamp_data, typical_file=None):
     """
     From an annual profile, with 8760 values, extracts the values corresponding to the typical days.
     """
 
     # Get which days are the typical ones
-    File_ID = get_cluster_file_ID(cluster)
-    timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    df_time = pd.read_csv(timestamp_file, delimiter='\t')
+    #File_ID = get_cluster_file_ID(cluster)
+    #timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
+    df_time = timestamp_data #pd.read_csv(timestamp_file, delimiter='\t')
     typical_days = df_time.Date.apply(lambda date: date[0:-3]).values
 
     df_annual = file_reader(annual_file)
@@ -54,7 +54,7 @@ def profile_reference_temperature(parameters_to_ampl, cluster):
     return np_temperature
 
 
-def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
+def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data, timestamp_file,
                        include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
     Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
@@ -112,8 +112,8 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
     >>>     build_eud_profiles(buildings_data, file_id, cluster, use_custom_profiles=my_profiles)
     """
     # get cluster information
-    timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    df = pd.read_csv(timestamp_file, delimiter='\t')
+    #timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
+    df = timestamp_file #pd.read_csv(timestamp_file, delimiter='\t')
     df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
     #path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
@@ -126,7 +126,7 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
     if use_custom_profiles:
         # Replace filepath in dictionary to typical profiles
         for key, val in use_custom_profiles.items():
-            use_custom_profiles[key] = annual_to_typical(cluster, annual_file=val)
+            use_custom_profiles[key] = annual_to_typical(cluster, timestamp_file, annual_file=val)
 
     for b in buildings_data:  # iterate over buildings
         # get SIA Profiles
@@ -298,8 +298,8 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
     """
     # Number of days computation
     PeriodDuration = ampl.getParameter('TimeEnd').getValues().toPandas()
-    timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    df = pd.read_csv(timestamp_file, delimiter='\t')
+    #timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
+    df = csv_data["timestamp_2"] #pd.read_csv(timestamp_file, delimiter='\t')
     df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
     frequency_dict = pd.Series(df.Frequency.values, index=df.Date).to_dict()
@@ -309,13 +309,13 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
 
     # get west_facades irradiation
     # check if irradiation already exists:
-    filename = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt')
+    filename = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt') # substitute filename, since it is in district_decomposition?
     if not os.path.exists(filename):
         total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
         df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, csv_data, total_irradiation, frequency_dict)
         np.savetxt(filename, irr_west)
     else:
-        irr_west = pd.read_csv(filename, header=None)[0].values
+        irr_west = csv_data["westfacades_irr"] #pd.read_csv(filename, header=None)[0].values
 
     g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
     g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds

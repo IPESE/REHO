@@ -19,11 +19,11 @@ def find_average_value(country, metric, emissions_matrix):
     return average
 
 
-def annual_to_typical_emissions(cluster, File_ID, country, metric, emissions_matrix):
+def annual_to_typical_emissions(cluster, timestamp_file, country, metric, emissions_matrix):
 
     # get relevant cluster information
-    filename = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    df = pd.read_csv(filename, delimiter='\t', parse_dates=[0])
+    #filename = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
+    df = timestamp_file #pd.read_csv(filename, delimiter='\t', parse_dates=[0])
     if isinstance(cluster, pd.DataFrame):
         PeriodDuration = cluster[["TimeEnd"]]
     else:
@@ -69,7 +69,7 @@ def annual_to_typical_emissions(cluster, File_ID, country, metric, emissions_mat
     return df_E
 
 
-def return_typical_emission_profiles(cluster, File_ID, metric, emissions_matrix):
+def return_typical_emission_profiles(cluster, File_ID, timestamp_file, metric, emissions_matrix):
 
     country = 'CH'
     emission_file = os.path.join(path_to_clustering, metric + '_' + File_ID + '.dat')
@@ -77,7 +77,7 @@ def return_typical_emission_profiles(cluster, File_ID, metric, emissions_matrix)
     if os.path.exists(emission_file):
         df_E = pd.read_csv(emission_file, index_col=[0, 1, 2])
     else:
-        df_E = annual_to_typical_emissions(cluster, File_ID, country, metric, emissions_matrix)
+        df_E = annual_to_typical_emissions(cluster, timestamp_file, country, metric, emissions_matrix)
         df_E.to_csv(emission_file)
 
     return df_E

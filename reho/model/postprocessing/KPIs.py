@@ -268,7 +268,7 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
 
 
 def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, cluster,
-                                 infrastructure, emissions_matrix):
+                                 infrastructure, timestamp_file, emissions_matrix):
     # --------------------------------------------------------------------
     # emissions
     # --------------------------------------------------------------------
@@ -309,7 +309,7 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
     df_el_net = df_profiles_net.xs('Electricity', level=0)
 
     File_ID = WD.get_cluster_file_ID(cluster)
-    res_profile = emissions.return_typical_emission_profiles(df_Time, File_ID, 'method 1', emissions_matrix)
+    res_profile = emissions.return_typical_emission_profiles(df_Time, File_ID, timestamp_file,'method 1', emissions_matrix)
     res_av = emissions.find_average_value('CH', 'method 1',emissions_matrix)
     s_RES_dy = pd.Series(dtype='float')
     s_RES_av = pd.Series(dtype='float')
@@ -495,7 +495,7 @@ def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
     return df_annual, df_annual_network
 
 
-def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, emissions_matrix):
+def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestamp_file, emissions_matrix):
     df_profiles = build_df_profiles_house(df_Results, infrastructure)
     df_profiles_network = df_Results["df_Grid_t"].xs('Network', level='Hub').copy()
 
@@ -557,7 +557,7 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, emission
     df_KPI['gwp_tot_m2'] = df_KPI['gwp_op_m2'] + df_KPI['gwp_constr_m2']  # [kgCO2-eq/m2/yr]
 
     df_G_RES = postcompute_average_emission(df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time,
-                                            cluster, infrastructure, emissions_matrix)
+                                            cluster, infrastructure, timestamp_file, emissions_matrix)
     df_KPI = pd.concat([df_KPI, df_G_RES[['gwp_elec_av', 'gwp_elec_dy']].div(df_hsA.ERA, axis=0)], axis=1)
     df_KPI = df_KPI.rename(
         columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})  # gwp_elec_av_m2    gwp_elec_dy_m2

@@ -103,7 +103,7 @@ class compact_optimization:
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
         if self.method_compact['use_pv_orientation']:
-            self.set_PV_models(ampl, File_ID)
+            self.set_PV_models(ampl)
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
         ampl = self.set_scenario(ampl)
 
@@ -151,6 +151,7 @@ class compact_optimization:
         ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl.setOption('presolve_fixeps', 1e-9)
         ampl.setOption('show_stats', 0)
+        ampl.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
         ampl.setOption('solver', self.solver)
@@ -169,6 +170,8 @@ class compact_optimization:
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_compact.UnitTypes:
             ampl.read('electrical_heater.mod')
+        if 'tap_water' in self.infrastructure_compact.UnitTypes:
+            ampl.read('tap_water.mod')
         if 'NG_Boiler' in self.infrastructure_compact.UnitTypes:
             ampl.read('ng_boiler.mod')
         if 'OIL_Boiler' in self.infrastructure_compact.UnitTypes:
@@ -308,7 +311,7 @@ class compact_optimization:
 
     def set_emissions_profiles(self, File_ID):
 
-        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a', self.csv_data["emissions_matrix"])
+        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, self.csv_data["timestamp"],'GWP100a', self.csv_data["emissions_matrix"])
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})
@@ -327,7 +330,7 @@ class compact_optimization:
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact)
+                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact, self.csv_data["timestamp_2"])
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -432,7 +435,7 @@ class compact_optimization:
 
 
 
-    def set_PV_models(self, ampl, File_ID):
+    def set_PV_models(self, ampl):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
         df_dome = SkyDome.skydome_to_df(self.csv_data)
@@ -442,7 +445,7 @@ class compact_optimization:
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
         #total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
-        df_irr = SkyDome.irradiation_to_df(ampl, self.csv_data["irradiation"], File_ID)
+        df_irr = SkyDome.irradiation_to_df(ampl, self.csv_data["irradiation"], self.csv_data["timestamp"])
         self.parameters_to_ampl['Irr'] = df_irr
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])

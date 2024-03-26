@@ -64,13 +64,25 @@ class district_decomposition:
         self.csv_data["df_cenpts"] = pd.read_csv(path_to_cenpts, header=None)
         self.csv_data["df_sia"] = pd.read_csv(path_sia, sep=';', index_col=[0], header=[0])
         self.csv_data["emissions_matrix"] = pd.read_csv(path_to_emissions_matrix, index_col = [0,1,2])
-        #self.csv_data["skydome"] = pd.read_csv(path_to_timestamp, index_col=[0])
+        self.csv_data["sia2024_data"] = pd.read_excel(path_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl',
+                           index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+
+
 
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
         else:
             self.cluster = cluster
         self.File_ID = WD.get_cluster_file_ID(self.cluster)
+
+        path_to_timestamp = os.path.join(path_to_clustering, 'timestamp_' + self.File_ID + '.dat')
+        path_to_westfacades_irr = os.path.join(path_to_clustering, 'westfacades_irr_' + self.File_ID + '.txt')
+        #path_to_emission_file = os.path.join(path_to_clustering, metric + '_' + self.File_ID + '.dat')
+        self.csv_data["timestamp"] = pd.read_csv(path_to_timestamp, delimiter='\t', parse_dates=[0])
+        self.csv_data["timestamp_2"] = pd.read_csv(path_to_timestamp, delimiter='\t')
+        self.csv_data["westfacades_irr"] = pd.read_csv(path_to_westfacades_irr, header=None)[0].values
+
+        #self.csv_data["timestamp_data_gen"] = pd.read_csv(path_to_timestamp)
 
         if parameters is None:
             self.parameters = {}
@@ -79,8 +91,8 @@ class district_decomposition:
 
         # Heat gains from electricity and people, domestic hot water demand, domestic electricity demand
         self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
-            DGF.build_eud_profiles(self.buildings_data, self.File_ID, self.cluster, self.csv_data["df_sia"], self.csv_data["sia2024_data"], self.method['include_stochasticity'],
-                                   self.method['sd_stochasticity'], self.method['use_custom_profiles'])
+            DGF.build_eud_profiles(self.buildings_data, self.File_ID, self.cluster, self.csv_data["df_sia"], self.csv_data["sia2024_data"], self.csv_data["timestamp_2"],
+                                   self.method['include_stochasticity'], self.method['sd_stochasticity'], self.method['use_custom_profiles'])
 
         if set_indexed is None:
             self.set_indexed = {}
@@ -349,6 +361,7 @@ class district_decomposition:
         ampl_MP.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl_MP.setOption('presolve_fixeps', 1e-9)
         ampl_MP.setOption('show_stats', 1)
+        ampl_MP.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
         ampl_MP.setOption('solver', self.solver)
@@ -444,7 +457,7 @@ class district_decomposition:
         if 'EV_plugged_out' not in MP_parameters:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
-                    MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster)
+                    MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster, self.csv_data["timestamp_2"])
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:

@@ -438,6 +438,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostTransformer_inv1'] + df_Grid['CapacityAdd'] * \
                                    df4['CostTransformer_inv2']
 
+
     df_Results['df_Grid'] = df_Grid
 
     # District

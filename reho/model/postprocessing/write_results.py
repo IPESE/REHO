@@ -40,8 +40,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df75 = get_parameter_in_pandas(ampl, 'EMOO_GWP', multi_index=False)
         df76 = get_parameter_in_pandas(ampl, 'EMOO_grid', multi_index=False)
 
-        df78 = get_parameter_in_pandas(ampl, 'Line_Length', multi_index=False)
-        print(df78)
 
         df_N1 = get_variable_in_pandas(df, 'Costs_op')  # without the comfort penalty costs
         df_N2 = get_variable_in_pandas(df, 'Costs_inv')
@@ -156,6 +154,25 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Unit_t = df_Unit_t.sort_index()
 
         return df_Unit, df_Unit_t
+
+    def set_df_grid_SP(df, ampl):
+        df1 = get_variable_in_pandas(df,'LineCapacityAdd')
+        df2 = get_variable_in_pandas(df, 'Use_LineCapacityAdd')
+        df3 = get_parameter_in_pandas(ampl, 'CostLine_inv1', multi_index=False)
+        df4 = get_parameter_in_pandas(ampl, 'CostLine_inv2', multi_index=False)
+
+        df3.index.names = ['Layer']
+        df4.index.names = ['Layer']
+        df_12 = pd.concat([df1,df2],axis=1,sort=True)
+        df_12.columns = ['CapacityAdd', 'UseCapacityAdd']
+        df_12.index.names=['Layer','Hub']
+        #df_Grid = pd.concat([df_12.swaplevel(), df34.swaplevel()], sort=True)
+        df_Grid=df_12.swaplevel().sort_index()
+        df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostLine_inv1']+df_Grid['CapacityAdd'] * df4['CostLine_inv2']
+        print(df_Grid)
+        return df_Grid
+
+
 
     def set_df_grid(df, ampl):
         # Grid_t
@@ -346,6 +363,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     df_Results["df_Annuals"] = set_df_annuals(df, ampl)
     df_Results["df_Buildings"] = set_df_buildings(buildings_data, df, ampl)
     df_Results["df_Unit"], df_Results["df_Unit_t"] = set_df_unit(df, ampl)
+    df_Results["df_Grid"] = set_df_grid_SP(df, ampl)
     df_Results["df_Grid_t"] = set_df_grid(df, ampl)
     df_Results["df_Buildings_t"] = set_df_buildings_t(df, ampl)
     df_Results["df_Time"], df_Results["df_External"], df_Results["df_Index"] = set_dfs_other(df, ampl)
@@ -403,6 +421,25 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_Buildings.index.names = ['FeasibleSolution', 'Hub']
     df_Results["df_Buildings"] = df_Buildings.sort_index()
 
+    # Grid
+    df1 = get_variable_in_pandas(df, 'TransformerCapacityAdd')
+    df2 = get_variable_in_pandas(df, 'Use_TransformerCapacityAdd')
+    df3 = get_parameter_in_pandas(ampl, 'CostTransformer_inv1', multi_index=False)
+    df4 = get_parameter_in_pandas(ampl, 'CostTransformer_inv2', multi_index=False)
+    df3.index.names = ['Layer']
+    df4.index.names = ['Layer']
+
+    df12 = pd.concat([df1, df2], axis=1)
+    df12.columns=['CapacityAdd', 'UseCapacityAdd']
+    df12.index.names = ['Layer']
+    df12['Hub']='Network'
+    df12.set_index('Hub', append=True, inplace=True)
+    df_Grid=df12.swaplevel().sort_index()
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostTransformer_inv1'] + df_Grid['CapacityAdd'] * \
+                                   df4['CostTransformer_inv2']
+
+    df_Results['df_Grid'] = df_Grid
+
     # District
     df1 = get_variable_in_pandas(df, 'Costs_House_op')
     df2 = get_variable_in_pandas(df, 'Costs_House_inv')
@@ -437,8 +474,6 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_District.index.names = ['Hub']
     df_Results["df_District"] = df_District.sort_index()
 
-    df666 = get_variable_in_pandas(df, 'TransformerCapacityAdd')
-    print(df666)
 
     # df_beta
     df1 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_CAPEX_constraint', False)

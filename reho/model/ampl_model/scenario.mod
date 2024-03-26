@@ -95,10 +95,10 @@ subject to EMOO_network_constraint{l in ResourceBalances,p in PeriodStandard,t i
 Network_supply[l,p,t] - Network_demand[l,p,t] <= if EMOO_network!=0 then EMOO_network*sum{i in Time[p]}((Network_supply[l,p,i] - Network_demand[l,p,i])*dt[p])/(card(Time[p])) else 1e8;
 
 subject to EMOO_GU_demand_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
-Network_demand[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_demand);
+Network_demand[l,p,t] <= TransformerCapacityAdd[l] + sum{h in House} (E_house_max[h]* EMOO_GU_demand);
 
 subject to EMOO_GU_supply_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
-Network_supply[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_supply );
+Network_supply[l,p,t] <= TransformerCapacityAdd[l] + sum{h in House} (E_house_max[h]* EMOO_GU_supply );
 
 
 ######################################################################################################################

@@ -457,10 +457,9 @@ class district_decomposition:
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
         additional = []
-        if "ReinforcementTrOfLayer" in self.infrastructure.__dict__.keys():
-            additional = additional + ["ReinforcementTrOfLayer"]
-        if "ReinforcementLineOfLayer" in self.infrastructure.__dict__.keys():
-            additional = additional + ["ReinforcementLineOfLayer"]
+        if 'ReinforcementTrOfLayer' in self.infrastructure.Set.keys():
+             additional = additional + ["ReinforcementTrOfLayer"]
+
         for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']+additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
@@ -492,6 +491,13 @@ class district_decomposition:
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses)))+1
 
+        ### Other way, pass the set through set_indexed
+        # if 'ReinforcementTrOfLayer' in self.set_indexed.keys():
+        #     MP_set_indexed['ReinforcementTrOfLayer']=self.set_indexed['ReinforcementTrOfLayer']
+        #     # additional = additional + ["ReinforcementTrOfLayer"]
+        # if 'ReinforcementLineOfLayer' in self.infrastructure.__dict__.keys():
+        #     additional = additional + ["ReinforcementLineOfLayer"]
+
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS
         # ---------------------------------------------------------------------------------------------------------------
@@ -511,7 +517,10 @@ class district_decomposition:
         # give values to ampl
         # ---------------------------------------------------------------------------------------------------------------
 
+
+
         for s in MP_set_indexed:
+
             if isinstance(MP_set_indexed[s], np.ndarray):
                 ampl_MP.getSet(str(s)).setValues(MP_set_indexed[s])
             elif isinstance(MP_set_indexed[s], dict):

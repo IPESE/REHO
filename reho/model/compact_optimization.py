@@ -7,7 +7,7 @@ import reho.model.preprocessing.skydome as SkyDome
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.EV_profile_generator as EV_gen
 from reho.model.preprocessing.QBuildings import *
-
+import logging
 
 class compact_optimization:
     """
@@ -60,12 +60,7 @@ class compact_optimization:
         self.method_compact = method
         self.solver = solver
         self.parameters_to_ampl = dict()
-
         self.csv_data = csv_data
-
-        # print('Execute for building:', self.buildings_data_compact)
-        # print('With parameters and sets:', self.parameters_compact, self.set_indexed_compact)
-        # print('Cluster settings are:', self.cluster_compact)
 
     def solve_model(self):
         ampl = self.build_model_without_solving()
@@ -142,7 +137,6 @@ class compact_optimization:
                 ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
                 raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
-        # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS
         ampl.setOption('solution_round', 11)
@@ -565,38 +559,30 @@ class compact_optimization:
 
             if isinstance(self.parameters_to_ampl[i], np.ndarray):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues(self.parameters_to_ampl[i])
 
             elif isinstance(self.parameters_to_ampl[i], list):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues(np.array(self.parameters_to_ampl[i]))
 
             elif isinstance(self.parameters_to_ampl[i], pd.DataFrame):
-                # print(self.parameters_to_ampl[i].columns)
                 ampl.setData(self.parameters_to_ampl[i])
 
             elif isinstance(self.parameters_to_ampl[i], pd.Series):
-                # print('Set values for : '+ i)
                 self.parameters_to_ampl[i].name = i
                 df = pd.DataFrame(self.parameters_to_ampl[i])
                 ampl.setData(df)
 
             elif isinstance(self.parameters_to_ampl[i], dict):
-                # print('Set Values for ' + str(i))
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues(self.parameters_to_ampl[i])
 
             elif isinstance(self.parameters_to_ampl[i], float):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues([self.parameters_to_ampl[i]])
 
             elif isinstance(self.parameters_to_ampl[i], int):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues([self.parameters_to_ampl[i]])
 
             else:
@@ -620,11 +606,11 @@ class compact_optimization:
                 ampl.getObjective(self.scenario_compact['Objective']).restore()
             except KeyError:
                 ampl.getObjective('TOTEX').restore()
-                print('Objective function "', self.scenario_compact['Objective'],
+                logging.warning('Objective function "', self.scenario_compact['Objective'],
                       '" was not found in ampl model, TOTEX minimization was set instead.')
         else:
             ampl.getObjective('TOTEX').restore()
-            print('No objective function was found in scenario dictionary, TOTEX minimization was set instead.')
+            logging.warning('No objective function was found in scenario dictionary, TOTEX minimization was set instead.')
 
         # Set epsilon constraints
         ampl.getConstraint('EMOO_CAPEX_constraint').drop()
@@ -649,7 +635,7 @@ class compact_optimization:
                         epsilon_parameter = ampl.getParameter(epsilon_constraint)
                         epsilon_parameter.setValues([self.scenario_compact['EMOO'][epsilon_constraint]])
                 except:
-                    print('EMOO constraint ', epsilon_constraint, ' was not found in ampl model and was thus ignored.')
+                    logging.warning('EMOO constraint ', epsilon_constraint, ' was not found in ampl model and was thus ignored.')
 
         # Set specific constraints
         ampl.getConstraint('disallow_exchanges_1').drop()
@@ -677,7 +663,7 @@ class compact_optimization:
                 try:
                     ampl.getConstraint(specific_constraint).restore()
                 except:
-                    print('Specific constraint "', specific_constraint,
+                    logging.warning('Specific constraint "', specific_constraint,
                           '" was not found in ampl model and was thus ignored.')
 
         return ampl

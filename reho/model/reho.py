@@ -166,7 +166,7 @@ class reho(district_decomposition):
         obj_values = self.get_objectives_values(ampl, self.scenario["Objective"], Scn_ID, Pareto_ID=1)
 
         gc.collect()  # free memory
-        print('The lower bound of the', objective1, 'value is: ', obj_values["district_obj1"])
+        logging.info('The lower bound of the', objective1, 'value is: ', obj_values["district_obj1"])
         return obj_values
 
 
@@ -198,7 +198,7 @@ class reho(district_decomposition):
 
 
         gc.collect()  # free memory
-        print('The upper bound of the', self.scenario["Objective"][0], 'value is: ', obj_values["district_obj1"])
+        logging.info('The upper bound of the', self.scenario["Objective"][0], 'value is: ', obj_values["district_obj1"])
         return obj_values
 
 
@@ -232,7 +232,7 @@ class reho(district_decomposition):
                 scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][0]: obj1_eps_lim}
 
             self.epsilon_constraints['EMOO_obj1'] = np.append(self.epsilon_constraints['EMOO_obj1'], obj1_eps_lim)
-            print('---------------> ', self.scenario["Objective"][0], ' LIMIT: ', obj1_eps_lim)
+            logging.info('---------------> ', self.scenario["Objective"][0], ' LIMIT: ', obj1_eps_lim)
 
             # results computation
             if self.method['district-scale']:
@@ -276,7 +276,7 @@ class reho(district_decomposition):
                     scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][1]: obj2_eps_lim}
 
                 self.epsilon_constraints['EMOO_obj2'] = np.append(self.epsilon_constraints['EMOO_obj2'], obj2_eps_lim)
-                print('---------------> ', self.scenario["Objective"][1], ' LIMIT: ', obj2_eps_lim)
+                logging.info('---------------> ', self.scenario["Objective"][1], ' LIMIT: ', obj2_eps_lim)
                 # results computation
                 if self.method['district-scale']:
                     ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
@@ -300,7 +300,7 @@ class reho(district_decomposition):
 
         self.sort_pareto_points(Scn_ID)
 
-        print(obj1_min, obj1_max)
+        logging.info(obj1_min, obj1_max)
 
     def sort_pareto_points(self, Scn_ID):
 
@@ -443,9 +443,9 @@ class reho(district_decomposition):
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
-        print('INITIATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+        logging.info('INITIATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
         self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
-        print('MASTER INITIATION, ', 'Iter:', self.iter)
+        logging.info('MASTER INITIATION, ', 'Iter:', self.iter)
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
 
         # -----------------------------------------------------------------------------------------------------------
@@ -453,9 +453,9 @@ class reho(district_decomposition):
         # -----------------------------------------------------------------------------------------------------------
         while (self.iter < self.DW_params['max_iter'] - 1):  # last iteration is used to run the binary MP.
             self.iter += 1
-            print('SUB PROBLEM ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+            logging.info('SUB PROBLEM ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
             self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
-            print('MASTER ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+            logging.info('MASTER ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
             self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
 
             if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
@@ -464,9 +464,9 @@ class reho(district_decomposition):
         # -----------------------------------------------------------------------------------------------------------
         # FINALIZATION
         # -----------------------------------------------------------------------------------------------------------
-        print(self.stopping_criteria)
+        logging.info(self.stopping_criteria)
         self.iter += 1
-        print('LAST MASTER ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+        logging.info('LAST MASTER ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
         self.pool.close()
 
@@ -903,7 +903,7 @@ class reho(district_decomposition):
             f = open(result_file_path, 'wb')
             pickle.dump(results, f)
             f.close()
-            print('Results are saved in ' + result_file_path)
+            logging.info('Results are saved in ' + result_file_path)
 
         if 'xlsx' in format:
 
@@ -925,4 +925,4 @@ class reho(district_decomposition):
                             df.to_excel(writer, sheet_name=df_name)
 
                     writer.close()
-                    print('Results are saved in ' + result_file_path)
+                    logging.info('Results are saved in ' + result_file_path)

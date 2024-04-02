@@ -6,7 +6,7 @@ import warnings
 import time
 import gc
 import pandas as pd
-
+import logging
 
 class district_decomposition:
     """
@@ -263,7 +263,7 @@ class district_decomposition:
         attr : results of the optimization process (CPU time, objective value, nb variables or constraints, ...)
         """
 
-        print('INITIATE HOUSE: ', h)
+        logging.info('INITIATE HOUSE: ', h)
 
         # find district structure and parameter for one single building
         buildings_data_SP, parameters_SP, infrastructure_SP = self.__split_parameter_sets_per_building(h)
@@ -350,13 +350,12 @@ class district_decomposition:
                 raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
 
         # AMPL (GNU) OPTIONS
-        ampl_MP.setOption('show_stats', 2)
         ampl_MP.setOption('solution_round', 11)
         ampl_MP.setOption('rel_boundtol', 1e-12)
         ampl_MP.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl_MP.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl_MP.setOption('presolve_fixeps', 1e-9)
-        ampl_MP.setOption('show_stats', 1)
+        ampl_MP.setOption('show_stats', 0)
         ampl_MP.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
@@ -561,8 +560,6 @@ class district_decomposition:
             elif isinstance(MP_parameters[i], pd.DataFrame):
                 if not MP_parameters[i].empty:
                     ampl_MP.setData(MP_parameters[i])
-                else:
-                    print("DataFrame", i,"is empty.")
 
             elif isinstance(MP_parameters[i], pd.Series):
                 MP_parameters[i].name = i
@@ -589,7 +586,7 @@ class district_decomposition:
         ampl_MP.solve()
 
         df_Results_MP = WR.get_df_Results_from_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
-        print(ampl_MP.getCurrentObjective().getValues().toPandas())
+        logging.info(ampl_MP.getCurrentObjective().getValues().toPandas())
 
         df = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl_MP)
         self.add_df_Results_MP(Scn_ID, Pareto_ID, self.iter, df_Results_MP, df)
@@ -651,7 +648,7 @@ class district_decomposition:
         ------
         If the SP optimization did not converge
         """
-        print('iterate HOUSE: ', House, 'iteration: ', self.iter)
+        logging.info('iterate HOUSE: ', House, 'iteration: ', self.iter)
 
         # Give dual variables to Subproblem
         pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'pi').reorder_levels(['Layer', 'Period', 'Time'])

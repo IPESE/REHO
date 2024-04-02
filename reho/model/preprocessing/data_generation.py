@@ -15,9 +15,7 @@ def annual_to_typical(cluster, annual_file, timestamp_data, typical_file=None):
     """
 
     # Get which days are the typical ones
-    #File_ID = get_cluster_file_ID(cluster)
-    #timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    df_time = timestamp_data #pd.read_csv(timestamp_file, delimiter='\t')
+    df_time = timestamp_data
     typical_days = df_time.Date.apply(lambda date: date[0:-3]).values
 
     df_annual = file_reader(annual_file)
@@ -54,7 +52,7 @@ def profile_reference_temperature(parameters_to_ampl, cluster):
     return np_temperature
 
 
-def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data, timestamp_file,
+def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
                        include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
     Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
@@ -109,15 +107,10 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
     >>> file_id = 'Geneva_10_24_T_I_W'
     >>> cluster = {'Location': 'Bruxelles', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
     >>> people_gain, eud_dhw, eud_elec =
-    >>>     build_eud_profiles(buildings_data, file_id, cluster, use_custom_profiles=my_profiles)
+    >>>     build_eud_profiles(buildings_data, cluster, use_custom_profiles=my_profiles)
     """
     # get cluster information
-    #timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    df = timestamp_file #pd.read_csv(timestamp_file, delimiter='\t')
-    df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
-
-    #path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
-    df_SIA = sia2024_data #pd.read_excel(path_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+    df_timestamp.Date = pd.to_datetime(df_timestamp['Date'], format="%m/%d/%Y/%H")
 
     np_gain_all = np.array([])
     np_dhw_all = np.array([])
@@ -126,7 +119,7 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
     if use_custom_profiles:
         # Replace filepath in dictionary to typical profiles
         for key, val in use_custom_profiles.items():
-            use_custom_profiles[key] = annual_to_typical(cluster, timestamp_file, annual_file=val)
+            use_custom_profiles[key] = annual_to_typical(cluster, annual_file=val, timestamp_data=df_timestamp)
 
     for b in buildings_data:  # iterate over buildings
         # get SIA Profiles
@@ -155,9 +148,9 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
             if include_stochasticity:
                 [RV_scaling, SF] = create_random_var(sd_stochasticity[0], sd_stochasticity[1])
 
-            for p in df.index:  # get profiles for each typical day
+            for p in df_timestamp.index:  # get profiles for each typical day
 
-                df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df.xs(p).Date, df_SIA)
+                df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df_timestamp.xs(p).Date, df_SIA)
                 if include_stochasticity:
                     df_profiles = apply_stochasticity(df_profiles, RV_scaling, SF)
 
@@ -190,9 +183,9 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
                 hot_water_day = hotwater  # L profiles for each typical day
                 electric_day = elec / 1000  # kW profiles for each typical day
 
-                if p not in df.index.tolist()[-2:]:
+                if p not in df_timestamp.index.tolist()[-2:]:
                     # sort it correctly (if first hour is not 12:00)
-                    begin = df.xs(p).Date.hour
+                    begin = df_timestamp.xs(p).Date.hour
 
                     # Size = 24 hours
                     heat_day = np.concatenate((heatgain_day.iloc[begin:].values, heatgain_day.iloc[:begin].values))
@@ -204,7 +197,7 @@ def build_eud_profiles(buildings_data, File_ID, cluster, sia_file, sia2024_data,
                     dhw_period = np.tile(dhw_day, round(cluster['PeriodDuration'] / 24))
                     el_period = np.tile(el_day, round(cluster['PeriodDuration'] / 24))
 
-                elif p == df.index.tolist()[-2:][0]:  # Minimum period
+                elif p == df_timestamp.index.tolist()[-2:][0]:  # Minimum period
                     heat_period = np.array([min(heatgain_day)])
                     dhw_period = np.array([max(dhw_day)])
                     el_period = np.array([max(el_day)])
@@ -298,8 +291,7 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
     """
     # Number of days computation
     PeriodDuration = ampl.getParameter('TimeEnd').getValues().toPandas()
-    #timestamp_file = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    df = csv_data["timestamp_2"] #pd.read_csv(timestamp_file, delimiter='\t')
+    df = csv_data["timestamp"]
     df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
     frequency_dict = pd.Series(df.Frequency.values, index=df.Date).to_dict()
@@ -315,7 +307,7 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
         df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, csv_data, total_irradiation, frequency_dict)
         np.savetxt(filename, irr_west)
     else:
-        irr_west = csv_data["westfacades_irr"] #pd.read_csv(filename, header=None)[0].values
+        irr_west = csv_data["westfacades_irr"]
 
     g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
     g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
@@ -328,13 +320,11 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
             ratios = str(buildings_data[b]['ratio'])
         else:
             ratios = buildings_data[b]['ratio'].split('/')
-        status_buildings = buildings_data[b]['status'].split(',')
         glass_fraction_building = 0
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
             rooms = read_sia2024_rooms_sia380_1(class_380, csv_data["df_sia"])
-            #path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
-            df = csv_data["sia2024_data"]['data'] #pd.read_excel(path_norms, sheet_name='data', engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+            df = csv_data["sia2024_data"]['data']
             glass_fraction_2024 = df['Taux de surface vitrée']
             glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
             glass_fraction_building += glass_fraction_rooms * float(ratios[i])

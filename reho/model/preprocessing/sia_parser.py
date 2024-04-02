@@ -8,8 +8,6 @@ __doc__ = """
 
 def read_sia2024_rooms_sia380_1(digit, sia_file):
 
-    #path_sia = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
-
     dict_affiliation2digit = {'collective housing': 'I',
                               'individual housing': 'II',
                               'administrative': 'III',
@@ -24,10 +22,9 @@ def read_sia2024_rooms_sia380_1(digit, sia_file):
                               'covered swimming-pool': 'XII',
                               'other': 'XIII'}
 
-    df = sia_file #pd.read_csv(path_sia, sep=';', index_col=[0], header=[0])
-    df = df.rename(columns=dict_affiliation2digit)
+    sia_file = sia_file.rename(columns=dict_affiliation2digit)
 
-    return df[digit]
+    return sia_file[digit]
 
 
 def read_sia_2024_profiles(status, df):

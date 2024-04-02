@@ -475,11 +475,7 @@ class reho(district_decomposition):
 
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
-        if self.method['district-scale']:
-            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
-
-        elif self.method['building-scale']:
-            self.DW_params['max_iter'] = 1
+        if self.method['district-scale'] or self.method['building-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
         else:

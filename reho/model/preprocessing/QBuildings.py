@@ -367,7 +367,7 @@ def translate_buildings_to_REHO(df_buildings):
         'status': 'status',
         'period': 'period',
         'capita_cap': 'n_p',
-        'NOMSECTEUR': 'NOMSECTEUR',
+        #'NOMSECTEUR': 'NOMSECTEUR',
 
         # Area
         'area_era_m2': 'ERA',

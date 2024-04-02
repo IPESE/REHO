@@ -49,10 +49,6 @@ def skydome_to_df(csv_data):
     df_area = csv_data["df_area"]  # area of patches
     df_cenpts = csv_data["df_cenpts"]  #  # location of centre points
 
-    # create one df for all skydome data
-    #df_area = pd.read_csv(areas, header=None)
-    #df_cenpts = pd.read_csv(cenpts, header=None)
-
     df_dome = pd.DataFrame()
     df_dome['Area'] = df_area[0]
     df_dome['X'] = df_cenpts[0]
@@ -72,12 +68,9 @@ def skydome_to_df(csv_data):
     return df_dome
 
 
-def irradiation_to_df(ampl, irradiation, timestamp):
+def irradiation_to_df(ampl, df_IRR, df_time):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
-
-
-    df_IRR = irradiation #pd.read_csv(irradiation_csv, index_col=[0])
 
     #change column name from string to int
     df_IRR.columns = df_IRR.columns.astype(int)
@@ -88,16 +81,14 @@ def irradiation_to_df(ampl, irradiation, timestamp):
     df_IRR.index = pd.to_datetime(df_IRR.index)
 
     # get relevant cluster information
-    #thisfile = os.path.join(path_to_clustering, 'timestamp_'+ File_ID +'.dat')
-    df = timestamp #pd.read_csv(thisfile, delimiter='\t', parse_dates=[0])
     PeriodDuration  = ampl.getParameter('TimeEnd').getValues().toPandas()
 
     # construct Multiindex
     df_p = pd.DataFrame()
     list_timesteps = []
 
-    for p in df.index:
-        date1 = df.xs(p).Date
+    for p in df_time.index:
+        date1 = df_time.xs(p).Date
         end = PeriodDuration.xs(p+1).TimeEnd  # ampl starts at 1
 
         date2 = date1 + timedelta(hours=int(end)-1)
@@ -113,7 +104,6 @@ def irradiation_to_df(ampl, irradiation, timestamp):
     # marry index and data
     df_IRR = df_p.set_index(idx)
 
-    #df_IRR = pd.concat([df_IRR], axis=1, keys=['Patches'])
     df = df_IRR.stack()
     df = df.reorder_levels([2, 0, 1])
     df = pd.DataFrame(df)
@@ -135,40 +125,23 @@ def irradiation_to_df_general(irradiation):
     return df_IRR
 
 
-def irradiation_to_typical_df(typical_days_string,irradiation):
+def irradiation_to_typical_df(typical_days_string, df_profiles):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
-    #filename = os.path.join(path_to_skydome, 'total_irradiation.csv')
-    df_profiles = irradiation #pd.read_csv(filename, sep=",", parse_dates=[1])
     df_profiles.set_index('time', inplace=True)
-
     df_profiles.index = pd.to_datetime(df_profiles.index)
-
-    # print(df_profiles[df_profiles.index.isin(typical_days_string)])
-    # print(df_profiles.loc['20160921'])
-    # print(df_profiles['20160921'])
 
     # select typical days, keep typday index as reference
     df_typical = pd.DataFrame()
     for i, td in enumerate(typical_days_string):
         df_typical = pd.concat([df_typical, df_profiles[td]],  sort = True)
-        # df_typical.loc[td,'TypdayID'] = int(i)
 
     # save profiles in csv
     df_typical.to_csv(os.path.join(path_to_skydome, 'typical_irradiation.csv'))
 
     return df_typical
 
-
-    #df_IRR = pd.read_csv(irradiation_csv, index_col=[0], dtype=float)
-
-    #change column name from string to int
-    #df_IRR.columns = df_IRR.columns.astype(int)
-    #change values from string to float
-    #df_IRR = df_IRR.infer_objects()
-
-    #return df_IRR
 
 def f_sqrt(x):
     """

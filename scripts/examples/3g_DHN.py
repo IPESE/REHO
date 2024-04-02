@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'Heat': {"Cost_demand_cst": 0.01, "Cost_supply_cst": 0.15}})
+                                             'Heat': {}})
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
@@ -37,8 +37,9 @@ if __name__ == '__main__':
     reho.get_DHN_costs()  # run one optimization forcing DHN to find costs DHN connection per house
     reho.single_optimization()  # run optimization with DHN costs
 
-    plotting.plot_performance(reho.results).show()
-    plotting.plot_sankey(reho.results["totex"][0]).show()
-
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='3g')
+
+    # Plot results
+    plotting.plot_performance(reho.results, plot='costs').show()
+    plotting.plot_sankey(reho.results["totex"][0]).show()

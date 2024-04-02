@@ -34,7 +34,7 @@ if __name__ =='__main__':
     reho.single_optimization()
 
     # SCENARIO 2 Wood stove #
-    scenario['name'] = 'wood'
+    scenario['name'] = 'Wood'
     scenario['exclude_units'] = ['DHN_hex', 'ThermalSolar', 'HeatPump', 'PV', 'OIL_Boiler', 'DataHeat']
     scenario['enforce_units'] = ['WOOD_Stove']
     units = infrastructure.initialize_units(scenario, grids)
@@ -44,10 +44,10 @@ if __name__ =='__main__':
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
-    # SCENARIO 3 DHN #
-    scenario['name'] = 'DHN'
+    # SCENARIO 3 Electrical Heater #
+    scenario['name'] = 'ElectricalHeater'
     scenario['exclude_units'] = ['ThermalSolar', 'HeatPump', 'PV', 'OIL_Boiler', 'WOOD_Stove', 'DataHeat']
-    scenario['enforce_units'] = ['DHN_hex']
+    scenario['enforce_units'] = []
     units = infrastructure.initialize_units(scenario, grids)
 
     reho.scenario = scenario
@@ -55,9 +55,9 @@ if __name__ =='__main__':
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
-    # SCENARIO 4 HP #
+    # SCENARIO 4 HP + PV #
     scenario['name'] = 'HP'
-    scenario['exclude_units'] = ['ThermalSolar', 'PV', 'OIL_Boiler', 'WOOD_Stove', 'DataHeat']
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'WOOD_Stove', 'DataHeat']
     scenario['enforce_units'] = []
     units = infrastructure.initialize_units(scenario, grids)
 
@@ -68,7 +68,7 @@ if __name__ =='__main__':
 
     # SCENARIO 5 EV #
     scenario['name'] = 'EV'
-    scenario['exclude_units'] = ['ThermalSolar', 'PV', 'OIL_Boiler', 'WOOD_Stove', 'DataHeat']
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'WOOD_Stove', 'DataHeat']
     scenario['enforce_units'] = ['EV_district']
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
     reho.parameters['n_vehicles'] = 2
@@ -78,7 +78,7 @@ if __name__ =='__main__':
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
-    # SCENARIO 6 ICT #
+    # SCENARIO 6 Data #
     scenario['name'] = 'Data'
     scenario['exclude_units'] = ['ThermalSolar', 'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'DataHeat_SH']
     units = infrastructure.initialize_units(scenario, grids, district_data=True)

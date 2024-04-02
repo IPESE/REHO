@@ -58,8 +58,8 @@ if __name__ == '__main__':
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
-    # SCENARIO 4 ICT #
-    scenario['name'] = 'ICT'
+    # SCENARIO 4 Data #
+    scenario['name'] = 'Data'
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_SH']
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 

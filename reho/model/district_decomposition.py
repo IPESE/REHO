@@ -408,13 +408,13 @@ class district_decomposition:
         # prepare df to have the same index as AMPL model
         if not self.method['include_all_solutions']:
             df_Performance = df_Performance.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID'))
-            df_Grid_t = df_Grid_t.xs((Scn_ID, Pareto_ID, 'Network'), level=('Scn_ID', 'Pareto_ID', 'Hub'))
+            df_Grid_t = df_Grid_t.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID'))
         else:
             df_Performance = df_Performance.droplevel(['Scn_ID', 'Pareto_ID'])
-            df_Grid_t = df_Grid_t.droplevel(['Scn_ID', 'Pareto_ID']).xs('Network', level='Hub')
+            df_Grid_t = df_Grid_t.droplevel(['Scn_ID', 'Pareto_ID'])
 
         df_Performance = df_Performance.droplevel(level='Iter')
-        df_Grid_t = df_Grid_t.droplevel(level='Iter').reorder_levels(['Layer', 'FeasibleSolution', 'house', 'Period', 'Time'])
+        df_Grid_t = df_Grid_t.droplevel(level=['Iter', 'Hub']).reorder_levels(['Layer', 'FeasibleSolution', 'house', 'Period', 'Time'])
 
         # assign data
         MP_parameters = {}
@@ -752,7 +752,7 @@ class district_decomposition:
 
         for h in last_SP_results:
             df_Grid_t = pd.concat([last_SP_results[h]["df_Grid_t"]], keys=[(self.iter, self.feasible_solutions - 1, h)], names=['Iter', 'FeasibleSolution', 'house'])
-            df_Grid_t = df_Grid_t.xs('Network', level='Hub')
+            df_Grid_t = df_Grid_t.xs(h, level='Hub')
             pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi')
             pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_GWP')
             pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_lca')

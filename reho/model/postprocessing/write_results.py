@@ -155,36 +155,25 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     def set_df_grid(df, ampl):
         # Grid_t
         df1 = get_variable_in_pandas(df, 'Grid_demand')
-        df2 = get_variable_in_pandas(df, 'Grid_supply')
-        df_cs = get_parameter_in_pandas(ampl, 'Cost_supply', multi_index=True)
-        df_cs = df_cs.reorder_levels((1, 0, 2, 3))
-        df_cd = get_parameter_in_pandas(ampl, 'Cost_demand', multi_index=True)
-        df_cd = df_cd.reorder_levels((1, 0, 2, 3))
-        df_electricity = get_parameter_in_pandas(ampl, 'Domestic_electricity', multi_index=True)
+        hub = df1.index.levels[1].values[0]
+        df1 = df1.droplevel(1)
+        df2 = get_variable_in_pandas(df, 'Grid_supply').droplevel(1)
+
+        df_cs = get_parameter_in_pandas(ampl, 'Cost_supply', multi_index=True).droplevel(0)
+        df_cd = get_parameter_in_pandas(ampl, 'Cost_demand', multi_index=True).droplevel(0)
+
+        df_electricity = get_parameter_in_pandas(ampl, 'Domestic_electricity', multi_index=True).droplevel(0)
         df_electricity.columns = ['Uncontrollable_load']
         df_electricity = df_electricity.set_index([pd.Index(["Electricity"]*df_electricity.index.size), df_electricity.index])
-        df12 = pd.concat([df1, df2, df_cs, df_cd, df_electricity], axis=1)
 
-        df3 = get_variable_in_pandas(df, 'Network_demand')
-        df4 = get_variable_in_pandas(df, 'Network_supply')
-        df_cs = get_parameter_in_pandas(ampl, 'Cost_supply_network', multi_index=True)
-        df_cd = get_parameter_in_pandas(ampl, 'Cost_demand_network', multi_index=True)
         df_es = get_parameter_in_pandas(ampl, 'GWP_supply', multi_index=True)
         df_ed = get_parameter_in_pandas(ampl, 'GWP_demand', multi_index=True)
 
-        # Rename Network to Grid and therefore add Level 'Hub' = Network
-        df3.columns = ['Grid_demand']
-        df4.columns = ['Grid_supply']
-        df_cs.columns = ['Cost_supply']
-        df_cd.columns = ['Cost_demand']
-
-        df34 = pd.concat([df3, df4, df_cs, df_cd, df_es, df_ed], axis=1)
-
-        df34['Hub'] = 'Network'
-        df34.set_index('Hub', append=True, inplace=True)
-        df34 = df34.reorder_levels((0, 3, 1, 2))
+        df12 = pd.concat([df1, df2, df_cs, df_cd, df_es, df_ed, df_electricity], axis=1)
+        df12["Hub"] = hub
+        df12.set_index('Hub', append=True, inplace=True)
+        df_Grid_t = df12.reorder_levels((0, 3, 1, 2))
         # combine Network & Grid dataframe
-        df_Grid_t = pd.concat([df12, df34], sort=True)
         df_Grid_t.index.names = ['Layer', 'Hub', 'Period', 'Time']
 
         return df_Grid_t.sort_index()
@@ -339,13 +328,23 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     df.columns = ["Varname", "Value"]
     df_Results["df_Performance"] = set_df_performance(df, ampl, scenario)
     df_Results["df_Annuals"] = set_df_annuals(df, ampl)
-    df_Results["df_Buildings"] = set_df_buildings(buildings_data, df, ampl)
-    df_Results["df_Unit"], df_Results["df_Unit_t"] = set_df_unit(df, ampl)
+    df_Results["df_Unit"], df_Unit_t = set_df_unit(df, ampl)
     df_Results["df_Grid_t"] = set_df_grid(df, ampl)
-    df_Results["df_Buildings_t"] = set_df_buildings_t(df, ampl)
-    df_Results["df_Time"], df_Results["df_External"], df_Results["df_Index"] = set_dfs_other(df, ampl)
+    df_Results["df_Time"], df_External, df_Index = set_dfs_other(df, ampl)
+
     if method['save_stream_t']:
         df_Results["df_Stream_t"] = set_df_stream_t(df, ampl)
+
+    if method["save_all_df"]:
+        df_Results["df_Buildings"] = set_df_buildings(buildings_data, df, ampl)
+        df_Results["df_Buildings_t"] = set_df_buildings_t(df, ampl)
+        df_Results["df_Unit_t"] = df_Unit_t
+        df_Results["df_External"] = df_External
+        df_Results["df_Index"] = df_Index
+    else:
+        for i in ['Cost_demand', 'Cost_supply', 'GWP_demand', 'GWP_supply', "Uncontrollable_load"]:
+            del df_Results["df_Grid_t"][i]
+
     if method['save_lca']:
         df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(df, ampl)
     if method['use_pv_orientation'] or method['use_facades']:
@@ -378,25 +377,26 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_DW.index.names = ['FeasibleSolution', 'Hub']
     df_Results["df_DW"] = df_DW.sort_index()
 
-    # Building_t
-    df1 = get_parameter_in_pandas(ampl, 'Grid_supply', multi_index=True)
-    df2 = get_parameter_in_pandas(ampl, 'Grid_demand', multi_index=True)
-    df_Buildings_t = pd.concat([df1, df2], axis=1)
-    if read_DHN:
-        df3 = get_parameter_in_pandas(ampl, 'flowrate_out', multi_index=True)
-        df3 = pd.concat({'Heat': df3})
-        df4 = get_parameter_in_pandas(ampl, 'flowrate_in', multi_index=True)
-        df4 = pd.concat({'Heat': df4})
-        df_Buildings_t = pd.concat([df_Buildings_t, df3, df4], axis=1)
-    df_Buildings_t.index.names = ['Layer', 'FeasibleSolution', 'Hub', 'Period', 'Time']
-    df_Results["df_Buildings_t"] = df_Buildings_t.sort_index()
+    if method["save_all_df"] or binary:
+        # Building_t
+        df1 = get_parameter_in_pandas(ampl, 'Grid_supply', multi_index=True)
+        df2 = get_parameter_in_pandas(ampl, 'Grid_demand', multi_index=True)
+        df_Buildings_t = pd.concat([df1, df2], axis=1)
+        if read_DHN:
+            df3 = get_parameter_in_pandas(ampl, 'flowrate_out', multi_index=True)
+            df3 = pd.concat({'Heat': df3})
+            df4 = get_parameter_in_pandas(ampl, 'flowrate_in', multi_index=True)
+            df4 = pd.concat({'Heat': df4})
+            df_Buildings_t = pd.concat([df_Buildings_t, df3, df4], axis=1)
+        df_Buildings_t.index.names = ['Layer', 'FeasibleSolution', 'Hub', 'Period', 'Time']
+        df_Results["df_Buildings_t"] = df_Buildings_t.sort_index()
 
-    # Building
-    df1 = get_parameter_in_pandas(ampl, 'Costs_inv_rep_SPs', multi_index=True)
-    df2 = get_parameter_in_pandas(ampl, 'Costs_ft_SPs', multi_index=True)
-    df_Buildings = pd.concat([df1, df2], axis=1)
-    df_Buildings.index.names = ['FeasibleSolution', 'Hub']
-    df_Results["df_Buildings"] = df_Buildings.sort_index()
+        # Building
+        df1 = get_parameter_in_pandas(ampl, 'Costs_inv_rep_SPs', multi_index=True)
+        df2 = get_parameter_in_pandas(ampl, 'Costs_ft_SPs', multi_index=True)
+        df_Buildings = pd.concat([df1, df2], axis=1)
+        df_Buildings.index.names = ['FeasibleSolution', 'Hub']
+        df_Results["df_Buildings"] = df_Buildings.sort_index()
 
     # District
     df1 = get_variable_in_pandas(df, 'Costs_House_op')

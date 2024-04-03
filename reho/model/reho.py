@@ -701,35 +701,34 @@ class reho(district_decomposition):
         df = self.get_final_SPs_results(MP_selection, 'df_Grid_t')
         df = df.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
         df = df.sort_index(level='Hub')
-        uncontrollable_load = df.groupby(["Layer", "Period", "Time"]).sum()["Uncontrollable_load"]
 
         h_op = df_Time.dp
         h_op.iloc[-2:] = 1
         df_network = last_results["df_District_t"].copy()
-        df_network[["Network_supply", "Network_demand"]] = df_network[["Network_supply", "Network_demand"]].divide(h_op,
-                                                                                                                   axis=0,
-                                                                                                                   level='Period')
-        df_network["Uncontrollable_load"] = uncontrollable_load
-        df_network = pd.concat([df_network], keys=['Network'], names=['Hub']).reorder_levels(
-            ['Layer', 'Hub', 'Period', 'Time'])
-        df_network = df_network.rename(
-            columns={"Cost_demand_network": "Cost_demand", "Cost_supply_network": "Cost_supply",
-                     "Network_demand": "Grid_demand", "Network_supply": "Grid_supply"})
+        df_network[["Network_supply", "Network_demand"]] = df_network[["Network_supply", "Network_demand"]].divide(h_op, axis=0, level='Period')
+
+        if self.method["save_all_df"]:
+            df_network["Uncontrollable_load"] = df.groupby(["Layer", "Period", "Time"]).sum()["Uncontrollable_load"]
+
+        df_network = pd.concat([df_network], keys=['Network'], names=['Hub']).reorder_levels(['Layer', 'Hub', 'Period', 'Time'])
+        df_network = df_network.rename(columns={"Cost_demand_network": "Cost_demand",
+                                                "Cost_supply_network": "Cost_supply",
+                                                "Network_demand": "Grid_demand",
+                                                "Network_supply": "Grid_supply"})
+        columns = ["Cost_demand", "Cost_supply"]
+        if self.method["save_all_df"]:
+            columns = columns + ["GWP_demand", "GWP_supply"]
+
         for h in self.buildings_data.keys():
-            for column in ["Cost_demand", "Cost_supply", "GWP_demand", "GWP_supply"]:
+            for column in columns:
                 df.loc[pd.IndexSlice[:, h, :, :], column] = df_network[column].values
+
         df_Grid_t = pd.concat([df, df_network])
 
         # df_Unit
         df_Unit = self.get_final_MP_results(Pareto_ID=Pareto_ID, Scn_ID=Scn_ID)
         df_Unit = df_Unit.droplevel(['FeasibleSolution', 'Hub'])
         df_Unit = df_Unit.sort_index(level='Unit')
-
-        # df_Unit_t
-        df_Unit_t = self.get_final_SPs_results(MP_selection, 'df_Unit_t')
-        df_Unit_t = df_Unit_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-        df_district_units = last_results["df_Unit_t"]
-        df_Unit_t = pd.concat([df_Unit_t, df_district_units])
 
         # df_Annuals
         df = self.get_final_SPs_results(MP_selection, 'df_Annuals')
@@ -738,8 +737,7 @@ class reho(district_decomposition):
         df = df.sort_index(level='Layer')
         df = df.drop('Network', level='Hub')
 
-        df_network = pd.DataFrame(self.infrastructure.grids.keys(),
-                                  columns=["Layer"])  # build a df template to work on it
+        df_network = pd.DataFrame(self.infrastructure.grids.keys(), columns=["Layer"]) # build a df template
         df_network["Hub"] = "Network"
         df_network = df_network.set_index(["Layer", "Hub"])
         df_network[df.columns] = float("nan")
@@ -751,27 +749,10 @@ class reho(district_decomposition):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                data = df_Unit_t.xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp, level='Period',
-                                                                              axis=0).sum() / 1000
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp, level='Period', axis=0).sum() / 1000
                 df_network.loc[(key, unit), :] = float('nan')
-                df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[
-                    ['Units_demand', 'Units_supply']].values
+                df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[['Units_demand', 'Units_supply']].values
         df_Annuals = pd.concat([df, df_network]).sort_index()
-
-        # df_Buildings_t
-        df_Buildings_t = self.get_final_SPs_results(MP_selection, 'df_Buildings_t')
-        df_Buildings_t = df_Buildings_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-        df_Buildings_t.sort_index(level='Hub')
-
-        # df_External
-        ids = self.number_SP_solutions.iloc[0]
-        df_External = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][
-            ids["House"]]["df_External"]
-
-        # df_Index
-        ids = self.number_SP_solutions.iloc[0]
-        df_Index = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][
-            ids["House"]]["df_Index"]
 
         # df_Buildings
         df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
@@ -799,18 +780,37 @@ class reho(district_decomposition):
         df_Results["df_Annuals"] = df_Annuals
         df_Results["df_Buildings"] = df_Buildings
         df_Results["df_Unit"] = df_Unit
-        df_Results["df_Unit_t"] = df_Unit_t
         df_Results["df_Grid_t"] = df_Grid_t
-        df_Results["df_Buildings_t"] = df_Buildings_t
+        df_Results["df_Time"] = df_Time
 
         if self.method["save_stream_t"]:
             df_Stream_t = self.get_final_SPs_results(MP_selection, 'df_Stream_t')
             df_Stream_t = df_Stream_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
             df_Results["df_Stream_t"] = df_Stream_t
 
-        df_Results["df_Time"] = df_Time
-        df_Results["df_External"] = df_External
-        df_Results["df_Index"] = df_Index
+        if self.method["save_all_df"]:
+            # df_Unit_t
+            df_Unit_t = self.get_final_SPs_results(MP_selection, 'df_Unit_t')
+            df_Unit_t = df_Unit_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+            df_district_units = last_results["df_Unit_t"]
+            df_Unit_t = pd.concat([df_Unit_t, df_district_units])
+            df_Results["df_Unit_t"] = df_Unit_t
+
+            # df_Buildings_t
+            df_Buildings_t = self.get_final_SPs_results(MP_selection, 'df_Buildings_t')
+            df_Buildings_t = df_Buildings_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+            df_Buildings_t.sort_index(level='Hub')
+            df_Results["df_Buildings_t"] = df_Buildings_t
+
+            # df_External
+            ids = self.number_SP_solutions.iloc[0]
+            df_External = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][ids["House"]]["df_External"]
+            df_Results["df_External"] = df_External
+
+            # df_Index
+            ids = self.number_SP_solutions.iloc[0]
+            df_Index = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][ids["House"]]["df_Index"]
+            df_Results["df_Index"] = df_Index
 
         if self.method["save_lca"]:
             df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
@@ -825,22 +825,17 @@ class reho(district_decomposition):
         data = self.return_combined_SP_results(self.results_SP, df_name)
         df = pd.DataFrame()
         for idx in MP_selection.values:
-            if df_name == "df_Grid_t":
-                df_idx = data.xs((idx), level=("FeasibleSolution", "house"), drop_level=False).xs(idx[1], level="Hub", drop_level=False)
-                df_idx_net = data.xs((idx), level=("FeasibleSolution", "house"), drop_level=False).xs("Network", level="Hub", drop_level=False)
-                df_idx["GWP_demand"] = np.array(df_idx_net["GWP_demand"])
-                df_idx["GWP_supply"] = np.array(df_idx_net["GWP_supply"])
-            else:
-                df_idx = data.xs((idx), level=('FeasibleSolution', 'house'), drop_level=False)
+            df_idx = data.xs((idx), level=('FeasibleSolution', 'house'), drop_level=False)
             df = pd.concat([df, df_idx])
         return df
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
-        df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.csv_data["timestamp"], self.csv_data["emissions_matrix"])
-        self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
-        self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_eco
-        if self.method['building-scale']:
-            self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
+        if self.method["save_all_df"]:
+            df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.csv_data["timestamp"], self.csv_data["emissions_matrix"])
+            self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
+            self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_eco
+            if self.method['building-scale']:
+                self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 
     def save_results(self, format=('pickle'), filename='results', erase_file=True, filter=True):
         """

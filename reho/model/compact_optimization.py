@@ -706,6 +706,8 @@ def initialize_default_methods(method):
         method['include_all_solutions'] = False
     if 'save_stream_t' not in method:
         method['save_stream_t'] = False
+    if 'save_all_df' not in method:
+        method['save_all_df'] = True
     if 'save_lca' not in method:
         method['save_lca'] = False
     if 'extract_parameters' not in method:

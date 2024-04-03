@@ -144,8 +144,9 @@ class compact_optimization:
         ampl.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl.setOption('presolve_fixeps', 1e-9)
-        ampl.setOption('show_stats', 0)
-        ampl.setOption('solver_msg', 0)
+        if self.method_compact['disable_print']:
+            ampl.setOption('show_stats', 0)
+            ampl.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
         ampl.setOption('solver', self.solver)
@@ -606,7 +607,7 @@ class compact_optimization:
                 ampl.getObjective(self.scenario_compact['Objective']).restore()
             except KeyError:
                 ampl.getObjective('TOTEX').restore()
-                logging.warning('Objective function "', self.scenario_compact['Objective'],
+                logging.warning('Objective function "' + str(self.scenario_compact['Objective']) +
                       '" was not found in ampl model, TOTEX minimization was set instead.')
         else:
             ampl.getObjective('TOTEX').restore()
@@ -635,7 +636,7 @@ class compact_optimization:
                         epsilon_parameter = ampl.getParameter(epsilon_constraint)
                         epsilon_parameter.setValues([self.scenario_compact['EMOO'][epsilon_constraint]])
                 except:
-                    logging.warning('EMOO constraint ', epsilon_constraint, ' was not found in ampl model and was thus ignored.')
+                    logging.warning('EMOO constraint ' + str(epsilon_constraint) + ' was not found in ampl model and was thus ignored.')
 
         # Set specific constraints
         ampl.getConstraint('disallow_exchanges_1').drop()
@@ -663,7 +664,7 @@ class compact_optimization:
                 try:
                     ampl.getConstraint(specific_constraint).restore()
                 except:
-                    logging.warning('Specific constraint "', specific_constraint,
+                    logging.warning('Specific constraint "' + str(specific_constraint) +
                           '" was not found in ampl model and was thus ignored.')
 
         return ampl
@@ -712,6 +713,8 @@ def initialize_default_methods(method):
         method['save_lca'] = False
     if 'extract_parameters' not in method:
         method['extract_parameters'] = False
+    if 'disable_print' not in method:
+        method['disable_print'] = False
 
     if 'actors_cost' not in method:
         method['actors_cost'] = False

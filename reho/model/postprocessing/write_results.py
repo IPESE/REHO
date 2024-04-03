@@ -61,11 +61,10 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df_Performance = pd.concat([df_Performance, df_Epsilon], axis=1)
         df_Performance.index.names = ['Hub']
-        logging.info(df_Performance)
 
         return df_Performance.sort_index()
 
-    def set_df_annuals(df, ampl):
+    def set_df_annuals(df):
         # Annuals
         df1 = get_variable_in_pandas(df, 'AnnualNetwork_demand')
         df1.columns = ['Demand_MWh']
@@ -109,7 +108,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Annuals
 
-    def set_df_buildings(buildings_data, df, ampl):
+    def set_df_buildings(buildings_data):
         # Building
         df_Buildings = pd.DataFrame.from_dict(buildings_data, orient='index')
         df_Buildings.index.names = ['Hub']
@@ -131,7 +130,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
-        logging.info(df_Unit)
 
         # Unit_t
         df1 = get_variable_in_pandas(df, 'Units_demand')
@@ -178,7 +176,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Grid_t.sort_index()
 
-    def set_df_buildings_t(df, ampl):
+    def set_df_buildings_t(df):
         # Building_t
         df1 = get_parameter_in_pandas(ampl, 'Domestic_electricity', multi_index=True)
 
@@ -244,7 +242,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Stream_t.sort_index()
 
-    def set_dfs_lca(df, ampl):
+    def set_dfs_lca(df):
 
         LCA_units = get_variable_in_pandas(df, 'lca_units')
         LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
@@ -300,7 +298,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_PV_Surface, df_PV_orientation
 
-    def set_dfs_other(df, ampl):
+    def set_dfs_other(ampl):
         # Time
         df1 = get_parameter_in_pandas(ampl, 'dp', multi_index=False)
         df2 = get_parameter_in_pandas(ampl, 'TimeEnd', multi_index=False)
@@ -327,17 +325,17 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
     df.columns = ["Varname", "Value"]
     df_Results["df_Performance"] = set_df_performance(df, ampl, scenario)
-    df_Results["df_Annuals"] = set_df_annuals(df, ampl)
+    df_Results["df_Annuals"] = set_df_annuals(df)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(df, ampl)
     df_Results["df_Grid_t"] = set_df_grid(df, ampl)
-    df_Results["df_Time"], df_External, df_Index = set_dfs_other(df, ampl)
+    df_Results["df_Time"], df_External, df_Index = set_dfs_other(ampl)
 
     if method['save_stream_t']:
         df_Results["df_Stream_t"] = set_df_stream_t(df, ampl)
 
     if method["save_all_df"]:
-        df_Results["df_Buildings"] = set_df_buildings(buildings_data, df, ampl)
-        df_Results["df_Buildings_t"] = set_df_buildings_t(df, ampl)
+        df_Results["df_Buildings"] = set_df_buildings(buildings_data)
+        df_Results["df_Buildings_t"] = set_df_buildings_t(df)
         df_Results["df_Unit_t"] = df_Unit_t
         df_Results["df_External"] = df_External
         df_Results["df_Index"] = df_Index
@@ -346,7 +344,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
             del df_Results["df_Grid_t"][i]
 
     if method['save_lca']:
-        df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(df, ampl)
+        df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(df)
     if method['use_pv_orientation'] or method['use_facades']:
         df_Results["df_PV_Surface"], df_Results["df_PV_orientation"] = set_dfs_pv(df, ampl)
     if method["extract_parameters"]:
@@ -494,7 +492,6 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Unit = pd.concat([df_Unit, df_DHN], axis=0)
     df_Unit.index.names = ['Unit']
     df_Results["df_Unit"] = df_Unit.sort_index()
-    logging.info(df_Results["df_Unit"])
 
     # Unit_t
     df1 = get_variable_in_pandas(df, 'Units_demand')

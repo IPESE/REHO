@@ -7,6 +7,7 @@ import time
 import gc
 import pandas as pd
 import logging
+import coloredlogs
 
 class district_decomposition:
     """
@@ -50,6 +51,10 @@ class district_decomposition:
 
         # methods
         self.method = initialize_default_methods(method)
+        self.logger = logging.getLogger(__name__)
+        if not method['disable_print']:
+            coloredlogs.install(level=logging.INFO, logger=self.logger, isatty=True,
+                                fmt="%(message)s", stream=sys.stdout)
 
         # District attributes / used also in REHO
         if method['use_facades'] or method['use_pv_orientation']:
@@ -66,8 +71,6 @@ class district_decomposition:
         self.csv_data["emissions_matrix"] = pd.read_csv(path_to_emissions_matrix, index_col = [0,1,2])
         self.csv_data["sia2024_data"] = pd.read_excel(path_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl',
                            index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
-
-
 
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -262,8 +265,8 @@ class district_decomposition:
         df_Results : results of the optimization (unit installed, power exchanged, costs, GWP emissions, ...)
         attr : results of the optimization process (CPU time, objective value, nb variables or constraints, ...)
         """
-
-        logging.info('INITIATE HOUSE: ', h)
+        if not self.method["disable_print"]:
+            print('INITIATE HOUSE: ' + h)
 
         # find district structure and parameter for one single building
         buildings_data_SP, parameters_SP, infrastructure_SP = self.__split_parameter_sets_per_building(h)
@@ -355,8 +358,9 @@ class district_decomposition:
         ampl_MP.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl_MP.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl_MP.setOption('presolve_fixeps', 1e-9)
-        ampl_MP.setOption('show_stats', 0)
-        ampl_MP.setOption('solver_msg', 0)
+        if self.method['disable_print']:
+            ampl_MP.setOption('show_stats', 0)
+            ampl_MP.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
         ampl_MP.setOption('solver', self.solver)
@@ -586,7 +590,7 @@ class district_decomposition:
         ampl_MP.solve()
 
         df_Results_MP = WR.get_df_Results_from_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
-        logging.info(ampl_MP.getCurrentObjective().getValues().toPandas())
+        self.logger.info(str(ampl_MP.getCurrentObjective().getValues().toPandas()))
 
         df = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl_MP)
         self.add_df_Results_MP(Scn_ID, Pareto_ID, self.iter, df_Results_MP, df)
@@ -648,7 +652,7 @@ class district_decomposition:
         ------
         If the SP optimization did not converge
         """
-        logging.info('iterate HOUSE: ', House, 'iteration: ', self.iter)
+        self.logger.info('iterate HOUSE: ' + House + 'iteration: '+ str(self.iter))
 
         # Give dual variables to Subproblem
         pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'pi').reorder_levels(['Layer', 'Period', 'Time'])

@@ -362,11 +362,9 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     return df_Results
 
 
-def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False):
+def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}):
 
     df_Results = dict()
-    df = ampl.getData("{j in 1.._nvars} (_varname[j],_var[j])").toPandas()
-    df.columns = ["Varname", "Value"]
 
     # Dantzig Wolfe algorithm
     df1 = get_parameter_in_pandas(ampl, 'lambda', multi_index=True)
@@ -430,19 +428,27 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_Results["df_District"] = df_District.sort_index()
 
     # df_beta
-    df1 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_CAPEX_constraint', False)
-    df1.columns = ['CAPEX']
-    df2 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_OPEX_constraint', False)
-    df2.columns = ['OPEX']
-    df3 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_GWP_constraint', False)
-    df3.columns = ['GWP']
-    df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_TOTEX_constraint', False)
-    df4.columns = ['TOTEX']
-    df_beta = pd.concat([df1, df2, df3, df4], axis=1).stack().droplevel(0)
-    df_beta = pd.DataFrame(df_beta, columns=['beta'])
-    df5 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_lca_constraint', False)
-    df5.columns = ['beta']
-    df_Results["df_beta"] = pd.concat([df_beta, df5])
+    emoo_keys = ["EMOO_CAPEX", "EMOO_OPEX", "EMOO_GWP", "EMOO_TOTEX", "EMOO_lca"]
+    list_keys = [i for i in scenario["EMOO"].keys() if i in emoo_keys]
+    if not list_keys:
+        df = pd.DataFrame([0.0] * 16)
+        df.index = ['CAPEX', 'OPEX', 'GWP', 'TOTEX'] + list(get_parameter_in_pandas(ampl, 'Lca_kpi').index)
+        df.columns = ["beta"]
+        df_Results["df_beta"] = df
+    else:
+        df1 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_CAPEX_constraint', False)
+        df1.columns = ['CAPEX']
+        df2 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_OPEX_constraint', False)
+        df2.columns = ['OPEX']
+        df3 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_GWP_constraint', False)
+        df3.columns = ['GWP']
+        df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_TOTEX_constraint', False)
+        df4.columns = ['TOTEX']
+        df_beta = pd.concat([df1, df2, df3, df4], axis=1).stack().droplevel(0)
+        df_beta = pd.DataFrame(df_beta, columns=['beta'])
+        df5 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_lca_constraint', False)
+        df5.columns = ['beta']
+        df_Results["df_beta"] = pd.concat([df_beta, df5])
 
     # District_t
     df1 = get_parameter_in_pandas(ampl, 'Cost_demand_network', multi_index=True)

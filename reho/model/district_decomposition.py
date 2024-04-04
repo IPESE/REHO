@@ -61,7 +61,10 @@ class district_decomposition:
             self.qbuildings_data = qbuildings_data
         self.buildings_data = qbuildings_data['buildings_data']
         self.ERA = sum([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
+
         self.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
+        self.infrastructure_SP = dict()
+        self.build_infrastructure_SP()
 
         self.csv_data = dict()
         self.csv_data["irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
@@ -132,8 +135,6 @@ class district_decomposition:
 
         self.results_SP = dict()
         self.results_MP = dict()
-
-        self.infrastructure_SP = dict()
 
         self.solver_attributes_SP = pd.DataFrame()
         self.solver_attributes_MP = pd.DataFrame()
@@ -231,17 +232,16 @@ class district_decomposition:
                 results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta)) for h in self.infrastructure.houses}
 
                 # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
-                while len(results[list(self.buildings_data.keys())[-1]].get()) != 3:
+                while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
                     time.sleep(1)
 
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation
                 for h in self.infrastructure.houses:
-                    (df_Results, attr, infrastructure_SP) = results[h].get()
+                    (df_Results, attr) = results[h].get()
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
-                    self.infrastructure_SP[h] = infrastructure_SP
             else:
                 for id, h in enumerate(self.infrastructure.houses):
-                    df_Results, attr, infrastructure_SP = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
+                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
             self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
@@ -271,7 +271,7 @@ class district_decomposition:
             print('INITIATE HOUSE: ' + h)
 
         # find district structure and parameter for one single building
-        buildings_data_SP, parameters_SP, infrastructure_SP = self.__split_parameter_sets_per_building(h)
+        buildings_data_SP, parameters_SP = self.__split_parameter_sets_per_building(h)
 
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
         if epsilon_init is not None and self.method['building-scale']:
@@ -289,9 +289,9 @@ class district_decomposition:
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[h], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[h], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -316,7 +316,7 @@ class district_decomposition:
             if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
                 raise Exception('Sub problem did not converge')
 
-        return df_Results, attr, infrastructure_SP
+        return df_Results, attr
 
     def MP_iteration(self, scenario, binary, Scn_ID=0, Pareto_ID=1, read_DHN=False):
         """
@@ -591,7 +591,7 @@ class district_decomposition:
         # Solve ampl_MP
         ampl_MP.solve()
 
-        df_Results_MP = WR.get_df_Results_from_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN)
+        df_Results_MP = WR.get_df_Results_from_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN, scenario=scenario)
         self.logger.info(str(ampl_MP.getCurrentObjective().getValues().toPandas()))
 
         df = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl_MP)
@@ -674,16 +674,16 @@ class district_decomposition:
         parameters_SP['lca_kpi_demand'] = pi_lca.mul(0)
 
         # find district structure, objective, beta and parameter for one single building
-        buildings_data_SP, parameters_SP, infrastructure_SP = self.__split_parameter_sets_per_building(House, parameters_SP)
+        buildings_data_SP, parameters_SP = self.__split_parameter_sets_per_building(House, parameters_SP)
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'beta')
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[House], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[House], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
 
         ampl = REHO.build_model_without_solving()
 
@@ -1138,10 +1138,7 @@ class district_decomposition:
         infrastructure_SP: dictionary, The district structure for a single house
         """
         ID = np.where(h == self.infrastructure.House)[0][0]
-
-        single_building_data = {"buildings_data": {h: self.buildings_data[h]}}
         buildings_data_SP = {h: self.buildings_data[h]}
-        building_units = {"building_units": self.infrastructure.units}
 
         for key in self.parameters:
             if key not in self.lists_MP["list_parameters_MP"]:
@@ -1154,16 +1151,19 @@ class district_decomposition:
                         parameters_SP[key] = profile_building_x[ID]
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
-        if h in self.infrastructure_SP:
-            infrastructure_SP = self.infrastructure_SP[h]
-        else:
+        return buildings_data_SP, parameters_SP
+
+    def build_infrastructure_SP(self):
+        for h in self.buildings_data:
+            single_building_data = {"buildings_data": {h: self.buildings_data[h]}}
+            building_units = {"building_units": self.infrastructure.units}
             infrastructure_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
 
-        # TODO: better integration Units_Parameters specific to each house
-        unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]
-        infrastructure_SP.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = unit_param[["Units_Fmax", "Cost_inv2"]]
-
-        return buildings_data_SP, parameters_SP, infrastructure_SP
+            # TODO: better integration Units_Parameters specific to each house
+            unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]
+            infrastructure_SP.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = unit_param[["Units_Fmax", "Cost_inv2"]]
+            self.infrastructure_SP[h] = infrastructure_SP
+        return
 
     def return_combined_SP_results(self, df_Results, df_name):
 

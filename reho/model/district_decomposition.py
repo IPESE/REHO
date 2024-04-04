@@ -133,6 +133,8 @@ class district_decomposition:
         self.results_SP = dict()
         self.results_MP = dict()
 
+        self.infrastructure_SP = dict()
+
         self.solver_attributes_SP = pd.DataFrame()
         self.solver_attributes_MP = pd.DataFrame()
         self.reduced_costs = pd.DataFrame()
@@ -229,17 +231,17 @@ class district_decomposition:
                 results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta)) for h in self.infrastructure.houses}
 
                 # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
-                while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                while len(results[list(self.buildings_data.keys())[-1]].get()) != 3:
                     time.sleep(1)
 
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation
                 for h in self.infrastructure.houses:
-                    (df_Results, attr) = results[h].get()
+                    (df_Results, attr, infrastructure_SP) = results[h].get()
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
-
+                    self.infrastructure_SP[h] = infrastructure_SP
             else:
                 for id, h in enumerate(self.infrastructure.houses):
-                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
+                    df_Results, attr, infrastructure_SP = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
             self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
@@ -314,7 +316,7 @@ class district_decomposition:
             if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
                 raise Exception('Sub problem did not converge')
 
-        return df_Results, attr
+        return df_Results, attr, infrastructure_SP
 
     def MP_iteration(self, scenario, binary, Scn_ID=0, Pareto_ID=1, read_DHN=False):
         """
@@ -1152,8 +1154,10 @@ class district_decomposition:
                         parameters_SP[key] = profile_building_x[ID]
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
-
-        infrastructure_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
+        if h in self.infrastructure_SP:
+            infrastructure_SP = self.infrastructure_SP[h]
+        else:
+            infrastructure_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
 
         # TODO: better integration Units_Parameters specific to each house
         unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]

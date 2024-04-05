@@ -1,0 +1,7 @@
+Name, Current [A], GWP_tot [kgCO2-eq/m], GWP_constr [kgCO2-eq/m]
+Hawk, 570, 3.3440e+03, 48.175
+Dove, 630, 3.9365e+03, 56
+Drake, 785, 5.6335e+03, 79.9120
+Tern, 775, 5.7569e+03, 73.3550
+Finch, 1460, 8.2385e+03, 107.7180
+Condor, 780, 5.7310e+03, 77.4320

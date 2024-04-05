@@ -484,8 +484,10 @@ class reho(district_decomposition):
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
             else:
+
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster, self.scenario, self.method, self.solver)
+
             ampl = REHO.build_model_without_solving()
 
             if self.method['fix_units']:
@@ -715,6 +717,11 @@ class reho(district_decomposition):
             df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors_tariff"]
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors"]
 
+        # df_Grid
+        df = self.get_final_SPs_results(MP_selection, 'df_Grid')
+        df = df.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+        df_Grid = pd.concat([df,last_results["df_Grid"]])
+
         # df_Grid_t
         df = self.get_final_SPs_results(MP_selection, 'df_Grid_t')
         df = df.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
@@ -817,6 +824,7 @@ class reho(district_decomposition):
         df_Results["df_Annuals"] = df_Annuals
         df_Results["df_Buildings"] = df_Buildings
         df_Results["df_Unit"] = df_Unit
+        df_Results["df_Grid"]=df_Grid
         df_Results["df_Unit_t"] = df_Unit_t
         df_Results["df_Grid_t"] = df_Grid_t
         df_Results["df_Buildings_t"] = df_Buildings_t
@@ -826,6 +834,7 @@ class reho(district_decomposition):
             df_Stream_t = df_Stream_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
             df_Results["df_Stream_t"] = df_Stream_t
 
+        
         df_Results["df_Time"] = df_Time
         df_Results["df_External"] = df_External
         df_Results["df_Index"] = df_Index

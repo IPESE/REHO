@@ -88,7 +88,7 @@ class district_decomposition:
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
-                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
+                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2"],
                          "list_constraints_MP": []
                          }
 
@@ -456,7 +456,11 @@ class district_decomposition:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']:
+        additional = []
+        if 'ReinforcementTrOfLayer' in self.infrastructure.Set.keys():
+             additional = additional + ["ReinforcementTrOfLayer"]
+
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']+additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
@@ -487,6 +491,13 @@ class district_decomposition:
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses)))+1
 
+        ### Other way, pass the set through set_indexed
+        # if 'ReinforcementTrOfLayer' in self.set_indexed.keys():
+        #     MP_set_indexed['ReinforcementTrOfLayer']=self.set_indexed['ReinforcementTrOfLayer']
+        #     # additional = additional + ["ReinforcementTrOfLayer"]
+        # if 'ReinforcementLineOfLayer' in self.infrastructure.__dict__.keys():
+        #     additional = additional + ["ReinforcementLineOfLayer"]
+
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS
         # ---------------------------------------------------------------------------------------------------------------
@@ -506,7 +517,10 @@ class district_decomposition:
         # give values to ampl
         # ---------------------------------------------------------------------------------------------------------------
 
+
+
         for s in MP_set_indexed:
+
             if isinstance(MP_set_indexed[s], np.ndarray):
                 ampl_MP.getSet(str(s)).setValues(MP_set_indexed[s])
             elif isinstance(MP_set_indexed[s], dict):

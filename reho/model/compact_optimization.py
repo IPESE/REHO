@@ -7,7 +7,7 @@ import reho.model.preprocessing.skydome as SkyDome
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.EV_profile_generator as EV_gen
 from reho.model.preprocessing.QBuildings import *
-
+import logging
 
 class compact_optimization:
     """
@@ -40,7 +40,7 @@ class compact_optimization:
             reho.model.district_decomposition.district_decomposition
 
             """
-    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
+    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None, csv_data=None):
 
         self.buildings_data_compact = buildings_data
         if method['use_facades']:
@@ -60,10 +60,7 @@ class compact_optimization:
         self.method_compact = method
         self.solver = solver
         self.parameters_to_ampl = dict()
-
-        # print('Execute for building:', self.buildings_data_compact)
-        # print('With parameters and sets:', self.parameters_compact, self.set_indexed_compact)
-        # print('Cluster settings are:', self.cluster_compact)
+        self.csv_data = csv_data
 
     def solve_model(self):
         ampl = self.build_model_without_solving()
@@ -101,7 +98,7 @@ class compact_optimization:
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
         if self.method_compact['use_pv_orientation']:
-            self.set_PV_models(ampl, File_ID)
+            self.set_PV_models(ampl)
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
         ampl = self.set_scenario(ampl)
 
@@ -140,7 +137,6 @@ class compact_optimization:
                 ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
                 raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
-        # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS
         ampl.setOption('solution_round', 11)
@@ -148,7 +144,9 @@ class compact_optimization:
         ampl.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl.setOption('presolve_fixeps', 1e-9)
-        ampl.setOption('show_stats', 0)
+        if self.method_compact['disable_print']:
+            ampl.setOption('show_stats', 0)
+            ampl.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
         ampl.setOption('solver', self.solver)
@@ -167,6 +165,8 @@ class compact_optimization:
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_compact.UnitTypes:
             ampl.read('electrical_heater.mod')
+        if 'tap_water' in self.infrastructure_compact.UnitTypes:
+            ampl.read('tap_water.mod')
         if 'NG_Boiler' in self.infrastructure_compact.UnitTypes:
             ampl.read('ng_boiler.mod')
         if 'OIL_Boiler' in self.infrastructure_compact.UnitTypes:
@@ -306,7 +306,7 @@ class compact_optimization:
 
     def set_emissions_profiles(self, File_ID):
 
-        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a')
+        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a', self.csv_data["timestamp"], self.csv_data["emissions_matrix"])
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})
@@ -319,13 +319,13 @@ class compact_optimization:
         #self.parameters_to_ampl['T_comfort_min'] = DGF.profile_reference_temperature(self.parameters_to_ampl, self.cluster_compact)
 
         # Heat gains from solar
-        self.parameters_to_ampl['SolarGains'] = DGF.solar_gains_profile(ampl, self.buildings_data_compact, File_ID)
+        self.parameters_to_ampl['SolarGains'] = DGF.solar_gains_profile(ampl, self.buildings_data_compact, File_ID, self.csv_data)
 
         # Set default EV plug out profile if EVs are allowed
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact)
+                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact, self.csv_data["timestamp"])
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -430,17 +430,17 @@ class compact_optimization:
 
 
 
-    def set_PV_models(self, ampl, File_ID):
+    def set_PV_models(self, ampl):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
-        df_dome = SkyDome.skydome_to_df()
+        df_dome = SkyDome.skydome_to_df(self.csv_data)
         self.parameters_to_ampl['Sin_a'] = df_dome.Sin_a.values
         self.parameters_to_ampl['Cos_a'] = df_dome.Cos_a.values
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
-        total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
-        df_irr = SkyDome.irradiation_to_df(ampl, total_irradiation, File_ID)
+        #total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
+        df_irr = SkyDome.irradiation_to_df(ampl, self.csv_data["irradiation"], self.csv_data["timestamp"])
         self.parameters_to_ampl['Irr'] = df_irr
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])
@@ -510,7 +510,7 @@ class compact_optimization:
                 df_shadows = self.shadows_compact[self.shadows_compact['id_building'] == self.buildings_data_compact[b]['id_building']]
                 facades = df_facades['Facades_ID']
                 np_facades = np.append(np_facades, facades)
-                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows)
+                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows, self.csv_data)
                 df_shadow = pd.concat([df_shadow], keys=[b], names=['House'])
                 df_limit_angle = pd.concat([df_limit_angle, df_shadow])
                 for fc in facades:
@@ -560,38 +560,30 @@ class compact_optimization:
 
             if isinstance(self.parameters_to_ampl[i], np.ndarray):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues(self.parameters_to_ampl[i])
 
             elif isinstance(self.parameters_to_ampl[i], list):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues(np.array(self.parameters_to_ampl[i]))
 
             elif isinstance(self.parameters_to_ampl[i], pd.DataFrame):
-                # print(self.parameters_to_ampl[i].columns)
                 ampl.setData(self.parameters_to_ampl[i])
 
             elif isinstance(self.parameters_to_ampl[i], pd.Series):
-                # print('Set values for : '+ i)
                 self.parameters_to_ampl[i].name = i
                 df = pd.DataFrame(self.parameters_to_ampl[i])
                 ampl.setData(df)
 
             elif isinstance(self.parameters_to_ampl[i], dict):
-                # print('Set Values for ' + str(i))
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues(self.parameters_to_ampl[i])
 
             elif isinstance(self.parameters_to_ampl[i], float):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues([self.parameters_to_ampl[i]])
 
             elif isinstance(self.parameters_to_ampl[i], int):
                 Para = ampl.getParameter(i)
-                # print('Set Values for ' + str(Para))
                 Para.setValues([self.parameters_to_ampl[i]])
 
             else:
@@ -615,11 +607,11 @@ class compact_optimization:
                 ampl.getObjective(self.scenario_compact['Objective']).restore()
             except KeyError:
                 ampl.getObjective('TOTEX').restore()
-                print('Objective function "', self.scenario_compact['Objective'],
+                logging.warning('Objective function "' + str(self.scenario_compact['Objective']) +
                       '" was not found in ampl model, TOTEX minimization was set instead.')
         else:
             ampl.getObjective('TOTEX').restore()
-            print('No objective function was found in scenario dictionary, TOTEX minimization was set instead.')
+            logging.warning('No objective function was found in scenario dictionary, TOTEX minimization was set instead.')
 
         # Set epsilon constraints
         ampl.getConstraint('EMOO_CAPEX_constraint').drop()
@@ -644,7 +636,7 @@ class compact_optimization:
                         epsilon_parameter = ampl.getParameter(epsilon_constraint)
                         epsilon_parameter.setValues([self.scenario_compact['EMOO'][epsilon_constraint]])
                 except:
-                    print('EMOO constraint ', epsilon_constraint, ' was not found in ampl model and was thus ignored.')
+                    logging.warning('EMOO constraint ' + str(epsilon_constraint) + ' was not found in ampl model and was thus ignored.')
 
         # Set specific constraints
         ampl.getConstraint('disallow_exchanges_1').drop()
@@ -672,7 +664,7 @@ class compact_optimization:
                 try:
                     ampl.getConstraint(specific_constraint).restore()
                 except:
-                    print('Specific constraint "', specific_constraint,
+                    logging.warning('Specific constraint "' + str(specific_constraint) +
                           '" was not found in ampl model and was thus ignored.')
 
         return ampl
@@ -715,10 +707,14 @@ def initialize_default_methods(method):
         method['include_all_solutions'] = False
     if 'save_stream_t' not in method:
         method['save_stream_t'] = False
+    if 'save_all_df' not in method:
+        method['save_all_df'] = True
     if 'save_lca' not in method:
         method['save_lca'] = False
     if 'extract_parameters' not in method:
         method['extract_parameters'] = False
+    if 'disable_print' not in method:
+        method['disable_print'] = False
 
     if 'actors_cost' not in method:
         method['actors_cost'] = False

@@ -52,7 +52,7 @@ def profile_reference_temperature(parameters_to_ampl, cluster):
     return np_temperature
 
 
-def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
+def build_eud_profiles(buildings_data, cluster, df_sia, df_SIA, df_timestamp,
                        include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
     Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
@@ -134,7 +134,7 @@ def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
         np_el_class = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
-            rooms = read_sia2024_rooms_sia380_1(class_380, sia_file)
+            rooms = read_sia2024_rooms_sia380_1(class_380, df_sia)
             status = ''.join(filter(str.isalnum, status_buildings[i]))
             if class_380 == 'I' or class_380 == 'II':
                 area_net_floor = buildings_data[b]['ERA'] / 1.245

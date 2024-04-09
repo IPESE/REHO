@@ -705,10 +705,10 @@ def initialize_default_methods(method):
 
     if 'include_all_solutions' not in method:
         method['include_all_solutions'] = False
-    if 'save_stream_t' not in method:
-        method['save_stream_t'] = False
-    if 'save_all_df' not in method:
-        method['save_all_df'] = True
+    if 'save_data_input' not in method:
+        method['save_data_input'] = True
+    if 'save_timeseries' not in method:
+        method['save_timeseries'] = True
     if 'save_lca' not in method:
         method['save_lca'] = False
     if 'extract_parameters' not in method:

@@ -910,9 +910,9 @@ def get_electricity_prices(city, year=2024, category=None, tva=None):
 
 
 if __name__ == '__main__':
-    injection = get_injection_prices(year=2023, city='Basel')
-    communes = get_electricity_prices(city='Genève', category=None, year=2017)
-    # prices = get_prices_from_elcom(year=2023, canton='Geneva', category=None, export_path='../../elec_prices_2024.csv')
+    injection = get_injection_prices(city='Basel', year=2023)
+    communes = get_electricity_prices(city='Geneva', year=2017, category=None)
+    prices = get_prices_from_elcom_by_city(year=2023, city='Geneva', category=None, export_path='../../elec_prices_2024.csv')
     id_commune = 177
     get_injection_prices(692)
     # url_commune = f'https://opendata.vese.ch/pvtarif/api/ClientService.php?mode=muni&idofs={id_commune}&licenseKey={license_key}'

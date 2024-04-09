@@ -70,9 +70,9 @@ class district_decomposition:
         self.csv_data["irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
         self.csv_data["df_area"] = pd.read_csv(path_to_areas, header=None)
         self.csv_data["df_cenpts"] = pd.read_csv(path_to_cenpts, header=None)
-        self.csv_data["df_sia"] = pd.read_csv(path_sia, sep=';', index_col=[0], header=[0])
+        self.csv_data["df_sia"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
         self.csv_data["emissions_matrix"] = pd.read_csv(path_to_emissions_matrix, index_col = [0,1,2])
-        self.csv_data["sia2024_data"] = pd.read_excel(path_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl',
+        self.csv_data["sia2024_data"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl',
                            index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
 
         if cluster is None:

@@ -15,9 +15,7 @@ def annual_to_typical(cluster, annual_file, timestamp_data, typical_file=None):
     """
 
     # Get which days are the typical ones
-    df_time = timestamp_data
-    typical_days = df_time.Date.apply(lambda date: date[0:-3]).values
-
+    typical_days = pd.Series([i.strftime("%m/%d/%Y") for i in timestamp_data.Date]).values
     df_annual = file_reader(annual_file)
     t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
 

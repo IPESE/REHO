@@ -151,30 +151,51 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Unit, df_Unit_t
 
-    def set_df_grid(ampl):
+    def set_df_grid(ampl, method):
         # Grid_t
         df1 = get_ampl_data(ampl, 'Grid_demand', multi_index=True)
-        hub = df1.index.levels[1].values[0]
-        df1 = df1.droplevel(1)
-        df2 = get_ampl_data(ampl, 'Grid_supply', multi_index=True).droplevel(1)
+        df2 = get_ampl_data(ampl, 'Grid_supply', multi_index=True)
 
-        df_cs = get_ampl_data(ampl, 'Cost_supply', multi_index=True).droplevel(0)
-        df_cd = get_ampl_data(ampl, 'Cost_demand', multi_index=True).droplevel(0)
+        df_cs = get_ampl_data(ampl, 'Cost_supply', multi_index=True)
+        df_cs = df_cs.reorder_levels((1, 0, 2, 3))
+        df_cd = get_ampl_data(ampl, 'Cost_demand', multi_index=True)
+        df_cd = df_cd.reorder_levels((1, 0, 2, 3))
 
-        df_electricity = get_ampl_data(ampl, 'Domestic_electricity', multi_index=True).droplevel(0)
+        df_electricity = get_ampl_data(ampl, 'Domestic_electricity', multi_index=True)
         df_electricity.columns = ['Uncontrollable_load']
         df_electricity = df_electricity.set_index([pd.Index(["Electricity"]*df_electricity.index.size), df_electricity.index])
 
         df_es = get_ampl_data(ampl, 'GWP_supply', multi_index=True)
         df_ed = get_ampl_data(ampl, 'GWP_demand', multi_index=True)
+        df_em = pd.concat([df_es, df_ed], axis=1)
+        df_em_tot = pd.DataFrame()
+        for bui in df1.index.get_level_values(1).unique():
+            df = df_em
+            df["Hub"] = bui
+            df_em_tot = pd.concat([df_em_tot, df])
+        df_em_tot.set_index('Hub', append=True, inplace=True)
+        df_em_tot = df_em_tot.reorder_levels((0, 3, 1, 2))
 
-        df12 = pd.concat([df1, df2, df_cs, df_cd, df_es, df_ed, df_electricity], axis=1)
-        df12["Hub"] = hub
-        df12.set_index('Hub', append=True, inplace=True)
-        df_Grid_t = df12.reorder_levels((0, 3, 1, 2))
-        # combine Network & Grid dataframe
+        df_Grid_t = pd.concat([df1, df2, df_cs, df_cd, df_em_tot, df_electricity], axis=1)
+
+        if not method["district-scale"] or not method["district-scale"]:
+            df3 = get_ampl_data(ampl, 'Network_demand', multi_index=True)
+            df3.columns = ['Grid_demand']
+            df4 = get_ampl_data(ampl, 'Network_supply', multi_index=True)
+            df4.columns = ['Grid_supply']
+            df_cs_net = get_ampl_data(ampl, 'Cost_supply_network', multi_index=True)
+            df_cs_net.columns = ['Cost_supply']
+            df_cd_net = get_ampl_data(ampl, 'Cost_demand_network', multi_index=True)
+            df_cd_net.columns = ['Cost_demand']
+
+            df_electricity_net = df_electricity.groupby(level=(0, 2, 3)).sum()
+            df34 = pd.concat([df3, df4, df_cs_net, df_cd_net, df_es, df_ed, df_electricity_net], axis=1)
+            df34['Hub'] = 'Network'
+            df34.set_index('Hub', append=True, inplace=True)
+            df34 = df34.reorder_levels((0, 3, 1, 2))
+            df_Grid_t = pd.concat([df_Grid_t, df34])
+
         df_Grid_t.index.names = ['Layer', 'Hub', 'Period', 'Time']
-
         return df_Grid_t.sort_index()
 
     def set_df_buildings_t(ampl):
@@ -326,7 +347,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     df_Results["df_Performance"] = set_df_performance(ampl, scenario)
     df_Results["df_Annuals"] = set_df_annuals(ampl)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
-    df_Results["df_Grid_t"] = set_df_grid(ampl)
+    df_Results["df_Grid_t"] = set_df_grid(ampl, method)
     df_Results["df_Time"], df_External, df_Index = set_dfs_other(ampl)
 
     if method['save_data_input']:

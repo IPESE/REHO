@@ -59,7 +59,7 @@ Change heat pump temperature
 
 Add other energy layers
 ====================================
-.. literalinclude:: ../../scripts/examples/3e_Layers.py
+.. literalinclude:: ../../scripts/examples/3e_Custom_infrastructure.py
    :language: python
 
 Include electric vehicles

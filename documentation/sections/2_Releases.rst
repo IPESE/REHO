@@ -254,7 +254,7 @@ While the following reports did not experience a peer-review process, they still
 
     Investigations on the potential of decentralization of data centers for waste heat valorization.
 
-.. dropdown:: :bdg-primary-line:`Research` Optimal Design and Operation of District Energy Systems using Dantzig Wolfe Decomposition, Terrier 2021 :cite:`terrierOptimalDesignOperation2021`
+.. dropdown:: :bdg-primary-line:`Research` Optimal Design and Operation of District Energy Systems using Dantzig Wolfe Decomposition, Terrier 2021
     :icon: organization
 
     Development of a decomposition algorithm for district-scale optimization.

@@ -679,7 +679,7 @@ def initialize_default_methods(method):
     if 'use_pv_orientation' not in method:
         method['use_pv_orientation'] = False
 
-    if 'include_stochasticity' not in method:  # https://ipese-web.epfl.ch/lepour/lacorte_pds/index.html
+    if 'include_stochasticity' not in method:
         method['include_stochasticity'] = False
     if 'sd_stochasticity' not in method:
         method['sd_stochasticity'] = [0.1, 1]

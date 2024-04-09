@@ -1,0 +1,24 @@
+﻿Method name;Description;Default behavior
+**Solar methods**;;
+*use_facades*;Allows to consider the facades for PV panels installation;False
+*use_pv_orientation*;Considers the orientation for the solar potential estimation, including a shadow model from neighbor buildings;False
+**Optimization methods**;;
+*building-scale*;Optimizes by considering than each building is an independent system;False
+*district-scale*;Optimizes by allowing exchanges between buildings and the use of district units;False
+*parallel_computation*;Allows to solve sub-problems in parallel;True
+*switch_off_second_objective*;To generate the Pareto curve by minimizing only one objective and constraining the other one. By default, both objectives are successively minimized and constrained.;False
+**Profiles**;;
+*include_stochasticity*;Includes variability among SIA typical consumption profiles;False
+*sd_stochasticity*;If include_stochasticity is True, allows to specify a list [sd_consumption, sd_timeshift] to choose the variability in 1-consumption and 2-moment of the consumption;None
+*use_dynamic_emission_profiles*;Uses hourly values for electricity GWP;False
+*use_custom_profiles*;Allows to replace SIA profiles for DHW [L/h], electricity demands [W/h] and people gains [W/h] by custom ones, via a dictionary where the key is among [‘electricity’, ‘dhw’, ‘occupancy’] and the value is the path to the file;False
+**Saving options**;;
+*include_all_solutions*;For a district-scale optimization, gives the results from the SPs;False
+*save_input_data*;Adds in the results file the input data (df_Buildings, df_External, df_Index);False
+*save_timeseries*;Adds in the results file the timeseries results (df_Buildings_t, df_Unit_t, df_Stream_t);False
+*save_lca*;dds in the results file the impact in terms of LCA indicators by units, hubs and energy carriers;False
+*extract_parameters*;To extract all the parameters used in the optimization;False
+**Other**;;
+*actors_cost*;Changes the MP to solve: instead of considering the district as a single entity to optimize, different stakeholders portfolios are considered where the objective function is the minimization of the costs for one particular actor, while the costs of the other actors are constrained with parameterized epsilon values;False
+*DHN_CO2*;To use CO2 in the DHN as heat carrier (default fluid is water);False
+*use_Storage_Interperiod*;Allows the usage of long-term storage units;False

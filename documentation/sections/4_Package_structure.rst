@@ -71,7 +71,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.postprocessing
 
 `building_scale_network_builder.py`
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.postprocessing.building_scale_network_builder
 

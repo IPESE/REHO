@@ -57,9 +57,14 @@ path_to_qbuildings = os.path.join(path_to_data, 'QBuildings')
 
 # SIA
 path_to_sia = os.path.join(path_to_data, 'SIA')
+path_to_sia_equivalence = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
+path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
 
 # skydome
 path_to_skydome = os.path.join(path_to_data, 'skydome')
+path_to_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
+path_to_areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt')  # area of patches
+path_to_cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt')  # location of centre points
 
 # weather
 path_to_weather = os.path.join(path_to_data, 'weather')
@@ -67,6 +72,7 @@ path_to_weather = os.path.join(path_to_data, 'weather')
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
 path_to_configurations = os.path.join(os.getcwd(), 'configurations')
+
 
 
 def path_handler(path_given):

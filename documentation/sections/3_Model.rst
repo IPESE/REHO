@@ -3,13 +3,6 @@
 Model
 +++++
 
-.. warning::
-
-    Section still under construction.
-    Focus on the energy model and mathematical background of REHO.
-    Sequential approach : Inputs --> Model --> Outputs.
-
-
 The energy hub concept is used to model an energy community where multi-energy carriers can supply
 diverse end use demands through building-level equipment and district-level infrastructure optimally interconnected and operated.
 For a delimited perimeter of buildings, REHO selects the optimal energy system configuration minimizing the specified objective function.

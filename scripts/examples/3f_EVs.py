@@ -1,3 +1,4 @@
+import reho.model.infrastructure
 from reho.model.reho import *
 
 
@@ -20,7 +21,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids, district_units=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     method = {'building-scale': True}
@@ -28,8 +29,9 @@ if __name__ == '__main__':
     # Set specific parameters
     parameters = {'n_vehicles': 6}
 
+
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, parameters=parameters, solver="gurobi")
     reho.single_optimization()
 
     # Save results

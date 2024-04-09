@@ -6,9 +6,7 @@ __doc__ = """
 *Collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.*
 """
 
-def read_sia2024_rooms_sia380_1(digit):
-
-    path_sia = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
+def read_sia2024_rooms_sia380_1(digit, df_sia):
 
     dict_affiliation2digit = {'collective housing': 'I',
                               'individual housing': 'II',
@@ -24,10 +22,9 @@ def read_sia2024_rooms_sia380_1(digit):
                               'covered swimming-pool': 'XII',
                               'other': 'XIII'}
 
-    df = pd.read_csv(path_sia, sep=';', index_col=[0], header=[0])
-    df = df.rename(columns=dict_affiliation2digit)
+    df_sia = df_sia.rename(columns=dict_affiliation2digit)
 
-    return df[digit]
+    return df_sia[digit]
 
 
 def read_sia_2024_profiles(status, df):

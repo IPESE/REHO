@@ -203,7 +203,7 @@ class infrastructure:
         self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
         # Grids------------------------------------------------------------
-        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst']
+        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection']
         lca_impact_demand = [key + "_demand_cst" for key in self.lca_kpis]
         lca_impact_supply = [key + "_supply_cst" for key in self.lca_kpis]
         for g in self.grids:
@@ -453,20 +453,18 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                         district_data="custom_district_units.csv", storage_data=True)
     """
 
-    default_units_to_exclude = ["DataHeat_DHW", "OIL_Boiler", "Air_Conditioner", "DHN_hex"]
-    units_to_exclude_except_enforced = ['HeatPump_Anergy', 'DataHeat_SH', 'HeatPump_Lake']
-    if scenario is None:
-        exclude_units = default_units_to_exclude + units_to_exclude_except_enforced
-    elif "exclude_units" not in scenario:
-        exclude_units = default_units_to_exclude + units_to_exclude_except_enforced
+    default_units_to_exclude = ["Air_Conditioner", "DHN_hex", 'HeatPump_Anergy', 'HeatPump_Lake', 'DataHeat_SH']
+    if "exclude_units" not in scenario:
+        exclude_units = default_units_to_exclude
     else:
-        exclude_units = scenario["exclude_units"] + units_to_exclude_except_enforced
+        exclude_units = scenario["exclude_units"] + default_units_to_exclude
 
     building_units = prepare_units_array(building_data, exclude_units, grids)
 
-    storage_to_exclude = ['BESS_IP', 'PTES_S_IP', 'PTES_C_IP', 'H2S_storage', 'H2_compression',
-                          'SOEFC', 'FC']
-    exclude_units = exclude_units + storage_to_exclude
+    # TODO: these storage units are not fully working
+    storage_units_to_exclude = ['BESS_IP', 'PTES_S_IP', 'PTES_C_IP', 'H2S_storage', 'H2_compression', 'SOEFC', 'FC']
+
+    exclude_units = exclude_units + storage_units_to_exclude
     if storage_data is True:
         default_storage_units = os.path.join(path_to_infrastructure, "storage_units.csv")
         building_units = np.concatenate([building_units, prepare_units_array(default_storage_units, exclude_units=exclude_units)])
@@ -483,15 +481,6 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     units = {"building_units": building_units, "district_units": district_units}
 
     return units
-
-
-def create_grid(name, Grids_flowrate_out, Grids_flowrate_in, grid_data):
-    grid = {'name': name, 'Grids_flowrate_out': 1e6*Grids_flowrate_out, 'Grids_flowrate_in': 1e6*Grids_flowrate_in}
-
-    for key in grid_data.loc[name].index:
-        grid[key] = grid_data.loc[name][key]
-
-    return grid
 
 
 def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
@@ -532,7 +521,6 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
     grid_data = file_reader(file)
     grid_data = grid_data.set_index("Grid")
 
-    grid_to_exclude = ['Data']
     grids = dict()
     for idx, row in grid_data.iterrows():
         if idx in available_grids.keys():
@@ -541,13 +529,15 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
             grid_dict['Grids_flowrate_in'] = 1e6 * grid_dict['Grids_flowrate_in']
             grid_dict['Grids_flowrate_out'] = 1e6 * grid_dict['Grids_flowrate_out']
             if 'Cost_demand_cst' in available_grids[idx]:
-                grid_dict[idx]['Cost_demand_cst'] = available_grids[idx]['Cost_demand_cst']
+                grid_dict['Cost_demand_cst'] = available_grids[idx]['Cost_demand_cst']
             if 'Cost_supply_cst' in available_grids[idx]:
-                grid_dict[idx]['Cost_supply_cst'] = available_grids[idx]['Cost_supply_cst']
+                grid_dict['Cost_supply_cst'] = available_grids[idx]['Cost_supply_cst']
             if 'GWP_demand_cst' in available_grids[idx]:
-                grid_dict[idx]['GWP_demand_cst'] = available_grids[idx]['GWP_demand_cst']
+                grid_dict['GWP_demand_cst'] = available_grids[idx]['GWP_demand_cst']
             if 'GWP_supply_cst' in available_grids[idx]:
-                grid_dict[idx]['GWP_supply_cst'] = available_grids[idx]['GWP_supply_cst']
+                grid_dict['GWP_supply_cst'] = available_grids[idx]['GWP_supply_cst']
+            if 'Cost_connection' in available_grids[idx]:
+                grid_dict['Cost_connection'] = available_grids[idx]['Cost_connection']
             grids[idx] = grid_dict
 
     return grids

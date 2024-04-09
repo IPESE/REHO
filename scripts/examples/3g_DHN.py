@@ -1,5 +1,5 @@
 from reho.model.reho import *
-
+from reho.plotting import plotting
 
 if __name__ == '__main__':
 
@@ -17,12 +17,12 @@ if __name__ == '__main__':
     scenario['name'] = 'totex'
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = ['HeatPump_DHN']
-
+    scenario["specific"] = ["enforce_DHN"]
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'Heat': {"Cost_demand_cst": 0.001, "Cost_supply_cst": 0.005}})
-    units = infrastructure.initialize_units(scenario, grids)
+                                             'Heat': {}})
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     # you can specify if the DHN is based on CO2. If not, a water DHN is assumed
@@ -39,3 +39,7 @@ if __name__ == '__main__':
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='3g')
+
+    # Plot results
+    plotting.plot_performance(reho.results, plot='costs').show()
+    plotting.plot_sankey(reho.results["totex"][0]).show()

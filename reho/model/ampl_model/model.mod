@@ -1,29 +1,3 @@
-# -------------------------------------------------------------------------------------------------------------------------
-# Renewable Energy Hub Optimizer (REHO) is an open-source energy model suitable for the optimization of energy systems at building-scale or district-scale.
-# It considers simultaneously the optimal design as well as optimal scheduling of capacities.
-# It allows to investigate the deployment of energy conversion and energy storage capacities to ensure the energy balance of a specified territory,
-# through multi-objective optimization and KPIs parametric studies. It is based on an hourly resolution.
-# 
-# Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
-# 
-# Licensed under the Apache License, Version0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# 
-# Description and complete License: see LICENSE file.
-# -------------------------------------------------------------------------------------------------------------------------
-# 
-# Version 1.0 of the model.
-# See documentation : https://reho.readthedocs.io/en/main/
-# See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
-
-
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 #---SETS
@@ -577,7 +551,7 @@ subject to House_EB_cyclic1{h in House,p in Period,t in Time[p]:t=last(Time[p])}
 																					(House_Q_heating[h,p,t]-House_Q_cooling[h,p,t]) + HeatGains[h,p,t] + SolarGains[h,p,t]; #kW
 
 #-additional constraints
-subject to TOTAL_design_c11{h in House}:
+subject to no_ElectricalHeater_without_HP{h in House}:
 2 * sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ElectricalHeater'] inter UnitsOfHouse[h]} Units_Use[ui]; 
 
 ######################################################################################################################
@@ -589,7 +563,7 @@ subject to TOTAL_design_c11{h in House}:
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid connection costs
 #--------------------------------------------------------------------------------------------------------------------#
-param monthly_grid_connection_cost{l in ResourceBalances} default 0; # CHF/kW/month
+param Cost_connection{l in ResourceBalances} default 0; # CHF/kW/month
 
 var peak_exchange_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
 var Costs_grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
@@ -599,7 +573,7 @@ subject to peak_exchange_calculation{l in ResourceBalances, h in HousesOfLayer[l
 peak_exchange_House[l,h] >= (Grid_supply[l,h,p,t]+Grid_demand[l,h,p,t]);
 
 subject to grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]}:
-Costs_grid_connection_House[l,h] = 12*monthly_grid_connection_cost[l]*peak_exchange_House[l,h];
+Costs_grid_connection_House[l,h] = 12*Cost_connection[l]*peak_exchange_House[l,h];
 
 subject to grid_connection_total:
 Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];

@@ -22,7 +22,7 @@ def install_dependencies():
 setup(
 
     name='REHO',
-    version='1.0.1',
+    version='1.0.2',
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',

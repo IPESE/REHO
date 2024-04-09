@@ -47,14 +47,15 @@ DHN_hex_out,Heat exchanger (out),HEX out,Échangeur de chaleur (sortie),#FF8C00,
 Heat_losses,Heat losses,SH leak,Pertes chaleur,#FF8C00,orange,#CDC8B1,grey
 SH,Space heating,SH,Chauffage,#FF8C00,orange,#FF8C00,orange
 SH_heat,Space heating,SH,Chauffage,#FF8C00,orange,#FF3030,red
+DataHeat_SH,Data centers,ICT,Centre de données,#ffcc99,skin,#EE00EE,magenta
 ThermalSolar,Thermal solar panels,TS,Panneaux solaires thermiques,#FF8C00,orange,#FF8C00,orange
 Tank,Tank,Tank,Réservoir,#FF8C00,orange,#FF7F24,orange
 WaterTankSH,Water Tank SH,WT (SH),Ballon d'eau (chauffage),#FF8C00,orange,#FF7F24,orange
 ,,,,,,,
 WaterTankDHW,Water Tank DHW,WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux,#B22222,bordeaux
 DHW,Domestic hot water,DHW,Eau chaude sanitaire,#B22222,bordeaux,#B22222,bordeaux
-DataHeat_DHW,Data centers,ICT,Centre de données,#ffcc99,skin,#EE00EE,magenta
-ict,Data centers,ICT,Vente de données,#ffcc99,skin,#EE00EE,magenta
+DataHeat_DHW,Data centers (DHW),ICT,Centre de données (ECS),#ffcc99,skin,#EE00EE,magenta
+Data,Data processing,ICT,Vente de données,#ffcc99,skin,#EE00EE,magenta
 ,,,,,,,
 PV,PV panel,PV,Panneaux solaires PV,#ffd980,yellow_light,#EEAD0E,darkyellow
 PV_roof,PV roof,PV,PV toiture,#ffd980,yellow_light,#EEAD0E,darkyellow

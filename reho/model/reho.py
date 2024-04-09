@@ -1,34 +1,9 @@
-# -------------------------------------------------------------------------------------------------------------------------
-# Renewable Energy Hub Optimizer (REHO)
-#
-# Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
-#
-# Licensed under the Apache License, Version0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# Description and complete License: see LICENSE file.
-# -------------------------------------------------------------------------------------------------------------------------
-#
-# Version 1.0
-# See documentation : https://reho.readthedocs.io/en/main/
-# See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
-
 import multiprocessing as mp
 import pickle
-
 from scipy.stats import qmc
-
 from reho.model.district_decomposition import *
 from reho.model.postprocessing.KPIs import *
 from reho.model.postprocessing.building_scale_network_builder import *
-
 from reho.paths import *
 
 
@@ -107,10 +82,10 @@ class reho(district_decomposition):
             buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
         else:
             tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
-            df_h = WR.get_parameter_in_pandas(ampl, 'Costs_House_inv', multi_index=False)
-            df1_h = WR.get_parameter_in_pandas(ampl, 'Costs_House_rep', multi_index=False)
-            df = WR.get_parameter_in_pandas(ampl, 'Costs_inv', multi_index=False)
-            df1 = WR.get_parameter_in_pandas(ampl, 'Costs_rep', multi_index=False)
+            df_h = WR.get_ampl_data(ampl, 'Costs_House_inv', multi_index=False)
+            df1_h = WR.get_ampl_data(ampl, 'Costs_House_rep', multi_index=False)
+            df = WR.get_ampl_data(ampl, 'Costs_inv', multi_index=False)
+            df1 = WR.get_ampl_data(ampl, 'Costs_rep', multi_index=False)
             # annualized investment costs with replacements (important for BAT and NG_Cogeneration)
             district = (df.sum()[0] + df1.sum()[0]) * tau[0] / surfaces.sum()[0]  # for compact models
             buildings = (df_h.Costs_House_inv.div(surfaces.ERA) + df1_h.Costs_House_rep.div(surfaces.ERA)) * tau[0]  # for decomposed models
@@ -123,8 +98,8 @@ class reho(district_decomposition):
             district = df_op.Costs_op[-1] / self.ERA
             building = df_op.Costs_op[:-1].div(surfaces.ERA)
         else:
-            df_h = WR.get_parameter_in_pandas(ampl, 'Costs_House_op', multi_index=False)
-            df = WR.get_parameter_in_pandas(ampl, 'Costs_op', multi_index=False)
+            df_h = WR.get_ampl_data(ampl, 'Costs_House_op', multi_index=False)
+            df = WR.get_ampl_data(ampl, 'Costs_op', multi_index=False)
 
             district = df.sum()[0] / surfaces.sum()[0]  # normalized OPEX CHF/m2, for compact models
             building = df_h.Costs_House_op.div(surfaces.ERA)
@@ -176,9 +151,9 @@ class reho(district_decomposition):
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
             ampl, exitcode = REHO.solve_model()
 
         scenario = {'Objective': objective1}
@@ -188,7 +163,7 @@ class reho(district_decomposition):
         obj_values = self.get_objectives_values(ampl, self.scenario["Objective"], Scn_ID, Pareto_ID=1)
 
         gc.collect()  # free memory
-        print('The lower bound of the', objective1, 'value is: ', obj_values["district_obj1"])
+        self.logger.info('The lower bound of the ' + str(objective1) + 'value is: ' + str(obj_values["district_obj1"]))
         return obj_values
 
 
@@ -207,9 +182,9 @@ class reho(district_decomposition):
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver)
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
             ampl, exitcode = REHO.solve_model()
 
         scenario = {'Objective': objective2}
@@ -220,7 +195,7 @@ class reho(district_decomposition):
 
 
         gc.collect()  # free memory
-        print('The upper bound of the', self.scenario["Objective"][0], 'value is: ', obj_values["district_obj1"])
+        self.logger.info('The upper bound of the ' + str(self.scenario["Objective"][0]) + 'value is: ' + str(obj_values["district_obj1"]))
         return obj_values
 
 
@@ -254,7 +229,7 @@ class reho(district_decomposition):
                 scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][0]: obj1_eps_lim}
 
             self.epsilon_constraints['EMOO_obj1'] = np.append(self.epsilon_constraints['EMOO_obj1'], obj1_eps_lim)
-            print('---------------> ', self.scenario["Objective"][0], ' LIMIT: ', obj1_eps_lim)
+            self.logger.info('---------------> ' + str(self.scenario["Objective"][0]) + ' LIMIT: ' + str(obj1_eps_lim))
 
             # results computation
             if self.method['district-scale']:
@@ -262,10 +237,10 @@ class reho(district_decomposition):
             else:
                 if self.method['use_facades'] or self.method['use_pv_orientation']:
                     REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                                self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+                                                self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
                 else:
                     REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                                self.cluster, scenario, self.method, self.solver)
+                                                self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
                 ampl, exitcode = REHO.solve_model()
 
             self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
@@ -298,7 +273,7 @@ class reho(district_decomposition):
                     scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][1]: obj2_eps_lim}
 
                 self.epsilon_constraints['EMOO_obj2'] = np.append(self.epsilon_constraints['EMOO_obj2'], obj2_eps_lim)
-                print('---------------> ', self.scenario["Objective"][1], ' LIMIT: ', obj2_eps_lim)
+                self.logger.info('---------------> ' + str(self.scenario["Objective"][1]) + ' LIMIT: ' + str(obj2_eps_lim))
                 # results computation
                 if self.method['district-scale']:
                     ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
@@ -306,12 +281,12 @@ class reho(district_decomposition):
                     if self.method['use_facades'] or self.method['use_pv_orientation']:
                         REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters,
                                                     self.set_indexed, self.cluster,
-                                                    scenario, self.method, self.solver, self.qbuildings_data)
+                                                    scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
                     else:
                         REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters,
                                                     self.set_indexed,
                                                     self.cluster,
-                                                    scenario, self.method, self.solver)
+                                                    scenario, self.method, self.solver, csv_data=self.csv_data)
                     ampl, exitcode = REHO.solve_model()
 
                 self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
@@ -322,7 +297,7 @@ class reho(district_decomposition):
 
         self.sort_pareto_points(Scn_ID)
 
-        print(obj1_min, obj1_max)
+        self.logger.info(str(obj1_min) + " " + str(obj1_max))
 
     def sort_pareto_points(self, Scn_ID):
 
@@ -364,11 +339,11 @@ class reho(district_decomposition):
             if self.method['use_facades'] or self.method['use_pv_orientation']:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster,
-                                            scenario, self.method, self.solver, self.qbuildings_data)
+                                            scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
             else:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
                                             self.cluster,
-                                            scenario, self.method, self.solver)
+                                            scenario, self.method, self.solver, csv_data=self.csv_data)
             ampl = REHO.build_model_without_solving()
 
             for i, value in ampl.getVariable('Units_Mult').instances():
@@ -423,10 +398,10 @@ class reho(district_decomposition):
         # REHOExecution, returns ampl library containing the whole model
         if self.method['use_facades'] or self.method['use_pv_orientation']:
             REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                        self.cluster, scenario_fix_uti, self.method, self.solver, self.qbuildings_data)
+                                        self.cluster, scenario_fix_uti, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
         else:
             REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                        self.cluster, scenario_fix_uti, self.method, self.solver)
+                                        self.cluster, scenario_fix_uti, self.method, self.solver, csv_data=self.csv_data)
         ampl = REHO.build_model_without_solving()
 
         for i, value in ampl.getVariable('Units_Mult').instances():
@@ -465,9 +440,9 @@ class reho(district_decomposition):
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
-        print('INITIATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+        self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
         self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
-        print('MASTER INITIATION, ', 'Iter:', self.iter)
+        self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
 
         # -----------------------------------------------------------------------------------------------------------
@@ -475,9 +450,9 @@ class reho(district_decomposition):
         # -----------------------------------------------------------------------------------------------------------
         while (self.iter < self.DW_params['max_iter'] - 1):  # last iteration is used to run the binary MP.
             self.iter += 1
-            print('SUB PROBLEM ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+            self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
             self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
-            print('MASTER ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+            self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
             self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
 
             if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
@@ -486,9 +461,9 @@ class reho(district_decomposition):
         # -----------------------------------------------------------------------------------------------------------
         # FINALIZATION
         # -----------------------------------------------------------------------------------------------------------
-        print(self.stopping_criteria)
+        self.logger.info(self.stopping_criteria)
         self.iter += 1
-        print('LAST MASTER ITERATION, ', 'Iter:', self.iter, 'Pareto_ID: ', Pareto_ID)
+        self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: '+ str(Pareto_ID))
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
         self.pool.close()
 
@@ -497,16 +472,16 @@ class reho(district_decomposition):
 
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
-        if self.method['district-scale']:
+        if self.method['district-scale'] or self.method['building-scale']:
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                            self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
+                                            self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
             else:
                 REHO = compact_optimization(self.infrastructure, self.buildings_data, self.parameters, self.set_indexed,
-                                            self.cluster, self.scenario, self.method, self.solver)
+                                            self.cluster, self.scenario, self.method, self.solver, csv_data=self.csv_data)
             ampl = REHO.build_model_without_solving()
 
             if self.method['fix_units']:
@@ -723,35 +698,34 @@ class reho(district_decomposition):
         df = self.get_final_SPs_results(MP_selection, 'df_Grid_t')
         df = df.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
         df = df.sort_index(level='Hub')
-        uncontrollable_load = df.groupby(["Layer", "Period", "Time"]).sum()["Uncontrollable_load"]
 
         h_op = df_Time.dp
         h_op.iloc[-2:] = 1
         df_network = last_results["df_District_t"].copy()
-        df_network[["Network_supply", "Network_demand"]] = df_network[["Network_supply", "Network_demand"]].divide(h_op,
-                                                                                                                   axis=0,
-                                                                                                                   level='Period')
-        df_network["Uncontrollable_load"] = uncontrollable_load
-        df_network = pd.concat([df_network], keys=['Network'], names=['Hub']).reorder_levels(
-            ['Layer', 'Hub', 'Period', 'Time'])
-        df_network = df_network.rename(
-            columns={"Cost_demand_network": "Cost_demand", "Cost_supply_network": "Cost_supply",
-                     "Network_demand": "Grid_demand", "Network_supply": "Grid_supply"})
+        df_network[["Network_supply", "Network_demand"]] = df_network[["Network_supply", "Network_demand"]].divide(h_op, axis=0, level='Period')
+
+        if self.method["save_timeseries"]:
+            df_network["Uncontrollable_load"] = df.groupby(["Layer", "Period", "Time"]).sum()["Uncontrollable_load"]
+
+        df_network = pd.concat([df_network], keys=['Network'], names=['Hub']).reorder_levels(['Layer', 'Hub', 'Period', 'Time'])
+        df_network = df_network.rename(columns={"Cost_demand_network": "Cost_demand",
+                                                "Cost_supply_network": "Cost_supply",
+                                                "Network_demand": "Grid_demand",
+                                                "Network_supply": "Grid_supply"})
+        columns = ["Cost_demand", "Cost_supply"]
+        if self.method["save_timeseries"]:
+            columns = columns + ["GWP_demand", "GWP_supply"]
+
         for h in self.buildings_data.keys():
-            for column in ["Cost_demand", "Cost_supply", "GWP_demand", "GWP_supply"]:
+            for column in columns:
                 df.loc[pd.IndexSlice[:, h, :, :], column] = df_network[column].values
+
         df_Grid_t = pd.concat([df, df_network])
 
         # df_Unit
         df_Unit = self.get_final_MP_results(Pareto_ID=Pareto_ID, Scn_ID=Scn_ID)
         df_Unit = df_Unit.droplevel(['FeasibleSolution', 'Hub'])
         df_Unit = df_Unit.sort_index(level='Unit')
-
-        # df_Unit_t
-        df_Unit_t = self.get_final_SPs_results(MP_selection, 'df_Unit_t')
-        df_Unit_t = df_Unit_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-        df_district_units = last_results["df_Unit_t"]
-        df_Unit_t = pd.concat([df_Unit_t, df_district_units])
 
         # df_Annuals
         df = self.get_final_SPs_results(MP_selection, 'df_Annuals')
@@ -760,8 +734,7 @@ class reho(district_decomposition):
         df = df.sort_index(level='Layer')
         df = df.drop('Network', level='Hub')
 
-        df_network = pd.DataFrame(self.infrastructure.grids.keys(),
-                                  columns=["Layer"])  # build a df template to work on it
+        df_network = pd.DataFrame(self.infrastructure.grids.keys(), columns=["Layer"]) # build a df template
         df_network["Hub"] = "Network"
         df_network = df_network.set_index(["Layer", "Hub"])
         df_network[df.columns] = float("nan")
@@ -773,27 +746,10 @@ class reho(district_decomposition):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                data = df_Unit_t.xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp, level='Period',
-                                                                              axis=0).sum() / 1000
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp, level='Period', axis=0).sum() / 1000
                 df_network.loc[(key, unit), :] = float('nan')
-                df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[
-                    ['Units_demand', 'Units_supply']].values
+                df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[['Units_demand', 'Units_supply']].values
         df_Annuals = pd.concat([df, df_network]).sort_index()
-
-        # df_Buildings_t
-        df_Buildings_t = self.get_final_SPs_results(MP_selection, 'df_Buildings_t')
-        df_Buildings_t = df_Buildings_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-        df_Buildings_t.sort_index(level='Hub')
-
-        # df_External
-        ids = self.number_SP_solutions.iloc[0]
-        df_External = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][
-            ids["House"]]["df_External"]
-
-        # df_Index
-        ids = self.number_SP_solutions.iloc[0]
-        df_Index = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][
-            ids["House"]]["df_Index"]
 
         # df_Buildings
         df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
@@ -819,22 +775,46 @@ class reho(district_decomposition):
         # set results
         df_Results["df_Performance"] = df_Performance
         df_Results["df_Annuals"] = df_Annuals
-        df_Results["df_Buildings"] = df_Buildings
         df_Results["df_Unit"] = df_Unit
-        df_Results["df_Unit_t"] = df_Unit_t
         df_Results["df_Grid_t"] = df_Grid_t
-        df_Results["df_Buildings_t"] = df_Buildings_t
+        df_Results["df_Time"] = df_Time
 
-        if self.method["save_stream_t"]:
+        if self.method["save_data_input"]:
+
+            df_Results["df_Buildings"] = df_Buildings
+
+            # df_External
+            ids = self.number_SP_solutions.iloc[0]
+            df_External = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][ids["House"]]["df_External"]
+            df_Results["df_External"] = df_External
+
+            # df_Index
+            ids = self.number_SP_solutions.iloc[0]
+            df_Index = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][ids["House"]]["df_Index"]
+            df_Results["df_Index"] = df_Index
+
+        if self.method["save_timeseries"]:
+
+            # df_Buildings_t
+            df_Buildings_t = self.get_final_SPs_results(MP_selection, 'df_Buildings_t')
+            df_Buildings_t = df_Buildings_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+            df_Buildings_t.sort_index(level='Hub')
+            df_Results["df_Buildings_t"] = df_Buildings_t
+
+            # df_Unit_t
+            df_Unit_t = self.get_final_SPs_results(MP_selection, 'df_Unit_t')
+            df_Unit_t = df_Unit_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+            df_district_units = last_results["df_Unit_t"]
+            df_Unit_t = pd.concat([df_Unit_t, df_district_units])
+            df_Results["df_Unit_t"] = df_Unit_t
+
+            # df_Stream_t
             df_Stream_t = self.get_final_SPs_results(MP_selection, 'df_Stream_t')
             df_Stream_t = df_Stream_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
             df_Results["df_Stream_t"] = df_Stream_t
 
-        df_Results["df_Time"] = df_Time
-        df_Results["df_External"] = df_External
-        df_Results["df_Index"] = df_Index
-
         if self.method["save_lca"]:
+
             df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
             df_lca_Units = df_lca_Units.droplevel(level=["Scn_ID", "Pareto_ID", "Iter", "FeasibleSolution", "house"])
             df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
@@ -847,22 +827,17 @@ class reho(district_decomposition):
         data = self.return_combined_SP_results(self.results_SP, df_name)
         df = pd.DataFrame()
         for idx in MP_selection.values:
-            if df_name == "df_Grid_t":
-                df_idx = data.xs((idx), level=("FeasibleSolution", "house"), drop_level=False).xs(idx[1], level="Hub", drop_level=False)
-                df_idx_net = data.xs((idx), level=("FeasibleSolution", "house"), drop_level=False).xs("Network", level="Hub", drop_level=False)
-                df_idx["GWP_demand"] = np.array(df_idx_net["GWP_demand"])
-                df_idx["GWP_supply"] = np.array(df_idx_net["GWP_supply"])
-            else:
-                df_idx = data.xs((idx), level=('FeasibleSolution', 'house'), drop_level=False)
+            df_idx = data.xs((idx), level=('FeasibleSolution', 'house'), drop_level=False)
             df = pd.concat([df, df_idx])
         return df
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
-        df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster)
-        self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
-        self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_eco
-        if self.method['building-scale']:
-            self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
+        if self.method["save_timeseries"]:
+            df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.csv_data["timestamp"], self.csv_data["emissions_matrix"])
+            self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
+            self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_eco
+            if self.method['building-scale']:
+                self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 
     def save_results(self, format=('pickle'), filename='results', erase_file=True, filter=True):
         """
@@ -925,7 +900,7 @@ class reho(district_decomposition):
             f = open(result_file_path, 'wb')
             pickle.dump(results, f)
             f.close()
-            print('Results are saved in ' + result_file_path)
+            self.logger.info('Results are saved in ' + result_file_path)
 
         if 'xlsx' in format:
 
@@ -947,4 +922,4 @@ class reho(district_decomposition):
                             df.to_excel(writer, sheet_name=df_name)
 
                     writer.close()
-                    print('Results are saved in ' + result_file_path)
+                    self.logger.info('Results are saved in ' + result_file_path)

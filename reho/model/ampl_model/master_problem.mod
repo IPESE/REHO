@@ -1,32 +1,6 @@
-# -------------------------------------------------------------------------------------------------------------------------
-# Renewable Energy Hub Optimizer (REHO) is an open-source energy model suitable for the optimization of energy systems at building-scale or district-scale.
-# It considers simultaneously the optimal design as well as optimal scheduling of capacities.
-# It allows to investigate the deployment of energy conversion and energy storage capacities to ensure the energy balance of a specified territory,
-# through multi-objective optimization and KPIs parametric studies. It is based on an hourly resolution.
-# 
-# Copyright (C) <2021-2023> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
-# 
-# Licensed under the Apache License, Version0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-# 
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# 
-# Description and complete License: see LICENSE file.
-# -------------------------------------------------------------------------------------------------------------------------
-# 
-# Version 1.0 of the model.
-# See documentation : https://reho.readthedocs.io/en/main/
-# See repo :  https://github.com/Renewable-Energy-Hub-Optimizer
-
-
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---# General Sets & Parameter
+#---# General Sets & Parameters
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
@@ -92,7 +66,7 @@ lambda[f,h] = lambda_binary[f,h];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---Network BALANCES - attention only electricity layer!
+#---Network BALANCES
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 param Grid_supply{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in Time[p]};
@@ -352,7 +326,7 @@ var EMOO_slack_totex          >= 0, <= abs(EMOO_TOTEX)*Area_tot;
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid connection costs
 #--------------------------------------------------------------------------------------------------------------------#
-param monthly_grid_connection_cost{l in ResourceBalances} default 0; # CHF/kW/month
+param Cost_connection{l in ResourceBalances} default 0; # CHF/kW/month
 
 var peak_exchange_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
 var Costs_grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]} >= 0;
@@ -362,7 +336,7 @@ subject to peak_exchange_calculation{l in ResourceBalances, f in FeasibleSolutio
 peak_exchange_House[l,h] >= (Grid_supply[l,f,h,p,t]+Grid_demand[l,f,h,p,t]) * lambda[f,h];
 
 subject to grid_connection_House{l in ResourceBalances, h in HousesOfLayer[l]}:
-Costs_grid_connection_House[l,h] = 12*monthly_grid_connection_cost[l]*peak_exchange_House[l,h];
+Costs_grid_connection_House[l,h] = 12*Cost_connection[l]*peak_exchange_House[l,h];
 
 subject to grid_connection_total:
 Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];
@@ -373,7 +347,7 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;  #kW
 
 subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h]; 
+Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
 
 subject to LineCapacity_demand{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
 Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
@@ -448,9 +422,3 @@ lca_tot["Human_toxicity"] + penalties;
 
 minimize land_use:
 lca_tot["land_use"] + penalties;
-
-
-
-
-
-

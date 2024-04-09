@@ -4,7 +4,6 @@ from reho.model.reho import *
 if __name__ == '__main__':
 
     # Set building parameters
-    # you can as well define your district from a csv file instead of reading the database
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2)
 
@@ -23,7 +22,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids=grids)
 
     # Set method options
-    # In that, give an electricity consumption profile
+    # You can provide here a profile for domestic electricity, domestic hot water, or occupancy
     path_to_custom_elec_profile = '../template/data/profiles/electricity.csv'
     method = {'building-scale': True, 'use_custom_profiles': {'electricity': path_to_custom_elec_profile}}
 

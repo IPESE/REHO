@@ -38,6 +38,10 @@ class QBuildingsReader:
         self.load_facades = load_facades
         self.load_roofs = load_roofs
 
+        self.csv_data = dict()
+        self.csv_data["df_area"] = pd.read_csv(path_to_areas, header=None)
+        self.csv_data["df_cenpts"] = pd.read_csv(path_to_cenpts, header=None)
+
     def establish_connection(self, db):
         """
         Allows to establish the connection with one of the QBuildings database.
@@ -69,8 +73,8 @@ class QBuildingsReader:
             self.connection = self.db_engine.connect()  # test connection
             print('Connected to database')
 
-        except:
-            print('Cannot connect to database engine')
+        except Exception as e:
+            print(f'Cannot connect to database engine: {e}')
 
         if 'database' in project:
             print('\thost: {}\n\tport: {}\n\tdatabase: {}\n\tusername: {}'.format(
@@ -88,7 +92,7 @@ class QBuildingsReader:
         return
 
     def read_csv(self, buildings_filename='buildings.csv', nb_buildings=None,
-                 roofs_filename='roofs.csv', facades_filename='facades.csv'):
+                 roofs_filename='roofs.csv', facades_filename='facades.csv', district=None):
         """
         Read buildings-related data from CSV files and prepare it for the REHO model.
 
@@ -137,6 +141,11 @@ class QBuildingsReader:
         self.data['buildings'] = file_reader(buildings_filename)
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
+
+        if district is not None:
+            # Filter the buildings based on the specified district
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['NOMSECTEUR'] == district]
+
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
         buildings = self.select_buildings_data(nb_buildings, None)
@@ -149,7 +158,7 @@ class QBuildingsReader:
             self.data['facades'] = add_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'])
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'], self.csv_data)
 
         if self.load_roofs:
             self.data['roofs'] = file_reader(path_handler(roofs_filename))
@@ -269,7 +278,7 @@ class QBuildingsReader:
                 self.data['facades'].to_csv('facades.csv', index=False)
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'], self.csv_data)
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
@@ -349,15 +358,26 @@ def translate_buildings_to_REHO(df_buildings):
         #################################################
 
         # Data for EUD profiles
+        'id_building': 'id_building',
+        'egid': 'egid',
         'id_class': 'id_class',
+        'class': 'class',
         'ratio': 'ratio',
         'status': 'status',
+        'period': 'period',
+        'capita_cap': 'n_p',
+        #'NOMSECTEUR': 'NOMSECTEUR',
 
         # Area
         'area_era_m2': 'ERA',
         'area_roof_solar_m2': 'SolarRoofArea',
         'area_facade_m2': 'area_facade_m2',
         'height_m': 'height_m',  # only for use facades
+        'count_floor': 'count_floor',
+
+        # Heating source
+        'source_heating': 'source_heating',
+        'source_hotwater': 'source_hotwater',
 
         # Thermal envelope
         'thermal_transmittance_signature_kW_m2_K': 'U_h',
@@ -381,17 +401,16 @@ def translate_buildings_to_REHO(df_buildings):
         'geometry': 'geometry',
         'transformer': 'transformer',
 
-        # Additional information
-        'id_building': 'id_building',
-        'egid': 'egid',
-        'period': 'period',
-        'capita_cap': 'n_p',
 
         # Annual energy
         'energy_heating_signature_kWh_y': 'energy_heating_signature_kWh_y',
         'energy_cooling_signature_kWh_y': 'energy_cooling_signature_kWh_y',
         'energy_hotwater_signature_kWh_y': 'energy_hotwater_signature_kWh_y',
         'energy_el_kWh_y': 'energy_el_kWh_y',
+
+        # Annual roof and facade irradiance
+        'roof_annual_irr_kWh_y': 'roof_annual_irr_kWh_y',
+        'facade_annual_irr_kWh_y': 'facade_annual_irr_kWh_y'
     }
 
     # TODO: correct heat source dictionary
@@ -551,12 +570,12 @@ def get_facades(self, buildings):
     return self.data['facades']
 
 
-def calculate_id_building_shadows(df_angles, id_building):
+def calculate_id_building_shadows(df_angles, id_building, csv_data):
     df_angles['to_id_building'] = pd.to_numeric(df_angles['to_id_building'])
     df_angles = df_angles.set_index('to_id_building')
     df_angles = df_angles.xs(id_building)
 
-    df_dome = skd.skydome_to_df()
+    df_dome = skd.skydome_to_df(csv_data)
 
     df_shadow = pd.DataFrame()
 
@@ -620,23 +639,23 @@ def neighbourhood_angles(buildings, facades):
 
         df_angles = pd.concat((df_angles, df_BUI))
 
-    df_angles.to_csv('angles.csv')
+    df_angles.to_csv('data/angles.csv')
 
     return df_angles
 
 
-def return_shadows_district(buildings, facades):
+def return_shadows_district(buildings, facades, csv_data):
     df_shadows = pd.DataFrame()
 
-    if os.path.exists('angles.csv'):
-        df_angles = pd.read_csv('angles.csv')
+    if os.path.exists('data/angles.csv'):
+        df_angles = pd.read_csv('data/angles.csv')
     else:
         df_angles = neighbourhood_angles(buildings, facades)
 
     for b in buildings:
         id_building = int(buildings[b]['id_building'])
         if id_building in df_angles['id_building'].values:  # check if angle calculation for id_building exists
-            df_id_building = calculate_id_building_shadows(df_angles, id_building)
+            df_id_building = calculate_id_building_shadows(df_angles, id_building, csv_data)
             idx = np.repeat(id_building, len(df_id_building))
             df_id_building = df_id_building.set_index(idx)
         else:
@@ -646,20 +665,20 @@ def return_shadows_district(buildings, facades):
         df_shadows = pd.concat((df_shadows, df_id_building))
 
     df_shadows["id_building"] = df_shadows["id_building"].astype(str)
-    df_shadows.to_csv('shadows.csv')
+    df_shadows.to_csv('data/shadows.csv')
 
     return df_shadows
 
 
-def return_shadows_id_building(id_building, df_district):
+def return_shadows_id_building(id_building, df_district, csv_data):
     id_building = int(id_building)
 
-    if os.path.isfile('shadows.csv'):
-        df = file_reader('shadows.csv', index_col=0)
+    if os.path.isfile('data/shadows.csv'):
+        df = file_reader('data/shadows.csv', index_col=0)
     else:
         df = df_district
     df = df.xs(id_building)
-    df_dome = skd.skydome_to_df()
+    df_dome = skd.skydome_to_df(csv_data)
 
     df_beta_dome = pd.DataFrame()
     for az in df_dome.azimuth:

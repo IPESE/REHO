@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # SCENARIO 1 Oil boiler #
     scenario['name'] = 'Oil'
-    scenario['exclude_units'] = ['ThermalSolar', 'HeatPump', 'ElectricalHeater', 'PV', 'DataHeat_DHW']
+    scenario['exclude_units'] = ['ThermalSolar', 'HeatPump', 'ElectricalHeater', 'PV', 'DataHeat']
     scenario['enforce_units'] = []
     grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Data': {}})
     units = infrastructure.initialize_units(scenario, grids)
@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
     # SCENARIO 2 HP + PV #
     scenario['name'] = 'HP + PV'
-    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_DHW']
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat']
     scenario['enforce_units'] = ['HeatPump_Geothermal']
     units = infrastructure.initialize_units(scenario, grids)
 
@@ -48,8 +48,9 @@ if __name__ == '__main__':
 
     # SCENARIO 3 EV  #
     scenario['name'] = 'EV'
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat']
     scenario['enforce_units'] = ['EV_district']
-    units = infrastructure.initialize_units(scenario, grids, district_units=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
     reho.parameters['n_vehicles'] = 6
 
     reho.scenario = scenario
@@ -57,10 +58,10 @@ if __name__ == '__main__':
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
-    # SCENARIO 4 ICT #
-    scenario['name'] = 'ICT'
-    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler']
-    units = infrastructure.initialize_units(scenario, grids, district_units=True)
+    # SCENARIO 4 Data #
+    scenario['name'] = 'Data'
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_SH']
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     reho.scenario = scenario
     reho.units = units

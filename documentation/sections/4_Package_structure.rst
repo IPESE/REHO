@@ -15,12 +15,6 @@ Package structure
    :maxdepth: 5
 
 
-.. warning::
-
-    Section still under construction.
-    Focus on package structure and implementation.
-
-
 REHO exploits the benefits of two programming languages:
 
 * **AMPL:** the core optimization model with the objectives, constraints, modeling equations (energy balance, mass balance, heating cascade, etc.)
@@ -77,7 +71,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.postprocessing
 
 `building_scale_network_builder.py`
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.postprocessing.building_scale_network_builder
 
@@ -130,8 +124,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.model.preprocessing.emissions_parser
 
-.. caution::
-    It relies on `emissions/electricity_matrix_2019_reduced.csv`, is that ok?.
 
 `EV_profile_generator.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -156,7 +148,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.preprocessing.skydome
 
 .. caution::
-    As for the solar heat gains, it relies on a skydome generated for Luise's case study. How to generalise it?
+    As for the solar heat gains, it relies on a skydome generated for Rolle's case study. We need to generalise it.
 
 `weather.py`
 ~~~~~~~~~~~~~~~~~~~~~~~

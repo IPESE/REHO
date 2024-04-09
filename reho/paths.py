@@ -14,8 +14,13 @@ __doc__ = """
 load_dotenv()
 if "AMPL_PATH" in os.environ:
     path_to_ampl = os.environ['AMPL_PATH']
-elif 'AMPL' in os.environ['PATH']:
-    ampl_paths_found = [path for path in re.findall(";(.*?);", os.environ['PATH']) if 'AMPL' in path]
+elif 'AMPL' in os.environ['PATH'] or 'ampl' in os.environ['PATH']:
+    if os.name == 'posix':
+        ampl_paths_found = [path for path in re.findall(":(.*?):", os.environ['PATH']) if 'ampl' in path]
+    elif os.name == 'nt':
+        ampl_paths_found = [path for path in re.findall(";(.*?);", os.environ['PATH']) if 'AMPL' in path]
+    elif os.name == 'linux':
+        print('Define method for Linux')
     if len(ampl_paths_found) > 1:
         print(f'AMPL_PATH was not given through the .env file.\n When looking in the computer, the following paths'
               f'have been found:\n {ampl_paths_found}.\n'

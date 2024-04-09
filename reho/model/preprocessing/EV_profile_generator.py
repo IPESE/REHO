@@ -89,17 +89,27 @@ def generate_EV_plugged_out_profiles_district(cluster):
     return EV_plugged_out, EV_plugging_in
 
 
-def generate_mobility_demand_profile(cluster,population):
+def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custom,transportunits):
     """
     Based on EV_profile_generator_structure
 
-    This reads the Input data on the "Tableau de Bord" excel file on mobility.
+    This reads the Input data on the (normalized?) dailyprofiles.csv.
+
+    Parameters:
+    ----------
+    dailydist : duplicata of the ampl param Dailydist, declared later in the program (TODO : Could be coded better)
+    population : the input reho.parameters['Population'] in the initialisation of the scenario
 
     Returns:
     -------
-    mobility_demand : A dataframe with indexes ("Mobility", p,t)
-    population : int 
+    param_output : a dict of dataframes containing the profiles for each param. 
     """
+    param_output = dict()
+    
+    if dailydist is None:
+        dailydist = 36.8 # km per day
+
+    # Periods
     # TODO IMPLEMENTATION of flexible period duration
     File_ID = WD.get_cluster_file_ID(cluster)
 
@@ -116,44 +126,180 @@ def generate_mobility_demand_profile(cluster,population):
         df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
         timestamp = df.fillna(1)  # only weekdays
 
-    # mapping of the types of days
-    days_mapping = {0: "Weekend",
-                    1: "Weekday"
+    # Label mapping of the types of days
+    days_mapping = {0: "wnd",  # Weekend
+                    1: "wdy"  # Weekday
                     }
 
-    # read the profiles
-    profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"),index_col=0)
-    # population = 7.5 # to modify 
-    profiles_input *= population
-    # profiles_weekday = np.ones(24)*10  # test constant profile (2km each hour)
-    # profiles_weekend = np.ones(24)*10  # test constant profile]
+    # Read the profiles and the transportation Units
+    profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
+    units = pd.read_csv(os.path.join(path_to_infrastructure,"district_units.csv"),sep = ";")
+    units = units[units.Unit.isin(transportunits)]
+
+    # Domestic demand ================================================================================================
+    # The labels look like this : demwdy => normalized mobility demand of a weekday
+    columns = ["dem" + x for x in days_mapping.values()]
+    profiles_input[columns] *= population
+    profiles_input[columns] *= dailydist
 
     mobility_demand = pd.DataFrame(columns=['l', 'p', 't', 'Domestic_energy'])
 
     # iter over the typical periods 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
         try:
-            profile = profiles_input[[days_mapping[day]]].copy()
+            profile = profiles_input[["dem" + days_mapping[day]]].copy()
         except:
             raise ("day type not possible")
-        profile.rename(columns={ days_mapping[day]: "Domestic_energy"}, inplace=True)
+        profile.rename(columns={"dem" + days_mapping[day]: "Domestic_energy"}, inplace=True)
         profile.index.name = 't'
         profile.reset_index(inplace=True)
         profile['p'] = j + 1
 
         mobility_demand = pd.concat([mobility_demand, profile])
 
-    # for p in range(1,13):
-    #     profile = pd.DataFrame.from_dict({"Domestic_energy" : profiles_weekend,"t" : range(1,25)})
-    #     profile['p'] = p
-
-    #     mobility_demand = pd.concat([mobility_demand,profile])
-
     # extreme hours
-    pd.concat([mobility_demand, pd.DataFrame({"p": 11, "t": 1, "Domestic_energy": 0},index=["extremehour1"])])
-    pd.concat([mobility_demand, pd.DataFrame({"p": 12, "t": 1, "Domestic_energy": 0},index=["extremehour2"])])
+    pd.concat([mobility_demand, pd.DataFrame({"p": 11, "t": 1, "Domestic_energy": 0}, index=["extremehour1"])])
+    pd.concat([mobility_demand, pd.DataFrame({"p": 12, "t": 1, "Domestic_energy": 0}, index=["extremehour2"])])
 
     mobility_demand['l'] = "Mobility"
     mobility_demand.set_index(['l', 'p', 't'], inplace=True)
+    param_output['Domestic_energy'] = mobility_demand
 
-    return mobility_demand, population
+    # Daily profiles (ex : Bikes and ICE) ==============================================================================
+    # The labels look like this : Bike_pfrwdy => the normalized daily profile of the Unit Bike_district on a weekday (_district is omitted)
+    daily_profile = pd.DataFrame(columns=['u', 'p', 't', 'Daily_Profile'])
+
+    # iter over the typical periods 
+    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
+        # get daily demand
+        try:
+            dd = profiles_input[["dem" + days_mapping[day]]].copy()
+        except:
+            raise ("day type not possible")
+        dd_filter = dd.astype('bool')
+
+        profile = profiles_input.loc[:, profiles_input.columns.str.contains(f"prf{days_mapping[day]}")].copy()
+        profile = profile.multiply(dd_filter.iloc[:,0],axis = 'index')
+        profile.columns = [x.split('_')[0] + "_district" for x in profile.columns]
+        missing_units = set(transportunits) - set(profile.columns)
+        for unit in missing_units:
+            profile[unit] = dd  # fill missing series with the period demand profile
+
+
+        profile.index.name = 't'
+        profile.columns.name = 'u'
+        profile = profile.stack().to_frame(name = "Daily_Profile")
+        profile.reset_index(inplace=True)
+        profile['p'] = j + 1
+
+        daily_profile = pd.concat([daily_profile, profile])
+
+    # extreme hours
+    pd.concat([daily_profile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0},index=["extremehour1"])])
+    pd.concat([daily_profile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0},index=["extremehour2"])])
+
+    daily_profile.set_index(['u', 'p', 't'], inplace=True)
+    param_output['Daily_Profile'] = daily_profile
+
+    # IN/OUT profiles (ex : EV) ========================================================================================
+    
+    # Mode_Speed =======================================================================================================
+    default_speed = pd.DataFrame({ "UnitOfType" : ['Bike','EV','ICE','Public_transport'],
+                                   "Mode_Speed" : [13.3,37,37,18]})
+
+    mode_speed = units[['Unit','UnitOfType']].copy()
+    mode_speed = mode_speed.merge(default_speed, how = 'outer')
+    mode_speed['Unit'].fillna(mode_speed['UnitOfType'],axis = 0,inplace=True)
+    mode_speed = mode_speed.set_index(['Unit'])[['Mode_Speed']]
+    
+    mode_speed_custom = pd.DataFrame.from_dict(mode_speed_custom,orient='index',columns = ["Mode_Speed"])
+    mode_speed.update(mode_speed_custom)
+
+    param_output['Mode_Speed'] = mode_speed
+
+    return param_output
+
+
+def bike_temp(cluster):
+    """
+    Temporary function to be removed
+    """
+    File_ID = WD.get_cluster_file_ID(cluster)
+
+    if 'W' in File_ID.split('_'):
+        use_weekdays = True
+    else:
+        use_weekdays = False
+
+    if use_weekdays:
+        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3),
+                               skiprows=1)
+        timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
+    else:
+        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
+        timestamp = df.fillna(1)  # only weekdays
+
+    profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
+    bikedailyprofile = pd.DataFrame(columns=['u', 'p', 't', 'Daily_Profile'])
+    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
+        try:
+            profile = profiles_input[["Bike_prfwdy"]].copy()
+        except:
+            raise ("day type not possible")
+        profile.rename(columns={"Bike_prfwdy": "Daily_Profile"}, inplace=True)
+        profile.index.name = 't'
+        profile.reset_index(inplace=True)
+        profile['p'] = j + 1
+        bikedailyprofile = pd.concat([bikedailyprofile, profile])
+
+    pd.concat([bikedailyprofile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
+    pd.concat([bikedailyprofile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
+
+    bikedailyprofile['u'] = "Bike_district"
+    bikedailyprofile.set_index(['u', 'p', 't'], inplace=True)
+
+    return bikedailyprofile
+
+
+def scenario_profiles_temp(cluster):
+    """
+    Temporary function to be removed
+    """
+    File_ID = WD.get_cluster_file_ID(cluster)
+
+    if 'W' in File_ID.split('_'):
+        use_weekdays = True
+    else:
+        use_weekdays = False
+
+    if use_weekdays:
+        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3),
+                               skiprows=1)
+        timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
+    else:
+        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
+        timestamp = df.fillna(1)  # only weekdays
+
+    profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
+    bikedailyprofile = pd.DataFrame(columns=['u', 'p', 't', 'Daily_Profile'])
+    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
+        try:
+            profile = profiles_input[["Bike_prfwnd"]].copy()
+        except:
+            raise ("day type not possible")
+        profile.rename(columns={"Bike_prfwnd": "Daily_Profile"}, inplace=True)
+        profile.index.name = 't'
+        profile.reset_index(inplace=True)
+        profile['p'] = j + 1
+        bikedailyprofile = pd.concat([bikedailyprofile, profile])
+
+    pd.concat([bikedailyprofile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
+    pd.concat([bikedailyprofile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
+
+    bikedailyprofile['u'] = "Bike_district"
+    bikedailyprofile.set_index(['u', 'p', 't'], inplace=True)
+
+    output = {
+        "Daily_Profile": bikedailyprofile
+    }
+    return output

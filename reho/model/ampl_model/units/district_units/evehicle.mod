@@ -18,27 +18,27 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 
 # Usage
-param n_EVperhab default 0.5;
+param n_EVperhab default 0.49; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
 param n_EV_max := n_EVperhab * Population; 
-param ff_EV default 1.56;
+param ff_EV{u in UnitsOfType['EV']} default 1.56;
+param EV_plugged_out{ p in Period, t in Time[p]} default 0.15;	# -
+param EV_plugging_in{ p in Period, t in Time[p]} default 0.15;	# -
 
 # Technical caracteriques
-param EV_eff_ch default 0.9;				#-	[1] both charging station efficiency and battery efficiency
-param EV_eff_di default 0.9;				#-	[1]
-param EV_limit_ch default 0.8;				#-	[2]
-param EV_limit_di default 0.2;				#-	[1]
-param EV_efficiency default 0.99992;		#-	[1]
+param EV_eff_ch default 0.9;				#-		[1] both charging station efficiency and battery efficiency
+param EV_eff_di default 0.9;				#-		[1]
+param EV_limit_ch default 0.8;				#-		[2]
+param EV_limit_di default 0.2;				#-		[1]
+param EV_efficiency default 0.99992;		#-		[1]
 param EV_charger_Power default 7;			#kW	 	[5] and [7]
-param EV_capacity default 70;		#kWh 	[5] and [6]
-param EV_plugged_out{p in Period, t in Time[p]} default 0.15;	# -
-param EV_plugging_in{p in Period, t in Time[p]} default 0.15;	# -
-param normalization_factor :=  max{p in PeriodStandard} ( sum{t in Time[p]}EV_plugging_in[p,t]);
-param EV_mobeff default 6; # km/kWh
+param EV_capacity default 70;				#kWh 	[5] and [6]
+param EV_mobeff default 6; 					#km/kWh
 
+# Old, to be cleaned
+# param normalization_factor :=  max{p in PeriodStandard} ( sum{t in Time[p]}EV_plugging_in[p,t]);
 # param EV_displacement_init{p in Period} := 
 # 		if p in PeriodStandard then 23.8 * 1.56 / 6 / normalization_factor	# km/person/day * person/car / km/kWh / normalisation factor 	[4] p.30, 32 and [5] 
 # 		else  0.0;
-
 # param EV_displacement{u in UnitsOfType['EV'],p in Period, t in Time[p]} := EV_displacement_init[p] * EV_plugging_in[p,t] * n_vehicles;
 param EV_displacement{u in UnitsOfType['EV'],p in Period, t in Time[p]} := EV_plugging_in[p,t] * 0;	#parce que y a du post traitement qui appelle cette variable TODO : remove postraitement 
 	
@@ -64,7 +64,7 @@ subject to EV_EB_c3{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] =  EV_E_stored_plug_in[u,p,t] + EV_E_stored_plug_out[u,p,t];
 
 subject to EV_EB_mobilitykm{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]) / ff_EV / EV_mobeff * EV_plugging_in[p,t] = EV_E_mob[u,p,t] ; # pkm * car/pers * kWh/km * share of EV coming back
+sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]) / ff_EV[u] / EV_mobeff * EV_plugging_in[p,t] = EV_E_mob[u,p,t] ; # pkm * car/pers * kWh/km * share of EV coming back
 
 subject to EV_EB_upper_bound1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] <= EV_capacity * n_vehicles[u];

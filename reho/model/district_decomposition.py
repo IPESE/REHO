@@ -88,7 +88,7 @@ class district_decomposition:
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
-                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units"],
+                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units","DailyDist","Mode_Speed"],
                          "list_constraints_MP": []
                          }
 
@@ -368,7 +368,7 @@ class district_decomposition:
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ICE_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ice.mod')
+                ampl_MP.read('icevehicle.mod')
             if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_boiler_district.mod')
             if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
@@ -443,7 +443,16 @@ class district_decomposition:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
                     MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster)
-                    MP_parameters["Domestic_energy"], xx = EV_gen.generate_mobility_demand_profile(self.cluster,self.parameters['Population'])
+                    # MP_parameters["bike_dailyprofile"] = EV_gen.bike_temp(self.cluster)
+                    d = None
+                    m = None
+                    if 'DailyDist' in self.parameters:
+                        d = self.parameters['DailyDist']
+                    if "Mode_Speed" in self.parameters:
+                        m = self.parameters['Mode_Speed']
+                    p = EV_gen.generate_mobility_parameters(self.cluster, self.parameters['Population'], d, m,
+                                                            np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
+                    MP_parameters.update(p)
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -493,6 +502,10 @@ class district_decomposition:
                     MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses)))+1
+
+        if 'EV_district' in self.infrastructure.UnitsOfDistrict: # TODO : trouver une meilleure condition d'activation de la mobilité
+            MP_set_indexed['transport_Units'] = np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport')
+
 
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS

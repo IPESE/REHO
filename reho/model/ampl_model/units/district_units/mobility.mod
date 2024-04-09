@@ -11,26 +11,35 @@
 
 # ----------------------------------------- PARAMETERS ---------------------------------------
 param Population default 10; # will multiply the domestic demand ? 
-
+param DailyDist default 36.8; # [1]
 param max_travel_time default 1.3; # 3 hours 
 
 # set transport_Units := setof{u in UnitsOfType['EV'] union UnitsOfType['Bike']} u;
 # set transport_Units := UnitsOfType['EV'] union UnitsOfType['Bike'];
-set transport_Units default {'Bike_district','EV_district','ICE_district'}; # TODO : not dynamic to the rest of the code, à améliorer
-param Mode_Speed{transport_Units};
-let Mode_Speed['EV_district'] := 37.1; # km/h [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
-let Mode_Speed['ICE_district'] := 37.1; # km/h
-let Mode_Speed['Bike_district'] := 13.3;
+set transport_Units; # TODO : check if dynamic to the rest of the code
+param Mode_Speed{u in transport_Units} default 37.1;
+param Daily_Profile{u in transport_Units,p in Period,t in Time[p]} default 1; # initialized through the function generate_mobility_parameters
 # ----------------------------------------- VARIABLES ---------------------------------------
 var travel_time >= 0 ;
 
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
 subject to travel_time_c1{ p in Period}:
-sum{u in transport_Units}(sum {i in Time[p]}(Units_supply['Mobility',u,p,i]) / Mode_Speed[u]) / Population <= max_travel_time; 
+(sum{u in transport_Units : u != "Public_transport"}(sum {i in Time[p]}(Units_supply['Mobility',u,p,i]) / Mode_Speed[u])  + sum {j in Time[p]}(Network_supply['Mobility',p,j]) / Mode_Speed['Public_transport'] )/ Population <= max_travel_time; 
 
 
 
 
-# Transport Public
-# contraindre Network_supply avec un profil de capacité horirea
+#--------------------------------------------------------------------------------------------------------------------#
+#-PUBLIC TRANSPORTS
+#--------------------------------------------------------------------------------------------------------------------#
+# contraindre Network_supply avec un profil de capacité horaire
+#-PARAMETERS
+param transport_public_capacity{p in Period, t in Time[p]} default 15; # pkm : availability of public transport each hour in pkm
+
+#-VARIABLES
+
+#-CONSTRAINTS
+
+subject to TP_c1{p in Period, t in Time[p]}:
+Network_supply["Mobility",p,t] <= transport_public_capacity[p,t];

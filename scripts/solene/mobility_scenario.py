@@ -22,12 +22,12 @@ if __name__ == '__main__':
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'FossilFuel' : {},
+                                             'FossilFuel': {},
                                              'Mobility': {},
-                                            })
-    units = infrastructure.initialize_units(scenario, grids,district_data = True)
+                                             })
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    parameters = {'Population' : 9}
+    parameters = {'Population': 12}
 
     # Set method options
     method = {'building-scale': True}
@@ -35,18 +35,21 @@ if __name__ == '__main__':
                 method=method, parameters=parameters, solver="gurobi")
 
     # Set specific parameters
-    reho.parameters['TransformerCapacity'] = np.array([1e6,1e6 , 0, 1e6]) # TODO : robustesse of mobility Network
+    # reho.parameters['TransformerCapacity'] = np.array([1e6, 1e6, 0, 1e6])  # TODO : robustesse of mobility Network
     reho.parameters['Population'] = 9
+    reho.parameters['Mode_Speed'] = {'Bike2_district': 20}
+    # reho.parameters['DailyDist'] = 9
+
+    # reho.parameters.update(EV_gen.scenario_profiles_temp(cluster))
 
     # Other params 
     # Mobility demand profile can be changed in the csv file data/mobility/dailyprofiles.csv + function get_demand_profiles
-
 
     # Run optimization
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['pickle','excel'], filename='Mob')
+    reho.save_results(format=['xlsx', 'pickle'], filename='Mob')
 
     # Mobility Formatting of results 
     date = datetime.datetime.now().strftime("%d_%H%M")
@@ -64,4 +67,6 @@ if __name__ == '__main__':
 
     df_mobility = df_Unit_t[['Units_demand', 'Units_supply']].unstack(level='Unit')
     df_mobility['Domestic_energy'] = df_dd['Domestic_energy']
+    df_mobility.sort_index(inplace = True)
     df_mobility.to_excel(f"results/3f_mobility{date}.xlsx")
+    print(f"Results are saved in 3f_mobility{date}")

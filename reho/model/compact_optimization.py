@@ -636,6 +636,8 @@ class compact_optimization:
         ampl.getConstraint('EMOO_GWP_constraint').drop()
         ampl.getConstraint('EMOO_lca_constraint').drop()
 
+        ampl.getConstraint('EMOO_elec_export_constraint').drop()
+
         ampl.getConstraint('EMOO_GU_demand_constraint').drop()
         ampl.getConstraint('EMOO_GU_supply_constraint').drop()
         ampl.getConstraint('EMOO_grid_constraint').drop()

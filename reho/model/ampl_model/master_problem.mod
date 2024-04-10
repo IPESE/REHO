@@ -250,7 +250,7 @@ Costs_House_inv[h] =sum{f in FeasibleSolutions} lambda[f,h] * Costs_inv_rep_SPs[
 
 
 subject to Costs_capex:
-Costs_inv = tau* (sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacityAdd[l]+CostTransformer_inv2[l] * TransformerCapacityAdd[l]) + sum{u in Units} (Costs_Unit_inv[u] + Costs_rep + sum{h in House} Costs_House_inv[h]));
+Costs_inv = tau* (sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacityAdd[l]+CostTransformer_inv2[l] * TransformerCapacityAdd[l]) + sum{u in Units} (Costs_Unit_inv[u])) + Costs_rep + sum{h in House} (Costs_House_inv[h]);
 
 
 subject to cft_costs_house{h in House}: 
@@ -294,7 +294,7 @@ subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
 
 subject to CO2_construction:
-GWP_constr = sum {u in Units} (GWP_Unit_constr[u] + sum{h in House} GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacityAdd[l]+GWP_Transformer2[l] * TransformerCapacityAdd[l]);
+GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacityAdd[l]+GWP_Transformer2[l] * TransformerCapacityAdd[l]);
 
 subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} (GWP_supply[l,p,t] * Network_supply_GWP[l,p,t] - GWP_demand[l,p,t] * Network_demand_GWP[l,p,t]);
@@ -368,11 +368,14 @@ param EMOO_TOTEX default 1000;
 param EMOO_grid default 0;
 param EMOO_lca{k in Lca_kpi} default 1e6;
 
+param EMOO_elec_export default 0;
+
 var EMOO_slack                >= 0, <= abs(EMOO_CAPEX) * Area_tot;
 var EMOO_slack_opex           >= 0, <= abs(EMOO_OPEX)*Area_tot;
 var EMOO_slack_gwp            >= 0, <= abs(EMOO_GWP)*Area_tot;
 var EMOO_slack_totex          >= 0, <= abs(EMOO_TOTEX)*Area_tot;
 
+var EMOO_slack_elec_export >=0;
 
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid connection costs
@@ -449,6 +452,11 @@ Costs_tot + EMOO_slack_totex = EMOO_TOTEX * Area_tot;
 subject to EMOO_lca_constraint{k in Lca_kpi} :
 lca_tot[k] <= EMOO_lca[k] * Area_tot;
 
+subject to EMOO_elec_export_constraint{l in ResourceBalances: l = 'Electricity'}:
+sum{p in PeriodStandard,t in Time[p]} (Network_demand[l,p,t]/1000) =  EMOO_elec_export+EMOO_slack_elec_export;
+
+#subject to dummy_test{l in ResourceBalances: l = 'Electricity'}:
+#sum{p in PeriodStandard,t in Time[p]} (Network_demand['Electricity',p,t]/1000) >=  10;
 
 param penalty_ratio default 1e-6;
 var penalties default 0;

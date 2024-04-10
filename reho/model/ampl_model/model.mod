@@ -640,6 +640,9 @@ Grid_supply[l,hl,p,t] <= LineCapacity[l,hl] + LineCapacityAdd[l,hl];
 subject to LineCapacity_demand{l in ResourceBalances,hl in HousesOfLayer[l],p in Period,t in Time[p]}:
 Grid_demand[l,hl,p,t] <= LineCapacity[l,hl] + LineCapacityAdd[l,hl];
 
+#subject to dummy_test2{l in ResourceBalances: l = 'Electricity'}:
+#sum{p in PeriodStandard,t in Time[p]} (Network_demand[l,p,t]*dp[p]*dt[p]/1000) >=  10;
+
 #--------------------------------------------------------------------------------------------------------------------#
 #---Transformer capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
@@ -660,4 +663,6 @@ sum{h in House} (Grid_supply[l,h,p,t]) = Network_supply[l,p,t];
 
 subject to disallow_exchanges_2{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 sum{h in House} (Grid_demand[l,h,p,t]) = Network_demand[l,p,t];
+
+
 

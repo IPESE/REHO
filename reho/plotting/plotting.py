@@ -11,6 +11,7 @@ from matplotlib.lines import Line2D
 from matplotlib.legend_handler import HandlerTuple
 import locale, calendar
 from reho.model.compact_optimization import *
+import matplotlib.ticker
 
 
 __doc__ = """
@@ -1767,6 +1768,99 @@ def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename
 
     if filename is not None:
         filename = os.path.join(save_path, filename + '_monthly_' + to_plot + '.')
+        if export_format == 'png':
+            fig.write_image(filename + export_format)
+        elif export_format == 'html':
+            fig.write_html(filename + export_format)
+
+    return fig
+
+def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short', save_path="", filename=None, export_format='html', objective=None, constraint=None):
+    """
+        Generate a line plot showing the investment pathway for the respective Objective function and EMOO selected
+
+        :param results: Dictionary containing REHO results.
+        :type results: dict
+
+        :param label: Indicates the language to use for the plot. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+        :type label: str
+
+        :param save_path: Path where the plot should be saved.
+        :type save_path: str
+
+        :param filename: Name of the file to be saved.
+        :type filename: str
+
+        :param export_format: Format for exporting the plot ('html' or 'png', default: 'html').
+        :type export_format: str
+
+        :return: The generated figure.
+    """
+    if scn_id is None:
+        scn_id =  list(results.keys())[0]
+
+    if objective is None:
+        raise SystemExit('Please select the objective function used in the optimization')
+
+    if constraint is None:
+        raise SystemExit('Please select the epsilon constraint used in the optimization')
+
+    if EMOO_list==[]:
+        raise SystemExit('Please enter the list of epsilon constraint used in the pathway optimization')
+
+    if y_span==[]:
+        raise SystemExit('Please enter the list of years used in the pathway optimization')
+
+    # Plot
+    fig,ax=plt.subplots(figsize=(12,7))
+    ax.set_xlabel('Year',fontsize=20)
+    ax.set_xlim((min(y_span), max(y_span)))
+    ax.set_title("Investment Pathway", fontsize=35)
+    ax.tick_params(axis='x', labelsize=15)
+
+    obj=[]
+    if objective=='CAPEX':
+        obj_label = 'Cumulative capital investment [CHF/m2/y]'
+        for i in range(len(EMOO_list)):
+            obj=obj+[results[scn_id][i]['df_KPIs']['capex_m2']['Network']]
+    lns1 = ax.plot(y_span, np.cumsum(obj), label=objective, color='C0', linewidth=2)
+    # Left y-axis params
+    ax.set_ylabel(obj_label, color='C0', fontsize=20)
+    ax.tick_params(axis='y', labelcolor='C0', labelsize=15)
+    ax.set_ylim(bottom=0)
+
+    # Creating a second y-axis
+    ax2 = ax.twinx()
+    constr=[]
+    if constraint=='GWP':
+        constr_label='GWP [kgCO2-eq/m2]'
+        for i in range(len(EMOO_list)):
+            constr=constr+[results[scn_id][i]['df_KPIs']['gwp_tot_m2']['Network']]
+    # Plotting the second set of data on the second y-axis
+    lns2 = ax2.plot(y_span, constr, label=constraint, color='C1', linewidth=2)
+    lns3 = ax2.plot(y_span, EMOO_list, label='EMOO', color='C1', linestyle='--', linewidth=2)
+
+    # right y-axis param
+    ax2.set_ylabel(constr_label, color='C1',fontsize=20)
+    ax2.tick_params(axis='y', labelcolor='C1', labelsize=15)
+    ax2.set_ylim(bottom=0)
+
+    # Adding legend
+    lns = lns1 + lns2 + lns3# + lns4
+    labs = [l.get_label() for l in lns]
+    ax.legend(lns, labs, loc=5,fontsize=15)
+
+    # Fixing background grid
+    nticks = 6
+    ax.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+    ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+    ax.grid()
+
+    # Show the plot
+    fig.show()
+
+    if filename is not None:
+        filename = os.path.join(save_path, filename + '.')
         if export_format == 'png':
             fig.write_image(filename + export_format)
         elif export_format == 'html':

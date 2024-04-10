@@ -1,4 +1,5 @@
-import subprocess, os
+import subprocess
+import os
 
 
 def test_run_examples_without_errors():

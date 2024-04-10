@@ -168,8 +168,6 @@ class compact_optimization:
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_compact.UnitTypes:
             ampl.read('electrical_heater.mod')
-        if 'tap_water' in self.infrastructure_compact.UnitTypes:
-            ampl.read('tap_water.mod')
         if 'NG_Boiler' in self.infrastructure_compact.UnitTypes:
             ampl.read('ng_boiler.mod')
         if 'OIL_Boiler' in self.infrastructure_compact.UnitTypes:

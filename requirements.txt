@@ -16,4 +16,5 @@ plotly>=5.10,<6.0.0
 kaleido>=0.2.1,<1.0.0
 python-dotenv>=1.0
 requests>=2.0.0,<3.0.0
-coloredlogs
+coloredlogs<=15.0.1,>=14.0
+pvlib<=0.10.4,>0.9.5

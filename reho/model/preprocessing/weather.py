@@ -6,6 +6,7 @@ import calendar
 import datetime as dt
 from reho.paths import *
 from reho.model.preprocessing.clustering import ClusterClass
+import pvlib
 
 __doc__ = """
 *Generates the meteorological data (temperature and solar irradiance).*
@@ -79,12 +80,23 @@ def get_cluster_file_ID(cluster):
 
 def read_hourly_dat(location):
 
+    path = os.path.join(path_to_weather, 'hour', location + '-hour')
     if location.endswith('.dat'):
         df = np.loadtxt(path_handler(location), unpack=True, skiprows=1)
-    else:
-        df = np.loadtxt(os.path.join(path_to_weather, 'hour', location + '-hour.dat'), unpack=True, skiprows=1)
-    df = pd.DataFrame(df).transpose()
-    df = df.drop([5,6,7,8], axis=1)
+        df = pd.DataFrame(df).transpose()
+        df = df.drop([5, 6, 7, 8], axis=1)
+
+    elif os.path.exists(path + '.dat'):
+        df = np.loadtxt((path + '.dat'), unpack=True, skiprows=1)
+        df = pd.DataFrame(df).transpose()
+        df = df.drop([5, 6, 7, 8], axis=1)
+
+    elif os.path.exists(path + '.epw'):
+        df, others = pvlib.iotools.read_epw(path + '.epw')
+        df = df.reset_index(drop=True)
+        df["id"] = df.index.values + 1
+        df = df[['id', 'month', 'day', 'hour', 'ghi', 'temp_air']].reset_index(drop=True)
+
     df.columns = ['id', 'Month', 'Day', 'Hour', 'Irr', 'Text']
     df2 = pd.read_csv(os.path.join(path_to_weather, 'Weekday_2005.txt'), index_col=[0], header=None)
     df['Weekday'] = df2
@@ -444,7 +456,7 @@ def plot_LDC(cl, location, save_fig):
 
 
     # set months instead of timestep as xticks
-    plt.xticks(np.arange(8760, step=730), calendar.month_name[1:13], rotation=20)
+    plt.xticks(np.arange(8760, step=730), calendar.month_name[1:13], rotation=30, fontsize=16)
 
     ax[0].set_ylabel('temperature [C]')
     ax[1].set_ylabel('global irradiation [W/m$^2$]')

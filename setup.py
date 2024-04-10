@@ -41,6 +41,8 @@ setup(
                       'kaleido>=0.2.1,<1.0.0',
                       'python-dotenv>=1.0',
                       'requests>=2.0.0,<3.0.0',
+                      'coloredlogs<=15.0.1,>=14.0',
+                      'pvlib<=0.10.4,>0.9.5'
                       ],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod', '*.ini'],

@@ -62,6 +62,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df_Performance = pd.concat([df_Performance, df_Epsilon], axis=1)
         df_Performance.index.names = ['Hub']
+        if method['print_logs']:
+            print(df_Performance)
 
         return df_Performance.sort_index()
 
@@ -126,11 +128,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df2 = get_ampl_data(ampl, 'Units_Mult')
 
         df3 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_inv')
-        df4 = get_ampl_data(ampl, 'GWP_Unit_constr') # per year! For total- multiply with lifetime
+        df4 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
         df5 = get_ampl_data(ampl, 'lifetime')
         df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
+        if method['print_logs']:
+            print(df_Unit)
 
         # Unit_t
         df1 = get_ampl_data(ampl, 'Units_demand', multi_index=True)

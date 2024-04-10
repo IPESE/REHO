@@ -40,14 +40,14 @@ def convert_results_txt_to_csv(load_timesteps):
     print(df)
 
 
-def skydome_to_df(csv_data):
+def skydome_to_df(location_data):
     """ reads two txt files: one containing the area and one the position of the center point of the 145 patches,
      which define the skydome. Calculates basic additional values and returns all data in one single df
 
     :return:   df
     """
-    df_area = csv_data["df_area"]  # area of patches
-    df_cenpts = csv_data["df_cenpts"]  #  # location of centre points
+    df_area = location_data["df_Area"]  # area of patches
+    df_cenpts = location_data["df_Cenpts"]  # location of centre points
 
     df_dome = pd.DataFrame()
     df_dome['Area'] = df_area[0]
@@ -68,17 +68,17 @@ def skydome_to_df(csv_data):
     return df_dome
 
 
-def irradiation_to_df(ampl, df_IRR, df_time):
+def irradiation_to_df(ampl, df_irradiation, df_time):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
     #change column name from string to int
-    df_IRR.columns = df_IRR.columns.astype(int)
+    df_irradiation.columns = df_irradiation.columns.astype(int)
     #change values from string to float
-    df_IRR = df_IRR.infer_objects()
+    df_irradiation = df_irradiation.infer_objects()
 
     # parse index as datetime
-    df_IRR.index = pd.to_datetime(df_IRR.index)
+    df_irradiation.index = pd.to_datetime(df_irradiation.index)
 
     # get relevant cluster information
     PeriodDuration  = ampl.getParameter('TimeEnd').getValues().toPandas()
@@ -92,7 +92,7 @@ def irradiation_to_df(ampl, df_IRR, df_time):
         end = PeriodDuration.xs(p+1).TimeEnd  # ampl starts at 1
 
         date2 = date1 + timedelta(hours=int(end)-1)
-        df_period = df_IRR.loc[date1:date2]
+        df_period = df_irradiation.loc[date1:date2]
 
         for t in np.arange(1, int(end)+1):  # ampl starts at 1
             list_timesteps.append((p +1, t))  # create ample index
@@ -102,27 +102,25 @@ def irradiation_to_df(ampl, df_IRR, df_time):
     idx = pd.MultiIndex.from_tuples(list_timesteps)
 
     # marry index and data
-    df_IRR = df_p.set_index(idx)
+    df_irradiation = df_p.set_index(idx)
 
-    df = df_IRR.stack()
+    df = df_irradiation.stack()
     df = df.reorder_levels([2, 0, 1])
     df = pd.DataFrame(df)
     df = df.rename(columns = {0 : 'Irr'})
     return df
 
 
-def irradiation_to_df_general(irradiation):
+def irradiation_to_df_general(df_irradiation):
     """reads Irradiation values of all 145 for the timesteps given in the csv file.
      Converts them to float and returns them as df"""
 
-    df_IRR = irradiation #pd.read_csv(irradiation_csv, index_col=[0])
-
     #change column name from string to int
-    df_IRR.columns = df_IRR.columns.astype(int)
+    df_irradiation.columns = df_irradiation.columns.astype(int)
     # change values from string to float
-    df_IRR = df_IRR.infer_objects()
+    df_irradiation = df_irradiation.infer_objects()
 
-    return df_IRR
+    return df_irradiation
 
 
 def irradiation_to_typical_df(typical_days_string, df_profiles):
@@ -176,19 +174,19 @@ def f_cos(x):
     return math.cos(a1-a2)
 
 
-def calc_orientation_profiles(azimuth, tilt, design_lim_angle, csv_data, irradiation_file, typical_frequency):
+def calc_orientation_profiles(azimuth, tilt, design_lim_angle, location_data, typical_frequency):
     cos_a = round(math.cos(math.radians(azimuth)), 8)
     sin_a = round(math.sin(math.radians(azimuth)), 8)
     sin_y = round(math.sin(math.radians(tilt)), 8)
     cos_y = round(math.cos(math.radians(tilt)), 8)
     print('PANEL ORIENTATION: azimuth ', azimuth, ', tilt ', tilt)
 
-    df_dome = skydome_to_df(csv_data)
-    df_IRR = irradiation_to_df_general(irradiation_file)
+    df_dome = skydome_to_df(location_data)
+    df_irradiation = irradiation_to_df_general(location_data["df_Irradiation"])
 
-    df_irr_pos = pd.DataFrame()
-    df_irr_neg = pd.DataFrame()
-    for pt in df_IRR.columns.values:
+    df_irradiation_pos = pd.DataFrame()
+    df_irradiation_neg = pd.DataFrame()
+    for pt in df_irradiation.columns.values:
 
         azi_pt = df_dome.xs(pt)['azimuth']
         ele_pt = df_dome.xs(pt)['elavation']
@@ -222,19 +220,19 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, csv_data, irradia
 
         rotation = - sin_a * sin_y * df_dome.xs(pt)['Sin_a'] * df_dome.xs(pt)['Cos_e'] \
                    - sin_y * cos_a * df_dome.xs(pt)['Cos_a'] * df_dome.xs(pt)['Cos_e'] - cos_y * df_dome.xs(pt)['Sin_e']
-        irradiation_patch = round(df_IRR[pt] * rotation * linear_factor, 10)
+        irradiation_patch = round(df_irradiation[pt] * rotation * linear_factor, 10)
         if irradiation_patch.min() < 0:
-            df_irr_neg[pt] = irradiation_patch
+            df_irradiation_neg[pt] = irradiation_patch
         else:
-            df_irr_pos[pt] = irradiation_patch
+            df_irradiation_pos[pt] = irradiation_patch
     print('Limiting angle design', design_lim_angle)
-    print(len(df_irr_pos.columns), 'patches can NOT be seen')
-    print(len(df_irr_neg.columns), 'patches can be seen')
+    print(len(df_irradiation_pos.columns), 'patches can NOT be seen')
+    print(len(df_irradiation_neg.columns), 'patches can be seen')
 
-    df_irr_panel_t = df_irr_neg.sum(axis=1)
+    df_irradiation_panel_t = df_irradiation_neg.sum(axis=1)
 
-    df_irr_panel_t.index = pd.to_datetime(df_irr_panel_t.index)  # convert index to datetime
-    df_irr_panel_t = df_irr_panel_t.sort_index()
+    df_irradiation_panel_t.index = pd.to_datetime(df_irradiation_panel_t.index)  # convert index to datetime
+    df_irradiation_panel_t = df_irradiation_panel_t.sort_index()
 
     # construct annual sum
     df_period = np.array([])
@@ -244,22 +242,22 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, csv_data, irradia
     for number, key in enumerate(list(typical_frequency.keys())[:-2]):
         hours_component = int(period_duration[number + 1])
         end = key + timedelta(hours=hours_component - 1)
-        irr_day = -1 * df_irr_panel_t.loc[key: end]
+        irr_day = -1 * df_irradiation_panel_t.loc[key: end]
         df_period = np.append(df_period, irr_day.values)
 
     df_period = np.append(df_period, [df_period.min(), df_period.max()])
 
-    return df_irr_panel_t, df_period
+    return df_irradiation_panel_t, df_period
 
 
-def calc_orientated_surface(azimuth, tilt, design_lim_angle, csv_data, irradiation_file, typical_frequency):
-    df_irr_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, csv_data, irradiation_file, typical_frequency)
+def calc_orientated_surface(azimuth, tilt, design_lim_angle, location_data, irradiation_file, typical_frequency):
+    df_irradiation_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, location_data, irradiation_file, typical_frequency)
 
     # construct annual sum
     df_period = pd.DataFrame()
 
     for key, value in typical_frequency.items():
-        irr_day = df_irr_panel_t.xs(key).sum() * (-value)
+        irr_day = df_irradiation_panel_t.xs(key).sum() * (-value)
         df_period = df_period.append([irr_day])
 
     annual_irr = round(df_period.sum().values[0] / 1000, 2)
@@ -269,14 +267,14 @@ def calc_orientated_surface(azimuth, tilt, design_lim_angle, csv_data, irradiati
     return azimuth, tilt, annual_irr
 
 
-def construct_annual_orientation_df(limiting_angle, csv_data):
+def construct_annual_orientation_df(limiting_angle, location_data):
 
     azimuth = np.array(range(0, 360))
     tilt = np.array(range(0, 90, 5))
 
     df = pd.DataFrame()
     for (a, t) in it.product(azimuth, tilt):
-        azimuth, tilt, annual_irr = calc_orientated_surface(a, t, limiting_angle, csv_data)
+        azimuth, tilt, annual_irr = calc_orientated_surface(a, t, limiting_angle, location_data)
         d = {'azimuth': azimuth, 'tilt': tilt, 'irr': annual_irr}
         df = df.append(d, ignore_index=True)
     print(df)
@@ -381,9 +379,6 @@ if __name__ == '__main__':
     #construct_annual_orientation_df(limiting_angle)
     #df_good = irradiation_to_df_general(irradiation_csv)
     #df_wrong = irradiation_to_df(irradiation_csv)
-    save_fig = False
-    plt.rcParams.update({'font.size': 12})
-    plot_irr(save_fig)
 
     #azimuth = 175
     #tilt = 20

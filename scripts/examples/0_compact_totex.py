@@ -31,7 +31,7 @@ if __name__ == '__main__':
     # Set method options (as defined in compact_optimization.py > initialize_default_methods)
     # by default a district scale design is performed with a compact optimization
     # watch out the maximum number of buildings is around 10 due to exponential complexity
-    method = {}
+    method = {"print_logs": True}
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

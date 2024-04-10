@@ -18,6 +18,7 @@
 *save_timeseries*;Adds in the results file the timeseries results (df_Buildings_t, df_Unit_t, df_Stream_t);False
 *save_lca*;dds in the results file the impact in terms of LCA indicators by units, hubs and energy carriers;False
 *extract_parameters*;To extract all the parameters used in the optimization;False
+*print_logs*;Prints the logs of the optimization(s);True
 **Other**;;
 *actors_cost*;Changes the MP to solve: instead of considering the district as a single entity to optimize, different stakeholders portfolios are considered where the objective function is the minimization of the costs for one particular actor, while the costs of the other actors are constrained with parameterized epsilon values;False
 *DHN_CO2*;To use CO2 in the DHN as heat carrier (default fluid is water);False

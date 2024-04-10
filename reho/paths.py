@@ -47,7 +47,7 @@ path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'h2_units')
 path_to_elcom = os.path.join(path_to_data, 'elcom')
 
 # emissions
-path_to_emissions_matrix = os.path.join(path_to_data, 'emissions', 'electricity_matrix_2019_reduced.csv')
+path_to_emissions = os.path.join(path_to_data, 'emissions', 'electricity_matrix_2019_reduced.csv')
 
 # infrastructure
 path_to_infrastructure = os.path.join(path_to_data, 'infrastructure')

@@ -92,6 +92,12 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.model.preprocessing
 
+`buildings_profiles.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.buildings_profiles
+    :members: eud_profiles, solar_gains_profile
+
 
 `clustering.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,14 +109,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
     typical meteos if no meteo file is provided? This could be easily done as the transformer in QBuildings have
     the meteo_cluster.
 
-`data_generation.py`
-~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: reho.model.preprocessing.data_generation
-    :members: build_eud_profiles, solar_gains_profile
-
-.. caution::
-    It seems the solar gain profiles relies on `skydome/typical_irradiation.csv` that is specific to Rolle.
 
 `electricity_prices.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -130,6 +128,11 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.model.preprocessing.EV_profile_generator
     :members: generate_EV_plugged_out_profiles_district
+
+`location_data.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.location_data
 
 `QBuildings.py`
 ~~~~~~~~~~~~~~~~~~~~~~~

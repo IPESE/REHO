@@ -1,9 +1,9 @@
 import os
 from amplpy import AMPL, Environment
 import itertools as itertools
-import reho.model.preprocessing.data_generation as DGF
+import reho.model.preprocessing.buildings_profiles as BP
 import reho.model.preprocessing.weather as WD
-import reho.model.preprocessing.skydome as SkyDome
+import reho.model.preprocessing.skydome as SKD
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.EV_profile_generator as EV_gen
 from reho.model.preprocessing.QBuildings import *
@@ -20,6 +20,8 @@ class compact_optimization:
                 Instance of the class district, contains relevant structure in the district such as Units or grids.
             buildings_data : dict
                 Dictionary containing relevant Building data.
+            location_data : dict
+                Dictionary containing relevant location-specific data.
             parameters : dict, optional
                 Dictionary containing 'new' parameters for the AMPL model. If incomplete, uses data from buildings_data.
             set_indexed : dict, optional
@@ -41,7 +43,7 @@ class compact_optimization:
             reho.model.district_decomposition.district_decomposition
 
             """
-    def __init__(self, district, buildings_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None, csv_data=None):
+    def __init__(self, district, buildings_data, location_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
 
         self.buildings_data_compact = buildings_data
         if method['use_facades']:
@@ -50,6 +52,7 @@ class compact_optimization:
         if method['use_pv_orientation']:
            self.roofs_compact = qbuildings_data['roofs_data']
         self.infrastructure_compact = district
+        self.location_data = location_data
         self.parameters_compact = parameters
         self.set_indexed_compact = set_indexed
         self.cluster_compact = cluster
@@ -61,7 +64,6 @@ class compact_optimization:
         self.method_compact = method
         self.solver = solver
         self.parameters_to_ampl = dict()
-        self.csv_data = csv_data
 
     def solve_model(self):
         ampl = self.build_model_without_solving()
@@ -95,7 +97,7 @@ class compact_optimization:
         ampl = self.set_weather_data(ampl)
         ampl = self.set_ampl_sets(ampl)
         self.set_emissions_profiles(File_ID)
-        self.set_gains_and_demands_profiles(ampl, File_ID)
+        self.set_temperature_and_EVs_profiles()
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
         if self.method_compact['use_pv_orientation']:
@@ -147,7 +149,7 @@ class compact_optimization:
         ampl.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl.setOption('presolve_fixeps', 1e-9)
-        if self.method_compact['disable_print']:
+        if not self.method_compact['print_logs']:
             ampl.setOption('show_stats', 0)
             ampl.setOption('solver_msg', 0)
 
@@ -259,6 +261,7 @@ class compact_optimization:
         self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering, 'GHI_' + File_ID + '.dat'))
 
         ampl.cd(path_to_ampl_model)
+
         return ampl
 
     def set_ampl_sets(self, ampl):
@@ -307,26 +310,23 @@ class compact_optimization:
 
     def set_emissions_profiles(self, File_ID):
 
-        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a', self.csv_data["timestamp"], self.csv_data["emissions_matrix"])
+        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a', self.location_data["df_Timestamp"], self.location_data["df_Emissions"])
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})
             self.parameters_to_ampl['Gas_emission'] = self.infrastructure_compact.Grids_Parameters.drop('Electricity').drop(
                 columns=['Cost_demand_cst', 'Cost_supply_cst'])
 
-    def set_gains_and_demands_profiles(self, ampl, File_ID):
+    def set_temperature_and_EVs_profiles(self):
 
         # Reference temperature
-        #self.parameters_to_ampl['T_comfort_min'] = DGF.profile_reference_temperature(self.parameters_to_ampl, self.cluster_compact)
-
-        # Heat gains from solar
-        self.parameters_to_ampl['SolarGains'] = DGF.solar_gains_profile(ampl, self.buildings_data_compact, File_ID, self.csv_data)
+        self.parameters_to_ampl['T_comfort_min'] = BP.reference_temperature_profile(self.parameters_to_ampl, self.cluster_compact)
 
         # Set default EV plug out profile if EVs are allowed
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact, self.csv_data["timestamp"])
+                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact, self.location_data["df_Timestamp"])
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -434,14 +434,14 @@ class compact_optimization:
     def set_PV_models(self, ampl):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
-        df_dome = SkyDome.skydome_to_df(self.csv_data)
+        df_dome = SKD.skydome_to_df(self.location_data)
         self.parameters_to_ampl['Sin_a'] = df_dome.Sin_a.values
         self.parameters_to_ampl['Cos_a'] = df_dome.Cos_a.values
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
         #total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
-        df_irr = SkyDome.irradiation_to_df(ampl, self.csv_data["irradiation"], self.csv_data["timestamp"])
+        df_irr = SKD.irradiation_to_df(ampl, self.location_data["df_Irradiation"], self.location_data["df_Timestamp"])
         self.parameters_to_ampl['Irr'] = df_irr
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])
@@ -511,7 +511,7 @@ class compact_optimization:
                 df_shadows = self.shadows_compact[self.shadows_compact['id_building'] == self.buildings_data_compact[b]['id_building']]
                 facades = df_facades['Facades_ID']
                 np_facades = np.append(np_facades, facades)
-                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows, self.csv_data)
+                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows, self.location_data)
                 df_shadow = pd.concat([df_shadow], keys=[b], names=['House'])
                 df_limit_angle = pd.concat([df_limit_angle, df_shadow])
                 for fc in facades:
@@ -714,8 +714,8 @@ def initialize_default_methods(method):
         method['save_lca'] = False
     if 'extract_parameters' not in method:
         method['extract_parameters'] = False
-    if 'disable_print' not in method:
-        method['disable_print'] = False
+    if 'print_logs' not in method:
+        method['print_logs'] = True
 
     if 'actors_cost' not in method:
         method['actors_cost'] = False
@@ -728,7 +728,7 @@ def initialize_default_methods(method):
         method['use_Storage_Interperiod'] = False
 
     if method['building-scale']:
-        method['include_all_solutions'] = False # avoid interactions between optimization scenarios
+        method['include_all_solutions'] = False  # avoid interactions between optimization scenarios
         method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
 
     return method

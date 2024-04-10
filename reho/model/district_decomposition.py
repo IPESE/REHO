@@ -1,6 +1,7 @@
 import reho.model.infrastructure as infrastructure
 from reho.model.compact_optimization import *
 import reho.model.postprocessing.write_results as WR
+from reho.model.preprocessing.location_data import *
 from itertools import groupby
 import warnings
 import time
@@ -52,28 +53,19 @@ class district_decomposition:
         # methods
         self.method = initialize_default_methods(method)
         self.logger = logging.getLogger(__name__)
-        if not method['disable_print']:
+        if method['print_logs']:
             coloredlogs.install(level=logging.INFO, logger=self.logger, isatty=True,
                                 fmt="%(message)s", stream=sys.stdout)
 
-        # District attributes / used also in REHO
+        # infrastructure
         if method['use_facades'] or method['use_pv_orientation']:
             self.qbuildings_data = qbuildings_data
         self.buildings_data = qbuildings_data['buildings_data']
         self.ERA = sum([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
-
+        
         self.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
         self.infrastructure_SP = dict()
         self.build_infrastructure_SP()
-
-        self.csv_data = dict()
-        self.csv_data["irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
-        self.csv_data["df_area"] = pd.read_csv(path_to_areas, header=None)
-        self.csv_data["df_cenpts"] = pd.read_csv(path_to_cenpts, header=None)
-        self.csv_data["df_sia"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
-        self.csv_data["emissions_matrix"] = pd.read_csv(path_to_emissions_matrix, index_col = [0,1,2])
-        self.csv_data["sia2024_data"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl',
-                           index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
 
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -81,20 +73,28 @@ class district_decomposition:
             self.cluster = cluster
         self.File_ID = WD.get_cluster_file_ID(self.cluster)
 
-        path_to_timestamp = os.path.join(path_to_clustering, 'timestamp_' + self.File_ID + '.dat')
-        path_to_westfacades_irr = os.path.join(path_to_clustering, 'westfacades_irr_' + self.File_ID + '.txt')
-        self.csv_data["timestamp"] = pd.read_csv(path_to_timestamp, delimiter='\t', parse_dates=[0])
-        self.csv_data["westfacades_irr"] = pd.read_csv(path_to_westfacades_irr, header=None)[0].values
+        # load SIA norms
+        sia_data = dict()
+        sia_data["df_SIA_380"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
+        sia_data["df_SIA_2024"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl', index_col=[0],
+                                                     skiprows=[0, 2, 3, 4], header=[0])
+
+        # retrieve location data
+        self.location_data = return_location_data(cluster)
 
         if parameters is None:
             self.parameters = {}
         else:
             self.parameters = parameters
 
-        # Heat gains from electricity and people, domestic hot water demand, domestic electricity demand
+        # build end use demands profile
         self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
-            DGF.build_eud_profiles(self.buildings_data, self.cluster, self.csv_data["df_sia"], self.csv_data["sia2024_data"], self.csv_data["timestamp"],
+            BP.eud_profiles(self.buildings_data, self.cluster, sia_data["df_SIA_380"], sia_data["df_SIA_2024"], self.location_data["df_Timestamp"],
                                    self.method['include_stochasticity'], self.method['sd_stochasticity'], self.method['use_custom_profiles'])
+
+        # build solar gains profile
+        self.parameters['SolarGains'] = BP.solar_gains_profile(self.buildings_data, sia_data, self.location_data)
+
 
         if set_indexed is None:
             self.set_indexed = {}
@@ -267,7 +267,7 @@ class district_decomposition:
         df_Results : results of the optimization (unit installed, power exchanged, costs, GWP emissions, ...)
         attr : results of the optimization process (CPU time, objective value, nb variables or constraints, ...)
         """
-        if not self.method["disable_print"]:
+        if self.method["print_logs"]:
             print('INITIATE HOUSE: ' + h)
 
         # find district structure and parameter for one single building
@@ -289,9 +289,9 @@ class district_decomposition:
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(self.infrastructure_SP[h], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[h], buildings_data_SP, self.location_data, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = compact_optimization(self.infrastructure_SP[h], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[h], buildings_data_SP, self.location_data, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -361,7 +361,7 @@ class district_decomposition:
         ampl_MP.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl_MP.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
         ampl_MP.setOption('presolve_fixeps', 1e-9)
-        if self.method['disable_print']:
+        if not self.method['print_logs']:
             ampl_MP.setOption('show_stats', 0)
             ampl_MP.setOption('solver_msg', 0)
 
@@ -459,7 +459,7 @@ class district_decomposition:
         if 'EV_plugged_out' not in MP_parameters:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
-                    MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster, self.csv_data["timestamp"])
+                    MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster, self.location_data["df_Timestamp"])
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -682,9 +682,11 @@ class district_decomposition:
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(self.infrastructure_SP[House], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[House], buildings_data_SP, self.location_data, parameters_SP, self.set_indexed, self.cluster,
+                                        scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = compact_optimization(self.infrastructure_SP[House], buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, csv_data=self.csv_data)
+            REHO = compact_optimization(self.infrastructure_SP[House], buildings_data_SP, self.location_data, parameters_SP, self.set_indexed, self.cluster,
+                                        scenario, self.method, self.solver)
 
         ampl = REHO.build_model_without_solving()
 

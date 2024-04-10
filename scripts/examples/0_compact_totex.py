@@ -7,13 +7,13 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()  # load QBuildingsReader class
     reader.establish_connection('Suisse')  # connect to QBuildings database
-    qbuildings_data = reader.read_db(3658, nb_buildings=1)  # read data
+    qbuildings_data = reader.read_db(4230, nb_buildings=1, return_location=True)  # read data
 
     # Select weather data
     # location can be chosen among the files available in preprocessing > weatherData > data > hour
     # I refers to Irradiance, T to Temperature, and W to Weekday
     # specify the desired number of typical days
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': qbuildings_data['Location'], 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()

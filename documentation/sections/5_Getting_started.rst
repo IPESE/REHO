@@ -47,9 +47,10 @@ Python
 You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
 As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_.
 
-.. warning::
-    Using `Visual Studio Code <https://code.visualstudio.com/>`_ is possible, although this may require adjustments regarding paths handling (just make sure that the working directory corresponds to the location of the run script and not to the root project folder).
+.. warning:: VScode
 
+    If you are a VScode user, you may have path issues, either when importing the REHO module or by providing a path.
+    Follow the instructions from `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_.
 
 AMPL
 ~~~~~~~~~~~~~~~~~~~~~~~~

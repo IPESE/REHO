@@ -1,4 +1,4 @@
-import os
+import os, re
 from csv import Sniffer
 from pathlib import Path
 from pandas import read_csv, read_table, read_excel
@@ -10,9 +10,24 @@ __doc__ = """
 """
 
 
+# load_dotenv(os.path.realpath('.env'))
 load_dotenv()
-if "AMPL_PATH" not in os.environ:
-    print("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+if "AMPL_PATH" in os.environ:
+    path_to_ampl = os.environ['AMPL_PATH']
+elif 'AMPL' in os.environ['PATH'] or 'ampl' in os.environ['PATH']:
+    if os.name == 'posix':
+        ampl_paths_found = [path for path in re.findall(":(.*?):", os.environ['PATH']) if 'ampl' in path]
+    elif os.name == 'nt':
+        ampl_paths_found = [path for path in re.findall(";(.*?);", os.environ['PATH']) if 'AMPL' in path]
+    elif os.name == 'linux':
+        print('Define method for Linux')
+    if len(ampl_paths_found) > 1:
+        print(f'AMPL_PATH was not given through the .env file.\n When looking in the computer, the following paths'
+              f'have been found:\n {ampl_paths_found}.\n'
+              f'The first one will be used.')
+    path_to_ampl = ampl_paths_found[0]
+else:
+    path_to_ampl = None
 
 path_to_reho = os.path.dirname(__file__)
 path_to_data = os.path.join(path_to_reho, 'data')

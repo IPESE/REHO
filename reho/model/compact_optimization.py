@@ -9,6 +9,7 @@ import reho.model.preprocessing.EV_profile_generator as EV_gen
 from reho.model.preprocessing.QBuildings import *
 import logging
 
+
 class compact_optimization:
     """
             Collects all the data input and sends it an AMPL model, solves the optimization.
@@ -133,10 +134,12 @@ class compact_optimization:
             modules.load()
             ampl = AMPL()
         else:
-            try:
-                ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
-            except:
-                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+            if path_to_ampl:
+                ampl = AMPL(Environment(path_to_ampl))
+            else:
+                raise EnvironmentError("No valid path to AMPL was found.\n"
+                                       " Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+        # print(ampl.getOption('version'))
 
         # -AMPL (GNU) OPTIONS
         ampl.setOption('solution_round', 11)
@@ -165,8 +168,6 @@ class compact_optimization:
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_compact.UnitTypes:
             ampl.read('electrical_heater.mod')
-        if 'tap_water' in self.infrastructure_compact.UnitTypes:
-            ampl.read('tap_water.mod')
         if 'NG_Boiler' in self.infrastructure_compact.UnitTypes:
             ampl.read('ng_boiler.mod')
         if 'OIL_Boiler' in self.infrastructure_compact.UnitTypes:

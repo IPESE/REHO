@@ -189,7 +189,7 @@ class QBuildingsReader:
         to_csv : bool
             To export the data into csv
         return_location : bool
-            To obtain the corresponding meteo cluster
+            To obtain the corresponding meteo cluster, in the returned dictionary under the key ``Location``
 
         Returns
         -------
@@ -239,10 +239,6 @@ class QBuildingsReader:
             .where(self.tables[self.db_schema + '.' + 'transformers'].columns.id == transformer)
         self.data['transformers'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine,
                                                      geom_col='geometry').fillna(np.nan)
-        if return_location:
-            meteo_cluster = translate_meteo_to_period_cluster(self.data['transformers']['meteo'][0])
-        else:
-            meteo_cluster = None
 
         # Select buildings
         sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]) \
@@ -298,6 +294,9 @@ class QBuildingsReader:
 
         if qbuildings["buildings_data"] == {}:
             raise print("Empty building data")
+
+        if return_location:
+            qbuildings['Location'] = translate_meteo_to_period_cluster(self.data['transformers']['meteo'][0])
 
         return qbuildings
 

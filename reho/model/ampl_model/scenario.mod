@@ -129,8 +129,8 @@ var AnnualSolarGainHouse{h in House}                            >= 0;   #MWh
 param EMOO_elec_export default 0;
 var EMOO_slack_elec_export 						>= 0;
 
-subject to EMOO_elec_export_constraint{l in ResourceBalances, p in PeriodStandard, t in Time[p]: l = 'Electricity'}:
-    Network_demand[l,p,t] = EMOO_elec_export+EMOO_slack_elec_export;
+subject to EMOO_elec_export_constraint{l in ResourceBalances: l = 'Electricity'}:
+    sum{p in PeriodStandard,t in Time[p]} ( Network_demand[l,p,t] - Network_supply[l,p,t] ) * dp[p] * dt[p] / 1000  =  EMOO_slack_elec_export + EMOO_elec_export * (sum{h in House} ERA[h]);
 
 subject to total_units_Q{s in Services, u in UnitsOfService[s]}:
 AnnualUnit_Q[s,u] = sum{st in StreamsOfService[s] inter StreamsOfUnit[u],p in PeriodStandard,t in Time[p]}(Streams_Q[s,st,p,t]*dp[p]*dt[p]/1000);

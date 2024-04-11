@@ -1812,58 +1812,110 @@ def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short'
         raise SystemExit('Please enter the list of years used in the pathway optimization')
 
     # Plot
-    fig,ax=plt.subplots(figsize=(12,7))
-    ax.set_xlabel('Year',fontsize=20)
-    ax.set_xlim((min(y_span), max(y_span)))
-    ax.set_title("Investment Pathway", fontsize=35)
-    ax.tick_params(axis='x', labelsize=15)
+    #fig, (ax1, ax2) = plt.subplots(1, 2, sharex=False, figsize=(20,7))
+    fig, ax1=plt.subplots()
+
+    # ax1.set_xlabel('Year',fontsize=20)
+    # ax1.set_xlim((min(y_span), max(y_span)))
+    ax1.set_title("Investment Pathway", fontsize=35)
+    ax1.tick_params(axis='x', labelsize=15)
 
     obj=[]
+    obj2=[]
+    add_line=False
     if objective=='CAPEX':
         obj_label = 'Cumulative capital investment [CHF/m2/y]'
         for i in range(len(EMOO_list)):
             obj=obj+[results[scn_id][i]['df_KPIs']['capex_m2']['Network']]
-    lns1 = ax.plot(y_span, np.cumsum(obj), label=objective, color='C0', linewidth=2)
+    elif objective=='TOTEX':
+        obj_label = 'Investment [CHF/m2/y]'
+        for i in range(len(EMOO_list)):
+            obj = obj + [results[scn_id][i]['df_KPIs']['capex_m2']['Network']]
+            obj2= obj2 + [results[scn_id][i]['df_KPIs']['opex_m2']['Network']]
+        objective='Cumulative CAPEX'
+        add_line=True
+        lns4 = ax1.plot(y_span, obj2, label='OPEX', color='C0', linewidth=2, linestyle='--')
+
+    lns1 = ax1.plot(y_span, np.cumsum(obj), label=objective, color='C0', linewidth=2)
+
+
     # Left y-axis params
-    ax.set_ylabel(obj_label, color='C0', fontsize=20)
-    ax.tick_params(axis='y', labelcolor='C0', labelsize=15)
-    ax.set_ylim(bottom=0)
+    ax1.set_ylabel(obj_label, color='C0', fontsize=20)
+    ax1.tick_params(axis='y', labelcolor='C0', labelsize=15)
+    ax1.set_ylim(bottom=0)
 
     # Creating a second y-axis
-    ax2 = ax.twinx()
+    ax11 = ax1.twinx()
     constr=[]
     if constraint=='GWP':
         constr_label='GWP [kgCO2-eq/m2]'
         for i in range(len(EMOO_list)):
             constr=constr+[results[scn_id][i]['df_KPIs']['gwp_tot_m2']['Network']]
+
+    elif constraint == 'elec_export':
+        constr_label='Electricity Exportation [MWh/m2/y]'
+        for i in range(len(EMOO_list)):
+            constr=constr+[(results[scn_id][i]['df_Annuals'].loc['Electricity'].loc['Network']['Demand_MWh']-results[scn_id][i]['df_Annuals'].loc['Electricity'].loc['Network']['Supply_MWh'])/results[scn_id][i]['df_Buildings']['ERA'].sum()]
+
     # Plotting the second set of data on the second y-axis
-    lns2 = ax2.plot(y_span, constr, label=constraint, color='C1', linewidth=2)
-    lns3 = ax2.plot(y_span, EMOO_list, label='EMOO', color='C1', linestyle='--', linewidth=2)
+    lns2 = ax11.plot(y_span, constr, label=constraint, color='C1', linewidth=2)
+    lns3 = ax11.plot(y_span, EMOO_list, label='EMOO', color='C1', linestyle='--', linewidth=2)
 
     # right y-axis param
-    ax2.set_ylabel(constr_label, color='C1',fontsize=20)
-    ax2.tick_params(axis='y', labelcolor='C1', labelsize=15)
-    ax2.set_ylim(bottom=0)
+    ax11.set_ylabel(constr_label, color='C1',fontsize=20)
+    ax11.tick_params(axis='y', labelcolor='C1', labelsize=15)
+    ax11.set_ylim(bottom=0)
 
     # Adding legend
-    lns = lns1 + lns2 + lns3# + lns4
+    if add_line:
+        lns = lns1 + lns2 + lns3 + lns4
+    else:
+        lns = lns1 + lns2 + lns3
     labs = [l.get_label() for l in lns]
-    ax.legend(lns, labs, loc=5,fontsize=15)
+    ax1.legend(lns, labs, loc=5,fontsize=15)
 
     # Fixing background grid
     nticks = 6
-    ax.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
-    ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
-    ax.grid()
+    ax1.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+    ax11.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+    #ax1.set_xticks(np.array([0,1]))
+    #ax11.set_xticks(np.array([0, 1]))
+    ax1.grid()
 
-    # Show the plot
+    fig.tight_layout()
     fig.show()
 
-    if filename is not None:
-        filename = os.path.join(save_path, filename + '.')
-        if export_format == 'png':
-            fig.write_image(filename + export_format)
-        elif export_format == 'html':
-            fig.write_html(filename + export_format)
+    fig, ax2 = plt.subplots()
+    df = pd.DataFrame()
+    for i in range(0, len(EMOO_list)):
+        start = results[scn_id][i]['df_Unit']['Units_Mult'].reset_index().apply(
+            lambda x: x['Unit'].split('_Building')[0], axis=1)
+        # start = reho.results['1'][i]['df_Unit'].query("Units_Use==1").reset_index().apply(lambda x: x['Unit'].split('_Building')[0], axis=1)
+        df = pd.concat([df, results[scn_id][i]['df_Unit']['Units_Mult'].reset_index().groupby(start).sum(
+            'Units_Mult').rename(columns={'Units_Mult': int(y_span[i])})], axis=1)
+        # df=pd.concat([df,reho.results['1'][0]['df_Unit'].query("Units_Use==1")['Units_Mult'].reset_index().groupby(start).sum('Units_Mult').rename(columns={'Units_Mult': str(y_span[i])})],axis=1)
+    df.transpose().loc[:, (df.transpose() != 0).any(axis=0)].plot(kind='bar', stacked=True,
+                                                                  title="Technology set for each period",
+                                                                  ylabel='Installed capacity', xlabel='Year', grid=True,
+                                                                  ax=ax2, width=0.8).set_xticklabels(ax2.get_xticklabels(),
+                                                                                         rotation=0, fontsize=15)
+
+    ax2.set_xlabel(ax2.get_xlabel(), fontsize=20)
+    ax2.set_ylabel(ax2.get_ylabel(), fontsize=20)
+    ax2.set_title(ax2.get_title(), fontsize=30)
+    ax2.legend(fontsize=15, loc='center left', bbox_to_anchor=(1, 0.5))
+    #ax2.set_xticks(y_span)
+    #ax2.set_xlim((-500, 2500))
+    #ax2.set_xlim((-2,2050))
+    fig.tight_layout()
+    fig.show()
+
+
+    # if filename is not None:
+    #     filename = os.path.join(save_path, filename + '.')
+    #     if export_format == 'png':
+    #         fig.write_image(filename + export_format)
+    #     elif export_format == 'html':
+    #         fig.write_html(filename + export_format)
 
     return fig

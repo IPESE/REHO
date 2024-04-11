@@ -655,12 +655,37 @@ class reho(district_decomposition):
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
-    def pathway(self,EMOO_list=[400],EMOO_type="GWP"):
-        Scn_ID=self.scenario["name"]
-        self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
-        self.single_optimization(Pareto_ID=0)
+    def pathway(self,EMOO_list=[400],EMOO_type="GWP",existing_unit_init=None):
+        if existing_unit_init is None:
+            Scn_ID=self.scenario["name"]
+            if 'EMOO' not in self.scenario.keys():
+                self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[0]}
+            else:
+                self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
+            self.single_optimization(Pareto_ID=0)
+        else:
+            existing_units=existing_unit_init
+            self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[
+                                                         [s for s in self.infrastructure.Units if h in s]][
+                                                         'Units_Mult'].to_list() for id, h in
+                                                     enumerate(self.infrastructure.houses)])
+            Scn_ID = self.scenario["name"]
+            self.single_optimization(Pareto_ID=0)
+            if 'EMOO' not in self.scenario.keys():
+                self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[0]}
+            else:
+                self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
+            existing_units = self.results[Scn_ID][0]['df_Unit'][['Units_Mult']]
+            self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[
+                                                         [s for s in self.infrastructure.Units if h in s]][
+                                                         'Units_Mult'].to_list() for id, h in
+                                                     enumerate(self.infrastructure.houses)])
+            self.single_optimization(Pareto_ID=0)
         for i in range(1,len(EMOO_list)):
-            self.scenario['EMOO']['EMOO_' + EMOO_type] = EMOO_list[i]
+            if 'EMOO' not in self.scenario.keys():
+                self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[i]}
+            else:
+                self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[i]
             existing_units = self.results[Scn_ID][i - 1]['df_Unit'][['Units_Mult']]
             self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[[s for s in self.infrastructure.Units if h in s]]['Units_Mult'].to_list() for id, h in enumerate(self.infrastructure.houses)])
             self.single_optimization(Pareto_ID=i)

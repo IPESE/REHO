@@ -133,21 +133,21 @@ Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
 
 # Discrete units
 subject to Unit_sizing_c1_1interval{u in UnitsOfDiscreteCost}:
-Units_Mult_1[u] >= Units_Use_1[u]*Units_Fmin[u];
+Units_Mult_1[u]-Units_Ext[u] >= Units_Use_1[u]*Units_Fmin[u];
 
 
 subject to Unit_sizing_c2_1interval{u in UnitsOfDiscreteCost}:
-Units_Mult_1[u] <= Units_Use_1[u]*Units_Fmid[u];
+Units_Mult_1[u]-Units_Ext[u] <= Units_Use_1[u]*(Units_Fmid[u]-Units_Ext[u]);
 
 subject to Unit_sizing_c1_2interval{u in UnitsOfDiscreteCost}:
-Units_Mult_2[u] >= Units_Use_2[u]*Units_Fmid[u];
+Units_Mult_2[u]-Units_Ext[u] >= Units_Use_2[u]*Units_Fmid[u];
 
 
 subject to Unit_sizing_c2_2interval{u in UnitsOfDiscreteCost}:
-Units_Mult_2[u] <= Units_Use_2[u]*Units_Fmax[u];
+Units_Mult_2[u]-Units_Ext[u] <= Units_Use_2[u]*(Units_Fmax[u]-Units_Ext[u]);
 
 subject to Unit_sizing_discrete_c1{u in UnitsOfDiscreteCost}:
-Units_Mult_1[u] + Units_Mult_2[u] = Units_Mult[u];
+Units_Mult_1[u] + Units_Mult_2[u]-Units_Ext[u]  = Units_Mult[u];
 
 subject to Unit_sizing_discrete_c2{u in UnitsOfDiscreteCost}:
 Units_Use_1[u] + Units_Use_2[u] = Units_Use[u];
@@ -450,7 +450,7 @@ Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cos
 #Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
 
 subject to Costs_Unit_capex_discrete{u in Units inter UnitsOfDiscreteCost}:
-Costs_Unit_inv[u] = Units_Use_1[u]*Cost_inv1[u] + Units_Mult_1[u]*Cost_inv2[u] + Units_Use_2[u]*Cost_inv1_2[u] + Units_Mult_2[u]*Cost_inv2_2[u];
+Costs_Unit_inv[u] = Units_Use_1[u]*Cost_inv1[u] + (Units_Mult_1[u]-Units_Ext[u])*Cost_inv2[u] + Units_Use_2[u]*Cost_inv1_2[u] + (Units_Mult_2[u]-Units_Ext[u])*Cost_inv2_2[u];
 
 subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacityAdd[l,h]+CostLine_inv2[l]*LineCapacityAdd[l,h]*Line_Length[h,l]);
@@ -640,8 +640,6 @@ Grid_supply[l,hl,p,t] <= LineCapacity[l,hl] + LineCapacityAdd[l,hl];
 subject to LineCapacity_demand{l in ResourceBalances,hl in HousesOfLayer[l],p in Period,t in Time[p]}:
 Grid_demand[l,hl,p,t] <= LineCapacity[l,hl] + LineCapacityAdd[l,hl];
 
-#subject to dummy_test2{l in ResourceBalances: l = 'Electricity'}:
-#sum{p in PeriodStandard,t in Time[p]} (Network_demand[l,p,t]*dp[p]*dt[p]/1000) >=  10;
 
 #--------------------------------------------------------------------------------------------------------------------#
 #---Transformer capacity constraints

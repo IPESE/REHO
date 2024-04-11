@@ -151,7 +151,7 @@ class district_decomposition:
 
         """
         SP_scenario = scenario.copy()
-        SP_scenario['EMOO'] = scenario['EMOO'].copy()
+        SP_scenario['EMOO'] = {}
         SP_scenario['specific'] = scenario['specific'].copy()
 
         SP_scenario_init = scenario.copy()
@@ -160,7 +160,6 @@ class district_decomposition:
 
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
-        SP_scenario['EMOO']['EMOO_grid'] = 0.0
 
         if "TransformerCapacity" in self.parameters:
             nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
@@ -931,7 +930,7 @@ class district_decomposition:
         return ampl
 
     def get_beta_values(self, scenario, beta=None):
-
+        scenario = scenario.copy()
         if isinstance(beta, (float, int, type(None))):
             index = list(self.flags.keys()) # list of objective function
             beta_list = pd.Series(np.zeros(len(index)), index=index) + 1e-6 # default penalty on other objectives
@@ -951,7 +950,7 @@ class district_decomposition:
         # add beta values on emoo constraint
         if isinstance(beta, (float, int)) and not self.method['building-scale']:
             emoo = scenario["EMOO"].copy()
-            for cst in ["EMOO_grid", "EMOO_GU_supply", "EMOO_GU_demand"]:
+            for cst in [k for k in scenario["EMOO"].keys() if k not in ['EMOO_TOTEX', 'EMOO_CAPEX', 'EMOO_OPEX','EMOO_GWP','EMOO_lca']]:
                 emoo.pop(cst, None)
             if 'EMOO_lca' in scenario["EMOO"].keys():
                 key = list(emoo['EMOO_lca'].keys())[0].replace("EMOO_", "")

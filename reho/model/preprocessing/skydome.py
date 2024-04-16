@@ -7,7 +7,7 @@ import itertools as it
 import matplotlib.pyplot as plt
 
 __doc__ = """
-*Used for PV orientation.*
+Used for PV orientation.
 """
 
 def convert_results_txt_to_csv(load_timesteps):
@@ -40,14 +40,14 @@ def convert_results_txt_to_csv(load_timesteps):
     print(df)
 
 
-def skydome_to_df(location_data):
+def skydome_to_df(local_data):
     """ reads two txt files: one containing the area and one the position of the center point of the 145 patches,
      which define the skydome. Calculates basic additional values and returns all data in one single df
 
     :return:   df
     """
-    df_area = location_data["df_Area"]  # area of patches
-    df_cenpts = location_data["df_Cenpts"]  # location of centre points
+    df_area = local_data["df_Area"]  # area of patches
+    df_cenpts = local_data["df_Cenpts"]  # location of centre points
 
     df_dome = pd.DataFrame()
     df_dome['Area'] = df_area[0]
@@ -174,15 +174,15 @@ def f_cos(x):
     return math.cos(a1-a2)
 
 
-def calc_orientation_profiles(azimuth, tilt, design_lim_angle, location_data, typical_frequency):
+def calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data, typical_frequency):
     cos_a = round(math.cos(math.radians(azimuth)), 8)
     sin_a = round(math.sin(math.radians(azimuth)), 8)
     sin_y = round(math.sin(math.radians(tilt)), 8)
     cos_y = round(math.cos(math.radians(tilt)), 8)
     print('PANEL ORIENTATION: azimuth ', azimuth, ', tilt ', tilt)
 
-    df_dome = skydome_to_df(location_data)
-    df_irradiation = irradiation_to_df_general(location_data["df_Irradiation"])
+    df_dome = skydome_to_df(local_data)
+    df_irradiation = irradiation_to_df_general(local_data["df_Irradiation"])
 
     df_irradiation_pos = pd.DataFrame()
     df_irradiation_neg = pd.DataFrame()
@@ -250,8 +250,8 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, location_data, ty
     return df_irradiation_panel_t, df_period
 
 
-def calc_orientated_surface(azimuth, tilt, design_lim_angle, location_data, irradiation_file, typical_frequency):
-    df_irradiation_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, location_data, irradiation_file, typical_frequency)
+def calc_orientated_surface(azimuth, tilt, design_lim_angle, local_data, irradiation_file, typical_frequency):
+    df_irradiation_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data, irradiation_file, typical_frequency)
 
     # construct annual sum
     df_period = pd.DataFrame()
@@ -267,14 +267,14 @@ def calc_orientated_surface(azimuth, tilt, design_lim_angle, location_data, irra
     return azimuth, tilt, annual_irr
 
 
-def construct_annual_orientation_df(limiting_angle, location_data):
+def construct_annual_orientation_df(limiting_angle, local_data):
 
     azimuth = np.array(range(0, 360))
     tilt = np.array(range(0, 90, 5))
 
     df = pd.DataFrame()
     for (a, t) in it.product(azimuth, tilt):
-        azimuth, tilt, annual_irr = calc_orientated_surface(a, t, limiting_angle, location_data)
+        azimuth, tilt, annual_irr = calc_orientated_surface(a, t, limiting_angle, local_data)
         d = {'azimuth': azimuth, 'tilt': tilt, 'irr': annual_irr}
         df = df.append(d, ignore_index=True)
     print(df)

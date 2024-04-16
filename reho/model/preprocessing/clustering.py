@@ -22,7 +22,7 @@ class ClusterClass:
         else:
             self.Iter = Iter
 
-        #org - original, nor-normalized, clu-clustered
+        # org - original, nor - normalized, clu - clustered
 
         self.outlier_removal = outliers
 

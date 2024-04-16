@@ -8,7 +8,7 @@ from reho.paths import *
 from reho.model.preprocessing.clustering import ClusterClass
 
 __doc__ = """
-*Generates the meteorological data (temperature and solar irradiance).*
+Generates the meteorological data (temperature and solar irradiance).
 """
 
 def get_cluster_file_ID(cluster):

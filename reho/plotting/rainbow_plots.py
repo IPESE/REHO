@@ -5,6 +5,9 @@ from scipy.interpolate import interp1d
 import math
 import scipy as sp
 
+__doc__ = """
+Reconstructs data from a Pareto optimization to produce a rainbow plot.
+"""
 
 def linerize_equal_steps (x, y):
     x.name = 'x'

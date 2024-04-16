@@ -20,7 +20,7 @@ class compact_optimization:
                 Instance of the class district, contains relevant structure in the district such as Units or grids.
             buildings_data : dict
                 Dictionary containing relevant Building data.
-            location_data : dict
+            local_data : dict
                 Dictionary containing relevant location-specific data.
             parameters : dict, optional
                 Dictionary containing 'new' parameters for the AMPL model. If incomplete, uses data from buildings_data.
@@ -43,7 +43,7 @@ class compact_optimization:
             reho.model.district_decomposition.district_decomposition
 
             """
-    def __init__(self, district, buildings_data, location_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
+    def __init__(self, district, buildings_data, local_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
 
         self.buildings_data_compact = buildings_data
         if method['use_facades']:
@@ -52,7 +52,7 @@ class compact_optimization:
         if method['use_pv_orientation']:
            self.roofs_compact = qbuildings_data['roofs_data']
         self.infrastructure_compact = district
-        self.location_data = location_data
+        self.local_data = local_data
         self.parameters_compact = parameters
         self.set_indexed_compact = set_indexed
         self.cluster_compact = cluster
@@ -136,12 +136,10 @@ class compact_optimization:
             modules.load()
             ampl = AMPL()
         else:
-            if path_to_ampl:
-                ampl = AMPL(Environment(path_to_ampl))
-            else:
-                raise EnvironmentError("No valid path to AMPL was found.\n"
-                                       " Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
-        # print(ampl.getOption('version'))
+            try:
+                ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
+            except:
+                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
 
         # -AMPL (GNU) OPTIONS
         ampl.setOption('solution_round', 11)
@@ -310,7 +308,7 @@ class compact_optimization:
 
     def set_emissions_profiles(self, File_ID):
 
-        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a', self.location_data["df_Timestamp"], self.location_data["df_Emissions"])
+        df_em = emissions.return_typical_emission_profiles(self.cluster_compact, File_ID, 'GWP100a', self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
         if self.method_compact['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = df_em
             self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})
@@ -326,7 +324,7 @@ class compact_optimization:
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact, self.location_data["df_Timestamp"])
+                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact, self.local_data["df_Timestamp"])
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -434,14 +432,14 @@ class compact_optimization:
     def set_PV_models(self, ampl):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
-        df_dome = SKD.skydome_to_df(self.location_data)
+        df_dome = SKD.skydome_to_df(self.local_data)
         self.parameters_to_ampl['Sin_a'] = df_dome.Sin_a.values
         self.parameters_to_ampl['Cos_a'] = df_dome.Cos_a.values
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
         #total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
-        df_irr = SKD.irradiation_to_df(ampl, self.location_data["df_Irradiation"], self.location_data["df_Timestamp"])
+        df_irr = SKD.irradiation_to_df(ampl, self.local_data["df_Irradiation"], self.local_data["df_Timestamp"])
         self.parameters_to_ampl['Irr'] = df_irr
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])
@@ -511,7 +509,7 @@ class compact_optimization:
                 df_shadows = self.shadows_compact[self.shadows_compact['id_building'] == self.buildings_data_compact[b]['id_building']]
                 facades = df_facades['Facades_ID']
                 np_facades = np.append(np_facades, facades)
-                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows, self.location_data)
+                df_shadow = return_shadows_id_building(self.buildings_data_compact[b]['id_building'], df_shadows, self.local_data)
                 df_shadow = pd.concat([df_shadow], keys=[b], names=['House'])
                 df_limit_angle = pd.concat([df_limit_angle, df_shadow])
                 for fc in facades:

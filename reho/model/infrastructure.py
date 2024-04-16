@@ -5,9 +5,9 @@ import pandas as pd
 from reho.paths import *
 
 
-class infrastructure:
+class infrastructure():
     """
-    This class characterizes all the sets and parameters which are connected to buildings, units and grids.
+    Characterize all the sets and parameters which are connected to buildings, units and grids.
 
     Parameters
     ----------
@@ -87,11 +87,9 @@ class infrastructure:
     
 
     def generate_structure(self):
-        """
-        The indexes h_ht, h_mt, h_lt, c_ht state for the discretization of the streams. They are connected to the heat cascade.
-        h_ht: hotstream_hightemperature. h_mt: hotstream_mediumtemperature. h_lt: hotstream_lowtemperature. c_ht: coldstream_hightemperature
-        :return:
-        """
+
+        # The indexes h_ht, h_mt, h_lt, c_ht state for the discretization of the streams. They are connected to the heat cascade.
+        # h_ht: hotstream_hightemperature. h_mt: hotstream_mediumtemperature. h_lt: hotstream_lowtemperature. c_ht: coldstream_hightemperature
 
         for h in self.House:
             # Units------------------------------------------------------------

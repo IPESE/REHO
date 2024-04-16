@@ -83,7 +83,9 @@ autodoc_mock_imports = ['amplpy',
                         'plotly',
                         'geopandas',
                         'urllib3',
-                        'dotenv']
+                        'dotenv',
+                        'SALib',
+                        'qmcpy']
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()
 sys.modules['sklearn.metrics'] = MagicMock()

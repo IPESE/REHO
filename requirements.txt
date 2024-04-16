@@ -18,3 +18,5 @@ python-dotenv>=1.0
 requests>=2.0.0,<3.0.0
 coloredlogs>=15.0
 pytest==8.*
+SALib
+qmcpy

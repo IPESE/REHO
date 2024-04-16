@@ -22,7 +22,7 @@ def install_dependencies():
 setup(
 
     name='REHO',
-    version='1.0.2',
+    version='1.0.3',
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',
@@ -41,6 +41,8 @@ setup(
                       'kaleido>=0.2.1,<1.0.0',
                       'python-dotenv>=1.0',
                       'requests>=2.0.0,<3.0.0',
+                      'SALib',
+                      'qmcpy',
                       ],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod', '*.ini'],

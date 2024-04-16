@@ -5,7 +5,7 @@ from reho.paths import *
 from matplotlib import pyplot as plt
 
 __doc__ = """
-*Reconstructs a yearly profile from the clustering periods.*
+Reconstructs a yearly profile from the clustering periods.
 """
 
 def yearly_profile(df_cluster, df):
@@ -20,14 +20,22 @@ def yearly_profile(df_cluster, df):
 
 def build_profiles(timeserie, timeserie_2, location, bui_list):
     """
-    input:
-    timeserie: dataframe Streams_Q
-    timeserie: dataframe domestic electricity
-    location: string
-    bui_list: list building id
 
-    return:
-    df: dataframe hourly consumption profile for a year for electricity, SH and DHW for all buildings in bui_list
+    Parameters
+    -----------
+    timeserie : dataframe
+        Streams_Q
+    timeserie : dataframe
+        domestic electricity
+    location : string
+
+    bui_list : list
+        building id
+
+    Returns
+    -------
+    df :
+        dataframe hourly consumption profile for a year for electricity, SH and DHW for all buildings in bui_list
     """
     elec_needs = timeserie_2.groupby(level=["Period", "Time"]).sum()
     timeserie = timeserie.groupby(level=["Stream", "Period", "Time"]).sum()

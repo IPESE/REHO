@@ -3,7 +3,7 @@ import numpy as np
 import logging
 
 __doc__ = """
-*Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.*
+Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
 """
 
 def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):

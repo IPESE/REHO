@@ -39,9 +39,9 @@ REHO exploits the benefits of two programming languages:
 
 Directory for data-related files.
 
-- **electricity/**
+- **elcom/**
 - **emissions/**
-- **parameters/**
+- **infrastructure/**
 - **QBuildings/**
 - **SIA/**
 - **skydome/**
@@ -74,18 +74,25 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.postprocessing.building_scale_network_builder
+    :members:
 
 `KPIs.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.postprocessing.KPIs
+    :members:
+
+`sensitivity_analysis.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.postprocessing.sensitivity_analysis
+    :members:
 
 `write_results.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.postprocessing.write_results
-
-
+    :members:
 
 **preprocessing/**
 ------------------------
@@ -96,22 +103,18 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.buildings_profiles
-    :members: eud_profiles, solar_gains_profile
+    :members:
 
 
 `clustering.py`
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: reho.model.preprocessing.clustering
-
-.. note::
-    The meteo file provided are only the ones from the 6 meteo archetypes. Should we link every other location to these
-    typical meteos if no meteo file is provided? This could be easily done as the transformer in QBuildings have
-    the meteo_cluster.
+.. automodule:: reho.model.preprocessing.clustering
+    :members:
 
 
 `electricity_prices.py`
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.electricity_prices
     :members: get_prices_from_elcom_by_canton, get_prices_from_elcom_by_city, get_injection_prices, get_electricity_prices
@@ -121,37 +124,36 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.emissions_parser
-
+    :members:
 
 `EV_profile_generator.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.EV_profile_generator
-    :members: generate_EV_plugged_out_profiles_district
+    :members:
 
-`location_data.py`
+`local_data.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: reho.model.preprocessing.location_data
+.. automodule:: reho.model.preprocessing.local_data
+    :members:
 
 `QBuildings.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: reho.model.preprocessing.QBuildings.QBuildingsReader
+.. automodule:: reho.model.preprocessing.QBuildings
     :members:
 
 `sia_parser.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.sia_parser
+    :members:
 
 `skydome.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.skydome
-
-.. caution::
-    As for the solar heat gains, it relies on a skydome generated for Rolle's case study. We need to generalise it.
 
 `weather.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,32 +164,32 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 *compact_optimization.py*
 ------------------------------
 
-.. autoclass:: reho.model.compact_optimization.compact_optimization
+.. automodule:: reho.model.compact_optimization
+    :members:
 
 *district_decomposition.py*
 ------------------------------
 
 .. autoclass:: reho.model.district_decomposition.district_decomposition
 
-
 *infrastructure.py*
 ------------------------------
 
-.. autoclass:: reho.model.infrastructure
+.. automodule:: reho.model.infrastructure
+    :members:
 
 
 *reho.py*
 ------------------------------
 
-.. autoclass:: reho.model.reho.reho
-   :members: save_results
+.. automodule:: reho.model.reho
+   :members:
 
 
 **plotting/**
 ==================
 
 .. automodule:: reho.plotting
-
 
 - `layout.csv`: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
 - `sia380_1.csv`: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
@@ -213,8 +215,8 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.plotting.yearly_profile_builder
 
-
 *paths.py*
 ==================
 
 .. automodule:: reho.paths
+

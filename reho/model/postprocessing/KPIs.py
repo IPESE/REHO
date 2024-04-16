@@ -4,7 +4,7 @@ import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as WD
 
 __doc__ = """
-*Calculates the KPIs resulting from the optimization.*
+Calculates the KPIs resulting from the optimization.
 """
 
 def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network, df_profiles, df_external, df_Time):
@@ -404,7 +404,7 @@ def postcompute_annual_COP(df_annuals, infrastructure):
 
 def build_df_profiles_house(df_Results, infrastructure):
     """
-    Build hourly profiles for demand and consumption of units and buildings
+    Build hourly profiles for demand and consumption of units and buildings.
     """
 
     df_PV = units_power_profiles_per_building(df_Results, infrastructure, 'PV')
@@ -438,8 +438,8 @@ def build_df_profiles_house(df_Results, infrastructure):
 
 def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
     """
-    Transform profiles to annual values, convert to MWh and insert additional values (costs, net resource exchanges)
-    Outputs: Annual parameter for each building and for the network
+    Transform profiles to annual values, convert to MWh and insert additional values (costs, net resource exchanges).
+    Outputs: Annual parameter for each building and for the network.
     """
 
     df_period = df_profiles_house.groupby(level=['Hub', 'Period']).sum()  # 'daily' sum

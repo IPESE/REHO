@@ -3,7 +3,7 @@ from reho.model.preprocessing.sia_parser import *
 from reho.model.preprocessing.QBuildings import *
 
 __doc__ = """
-Generates the buildings profiles : 1) Domestic hot water (DHW), 2) Domestic electricity, 3) Heat gains, 4) Solar gains.*
+Generates the buildings profiles for domestic hot water (DHW) demand, domestic electricity demand, internal heat gains, and solar gains.
 """
 
 def reference_temperature_profile(parameters_to_ampl, cluster):
@@ -18,63 +18,15 @@ def reference_temperature_profile(parameters_to_ampl, cluster):
 
     return np_temperature
 
-def solar_gains_profile(buildings_data, sia_data, location_data):
-    """
-    Computes the solar heat gains from the irradiance.
-
-    It uses a typical irradiation file and uses `calc_orientation_profiles` to obtain the irradiation on the west
-    facades. Additionally, the solar gains depends on the facades and on a window fraction (obtained from SIA 2024).
-
-    Parameters
-    ----------
-    ampl : AMPL
-        The AMPL object created in the reho.model.reho.reho class.
-    buildings_data : dict
-        Dictionary of buildings data from QBuildingsReader class.
-    File_ID : str
-        File ID of the clustering results, used to know the periods and period duration.
-
-    Returns
-    -------
-    A Numpy array of shape (242,) with the solar gains for each timesteps.
-    """
-    
-    irr_west = location_data["df_Westfacades_irr"]
-
-    g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
-    g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
-
-    np_gains = np.array([])
-    for b in buildings_data:
-        A_facades = buildings_data[b]['area_facade_m2']
-        classes = buildings_data[b]['id_class'].split('/')
-        if isinstance(buildings_data[b]['ratio'], float):
-            ratios = str(buildings_data[b]['ratio'])
-        else:
-            ratios = buildings_data[b]['ratio'].split('/')
-        glass_fraction_building = 0
-        for i, class_380 in enumerate(classes):
-            # share of rooms for building type
-            rooms = read_sia2024_rooms_sia380_1(class_380, sia_data["df_SIA_380"])
-            df = sia_data["df_SIA_2024"]['data']
-            glass_fraction_2024 = df['Taux de surface vitrée']
-            glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
-            glass_fraction_building += glass_fraction_rooms * float(ratios[i])
-        gains = irr_west / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
-        # glass fraction on facades from SIA 2024, 0.9 SIA 2024: acknowledge perpendicular rays
-        np_gains = np.append(np_gains, gains)
-
-    return np_gains
-
 
 def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
                        include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
-    Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
-    `SIA 2024 <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_.
+    Generates building-specific profiles for internal heat gains, DHW demand, and domestic electricity demand based on
+    `SIA 2024 norms <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_.
 
     The SIA profiles are daily profiles with coefficient attributed to each month.
-    This function extends the profiles to the periods used, according the building's affectation.
+    This function extends the profiles to the periods used, according to the building's affectation.
 
     Parameters
     ----------
@@ -102,14 +54,13 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
     reho.model.preprocessing.QBuildings.QBuildingsReader :
         Class used to handle the buildings' data.
     reho.model.reho.reho :
-        Wrapper Class that manages the optimization.
+        Wrapper class that manages the optimization.
 
     Notes
     -----
     - One building can have several affectations. In that case, the building is divided by the share of ERA by
       affectations and the profiles are summed.
     - To use custom profiles, use csv files with 8760 rows. The name of the columns should be the same as the buildings keys in `buildings_data`.
-    -
 
     .. caution::
 
@@ -309,3 +260,53 @@ def annual_to_typical(cluster, annual_file, timestamp_data, typical_file=None):
         df_typical.to_csv(typical_file)
 
     return df_typical
+
+
+def solar_gains_profile(buildings_data, sia_data, local_data):
+    """
+    Computes the solar heat gains from the irradiance.
+
+    It uses a typical irradiation file and uses `calc_orientation_profiles` to obtain the irradiation on the west
+    facades. Additionally, the solar gains depends on the facades and on a window fraction (obtained from SIA 2024).
+
+    Parameters
+    ----------
+    ampl : AMPL
+        The AMPL object created in the reho.model.reho.reho class.
+    buildings_data : dict
+        Dictionary of buildings data from QBuildingsReader class.
+    File_ID : str
+        File ID of the clustering results, used to know the periods and period duration.
+
+    Returns
+    -------
+    A Numpy array of shape (242,) with the solar gains for each timesteps.
+    """
+
+    irr_west = local_data["df_Westfacades_irr"]
+
+    g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
+    g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
+
+    np_gains = np.array([])
+    for b in buildings_data:
+        A_facades = buildings_data[b]['area_facade_m2']
+        classes = buildings_data[b]['id_class'].split('/')
+        if isinstance(buildings_data[b]['ratio'], float):
+            ratios = str(buildings_data[b]['ratio'])
+        else:
+            ratios = buildings_data[b]['ratio'].split('/')
+        glass_fraction_building = 0
+        for i, class_380 in enumerate(classes):
+            # share of rooms for building type
+            rooms = read_sia2024_rooms_sia380_1(class_380, sia_data["df_SIA_380"])
+            df = sia_data["df_SIA_2024"]['data']
+            glass_fraction_2024 = df['Taux de surface vitrée']
+            glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
+            glass_fraction_building += glass_fraction_rooms * float(ratios[i])
+        gains = irr_west / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
+        # glass fraction on facades from SIA 2024, 0.9 SIA 2024: acknowledge perpendicular rays
+        np_gains = np.append(np_gains, gains)
+
+    return np_gains
+

@@ -151,10 +151,10 @@ class reho(district_decomposition):
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed, self.cluster,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
                                             scenario, self.method, self.solver, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed, self.cluster,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
                                             scenario, self.method, self.solver)
             ampl, exitcode = REHO.solve_model()
 
@@ -184,10 +184,10 @@ class reho(district_decomposition):
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed, self.cluster,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
                                             scenario, self.method, self.solver, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed, self.cluster,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
                                             scenario, self.method, self.solver)
             ampl, exitcode = REHO.solve_model()
 
@@ -240,10 +240,10 @@ class reho(district_decomposition):
                 ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
             else:
                 if self.method['use_facades'] or self.method['use_pv_orientation']:
-                    REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+                    REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                                 self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
                 else:
-                    REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+                    REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                                 self.cluster, scenario, self.method, self.solver)
                 ampl, exitcode = REHO.solve_model()
 
@@ -283,10 +283,10 @@ class reho(district_decomposition):
                     ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
                 else:
                     if self.method['use_facades'] or self.method['use_pv_orientation']:
-                        REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters,
+                        REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
                                                     self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
                     else:
-                        REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters,
+                        REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
                                                     self.set_indexed, self.cluster, scenario, self.method, self.solver)
                     ampl, exitcode = REHO.solve_model()
 
@@ -338,10 +338,10 @@ class reho(district_decomposition):
 
             # REHOExecution, returns ampl library containing the whole model
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                             self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                             self.cluster, scenario, self.method, self.solver)
             ampl = REHO.build_model_without_solving()
 
@@ -396,10 +396,10 @@ class reho(district_decomposition):
         # -----------------------------------------------------------------------------------------------------#
         # REHOExecution, returns ampl library containing the whole model
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+            REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                         self.cluster, scenario_fix_uti, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+            REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                         self.cluster, scenario_fix_uti, self.method, self.solver)
         ampl = REHO.build_model_without_solving()
 
@@ -476,10 +476,10 @@ class reho(district_decomposition):
 
         else:
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                             self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
             else:
-                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.location_data, self.parameters, self.set_indexed,
+                REHO = compact_optimization(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                             self.cluster, self.scenario, self.method, self.solver)
             ampl = REHO.build_model_without_solving()
 
@@ -832,7 +832,7 @@ class reho(district_decomposition):
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
         if self.method["save_timeseries"]:
-            df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.location_data["df_Timestamp"], self.location_data["df_Emissions"])
+            df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
             self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
             self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_eco
             if self.method['building-scale']:

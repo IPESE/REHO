@@ -130,7 +130,7 @@ subject to TOTAL_line_c6{l in ResourceBalances, p in Period,t in Time[p]}:
 #-PARAMETERS
 param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
-param Units_Ext{u in Units} default 0;
+param Units_Ext{u in Units union ResourceBalances} default 0;
 
 #-VARIABLES
 var Units_Mult{u in Units} <= Units_Fmax[u];                            #var

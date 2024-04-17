@@ -41,8 +41,9 @@ setup(
                       'kaleido>=0.2.1,<1.0.0',
                       'python-dotenv>=1.0',
                       'requests>=2.0.0,<3.0.0',
-                      'SALib',
-                      'qmcpy',
+                      'coloredlogs>=15.0.1',
+                      'SALib>=1.4.8',
+                      'qmcpy>=1.4.5',
                       ],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod', '*.ini'],

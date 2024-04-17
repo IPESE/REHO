@@ -469,7 +469,7 @@ These layers are modeled through parameters that can be changed in the model:
     - Land use
     - Human toxicity
     - Water pollutants
-    - ....
+    - (to be completed)
 
     .. caution:: Complete list of LCA
 

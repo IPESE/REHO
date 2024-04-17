@@ -75,7 +75,7 @@ def build_all_profiles(pareto, zones, T_list=[]):
     for temperature in T_list:
         df[temperature] = {}
         for location in zones:
-            timeserie = pareto[location + '_' + str(temperature)][0]["df_Stream_t"].Streams_Q
+            timeserie = pareto[location + '_' + str(temperature)][0]["df_Streams_t"].Streams_Q
             timeserie_2 = pareto[location + '_' + str(temperature)][0]["df_Buildings_t"].Domestic_electricity
 
             df[temperature][location] = build_profiles(timeserie, timeserie_2, location, bui_list)

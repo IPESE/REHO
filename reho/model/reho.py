@@ -807,10 +807,12 @@ class reho(district_decomposition):
             df_Unit_t = pd.concat([df_Unit_t, df_district_units])
             df_Results["df_Unit_t"] = df_Unit_t
 
-            # df_Stream_t
-            df_Stream_t = self.get_final_SPs_results(MP_selection, 'df_Stream_t')
-            df_Stream_t = df_Stream_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-            df_Results["df_Stream_t"] = df_Stream_t
+        if self.method["save_streams"]:
+
+            # df_Streams_t
+            df_Streams_t = self.get_final_SPs_results(MP_selection, 'df_Streams_t')
+            df_Streams_t = df_Streams_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+            df_Results["df_Streams_t"] = df_Streams_t
 
         if self.method["save_lca"]:
 
@@ -832,9 +834,9 @@ class reho(district_decomposition):
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
         if self.method["save_timeseries"]:
-            df_KPI, df_eco = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
+            df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
             self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
-            self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_eco
+            self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_Economics
             if self.method['building-scale']:
                 self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 

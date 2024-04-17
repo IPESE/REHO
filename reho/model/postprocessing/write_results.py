@@ -225,7 +225,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Buildings_t.sort_index()
 
-    def set_df_stream_t(ampl):
+    def set_df_streams_t(ampl):
 
         df_Q = get_ampl_data(ampl, 'Streams_Q', multi_index=True)
         df_Q.index.set_names(['Service', 'Stream', 'Period', 'Time'], inplace=True)
@@ -263,10 +263,10 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_dict.index.set_names(['Stream'], inplace=True)
         df_dict.rename(columns={'level_1': 'Unit'}, inplace=True)
 
-        df_Stream_t = df_Q.reset_index().set_index('Stream')
-        df_Stream_t = df_Stream_t.join([df_dict, df_Tmin]).set_index(['Service', 'Unit', 'Period', 'Time'], append=True)
+        df_Streams_t = df_Q.reset_index().set_index('Stream')
+        df_Streams_t = df_Streams_t.join([df_dict, df_Tmin]).set_index(['Service', 'Unit', 'Period', 'Time'], append=True)
 
-        return df_Stream_t.sort_index()
+        return df_Streams_t.sort_index()
 
     def set_dfs_lca(ampl):
 
@@ -362,11 +362,12 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     if method["save_timeseries"]:
         df_Results["df_Buildings_t"] = set_df_buildings_t(ampl)
         df_Results["df_Unit_t"] = df_Unit_t
-        df_Results["df_Stream_t"] = set_df_stream_t(ampl)
-
     else:
         for i in ['Cost_demand', 'Cost_supply', 'GWP_demand', 'GWP_supply', "Uncontrollable_load"]:
             del df_Results["df_Grid_t"][i]
+
+    if method["save_streams"]:
+        df_Results["df_Streams_t"] = set_df_streams_t(ampl)
 
     if method['save_lca']:
         df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(ampl)

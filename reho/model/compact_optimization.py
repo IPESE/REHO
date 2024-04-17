@@ -708,6 +708,8 @@ def initialize_default_methods(method):
         method['save_data_input'] = True
     if 'save_timeseries' not in method:
         method['save_timeseries'] = True
+    if 'save_streams' not in method:
+        method['save_streams'] = False
     if 'save_lca' not in method:
         method['save_lca'] = False
     if 'extract_parameters' not in method:

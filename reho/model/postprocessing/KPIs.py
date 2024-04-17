@@ -696,6 +696,6 @@ def build_df_Economics(df_Results, df_profiles):
     df_op = pd.concat([df_op, df_op_impact])
     df_inv = pd.concat([df_unit_cost, df_unit_impact], keys=['costs', 'impact'], names=['Perf_type'])
 
-    df_eco = pd.concat([df_op, df_inv], keys=['operation', 'investment'], names=['Category'], axis=1)
+    df_Economics = pd.concat([df_op, df_inv], keys=['operation', 'investment'], names=['Category'], axis=1)
 
-    return df_eco
+    return df_Economics

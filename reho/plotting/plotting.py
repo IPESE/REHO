@@ -51,16 +51,16 @@ def handle_zero_rows(df):
     return df.loc[~is_zero_row]
 
 
-def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, premium_version=False,
+def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=None,
                 additional_costs={}, scaling_factor=1):
     """
     This function prepares the dataframes that will be needed for the plot_performance and plot_actors
     """
-    df_eco = df_eco.xs('Network', level='Hub', axis=0)
-    df_eco = df_eco.groupby(level=indexed_on, sort=False).sum() * scaling_factor
-    indexes = df_eco.index.tolist()
+    df_Economics = df_Economics.xs('Network', level='Hub', axis=0)
+    df_Economics = df_Economics.groupby(level=indexed_on, sort=False).sum() * scaling_factor
+    indexes = df_Economics.index.tolist()
 
-    data_capex = df_eco.xs('investment', level='Category', axis=1).transpose()
+    data_capex = df_Economics.xs('investment', level='Category', axis=1).transpose()
     data_capex.index.names = ['Unit']
 
     if 'isolation' in additional_costs:
@@ -68,7 +68,7 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, premium_version=False,
 
     data_capex = data_capex.reset_index().merge(layout, left_on="Unit", right_on='Name').set_index("Unit").fillna(0)
 
-    data_opex = df_eco.xs('operation', level='Category', axis=1).transpose()
+    data_opex = df_Economics.xs('operation', level='Category', axis=1).transpose()
     indices = data_opex.index.get_level_values(0)
     new_indices = []
     [new_indices.append(tuple(idx.split("_", 1))) for idx in indices]
@@ -79,8 +79,8 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, premium_version=False,
             new_indices[i] = ('revenues', 'Electrical_grid_feed_in')
     data_opex.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
 
-    if premium_version:
-        data_opex.loc[('avoided', 'solar_premium'), :] = data_opex.loc[('avoided', 'PV_SC')] * (0.279 - 0.1645) / 0.279
+    if premium_version is not None:
+        data_opex.loc[('avoided', 'solar_premium'), :] = data_opex.loc[('avoided', 'PV_SC')] * (premium_version[0] - premium_version[1]) / premium_version[0]
         data_opex.loc[('revenues', 'solar_value'), :] = data_opex.loc[('revenues', 'Electrical_grid_feed_in')] + \
                                                         data_opex.loc[('avoided', 'PV_SC')] - data_opex.loc[
                                                             ('avoided', 'solar_premium')]
@@ -93,7 +93,8 @@ def prepare_dfs(df_eco, indexed_on='Scn_ID', neg=False, premium_version=False,
         data_opex.loc[('costs', 'Gasoline'), :] = additional_costs['mobility']
 
     if 'ict' in additional_costs:
-        data_opex.loc[('costs', 'ict'), :] = additional_costs['ict']
+        data_opex.loc[('costs', 'Data'), :] = additional_costs['ict']
+        data_opex.loc[('revenues', 'Data'), :] = 0
 
     if neg:
         indices = data_opex.index.get_level_values(0)
@@ -171,7 +172,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     id = list(results[sc].keys())[0]
     era = results[sc][id]['df_Buildings'].ERA
 
-    df_eco = dict_to_df(results, 'df_Economics')
+    df_Economics = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
     change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites']
@@ -179,20 +180,23 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     if plot == 'costs':
         change_data['FR'] = ['Costs_Unit_inv', 'price', 'CAPEX', 'OPEX', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', 'CHF']
         change_data['EN'] = ['Costs_Unit_inv', 'price', 'CAPEX', 'OPEX', 'Costs [CHF/y]', 'Costs', 'TOTEX', 'CHF']
-        df_eco = df_eco.xs('costs', level='Perf_type')
+        df_Economics = df_Economics.xs('costs', level='Perf_type')
+        if per_m2:
+            df_Economics = df_Economics / era.sum()
+            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
     elif plot == 'gwp':
         change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Réseau', 'GWP [kgCO2/an]', 'Émissions', 'Total',
                              'kgCO2']
         change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Grid', 'GWP [kgCO2/y]', 'Emissions', 'Total',
                              'kgCO2']
-        df_eco = df_eco.xs('impact', level='Perf_type')
+        df_Economics = df_Economics.xs('impact', level='Perf_type')
+        if per_m2:
+            df_Economics = df_Economics / era.sum()
+            change_data.loc['y_axis']['FR'] = "GWP [kgCO2/m2/an]"
+            change_data.loc['y_axis']['EN'] = "GWP [kgCO2/m2/y]"
 
-    if per_m2:
-        df_eco = df_eco / era.sum()
-        change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
-        change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
-
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=True, additional_costs=additional_costs,
+    indexes, data_capex, data_opex = prepare_dfs(df_Economics, indexed_on, neg=True, additional_costs=additional_costs,
                                                  scaling_factor=scaling_factor)
 
     data_opex = data_opex.drop("avoided", level='type')
@@ -294,13 +298,16 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         return fig
 
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=False, per_m2=False, additional_costs={},
+def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=None, per_m2=False, additional_costs={},
                 filename=None, export_format='html', scaling_factor=1, return_df=False):
+
+    # If enabled, premium_version should be an array containing the retail price and feed-in price of electricity.
+
     sc = list(results.keys())[0]
     id = list(results[sc].keys())[0]
     era = results[sc][id]['df_Buildings'].ERA
 
-    df_eco = dict_to_df(results, 'df_Economics')
+    df_Economics = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
     change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1',
@@ -309,22 +316,25 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
     if plot == 'costs':
         change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX',
                              'CAPEX']
-        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/m2/y]', 'Costs', 'TOTEX', 'CHF',
+        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/y]', 'Costs', 'TOTEX', 'CHF',
                              'OPEX', 'CAPEX']
-        df_eco = df_eco.xs('costs', level='Perf_type')
+        df_Economics = df_Economics.xs('costs', level='Perf_type')
+        if per_m2:
+            df_Economics = df_Economics / era.sum()
+            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
     elif plot == 'gwp':
         change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Evitées', 'GWP [kgCO2/an]', 'Émissions', 'Total',
                              'kgCO2', 'Réseau', 'Constr']
         change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Avoided', 'GWP [kgCO2/y]', 'Emissions', 'Total',
                              'kgCO2', 'Grid', 'Constr']
-        df_eco = df_eco.xs('impact', level='Perf_type')
+        df_Economics = df_Economics.xs('impact', level='Perf_type')
+        if per_m2:
+            df_Economics = df_Economics / era.sum()
+            change_data.loc['y_axis']['FR'] = "GWP [kgCO2/m2/an]"
+            change_data.loc['y_axis']['EN'] = "GWP [kgCO2/m2/y]"
 
-    if per_m2:
-        df_eco = df_eco / era.sum()
-        change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
-        change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
-
-    indexes, data_capex, data_opex = prepare_dfs(df_eco, indexed_on, neg=False, premium_version=premium_version, additional_costs=additional_costs,
+    indexes, data_capex, data_opex = prepare_dfs(df_Economics, indexed_on, neg=False, premium_version=premium_version, additional_costs=additional_costs,
                                                  scaling_factor=scaling_factor)
 
     costs = pd.concat([data_capex, data_opex.xs('costs', level='type')],
@@ -1601,12 +1611,12 @@ def monthly_average_balance(results, to_plot):
 
         return month_ranges
 
-    df_units_t = remove_building_from_index(results['df_Unit_t'])
-    pos_units = df_units_t.index.get_level_values('Unit').unique()
+    df_Unit_t_t = remove_building_from_index(results['df_Unit_t'])
+    pos_units = df_Unit_t_t.index.get_level_values('Unit').unique()
     pos_columns_bui = ['House_Q_heating', 'House_Q_cooling', 'House_Q_convection', 'HeatGains', 'SolarGains']
 
     # Df of time period
-    df_period_time = df_units_t.index.to_frame()[['Period', 'Time']].reset_index(drop=True)
+    df_period_time = df_Unit_t_t.index.to_frame()[['Period', 'Time']].reset_index(drop=True)
 
     df_type = ''
     if to_plot in pos_units:
@@ -1620,7 +1630,7 @@ def monthly_average_balance(results, to_plot):
             column_to_plot = 'Units_supply'
         else:
             column_to_plot = 'Units_demand'
-        df_to_extract = df_units_t.xs(to_plot, level='Unit').droplevel('Layer')[column_to_plot][:-2]
+        df_to_extract = df_Unit_t_t.xs(to_plot, level='Unit').droplevel('Layer')[column_to_plot][:-2]
 
     elif df_type == 'building':
         # Extract the data
@@ -1640,9 +1650,9 @@ def monthly_average_balance(results, to_plot):
             df_to_extract = results['df_Buildings_t'][to_plot][:-2]
     else:
         # Case where the unit is not referenced in df_Unit_t such as for WaterTank
-        if 'df_Stream_t' in results.dict_config.keys():
-            df_stream = remove_building_from_index(results['df_Stream_t'])
-            df_to_extract = df_stream.xs(to_plot, level='Unit')['Streams_Q'][:-2]
+        if 'df_Streams_t' in results.dict_config.keys():
+            df_Streams_t = remove_building_from_index(results['df_Streams_t'])
+            df_to_extract = df_Streams_t.xs(to_plot, level='Unit')['Streams_Q'][:-2]
         else:
             idx = pd.MultiIndex.from_frame(df_period_time)
             units_mult = remove_building_from_index(results['df_Unit']).reset_index().groupby('Unit').sum()['Units_Mult']

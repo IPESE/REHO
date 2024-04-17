@@ -71,7 +71,7 @@ class infrastructure:
                 if 'ReinforcementTrOfLayer' in grids[l].keys():
                     self.ReinforcementTrOfLayer[l] = grids[l]['ReinforcementTrOfLayer']
                 else:
-                    self.ReinforcementTrOfLayer[l] = np.array([0])
+                    self.ReinforcementTrOfLayer[l] = np.array([1e8])
 
 
             self.ReinforcementLineOfLayer = {}
@@ -79,7 +79,7 @@ class infrastructure:
                 if 'ReinforcementLineOfLayer' in grids[l].keys():
                     self.ReinforcementLineOfLayer[l] = grids[l]['ReinforcementLineOfLayer']
                 else:
-                    self.ReinforcementLineOfLayer[l] = np.array([0])
+                    self.ReinforcementLineOfLayer[l] = np.array([1e8])
 
 
         self.StreamsOfBuilding = {}

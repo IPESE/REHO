@@ -71,7 +71,7 @@ lambda[f,h] = lambda_binary[f,h];
 ######################################################################################################################
 param Grid_supply{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in Time[p]};
 param Grid_demand{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in  Time[p]};
-param TransformerCapacity{l in ResourceBalances} default 1e8;         #kW
+#param TransformerCapacity{l in ResourceBalances} default 1e8;         #kW
 param Grids_flowrate{l in ResourceBalances, h in House} default 1e9;
 param Grid_usage_max_demand default 0;
 param Grid_usage_max_supply default 0;
@@ -130,7 +130,7 @@ subject to TOTAL_line_c6{l in ResourceBalances, p in Period,t in Time[p]}:
 #-PARAMETERS
 param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
-param Units_Ext{u in Units union ResourceBalances} default 0;
+param Units_Ext{u in Units} default 0;
 
 #-VARIABLES
 var Units_Mult{u in Units} <= Units_Fmax[u];                            #var
@@ -209,27 +209,33 @@ var DHN_inv_house{h in House} >= 0;
 
 # Transformer additional capacity
 set ReinforcementTrOfLayer{ResourceBalances} default {};
-var TransformerCapacityAdd{l in ResourceBalances} in ReinforcementTrOfLayer[l];
-var Use_TransformerCapacityAdd{l in ResourceBalances} binary;
+var TransformerCapacity{l in ResourceBalances} in ReinforcementTrOfLayer[l];
+var Use_TransformerCapacity{l in ResourceBalances} binary;
 param CostTransformer_inv1{l in ResourceBalances}>=0 default 0;
 param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
 param GWP_Transformer1{l in ResourceBalances} default 0;
 param GWP_Transformer2{l in ResourceBalances} default 0;
+param Transformer_Ext{l in ResourceBalances} default 1e8;
 
 # Lines additional capacities
-#set ReinforcementLineOfLayer{ResourceBalances} default {};
-#var LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
-#var Use_LineCapacityAdd{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
-#param CostLine_inv1{l in ResourceBalances} default 20;
-#param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
-#param Line_Length{h in House,l in ResourceBalances} default 10;
-#param GWP_Line1{l in ResourceBalances} default 0;
-#param GWP_Line2{l in ResourceBalances} default 0;
+set ReinforcementLineOfLayer{ResourceBalances} default {};
+var LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
+var Use_LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
+param CostLine_inv1{l in ResourceBalances} default 20;
+param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
+param Line_Length{h in House,l in ResourceBalances} default 10;
+param GWP_Line1{l in ResourceBalances} default 0;
+param GWP_Line2{l in ResourceBalances} default 0;
+param Line_Ext{h in House,l in ResourceBalances} default 1e8;
+
 
 #-CONSTRAINTS
 
 subject to transformer_additional_capacity_c1{l in ResourceBalances}:
-Use_TransformerCapacityAdd[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacityAdd[l];
+Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
+
+subject to transformer_additional_capacity_c2{l in ResourceBalances}:
+TransformerCapacity[l]>=Transformer_Ext[l];
 
 #subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
 #Use_LineCapacityAdd[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacityAdd[l,hl];
@@ -250,7 +256,7 @@ Costs_House_inv[h] =sum{f in FeasibleSolutions} lambda[f,h] * Costs_inv_rep_SPs[
 
 
 subject to Costs_capex:
-Costs_inv = tau* (sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacityAdd[l]+CostTransformer_inv2[l] * TransformerCapacityAdd[l]) + sum{u in Units} (Costs_Unit_inv[u])) + Costs_rep + sum{h in House} (Costs_House_inv[h]);
+Costs_inv = tau* (sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacity[l]+CostTransformer_inv2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l]))) + sum{u in Units} (Costs_Unit_inv[u])) + Costs_rep + sum{h in House} (Costs_House_inv[h]);
 
 
 subject to cft_costs_house{h in House}: 
@@ -294,7 +300,7 @@ subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
 
 subject to CO2_construction:
-GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacityAdd[l]+GWP_Transformer2[l] * TransformerCapacityAdd[l]);
+GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacity[l]+GWP_Transformer2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l])));
 
 subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} (GWP_supply[l,p,t] * Network_supply_GWP[l,p,t] - GWP_demand[l,p,t] * Network_demand_GWP[l,p,t]);
@@ -398,7 +404,7 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;  #kW
+#param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;  #kW
 
 subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
 Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];# + LineCapacityAdd[l,h];
@@ -414,10 +420,10 @@ Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];# + LineCapacityAdd[l,
 
 
 subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_supply[l,p,t] <= (TransformerCapacity[l]+TransformerCapacityAdd[l]) * dp[p] * dt[p];
+Network_supply[l,p,t] <= TransformerCapacity[l] * dp[p] * dt[p];
 
 subject to TransformerCapacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_demand[l,p,t] <=  (TransformerCapacity[l]+TransformerCapacityAdd[l]) * dp[p] * dt[p];
+Network_demand[l,p,t] <=  TransformerCapacity[l] * dp[p] * dt[p];
 
 subject to EMOO_grid_constraint {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
 Network_supply[l,p,t]-Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{ts in Time[p]}((Network_supply[l,p,ts]-Network_demand[l,p,ts])*dt[p]/card(Time[p])) else 1e9;

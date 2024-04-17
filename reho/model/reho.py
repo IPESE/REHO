@@ -655,8 +655,8 @@ class reho(district_decomposition):
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
-    def pathway(self,EMOO_list=[400],EMOO_type="GWP",existing_unit_init=None):
-        if existing_unit_init is None:
+    def pathway(self,EMOO_list=[400],EMOO_type="GWP",existing_init=None):
+        if existing_init is None:
             Scn_ID=self.scenario["name"]
             if 'EMOO' not in self.scenario.keys():
                 self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[0]}
@@ -664,22 +664,30 @@ class reho(district_decomposition):
                 self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
             self.single_optimization(Pareto_ID=0)
         else:
-            existing_units=existing_unit_init
-            self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[
-                                                         [s for s in self.infrastructure.Units if h in s]][
-                                                         'Units_Mult'].to_list() for id, h in
-                                                     enumerate(self.infrastructure.houses)])
+            if 'Units' in existing_init.keys():
+                existing_units=existing_init['Units']
+                self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[
+                                                             [s for s in self.infrastructure.Units if h in s]][
+                                                             'Units_Mult'].to_list() for id, h in
+                                                         enumerate(self.infrastructure.houses)])
+            if 'Transformer' in existing_init.keys():
+                self.parameters["Transformer_Ext"]=existing_init['Transformer']
+            if 'Lines' in existing_init.keys():
+                self.parameters["Line_Ext"]=existing_init['Lines']
+
             Scn_ID = self.scenario["name"]
-            self.single_optimization(Pareto_ID=0)
+            self.single_optimization(Pareto_ID=-1)
             if 'EMOO' not in self.scenario.keys():
                 self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[0]}
             else:
                 self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
-            existing_units = self.results[Scn_ID][0]['df_Unit'][['Units_Mult']]
+            existing_units = self.results[Scn_ID][-1]['df_Unit'][['Units_Mult']]
             self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[
                                                          [s for s in self.infrastructure.Units if h in s]][
                                                          'Units_Mult'].to_list() for id, h in
                                                      enumerate(self.infrastructure.houses)])
+            self.parameters["Transformer_Ext"]=self.results[Scn_ID][-1]['df_Grid']['Capacity'].loc['Network'].values
+            self.parameters["Line_Ext"]=self.results[Scn_ID][-1]['df_Grid']['Capacity'].loc[[h for h in self.infrastructure.houses]].unstack().values
             self.single_optimization(Pareto_ID=0)
         for i in range(1,len(EMOO_list)):
             if 'EMOO' not in self.scenario.keys():
@@ -688,6 +696,9 @@ class reho(district_decomposition):
                 self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[i]
             existing_units = self.results[Scn_ID][i - 1]['df_Unit'][['Units_Mult']]
             self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[[s for s in self.infrastructure.Units if h in s]]['Units_Mult'].to_list() for id, h in enumerate(self.infrastructure.houses)])
+            self.parameters["Transformer_Ext"] = self.results[Scn_ID][i-1]['df_Grid']['Capacity'].loc['Network'].values
+            self.parameters["Line_Ext"] = self.results[Scn_ID][i-1]['df_Grid']['Capacity'].loc[
+                [h for h in self.infrastructure.houses]].unstack().values
             self.single_optimization(Pareto_ID=i)
 
 

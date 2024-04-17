@@ -156,24 +156,28 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         return df_Unit, df_Unit_t
 
     def set_df_grid_SP(df, ampl):
-        df1 = get_variable_in_pandas(df,'LineCapacityAdd')
-        df2 = get_variable_in_pandas(df, 'Use_LineCapacityAdd')
+        df1 = get_variable_in_pandas(df,'LineCapacity')
+        df2 = get_variable_in_pandas(df, 'Use_LineCapacity')
         df3 = get_parameter_in_pandas(ampl, 'CostLine_inv1', multi_index=False)
         df4 = get_parameter_in_pandas(ampl, 'CostLine_inv2', multi_index=False)
         df5 = get_parameter_in_pandas(ampl, 'GWP_Line1', multi_index=False)
         df6 = get_parameter_in_pandas(ampl, 'GWP_Line2', multi_index=False)
+        df7 = get_parameter_in_pandas(ampl, 'Line_Ext', multi_index=True)
+        df8 = get_parameter_in_pandas(ampl, 'Line_Length', multi_index=True)
 
         df3.index.names = ['Layer']
         df4.index.names = ['Layer']
         df5.index.names = ['Layer']
         df6.index.names = ['Layer']
+        df7.index.names = ['Hub','Layer']
+        df8.index.names = ['Hub','Layer']
         df_12 = pd.concat([df1,df2],axis=1,sort=True)
-        df_12.columns = ['CapacityAdd', 'UseCapacityAdd']
+        df_12.columns = ['Capacity', 'UseCapacity']
         df_12.index.names=['Layer','Hub']
         #df_Grid = pd.concat([df_12.swaplevel(), df34.swaplevel()], sort=True)
         df_Grid=df_12.swaplevel().sort_index()
-        df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostLine_inv1']+df_Grid['CapacityAdd'] * df4['CostLine_inv2']
-        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacityAdd'] * df5['GWP_Line1'] + df_Grid['CapacityAdd'] * df6['GWP_Line2']
+        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostLine_inv1']+(df_Grid['Capacity'] -df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df4['CostLine_inv2']*df8['Line_Length']
+        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Line1'] + (df_Grid['Capacity']-df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df6['GWP_Line2']*df8['Line_Length']
         print(df_Grid)
         return df_Grid
 
@@ -427,26 +431,28 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_Results["df_Buildings"] = df_Buildings.sort_index()
 
     # Grid
-    df1 = get_variable_in_pandas(df, 'TransformerCapacityAdd')
-    df2 = get_variable_in_pandas(df, 'Use_TransformerCapacityAdd')
+    df1 = get_variable_in_pandas(df, 'TransformerCapacity')
+    df2 = get_variable_in_pandas(df, 'Use_TransformerCapacity')
     df3 = get_parameter_in_pandas(ampl, 'CostTransformer_inv1', multi_index=False)
     df4 = get_parameter_in_pandas(ampl, 'CostTransformer_inv2', multi_index=False)
     df5 = get_parameter_in_pandas(ampl, 'GWP_Transformer1', multi_index=False)
     df6 = get_parameter_in_pandas(ampl, 'GWP_Transformer2', multi_index=False)
+    df7 = get_parameter_in_pandas(ampl,'Transformer_Ext', multi_index=False)
 
     df3.index.names = ['Layer']
     df4.index.names = ['Layer']
     df5.index.names = ['Layer']
     df6.index.names = ['Layer']
+    df7.index.names = ['Layer']
 
     df12 = pd.concat([df1, df2], axis=1)
-    df12.columns=['CapacityAdd', 'UseCapacityAdd']
+    df12.columns=['Capacity', 'UseCapacity']
     df12.index.names = ['Layer']
     df12['Hub']='Network'
     df12.set_index('Hub', append=True, inplace=True)
     df_Grid=df12.swaplevel().sort_index()
-    df_Grid['ReinforcementCost'] = df_Grid['UseCapacityAdd'] * df3['CostTransformer_inv1'] + df_Grid['CapacityAdd'] * df4['CostTransformer_inv2']
-    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacityAdd'] * df5['GWP_Transformer1'] + df_Grid['CapacityAdd'] * df6['GWP_Transformer2']
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostTransformer_inv1'] + (df_Grid['Capacity']-df7['Transformer_Ext']*(1-df_Grid['UseCapacity'])) * df4['CostTransformer_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Transformer1'] + (df_Grid['Capacity']-df7['Transformer_Ext']*(1-df_Grid['UseCapacity'])) * df6['GWP_Transformer2']
 
     df_Results['df_Grid'] = df_Grid
 

@@ -1823,6 +1823,7 @@ def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short'
     obj=[]
     obj2=[]
     add_line=False
+    # if -1 in results[scn_id].keys():
     if objective=='CAPEX':
         obj_label = 'Cumulative capital investment [CHF/m2/y]'
         for i in range(len(EMOO_list)):
@@ -1892,7 +1893,7 @@ def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short'
             lambda x: x['Unit'].split('_Building')[0], axis=1)
         # start = reho.results['1'][i]['df_Unit'].query("Units_Use==1").reset_index().apply(lambda x: x['Unit'].split('_Building')[0], axis=1)
         df = pd.concat([df, pd.concat([results[scn_id][i]['df_Unit']['Units_Mult'].reset_index().groupby(start).sum(
-            'Units_Mult'),pd.DataFrame(data=[results[scn_id][i]['df_Grid'].loc['Network'].loc['Electricity']['CapacityAdd']],columns=['Units_Mult'],index=['Transformer_Reinforcement'])],axis=0).rename(columns={'Units_Mult': int(y_span[i])})], axis=1)
+            'Units_Mult'),pd.DataFrame(data=[results[scn_id][i]['df_Grid'].loc['Network'].loc['Electricity']['Capacity']],columns=['Units_Mult'],index=['Transformer_Reinforcement'])],axis=0).rename(columns={'Units_Mult': int(y_span[i])})], axis=1)
         # df=pd.concat([df,reho.results['1'][0]['df_Unit'].query("Units_Use==1")['Units_Mult'].reset_index().groupby(start).sum('Units_Mult').rename(columns={'Units_Mult': str(y_span[i])})],axis=1)
     df.transpose().loc[:, (df.transpose() != 0).any(axis=0)].plot(kind='bar', stacked=True,
                                                                   title="Technology set for each period",

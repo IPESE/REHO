@@ -86,7 +86,7 @@ class district_decomposition:
             self.DW_params = DW_params
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
-        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
+        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2"],
                          "list_constraints_MP": []
@@ -162,12 +162,12 @@ class district_decomposition:
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
 
-        if "TransformerCapacity" in self.parameters:
+        if "Transformer_Ext" in self.parameters:
             nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
             profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
             max_DEL = profile_building_x.max(axis=1).sum()
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["TransformerCapacity"][0] * 0.999/max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Transformer_Ext"][0] * 0.999/max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Transformer_Ext"][0] * 0.999/max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:

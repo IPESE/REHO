@@ -17,6 +17,7 @@ param max_travel_time default 1.3; # 3 hours
 # set transport_Units := setof{u in UnitsOfType['EV'] union UnitsOfType['Bike']} u;
 # set transport_Units := UnitsOfType['EV'] union UnitsOfType['Bike'];
 set transport_Units; # TODO : check if dynamic to the rest of the code
+set Activities := {"work","leisure","travel"}; 
 param Mode_Speed{u in transport_Units} default 37.1;
 param Daily_Profile{u in transport_Units,p in Period,t in Time[p]} default 1; # initialized through the function generate_mobility_parameters
 # ----------------------------------------- VARIABLES ---------------------------------------
@@ -42,4 +43,4 @@ param transport_public_capacity{p in Period, t in Time[p]} default 15; # pkm : a
 #-CONSTRAINTS
 
 subject to TP_c1{p in Period, t in Time[p]}:
-Network_supply["Mobility",p,t] <= transport_public_capacity[p,t];
+Network_demand["Mobility",p,t] <= transport_public_capacity[p,t];

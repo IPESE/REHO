@@ -70,3 +70,6 @@ if __name__ == '__main__':
     df_mobility.sort_index(inplace = True)
     df_mobility.to_excel(f"results/3f_mobility{date}.xlsx")
     print(f"Results are saved in 3f_mobility{date}")
+
+    # getting parameters for iteration
+    print(reho.results_MP["totex"][0][0]["df_Dual_t"]["pi"].xs("Electricity"))

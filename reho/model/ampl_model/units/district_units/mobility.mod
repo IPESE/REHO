@@ -12,13 +12,13 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 param Population default 10; # will multiply the domestic demand ? 
 param DailyDist default 36.8; # [1]
-param max_travel_time default 1.3; # 3 hours 
+param max_travel_time default 3; # 1.3 hours mean
 
 # set transport_Units := setof{u in UnitsOfType['EV'] union UnitsOfType['Bike']} u;
 # set transport_Units := UnitsOfType['EV'] union UnitsOfType['Bike'];
 set transport_Units; # TODO : check if dynamic to the rest of the code
 set Activities := {"work","leisure","travel"}; 
-param Mode_Speed{u in transport_Units} default 37.1;
+param Mode_Speed{u in transport_Units} default 37.1; # [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
 param Daily_Profile{u in transport_Units,p in Period,t in Time[p]} default 1; # initialized through the function generate_mobility_parameters
 # ----------------------------------------- VARIABLES ---------------------------------------
 var travel_time >= 0 ;

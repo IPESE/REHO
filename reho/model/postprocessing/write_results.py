@@ -143,7 +143,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
             df6 = get_parameter_in_pandas(ampl, "EV_displacement", multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
+            df7 = get_variable_in_pandas(df, 'EV_E_charged_outside', multi_index=True)
+            df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         else:
             df_Unit_t = pd.concat([df1, df2, df3, df4], axis=1)
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
@@ -513,7 +514,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
             df6 = get_parameter_in_pandas(ampl, 'EV_V2V', multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6], axis=1)
+            df7 = get_parameter_in_pandas(ampl, 'EV_E_charged_outside', multi_index=True)
+            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6,df7], axis=1)
     df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
     units_districts = district.UnitsOfDistrict

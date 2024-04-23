@@ -23,7 +23,7 @@ def return_local_data(cluster):
     local_data["df_Emissions"] = file_reader(path_to_emissions, index_col=[0, 1, 2])
 
     # Solar
-    # TODO: These files are specific to Rolle.
+    # TODO: The skydome files are specific to the Geneva regions.
     local_data["df_Irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
     local_data["df_Area"] = pd.read_csv(path_to_areas, header=None)
     local_data["df_Cenpts"] = pd.read_csv(path_to_cenpts, header=None)

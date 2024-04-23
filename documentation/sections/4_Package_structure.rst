@@ -198,7 +198,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ---------------
 
 .. automodule:: reho.plotting.plotting
-   :members: plot_actors, plot_performance, plot_sankey, sunburst_eud, unit_monthly_plot
+   :members: plot_performance, plot_expenses, plot_sankey, sunburst_eud, unit_monthly_plot
 
 *rainbow_plots.py*
 ------------------

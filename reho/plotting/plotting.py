@@ -51,10 +51,20 @@ def handle_zero_rows(df):
     return df.loc[~is_zero_row]
 
 
+def custom_round(value, decimal):
+    if decimal == 0:
+        rounded_value = int(round(value))
+    elif decimal == 1:
+        rounded_value = round(value, 1)
+    else:
+        raise ValueError("decimal argument must be 0 or 1")
+    return rounded_value
+
+
 def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=None,
                 additional_data={}, scaling_factor=1):
     """
-    This function prepares the dataframes that will be needed for the plot_performance and plot_actors
+    This function prepares the dataframes that will be needed for the plot_performance and plot_expenses
     """
     df_Economics = df_Economics.xs('Network', level='Hub', axis=0)
     df_Economics = df_Economics.groupby(level=indexed_on, sort=False).sum() * scaling_factor
@@ -188,6 +198,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
 
     change_data = pd.DataFrame()
     change_data.index = ['x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'scc_legend']
+    decimal = 0
     lang = re.split('_', label)[0]
 
     if plot == 'costs':
@@ -198,6 +209,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
             df_costs = df_costs / era.sum()
             change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
             change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+            decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=True,
                                                      additional_data=additional_costs,
                                                      scaling_factor=scaling_factor)
@@ -215,8 +227,9 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         df_impact = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
             df_impact = df_impact / era.sum()
-            change_data.loc['y_axis']['FR'] = "GWP [kgCO2/m2/an]"
-            change_data.loc['y_axis']['EN'] = "GWP [kgCO2/m2/y]"
+            change_data.loc['y_axis']['FR'] = "Émissions [kgCO2/m2/an]"
+            change_data.loc['y_axis']['EN'] = "Emissions [kgCO2/m2/y]"
+            decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_impact, indexed_on, neg=True,
                                                     additional_data=additional_gwp,
                                                     scaling_factor=scaling_factor)
@@ -239,7 +252,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
             df_impact = df_impact / era.sum()
             change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
             change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
-
+            decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=True,
                                                                additional_data=additional_costs,
                                                                scaling_factor=scaling_factor)
@@ -255,10 +268,10 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
 
         showlegend = True
 
-    sum_resources = data_resources[indexes].sum(axis=0).astype(int).reset_index(drop=True)
-    sum_capacities = data_capacities[indexes].sum(axis=0).astype(int).reset_index(drop=True)
-    sum_scc_resources = data_scc_resources[indexes].sum(axis=0).astype(int).reset_index(drop=True)
-    sum_scc_capacities = data_scc_capacities[indexes].sum(axis=0).astype(int).reset_index(drop=True)
+    sum_resources = data_resources[indexes].sum(axis=0).reset_index(drop=True)
+    sum_capacities = data_capacities[indexes].sum(axis=0).reset_index(drop=True)
+    sum_scc_resources = data_scc_resources[indexes].sum(axis=0).reset_index(drop=True)
+    sum_scc_capacities = data_scc_capacities[indexes].sum(axis=0).reset_index(drop=True)
     combined_resources = sum_resources + sum_scc_resources
     combined_capacities = sum_capacities + sum_scc_capacities
 
@@ -266,35 +279,33 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     x2 = [x + 1 / 3 for x in x1]
     xtick = [x + 1 / 6 for x in x1]
 
-    text_constr = ["<b>" + change_data.loc['x_axis_1', lang] + "</b><br>" + str(cp)
+    text_capacities = ["<b>" + change_data.loc['x_axis_1', lang] + "</b><br>" + str(custom_round(cp, decimal))
                    for cp in combined_capacities]
-    text_op = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(op)
+    text_resources = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(custom_round(op, decimal))
                for op in combined_resources]
-    pos_opex = data_resources[indexes][data_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True) + \
+    pos_resources = data_resources[indexes][data_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True) + \
                data_scc_resources[indexes][data_scc_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True)
 
     fig = go.Figure()
-    neg_opex = combined_resources - pos_opex
-    text_placeholder = 0.04 * max(max(combined_capacities - neg_opex + combined_resources),
-                                  max(combined_capacities + combined_resources + neg_opex),
+    neg_resources = combined_resources - pos_resources
+    text_placeholder = 0.04 * max(max(combined_capacities - neg_resources + combined_resources),
+                                  max(combined_capacities + combined_resources + neg_resources),
                                   max(combined_resources))
 
     if add_annotation:
         for i in range(len(indexes)):
             fig.add_annotation(x=x2[i], y=-text_placeholder,
-                               text=text_op[i], font=dict(size=10),
+                               text=text_resources[i], font=dict(size=10),
                                textangle=0, align='center', valign='top',
                                showarrow=False)
             fig.add_annotation(x=x1[i], y=-text_placeholder,
-                               text=text_constr[i], font=dict(size=10),
+                               text=text_capacities[i], font=dict(size=10),
                                textangle=0, align='center', valign='top',
                                showarrow=False
                                )
-            fig.add_annotation(x=xtick[i], y=max(combined_capacities[i], pos_opex[i],
+            fig.add_annotation(x=xtick[i], y=max(combined_capacities[i], pos_resources[i],
                                                  combined_capacities[i] + combined_resources[i]) + text_placeholder,
-                               text="<b>Total</b><br>" + str(
-                                   combined_capacities[i] + combined_resources[i]) +
-                                    change_data.loc['unites', lang],
+                               text="<b>Total</b><br>" + str(custom_round(combined_capacities[i] + combined_resources[i], decimal)) + change_data.loc['unites', lang],
                                font=dict(size=10, color=cm['darkblue']),
                                textangle=0, align='center', valign='top',
                                showarrow=False
@@ -307,7 +318,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                        y=tech[indexes],
                        marker_color=tech["ColorPastel"],
                        width=1/3,
-                       hovertemplate='<b>' + tech[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
+                       hovertemplate=f'<b>{tech[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
                        legendgroup='group1',
                        legendgrouptitle_text=change_data.loc['x_axis_1', lang],
                        showlegend=True)
@@ -320,7 +331,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                        marker_color=tech["ColorPastel"],
                        marker_pattern_shape="x",
                        width=1/3,
-                       hovertemplate='<b>' + data_scc_capacities.loc[line, label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
+                       hovertemplate=f'<b>{tech[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
                        legendgroup='group1',
                        showlegend=False)
             )
@@ -332,7 +343,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                        y=layer[indexes],
                        marker_color=layer["ColorPastel"],
                        width=1/3,
-                       hovertemplate='<b>' + layer[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
+                       hovertemplate=f'<b>{layer[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
                        legendgroup='group2',
                        legendgrouptitle_text=change_data.loc['x_axis_2', lang],
                        showlegend=True)
@@ -345,7 +356,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                        marker_color=layer["ColorPastel"],
                        marker_pattern_shape="x",
                        width=1/3,
-                       hovertemplate='<b>' + data_scc_resources.loc[line, label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
+                       hovertemplate=f'<b>{layer[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
                        legendgroup='group2',
                        showlegend=False)
             )
@@ -357,7 +368,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
             y=sum_capacities + sum_resources,
             marker_color=cm['lightblue'],
             width=1/6,
-            hovertemplate="<b>Total</b><br>%{y:.0f}" + change_data.loc['unites', lang],
+            hovertemplate=f'<b>Total</b><br>%{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
             legendgroup='group3',
             legendgrouptitle_text='Total',
             showlegend=showlegend)
@@ -371,7 +382,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
             marker_color=cm['lightblue'],
             marker_pattern_shape="x",
             width=1/6,
-            hovertemplate="<b>Total</b><br>%{y:.0f}" + change_data.loc['unites', lang],
+            hovertemplate=f'<b>Total</b><br>%{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
             legendgroup='group3',
             legendgrouptitle_text='Total',
             showlegend=showlegend)
@@ -404,7 +415,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         return fig
 
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=None, per_m2=False, additional_data={},
+def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=None, per_m2=False, additional_costs={}, additional_gwp={}, scc=0.177,
                 filename=None, export_format='html', scaling_factor=1, return_df=False):
     # If enabled, premium_version should be an array containing the retail price and feed-in price of electricity.
 
@@ -415,77 +426,110 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
     df_Economics = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
-    change_data.index = ['x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1', 'leg_2']
+    change_data.index = ['x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1', 'leg_2', 'scc_legend']
+    decimal = 0
     lang = re.split('_', label)[0]
+
     if plot == 'costs':
-        change_data['FR'] = ['Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', ' CHF', 'Ressources', 'Capacités']
-        change_data['EN'] = ['Costs', 'Income', '[CHF/y]', 'Costs', 'TOTEX', ' CHF', 'Resources', 'Capacities']
-        df_Economics = df_Economics.xs('costs', level='Perf_type')
+        change_data['FR'] = ['Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'Total', ' CHF', 'Capacités', 'Ressources', '']
+        change_data['EN'] = ['Costs', 'Revenues', '[CHF/y]', 'Costs', 'Total', ' CHF', 'Capacities', 'Resources', '']
+        df_costs = df_Economics.xs('costs', level='Perf_type')
         if per_m2:
-            df_Economics = df_Economics / era.sum()
+            df_costs = df_costs / era.sum()
             change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
             change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+            decimal = 1
+        indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=False,
+                                                               premium_version=premium_version, additional_data=additional_costs, scaling_factor=scaling_factor)
+
+        data_scc_resources = pd.DataFrame(0, columns=[indexes], index=data_resources.index)
+        data_scc_capacities = pd.DataFrame(0, columns=[indexes], index=data_capacities.index)
+
     elif plot == 'gwp':
-        change_data['FR'] = ['Émissions', 'Évitées', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', 'Ressources', 'Capacités']
-        change_data['EN'] = ['Emissions', 'Avoided', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', 'Resources', 'Capacities']
-        df_Economics = df_Economics.xs('impact', level='Perf_type')
+        change_data['FR'] = ['Émissions', 'Évitées', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', 'Capacités', 'Ressources', '']
+        change_data['EN'] = ['Emissions', 'Avoided', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', 'Capacities', 'Resources', '']
+        df_impact = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
-            df_Economics = df_Economics / era.sum()
+            df_impact = df_impact / era.sum()
             change_data.loc['y_axis']['FR'] = "Émissions [kgCO2/m2/an]"
             change_data.loc['y_axis']['EN'] = "Emissions [kgCO2/m2/y]"
+            decimal = 1
+        indexes, data_capacities, data_resources = prepare_dfs(df_impact, indexed_on, neg=False,
+                                                               premium_version=premium_version, additional_data=additional_gwp, scaling_factor=scaling_factor)
 
-    indexes, data_capacities, data_resources = prepare_dfs(df_Economics, indexed_on, neg=False,
-                                                           premium_version=premium_version, additional_data=additional_data, scaling_factor=scaling_factor)
+        data_scc_resources = pd.DataFrame(0, columns=[indexes], index=data_resources.index)
+        data_scc_capacities = pd.DataFrame(0, columns=[indexes], index=data_capacities.index)
 
-    costs = pd.concat([data_capacities, data_resources.xs('costs', level='type')],
-                      keys=['investment', 'operation'], names=['Category'])
+    elif plot == 'combined':
+        change_data['FR'] = ['Coûts', 'Revenus', 'Coûts [CHF/an]', 'Coûts', 'Total', ' CHF', 'Capacités', 'Ressources', 'Impact carbone']
+        change_data['EN'] = ['Costs', 'Revenues', 'Costs [CHF/y]', 'Costs', 'Total', ' CHF', 'Capacities', 'Resources', 'Carbon impact']
+
+        df_costs = df_Economics.xs('costs', level='Perf_type')
+        df_impact = df_Economics.xs('impact', level='Perf_type')
+        if per_m2:
+            df_costs = df_costs / era.sum()
+            df_impact = df_impact / era.sum()
+            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+            decimal = 1
+        indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=False,
+                                                               additional_data=additional_costs,
+                                                               scaling_factor=scaling_factor)
+        indexes, data_scc_capacities, data_scc_resources = prepare_dfs(df_impact, indexed_on, neg=False,
+                                                    additional_data=additional_gwp,
+                                                    scaling_factor=scaling_factor)
+        data_scc_resources[indexes] = data_scc_resources[indexes] * scc
+        data_scc_capacities[indexes] = data_scc_capacities[indexes] * scc
+
+    costs = pd.concat([data_capacities, data_resources.xs('costs', level='type')], keys=['investment', 'operation'], names=['Category'])
     revenues = data_resources.loc[['avoided', 'revenues'], :]
     costs = costs[costs[indexes].sum(axis=1) > 0]
     revenues = revenues[revenues[indexes].sum(axis=1) > 0]
     totex = costs[indexes].sum(axis=0) - revenues[indexes].sum(axis=0)
     revenues = revenues.reindex(columns=costs.columns.tolist())
 
+    costs_scc = pd.concat([data_scc_capacities, data_scc_resources.xs('costs', level='type')], keys=['investment', 'operation'], names=['Category'])
+    revenues_scc = data_scc_resources.loc[['avoided', 'revenues'], :]
+    totex_scc = costs_scc[indexes].sum(axis=0) - revenues_scc[indexes].sum(axis=0)
+    revenues_scc = revenues_scc.reindex(columns=costs_scc.columns.tolist())
+
+    sum_costs = costs[indexes].sum(axis=0).reset_index(drop=True)
+    sum_revenues = revenues[indexes].sum(axis=0).reset_index(drop=True)
+    sum_scc_costs = costs_scc[indexes].sum(axis=0).reset_index(drop=True)
+    sum_scc_revenues = revenues_scc[indexes].sum(axis=0).reset_index(drop=True)
+
     x1 = list(range(len(indexes)))
     x2 = [x + 1 / 3 for x in x1]
     xtick = [x + 1 / 6 for x in x1]
-    revenues_sum = revenues[indexes].sum(axis=0).astype(int).reset_index(drop=True)
-    costs_sum = costs[indexes].sum(axis=0).astype(int).reset_index(drop=True)
-    revenues_text = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(cp) + change_data.loc['unites', lang]
-                     for cp in revenues_sum]
-    costs_text = ["<b>" + change_data.loc['x_axis_1', lang] + "</b><br>" + str(op) + change_data.loc['unites', lang]
-                  for op in costs_sum]
-    totex_text = ["<b>" + change_data.loc['total', lang] + "</b><br>" + str(tot) + change_data.loc['unites', lang]
-                  for tot in totex.astype(int)]
+    combined_costs = sum_costs + sum_scc_costs
+    combined_revenues = sum_revenues + sum_scc_revenues
+    combined_totex = totex.values + totex_scc.values
+    text_revenues = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(custom_round(cp, decimal)) + change_data.loc['unites', lang]
+                     for cp in combined_revenues]
+    text_costs = ["<b>" + change_data.loc['x_axis_1', lang] + "</b><br>" + str(custom_round(op, decimal)) + change_data.loc['unites', lang]
+                  for op in combined_costs]
+    text_totex = ["<b>" + change_data.loc['total', lang] + "</b><br>" + str(custom_round(tot, decimal)) + change_data.loc['unites', lang]
+                  for tot in combined_totex]
 
     fig = go.Figure()
     for i in range(len(indexes)):
-        fig.add_annotation(x=x2[i], y=-0.04 * max(max(revenues_sum), max(costs_sum)),
-                           text=revenues_text[i], font=dict(size=10),
+        fig.add_annotation(x=x2[i], y=-0.04 * max(max(combined_revenues), max(combined_costs)),
+                           text=text_revenues[i], font=dict(size=10),
                            textangle=0, align='center', valign='top',
                            showarrow=False)
-        fig.add_annotation(x=x1[i], y=-0.04 * max(max(revenues_sum), max(costs_sum)),
-                           text=costs_text[i], font=dict(size=10),
+        fig.add_annotation(x=x1[i], y=-0.04 * max(max(combined_revenues), max(combined_costs)),
+                           text=text_costs[i], font=dict(size=10),
                            textangle=0, align='center', valign='top',
                            showarrow=False
                            )
-        fig.add_annotation(x=xtick[i], y=costs_sum[i] + 0.04 * max(max(revenues_sum), max(costs_sum)),
-                           text=totex_text[i],
+        fig.add_annotation(x=xtick[i], y=combined_costs[i] + 0.04 * max(max(combined_revenues), max(combined_costs)),
+                           text=text_totex[i],
                            font=dict(size=10, color=cm['darkblue']),
                            textangle=0, align='center', valign='top',
                            showarrow=False
                            )
 
-    fig.add_trace(
-        go.Bar(name=change_data.loc['total', lang], x=x2,
-               y=totex,
-               legendgroup='group3',
-               legendgrouptitle_text=change_data.loc['total', lang],
-               marker=dict(color=cm['darkblue'], opacity=0),
-               showlegend=False,
-               hovertemplate=None,
-               width=1/6
-               )
-    )
+    df_scc = costs_scc.xs('investment', level='Category')
     for line, tech in costs.xs('investment', level='Category').iterrows():
         if tech.loc[indexes].sum() > 0:
             fig.add_trace(
@@ -494,11 +538,24 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
                        y=tech[indexes],
                        marker_color=tech["ColorPastel"],
                        width=1/3,
-                       hovertemplate='<b>' + tech[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc['unites', lang],
+                       hovertemplate=f'<b>{tech[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
                        legendgroup='group1',
-                       legendgrouptitle_text=change_data.loc['leg_2', lang],
+                       legendgrouptitle_text=change_data.loc['leg_1', lang],
                        showlegend=True)
             )
+        if line in df_scc.index and df_scc.loc[line, indexes].sum() > 0:
+            fig.add_trace(
+                go.Bar(name='Impact - ' + df_scc.loc[line, label],
+                       x=x1,
+                       y=df_scc.loc[line, indexes],
+                       marker_color=tech["ColorPastel"],
+                       marker_pattern_shape="x",
+                       width=1/3,
+                       hovertemplate=f'<b>{tech[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
+                       legendgroup='group1',
+                       showlegend=False)
+            )
+    df_scc = costs_scc.xs('operation', level='Category')
     for line, layer in costs.xs('operation', level='Category').iterrows():
         fig.add_trace(
             go.Bar(name=layer[label],
@@ -506,11 +563,34 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
                    y=layer[indexes],
                    marker_color=layer["ColorPastel"],
                    width=1/3,
-                   hovertemplate='<b>' + layer[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc['unites', lang],
+                   hovertemplate=f'<b>{layer[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
                    legendgroup='group2',
-                   legendgrouptitle_text=change_data.loc['leg_1', lang],
+                   legendgrouptitle_text=change_data.loc['leg_2', lang],
                    showlegend=True)
         )
+        if line in df_scc.index and df_scc.loc[line, indexes].sum() > 0:
+            fig.add_trace(
+                go.Bar(name='Impact - ' + df_scc.loc[line, label],
+                       x=x1,
+                       y=df_scc.loc[line, indexes],
+                       marker_color=layer["ColorPastel"],
+                       marker_pattern_shape="x",
+                       width=1/3,
+                       hovertemplate=f'<b>{layer[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
+                       legendgroup='group1',
+                       showlegend=False)
+            )
+
+    fig.add_trace(
+        go.Bar(name=change_data.loc['total', lang],
+               x=x2,
+               y=combined_totex,
+               opacity=0,
+               width=1/6,
+               showlegend=False)
+    )
+
+    df_scc = revenues_scc
     for line, layer in revenues.iterrows():
         fig.add_trace(
             go.Bar(name=layer[label],
@@ -518,11 +598,23 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
                    y=layer[indexes],
                    marker=dict(color=layer["ColorPastel"]),
                    width=1/3,
-                   hovertemplate='<b>' + layer[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc['unites', lang],
+                   hovertemplate=f'<b>{layer[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
                    legendgroup='group2',
                    legendgrouptitle_text=change_data.loc['x_axis_2', lang],
                    showlegend=True)
         )
+        if line in df_scc.index and df_scc.loc[line, indexes].sum() > 0:
+            fig.add_trace(
+                go.Bar(name='Impact - ' + df_scc.loc[line, label],
+                       x=x2,
+                       y=df_scc.loc[line, indexes],
+                       marker_color=layer["ColorPastel"],
+                       marker_pattern_shape="x",
+                       width=1/3,
+                       hovertemplate=f'<b>{layer[label]}</b><br>{change_data.loc["keyword", lang]}: %{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
+                       legendgroup='group1',
+                       showlegend=False)
+            )
 
     fig.update_layout(barmode="relative",
                       bargap=0,
@@ -534,6 +626,7 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
                           ticktext=indexes),
                       yaxis=dict(title=change_data.loc['y_axis', lang])
                       )
+
     if filename is not None:
         if not os.path.isdir(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))

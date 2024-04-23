@@ -52,7 +52,7 @@ def handle_zero_rows(df):
 
 
 def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=None,
-                additional_costs={}, scaling_factor=1):
+                additional_data={}, scaling_factor=1):
     """
     This function prepares the dataframes that will be needed for the plot_performance and plot_actors
     """
@@ -60,16 +60,16 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=No
     df_Economics = df_Economics.groupby(level=indexed_on, sort=False).sum() * scaling_factor
     indexes = df_Economics.index.tolist()
 
-    data_capex = df_Economics.xs('investment', level='Category', axis=1).transpose()
-    data_capex.index.names = ['Unit']
+    data_capacities = df_Economics.xs('investment', level='Category', axis=1).transpose()
+    data_capacities.index.names = ['Unit']
 
-    if 'isolation' in additional_costs:
-        data_capex.loc[('Isolation'), :] = additional_costs['isolation']
+    if 'isolation' in additional_data:
+        data_capacities.loc[('Isolation'), :] = additional_data['isolation']
 
-    data_capex = data_capex.reset_index().merge(layout, left_on="Unit", right_on='Name').set_index("Unit").fillna(0)
+    data_capacities = data_capacities.reset_index().merge(layout, left_on="Unit", right_on='Name').set_index("Unit").fillna(0)
 
-    data_opex = df_Economics.xs('operation', level='Category', axis=1).transpose()
-    indices = data_opex.index.get_level_values(0)
+    data_resources = df_Economics.xs('operation', level='Category', axis=1).transpose()
+    indices = data_resources.index.get_level_values(0)
     new_indices = []
     [new_indices.append(tuple(idx.split("_", 1))) for idx in indices]
     for i, tup in enumerate(new_indices):
@@ -77,33 +77,33 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=No
             new_indices[i] = ('costs', 'Electrical_grid')
         elif tup == ('revenues', 'Electricity'):
             new_indices[i] = ('revenues', 'Electrical_grid_feed_in')
-    data_opex.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
+    data_resources.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
 
     if premium_version is not None:
-        data_opex.loc[('avoided', 'solar_premium'), :] = data_opex.loc[('avoided', 'PV_SC')] * (premium_version[0] - premium_version[1]) / premium_version[0]
-        data_opex.loc[('revenues', 'solar_value'), :] = data_opex.loc[('revenues', 'Electrical_grid_feed_in')] + \
-                                                        data_opex.loc[('avoided', 'PV_SC')] - data_opex.loc[
+        data_resources.loc[('avoided', 'solar_premium'), :] = data_resources.loc[('avoided', 'PV_SC')] * (premium_version[0] - premium_version[1]) / premium_version[0]
+        data_resources.loc[('revenues', 'solar_value'), :] = data_resources.loc[('revenues', 'Electrical_grid_feed_in')] + \
+                                                        data_resources.loc[('avoided', 'PV_SC')] - data_resources.loc[
                                                             ('avoided', 'solar_premium')]
-        data_opex = data_opex.drop("PV_SC", level='Layer')
-        data_opex = data_opex.drop("Electrical_grid_feed_in", level='Layer')
+        data_resources = data_resources.drop("PV_SC", level='Layer')
+        data_resources = data_resources.drop("Electrical_grid_feed_in", level='Layer')
 
-    data_opex = data_opex.drop("PV", level='Layer')
+    data_resources = data_resources.drop("PV", level='Layer')
 
-    if 'mobility' in additional_costs:
-        data_opex.loc[('costs', 'Gasoline'), :] = additional_costs['mobility']
+    if 'mobility' in additional_data:
+        data_resources.loc[('costs', 'Gasoline'), :] = additional_data['mobility']
 
-    if 'ict' in additional_costs:
-        data_opex.loc[('costs', 'Data'), :] = additional_costs['ict']
-        data_opex.loc[('revenues', 'Data'), :] = 0
+    if 'ict' in additional_data:
+        data_resources.loc[('costs', 'Data'), :] = additional_data['ict']
+        data_resources.loc[('revenues', 'Data'), :] = 0
 
     if neg:
-        indices = data_opex.index.get_level_values(0)
+        indices = data_resources.index.get_level_values(0)
         neg_indices = indices.str.contains('avoided')
         neg_indices = neg_indices + indices.str.contains('revenues')
-        data_opex.loc[neg_indices] = - data_opex.loc[neg_indices]
-    data_opex = data_opex.reset_index().merge(layout, left_on='Layer', right_on='Name').set_index(['type', 'Layer'])
+        data_resources.loc[neg_indices] = - data_resources.loc[neg_indices]
+    data_resources = data_resources.reset_index().merge(layout, left_on='Layer', right_on='Name').set_index(['type', 'Layer'])
 
-    return indexes, data_capex, data_opex
+    return indexes, data_capacities, data_resources
 
 
 def remove_building_from_index(df):
@@ -135,37 +135,49 @@ def remove_building_from_index(df):
     return df.set_index(index_modified)
 
 
-def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False,
-                     additional_costs={}, filename=None,
-                     export_format='html', scaling_factor=1, return_df=False):
+def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False, additional_costs={}, additional_gwp={}, scc=0.177,
+                     filename=None, export_format='html', scaling_factor=1, return_df=False):
     """
     Plot performance based on REHO results.
 
-    :param results: Dictionary of REHO results.
-    :type results: dict
-    :param plot: Choose among 'costs' and 'gwp'.
-    :type plot: str
-    :param label: Indicates the language to use for the plot. Pick among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
-    :type label: str
-    :param indexed_on: Whether the results should be grouped on Scn_ID or Pareto_ID.
-    :type indexed_on: str
-    :param add_annotation: Adds the numerical values along the bar plots.
-    :type add_annotation: bool
-    :param per_m2: Set to True to obtain the results divided by the total ERA.
-    :type per_m2: bool
-    :param additional_costs: Dictionary of additional costs to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
-    :type additional_costs: dict
-    :param filename: Name of the file to be saved.
-    :type filename: str
-    :param export_format: Can be either 'html', 'png', or 'plotly_plot'.
-    :type export_format: str
-    :param scaling_factor: Scaling factor for the plot if a linear assumption is made.
-    :type scaling_factor: int or float
-    :param return_df: A dataframe can be returned for further post-processing or reporting purposes.
-    :type return_df: bool
+    Parameters
+    ----------
+    results: dict
+        Dictionary of REHO results.
+    plot: str
+        Choose among those three possibilities:
 
-    :return: (Optional) A dataframe for further post-processing or reporting purposes.
-    :rtype: pd.DataFrame or None
+        - 'costs' for the economic performance indicators,
+        - 'gwp' for the global warming potential indicators,
+        - 'combined' for a combination of the two indicators, where the emissions are converted into costs using the
+          ``scc`` parameter.
+    label: str
+        Indicates the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+    indexed_on: str
+        Whether the results should be grouped on *Scn_ID* or *Pareto_ID*.
+    add_annotation: bool
+        Adds the numerical values along the bar plots.
+    per_m2: bool
+        Set to True to obtain the results divided by the total ERA.
+    additional_costs: dict
+        Additional costs to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
+    additional_gwp: dict
+        Additional gwp to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
+    scc: float
+        Carbon externalities, expressed in *CHF/kgCO2*. Default value is the *Social Cost of Carbon*, from `Rennert, 2022 <https://www.nature.com/articles/s41586-022-05224-9>`_.
+    filename: str
+        Name of the file to be saved.
+    export_format: str
+        Can be either 'html', 'png', or 'plotly_plot'.
+    scaling_factor: int/float
+        Scales linearly the REHO results for the plot.
+    return_df: bool
+        A dataframe can be returned for further post-processing or reporting purposes.
+
+    Returns
+    ----------
+    pd.DataFrame or None
+        (Optional) A dataframe for further post-processing or reporting purposes.
     """
 
     sc = list(results.keys())[0]
@@ -175,103 +187,196 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     df_Economics = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
-    change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites']
+    change_data.index = ['x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'scc_legend']
     lang = re.split('_', label)[0]
+
     if plot == 'costs':
-        change_data['FR'] = ['Costs_Unit_inv', 'price', 'CAPEX', 'OPEX', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', 'CHF']
-        change_data['EN'] = ['Costs_Unit_inv', 'price', 'CAPEX', 'OPEX', 'Costs [CHF/y]', 'Costs', 'TOTEX', 'CHF']
-        df_Economics = df_Economics.xs('costs', level='Perf_type')
+        change_data['FR'] = ['CAPEX', 'OPEX', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', ' CHF', '']
+        change_data['EN'] = ['CAPEX', 'OPEX', 'Costs [CHF/y]', 'Costs', 'TOTEX', ' CHF', '']
+        df_costs = df_Economics.xs('costs', level='Perf_type')
         if per_m2:
-            df_Economics = df_Economics / era.sum()
+            df_costs = df_costs / era.sum()
             change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
             change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+        indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=True,
+                                                     additional_data=additional_costs,
+                                                     scaling_factor=scaling_factor)
+
+        data_resources = data_resources.drop("avoided", level='type')
+        
+        data_scc_resources = pd.DataFrame(0, columns=[indexes], index=data_resources.index)
+        data_scc_capacities = pd.DataFrame(0, columns=[indexes], index=data_capacities.index)
+
+        showlegend = False
+
     elif plot == 'gwp':
-        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Réseau', 'GWP [kgCO2/an]', 'Émissions', 'Total',
-                             'kgCO2']
-        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Construction', 'Grid', 'GWP [kgCO2/y]', 'Emissions', 'Total',
-                             'kgCO2']
-        df_Economics = df_Economics.xs('impact', level='Perf_type')
+        change_data['FR'] = ['Capacités', 'Ressources', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', '']
+        change_data['EN'] = ['Capacities', 'Resources', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', '']
+        df_impact = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
-            df_Economics = df_Economics / era.sum()
+            df_impact = df_impact / era.sum()
             change_data.loc['y_axis']['FR'] = "GWP [kgCO2/m2/an]"
             change_data.loc['y_axis']['EN'] = "GWP [kgCO2/m2/y]"
+        indexes, data_capacities, data_resources = prepare_dfs(df_impact, indexed_on, neg=True,
+                                                    additional_data=additional_gwp,
+                                                    scaling_factor=scaling_factor)
 
-    indexes, data_capex, data_opex = prepare_dfs(df_Economics, indexed_on, neg=True, additional_costs=additional_costs,
-                                                 scaling_factor=scaling_factor)
+        data_resources = data_resources.drop("avoided", level='type')
 
-    data_opex = data_opex.drop("avoided", level='type')
+        data_scc_resources = pd.DataFrame(0, columns=[indexes], index=data_resources.index)
+        data_scc_capacities = pd.DataFrame(0, columns=[indexes], index=data_capacities.index)
+
+        showlegend = False
+
+    elif plot == 'combined':
+        change_data['FR'] = ['Capacités', 'Ressources', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', ' CHF', 'Impact carbone']
+        change_data['EN'] = ['Capacities', 'Resources', 'Costs [CHF/y]', 'Costs', 'TOTEX', ' CHF', 'Carbon impact']
+
+        df_costs = df_Economics.xs('costs', level='Perf_type')
+        df_impact = df_Economics.xs('impact', level='Perf_type')
+        if per_m2:
+            df_costs = df_costs / era.sum()
+            df_impact = df_impact / era.sum()
+            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+
+        indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=True,
+                                                               additional_data=additional_costs,
+                                                               scaling_factor=scaling_factor)
+        indexes, data_scc_capacities, data_scc_resources = prepare_dfs(df_impact, indexed_on, neg=True,
+                                                    additional_data=additional_gwp,
+                                                    scaling_factor=scaling_factor)
+        
+        data_resources = data_resources.drop("avoided", level='type')
+        data_scc_resources = data_scc_resources.drop("avoided", level='type')
+
+        data_scc_resources[indexes] = data_scc_resources[indexes] * scc
+        data_scc_capacities[indexes] = data_scc_capacities[indexes] * scc
+
+        showlegend = True
+
+    sum_resources = data_resources[indexes].sum(axis=0).astype(int).reset_index(drop=True)
+    sum_capacities = data_capacities[indexes].sum(axis=0).astype(int).reset_index(drop=True)
+    sum_scc_resources = data_scc_resources[indexes].sum(axis=0).astype(int).reset_index(drop=True)
+    sum_scc_capacities = data_scc_capacities[indexes].sum(axis=0).astype(int).reset_index(drop=True)
+    combined_resources = sum_resources + sum_scc_resources
+    combined_capacities = sum_capacities + sum_scc_capacities
 
     x1 = list(range(len(indexes)))
     x2 = [x + 1 / 3 for x in x1]
     xtick = [x + 1 / 6 for x in x1]
-    capex = data_capex[indexes].sum(axis=0).astype(int).reset_index(drop=True)
-    capex_text = ["<b>" + change_data.loc['x_axis_1', lang] + "</b><br>" + str(cp) + change_data.loc['unites', lang]
-                  for cp in capex]
-    opex = data_opex[indexes].sum(axis=0).astype(int).reset_index(drop=True)
-    pos_opex = data_opex[indexes][data_opex[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True)
-    opex_text = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(op) + change_data.loc['unites', lang]
-                 for op in opex]
+
+    text_constr = ["<b>" + change_data.loc['x_axis_1', lang] + "</b><br>" + str(cp)
+                   for cp in combined_capacities]
+    text_op = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(op)
+               for op in combined_resources]
+    pos_opex = data_resources[indexes][data_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True) + \
+               data_scc_resources[indexes][data_scc_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True)
 
     fig = go.Figure()
-    neg_opex = opex - pos_opex
-    text_placeholder = 0.04 * max(max(capex - neg_opex), max(capex + pos_opex), max(pos_opex - neg_opex))
+    neg_opex = combined_resources - pos_opex
+    text_placeholder = 0.04 * max(max(combined_capacities - neg_opex + combined_resources),
+                                  max(combined_capacities + combined_resources + neg_opex),
+                                  max(combined_resources))
 
     if add_annotation:
         for i in range(len(indexes)):
             fig.add_annotation(x=x2[i], y=-text_placeholder,
-                               text=opex_text[i], font=dict(size=10),
+                               text=text_op[i], font=dict(size=10),
                                textangle=0, align='center', valign='top',
                                showarrow=False)
             fig.add_annotation(x=x1[i], y=-text_placeholder,
-                               text=capex_text[i], font=dict(size=9),
+                               text=text_constr[i], font=dict(size=10),
                                textangle=0, align='center', valign='top',
                                showarrow=False
                                )
-            fig.add_annotation(x=xtick[i], y=max(capex[i], pos_opex[i], capex[i] + opex[i]) + text_placeholder,
-                               text="<b>" + change_data.loc['total', lang] + "</b><br>" + str(capex[i] + opex[i]) +
+            fig.add_annotation(x=xtick[i], y=max(combined_capacities[i], pos_opex[i],
+                                                 combined_capacities[i] + combined_resources[i]) + text_placeholder,
+                               text="<b>Total</b><br>" + str(
+                                   combined_capacities[i] + combined_resources[i]) +
                                     change_data.loc['unites', lang],
-                               font=dict(size=9, color=cm['darkblue']),
+                               font=dict(size=10, color=cm['darkblue']),
                                textangle=0, align='center', valign='top',
                                showarrow=False
                                )
-    for line, tech in data_capex.iterrows():
+    for line, tech in data_capacities.iterrows():
         if tech.loc[indexes].sum() > 0:
             fig.add_trace(
-                go.Bar(name=tech[label], x=x1,
-                       y=tech[indexes], width=1 / 3,
+                go.Bar(name=tech[label],
+                       x=x1,
+                       y=tech[indexes],
                        marker_color=tech["ColorPastel"],
-                       hovertemplate='<b>' + tech[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' +
-                                     change_data.loc['unites', lang],
-                       # text=unit_to_plot[label],
+                       width=1/3,
+                       hovertemplate='<b>' + tech[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
                        legendgroup='group1',
                        legendgrouptitle_text=change_data.loc['x_axis_1', lang],
-                       showlegend=True))
-    for line, layer in data_opex.iterrows():
+                       showlegend=True)
+            )
+        if data_scc_capacities.loc[line, indexes].sum() > 0:
+            fig.add_trace(
+                go.Bar(name='Impact - ' + data_scc_capacities.loc[line, label],
+                       x=x1,
+                       y=data_scc_capacities.loc[line, indexes],
+                       marker_color=tech["ColorPastel"],
+                       marker_pattern_shape="x",
+                       width=1/3,
+                       hovertemplate='<b>' + data_scc_capacities.loc[line, label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
+                       legendgroup='group1',
+                       showlegend=False)
+            )
+    for line, layer in data_resources.iterrows():
         if abs(layer.loc[indexes].sum()) > 0:
             fig.add_trace(
                 go.Bar(name=layer[label],
                        x=x2,
                        y=layer[indexes],
-                       marker=dict(color=layer["ColorPastel"]),
+                       marker_color=layer["ColorPastel"],
+                       width=1/3,
+                       hovertemplate='<b>' + layer[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
                        legendgroup='group2',
                        legendgrouptitle_text=change_data.loc['x_axis_2', lang],
-                       # text=data_opex[label],
-                       showlegend=True,
-                       width=1 / 3,
-                       hovertemplate='<b>' + layer[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc[
-                                         'unites', lang])
+                       showlegend=True)
             )
+        if abs(data_scc_resources.loc[line, indexes].sum()) > 0:
+            fig.add_trace(
+                go.Bar(name='Impact - ' + data_scc_resources.loc[line, label],
+                       x=x2,
+                       y=data_scc_resources.loc[line, indexes],
+                       marker_color=layer["ColorPastel"],
+                       marker_pattern_shape="x",
+                       width=1/3,
+                       hovertemplate='<b>' + data_scc_resources.loc[line, label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.0f}' + change_data.loc['unites', lang],
+                       legendgroup='group2',
+                       showlegend=False)
+            )
+
     fig.add_trace(
         go.Bar(
             name=change_data.loc['total', lang],
-            x=xtick, y=capex + opex,
-            width=1 / 6, showlegend=False,
-            hovertemplate="<b>" + change_data.loc['total', lang] + "</b><br>%{y:.0f}" + change_data.loc['unites', lang],
-            marker=dict(color=cm['lightblue'], opacity=1)
-        )
+            x=xtick,
+            y=sum_capacities + sum_resources,
+            marker_color=cm['lightblue'],
+            width=1/6,
+            hovertemplate="<b>Total</b><br>%{y:.0f}" + change_data.loc['unites', lang],
+            legendgroup='group3',
+            legendgrouptitle_text='Total',
+            showlegend=showlegend)
     )
+
+    fig.add_trace(
+        go.Bar(
+            name=change_data.loc['scc_legend', lang],
+            x=xtick,
+            y=sum_scc_capacities + sum_scc_resources,
+            marker_color=cm['lightblue'],
+            marker_pattern_shape="x",
+            width=1/6,
+            hovertemplate="<b>Total</b><br>%{y:.0f}" + change_data.loc['unites', lang],
+            legendgroup='group3',
+            legendgrouptitle_text='Total',
+            showlegend=showlegend)
+        )
+
     fig.update_layout(barmode="relative",
                       bargap=0,
                       template='plotly_white',
@@ -282,6 +387,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                           ticktext=indexes),
                       yaxis=dict(title=change_data.loc['y_axis', lang])
                       )
+
     if filename is not None:
         if not os.path.isdir(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
@@ -293,14 +399,13 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
             fig.write_image(filename + '.' + export_format)
 
     if return_df:
-        return fig, pd.concat([data_capex, data_opex])
+        return fig, pd.concat([data_capacities, data_resources])
     else:
         return fig
 
 
-def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=None, per_m2=False, additional_costs={},
+def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=None, per_m2=False, additional_data={},
                 filename=None, export_format='html', scaling_factor=1, return_df=False):
-
     # If enabled, premium_version should be an array containing the retail price and feed-in price of electricity.
 
     sc = list(results.keys())[0]
@@ -310,36 +415,31 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
     df_Economics = dict_to_df(results, 'df_Economics')
 
     change_data = pd.DataFrame()
-    change_data.index = ['col_1', 'col_2', 'x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1',
-                         'leg_2']
+    change_data.index = ['x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'leg_1', 'leg_2']
     lang = re.split('_', label)[0]
     if plot == 'costs':
-        change_data['FR'] = ['Costs_Unit_inv', 'price', 'Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', 'CHF', 'OPEX',
-                             'CAPEX']
-        change_data['EN'] = ['Costs_Unit_inv', 'price', 'Costs', 'Income', '[CHF/y]', 'Costs', 'TOTEX', 'CHF',
-                             'OPEX', 'CAPEX']
+        change_data['FR'] = ['Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'TOTEX', ' CHF', 'Ressources', 'Capacités']
+        change_data['EN'] = ['Costs', 'Income', '[CHF/y]', 'Costs', 'TOTEX', ' CHF', 'Resources', 'Capacities']
         df_Economics = df_Economics.xs('costs', level='Perf_type')
         if per_m2:
             df_Economics = df_Economics / era.sum()
             change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
             change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
     elif plot == 'gwp':
-        change_data['FR'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Evitées', 'GWP [kgCO2/an]', 'Émissions', 'Total',
-                             'kgCO2', 'Réseau', 'Constr']
-        change_data['EN'] = ['GWP_Unit_constr', 'gwp', 'Emissions', 'Avoided', 'GWP [kgCO2/y]', 'Emissions', 'Total',
-                             'kgCO2', 'Grid', 'Constr']
+        change_data['FR'] = ['Émissions', 'Évitées', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', 'Ressources', 'Capacités']
+        change_data['EN'] = ['Emissions', 'Avoided', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', 'Resources', 'Capacities']
         df_Economics = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
             df_Economics = df_Economics / era.sum()
-            change_data.loc['y_axis']['FR'] = "GWP [kgCO2/m2/an]"
-            change_data.loc['y_axis']['EN'] = "GWP [kgCO2/m2/y]"
+            change_data.loc['y_axis']['FR'] = "Émissions [kgCO2/m2/an]"
+            change_data.loc['y_axis']['EN'] = "Emissions [kgCO2/m2/y]"
 
-    indexes, data_capex, data_opex = prepare_dfs(df_Economics, indexed_on, neg=False, premium_version=premium_version, additional_costs=additional_costs,
-                                                 scaling_factor=scaling_factor)
+    indexes, data_capacities, data_resources = prepare_dfs(df_Economics, indexed_on, neg=False,
+                                                           premium_version=premium_version, additional_data=additional_data, scaling_factor=scaling_factor)
 
-    costs = pd.concat([data_capex, data_opex.xs('costs', level='type')],
+    costs = pd.concat([data_capacities, data_resources.xs('costs', level='type')],
                       keys=['investment', 'operation'], names=['Category'])
-    revenues = data_opex.loc[['avoided', 'revenues'], :]
+    revenues = data_resources.loc[['avoided', 'revenues'], :]
     costs = costs[costs[indexes].sum(axis=1) > 0]
     revenues = revenues[revenues[indexes].sum(axis=1) > 0]
     totex = costs[indexes].sum(axis=0) - revenues[indexes].sum(axis=0)
@@ -364,13 +464,13 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
                            textangle=0, align='center', valign='top',
                            showarrow=False)
         fig.add_annotation(x=x1[i], y=-0.04 * max(max(revenues_sum), max(costs_sum)),
-                           text=costs_text[i], font=dict(size=9),
+                           text=costs_text[i], font=dict(size=10),
                            textangle=0, align='center', valign='top',
                            showarrow=False
                            )
         fig.add_annotation(x=xtick[i], y=costs_sum[i] + 0.04 * max(max(revenues_sum), max(costs_sum)),
                            text=totex_text[i],
-                           font=dict(size=9, color=cm['darkblue']),
+                           font=dict(size=10, color=cm['darkblue']),
                            textangle=0, align='center', valign='top',
                            showarrow=False
                            )
@@ -382,59 +482,47 @@ def plot_actors(results, plot='costs', indexed_on='Scn_ID', label='EN_long', pre
                legendgrouptitle_text=change_data.loc['total', lang],
                marker=dict(color=cm['darkblue'], opacity=0),
                showlegend=False,
-               # texttemplate=totex_text,
                hovertemplate=None,
-               # textposition='inside',
-               # textfont=dict(size=9, color=cm['darkblue']),
-               width=1 / 6
+               width=1/6
                )
     )
     for line, tech in costs.xs('investment', level='Category').iterrows():
         if tech.loc[indexes].sum() > 0:
             fig.add_trace(
-                go.Bar(name=tech[label], x=x1,
-                       y=tech[indexes], width=1 / 3,
+                go.Bar(name=tech[label],
+                       x=x1,
+                       y=tech[indexes],
                        marker_color=tech["ColorPastel"],
-                       hovertemplate='<b>' + tech[label] + '</b>' +
-                                     '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' +
-                                     change_data.loc['unites', lang],
+                       width=1/3,
+                       hovertemplate='<b>' + tech[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc['unites', lang],
                        legendgroup='group1',
                        legendgrouptitle_text=change_data.loc['leg_2', lang],
-                       showlegend=True))
-    for line, tech in costs.xs('operation', level='Category').iterrows():
+                       showlegend=True)
+            )
+    for line, layer in costs.xs('operation', level='Category').iterrows():
         fig.add_trace(
-            go.Bar(name=tech[label], x=x1,
-                   y=tech[indexes], width=1 / 3,
-                   marker_color=tech["ColorPastel"],
-                   hovertemplate='<b>' + tech[label] + '</b>' +
-                                 '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' +
-                                 change_data.loc['unites', lang],
+            go.Bar(name=layer[label],
+                   x=x1,
+                   y=layer[indexes],
+                   marker_color=layer["ColorPastel"],
+                   width=1/3,
+                   hovertemplate='<b>' + layer[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc['unites', lang],
                    legendgroup='group2',
                    legendgrouptitle_text=change_data.loc['leg_1', lang],
-                   showlegend=True))
+                   showlegend=True)
+        )
     for line, layer in revenues.iterrows():
         fig.add_trace(
             go.Bar(name=layer[label],
                    x=x2,
                    y=layer[indexes],
                    marker=dict(color=layer["ColorPastel"]),
+                   width=1/3,
+                   hovertemplate='<b>' + layer[label] + '</b>' + '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc['unites', lang],
                    legendgroup='group2',
                    legendgrouptitle_text=change_data.loc['x_axis_2', lang],
-                   showlegend=True,
-                   width=1 / 3,
-                   hovertemplate='<b>' + layer[label] + '</b>' +
-                                 '<br>' + change_data.loc['keyword', lang] + ': %{y:.1f}' + change_data.loc[
-                                     'unites', lang])
+                   showlegend=True)
         )
-    # fig.add_trace(
-    #     go.Bar(
-    #         name=change_data.loc['total', lang],
-    #         x=xtick, y=totex,
-    #         width=1 / 6, showlegend=False,
-    #         hovertemplate=totex_text,
-    #         marker=dict(color=cm['darkblue'], opacity=0.7)
-    #     )
-    # )
 
     fig.update_layout(barmode="relative",
                       bargap=0,
@@ -1186,7 +1274,7 @@ def plot_composite_curve(results, cluster, plot=True, periods=["Yearly"]):
     if plot:
         for i in periods:
             fig, ax = plt.subplots(figsize=(9, 6))
-            ax.plot(data[i] , data[i].index, color="indianred", label="Space heating")
+            ax.plot(data[i], data[i].index, color="indianred", label="Space heating")
             plt.ylabel("Temperature [°C]", fontsize=18)
             plt.xlabel("Heat [MW]", fontsize=18)
             plt.title("Composite curve for the city of Sierre: " + i, fontsize=20)
@@ -1655,7 +1743,8 @@ def monthly_average_balance(results, to_plot):
             df_to_extract = df_Streams_t.xs(to_plot, level='Unit')['Streams_Q'][:-2]
         else:
             idx = pd.MultiIndex.from_frame(df_period_time)
-            units_mult = remove_building_from_index(results['df_Unit']).reset_index().groupby('Unit').sum()['Units_Mult']
+            units_mult = remove_building_from_index(results['df_Unit']).reset_index().groupby('Unit').sum()[
+                'Units_Mult']
             df_to_extract = pd.Series(units_mult, index=idx)
     month_values = monthly_average(results, df_to_extract)
 

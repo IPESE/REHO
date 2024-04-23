@@ -12,21 +12,23 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 param Population default 10; # will multiply the domestic demand ? 
 param DailyDist default 36.8; # [1]
-param max_travel_time default 3; # 1.3 hours mean
+param max_travel_time default 10; # 1.3 hours mean
 
-# set transport_Units := setof{u in UnitsOfType['EV'] union UnitsOfType['Bike']} u;
-# set transport_Units := UnitsOfType['EV'] union UnitsOfType['Bike'];
 set transport_Units; # TODO : check if dynamic to the rest of the code
 set Activities := {"work","leisure","travel"}; 
 param Mode_Speed{u in transport_Units} default 37.1; # [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
 param Daily_Profile{u in transport_Units,p in Period,t in Time[p]} default 1; # initialized through the function generate_mobility_parameters
 # ----------------------------------------- VARIABLES ---------------------------------------
-var travel_time >= 0 ;
+var travel_time{p in Period,t in Time[p]} >= 0 ; #pkm
 
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
-subject to travel_time_c1{ p in Period}:
-(sum{u in transport_Units : u != "Public_transport"}(sum {i in Time[p]}(Units_supply['Mobility',u,p,i]) / Mode_Speed[u])  + sum {j in Time[p]}(Network_supply['Mobility',p,j]) / Mode_Speed['Public_transport'] )/ Population <= max_travel_time; 
+subject to travel_time_c1{p in Period,t in Time[p]}:
+travel_time[p,t] = sum{u in transport_Units : u != "Public_transport"}(Units_supply['Mobility',u,p,t] / Mode_Speed[u]) +( Network_supply['Mobility',p,t] / 18); # Mode_Speed['Public_transport'] replaced by 18
+
+
+subject to travel_time_c2{p in Period}:
+sum {t in Time[p]}(travel_time[p,t]) <= max_travel_time * Population; 
 
 
 

@@ -12,7 +12,7 @@
 
 # ----------------------------------------- PARAMETERS ---------------------------------------
 # Usage
-param n_ICEperhab default 2; # [1] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling )
+param n_ICEperhab default 1; # [1] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling )
 param max_n_ICE := n_ICEperhab * Population;
 param ff_ICE default 1.56; # [1]
 

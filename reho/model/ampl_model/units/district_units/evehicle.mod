@@ -18,7 +18,7 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 
 # Usage
-param n_EVperhab default 2; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
+param n_EVperhab default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
 param n_EV_max := n_EVperhab * Population; 
 param ff_EV{u in UnitsOfType['EV']} default 1.56;
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -

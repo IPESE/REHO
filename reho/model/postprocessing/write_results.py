@@ -515,8 +515,10 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             df6 = get_parameter_in_pandas(ampl, 'EV_V2V', multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             df7 = get_parameter_in_pandas(ampl, 'EV_E_charged_outside', multi_index=True)
-            # df7 = df7.unstack(level = 0 ).droplevel(0,axis = 1)
-            # df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
+            # df8 = get_variable_in_pandas(df, 'travel_time')  # TODO : temp, to debug travel_time_c1
+            # df8 = pd.concat([df8], keys=['Time'], names=['Layer'])
+            # df8 = pd.concat([df8], keys=['Time'], names=['Unit'])
+
             df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6,df7], axis=1)
     df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 

@@ -12,7 +12,7 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 param Population default 10; # will multiply the domestic demand ? 
 param DailyDist default 36.8; # [1]
-param max_travel_time default 10; # 1.3 hours mean
+param max_travel_time default 3; # 1.3 hours mean
 
 set transport_Units; # TODO : check if dynamic to the rest of the code
 set Activities := {"work","leisure","travel"}; 
@@ -24,7 +24,7 @@ var travel_time{p in Period,t in Time[p]} >= 0 ; #pkm
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
 subject to travel_time_c1{p in Period,t in Time[p]}:
-travel_time[p,t] = sum{u in transport_Units : u != "Public_transport"}(Units_supply['Mobility',u,p,t] / Mode_Speed[u]) +( Network_supply['Mobility',p,t] / 18); # Mode_Speed['Public_transport'] replaced by 18
+travel_time[p,t] = sum{u in transport_Units : u != "Public_transport"}(Units_supply['Mobility',u,p,t] / Mode_Speed[u]) +( Network_supply['Mobility',p,t] / dp[p] / Mode_Speed['Public_transport']);
 
 
 subject to travel_time_c2{p in Period}:

@@ -1,86 +1,35 @@
 from reho.model.reho import *
 import datetime
 
+def compute_iterative_parameters(variables,parameters):
+    # for 2 districts:
+    if len(variables.keys()) == 2:
+        for d1,d2 in zip(variables.keys(),reversed(variables.keys())):
+            parameters[d1] = {    "outside_charging_price" : variables[d2]['pi'].rename("outside_charging_price"),
+                            "charging_externalload"  : variables[d2]["externaldemand"].stack().to_frame(name = "charging_externalload")
+                        }
 
-def run_district(transformer,price = pd.DataFrame(),externalload = pd.DataFrame()):
-    # Set building parameters
-    reader = QBuildingsReader()
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=transformer, nb_buildings=2)
+def check_convergence(deltas,df_delta,variables):
+    
+    # Compute Delta
+    df_demand = pd.DataFrame()
+    df_load = pd.DataFrame()
+    for k in variables.keys():
+        df = variables[k]['externaldemand']
+        df.columns.name = "Activity"
+        df_demand[k] = df.stack()
+       
+        df = variables[k]['externalload']
+        df.columns.name = "Activity"
+        df_load[k] = df.stack()
+    
+    df_delta[f"demand{i}"] = df_demand.sum(axis=1)
+    df_delta[f"load{i}"] = df_load.sum(axis=1)
 
-    # Select weather data
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-
-    # Set scenario
-    scenario = dict()
-    scenario['Objective'] = 'TOTEX'
-    scenario['EMOO'] = {}
-    scenario['specific'] = []
-    scenario['name'] = 'totex'
-    scenario['exclude_units'] = ['NG_Cogeneration']
-    scenario['enforce_units'] = ['EV_district']
-
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {},
-                                             'NaturalGas': {},
-                                             'FossilFuel': {},
-                                             'Mobility': {},
-                                             })
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
-
-    parameters = {'Population': 9}
-
-    # Set method options
-    method = {'building-scale': True}
-    rehorun = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
-                method=method, parameters=parameters, solver="gurobi")
-
-    # Set specific parameters
-    # reho.parameters['TransformerCapacity'] = np.array([1e6, 1e6, 0, 1e6])  # TODO : robustesse of mobility Network
-    rehorun.parameters['Mode_Speed'] = {'Bike2_district': 20}
-    # rehorun.parameters['DailyDist'] = 9
-    if not price.empty :
-        rehorun.parameters['outside_charging_price'] = price
-    if not externalload.empty :
-        rehorun.parameters['charging_externalload'] = externalload
-
-    # Other params
-    # Mobility demand profile can be changed in the csv file data/mobility/dailyprofiles.csv
-    # (imported through the function generate_mobility_profiles)
-
-    # Run optimization
-    rehorun.single_optimization()
-
-    # Save results
-    rehorun.save_results(format=['xlsx', 'pickle'], filename='Mob')
-
-    # Mobility Formatting of results
-    date = datetime.datetime.now().strftime("%d_%H%M")
-    result_file_path = 'results/Mob_totex.xlsx'
-    df_Unit_t = pd.read_excel(result_file_path, sheet_name="df_Unit_t",
-                              index_col=[0, 1, 2, 3])  # refaire sans passer par le xlsx
-    df_Grid_t = pd.read_excel(result_file_path, sheet_name="df_Grid_t",
-                              index_col=[0, 1, 2, 3])
-    # df_Unit_t.index.name = ['Layer','Unit','Period','Time']
-    df_Unit_t = df_Unit_t[df_Unit_t.index.get_level_values("Layer") == "Mobility"]
-    df_Grid_t = df_Grid_t[df_Grid_t.index.get_level_values("Layer") == "Mobility"]
-    df_dd = df_Grid_t[df_Grid_t.index.get_level_values("Hub") == "Network"]
-    # df_dd.index = df_dd.index.droplevel('Hub')
-    df_dd.reset_index("Hub", inplace=True)
-
-    df_mobility = df_Unit_t[['Units_demand', 'Units_supply']].unstack(level='Unit')
-    df_mobility['Domestic_energy'] = df_dd['Domestic_energy']
-    df_mobility.sort_index(inplace=True)
-    df_mobility.to_excel(f"results/3f_mobility{date}.xlsx")
-    print(f"Results are saved in 3f_mobility{date}")
-
-    # getting parameters for iteration
-    pi = rehorun.results_MP["totex"][0][0]["df_Dual_t"]["pi"].xs("Electricity")
-    EV_E_charged_outside = rehorun.results['totex'][0]['df_Unit_t'].reset_index()
-    EV_E_charged_outside = EV_E_charged_outside[EV_E_charged_outside.Layer.isin(['work', 'leisure', 'travel'])].set_index(['Layer','Unit','Period','Time'])[['EV_E_charged_outside']]
-
-    print(pi, EV_E_charged_outside)
-    return pi,EV_E_charged_outside
+    df_delta[f"delta{i}"] = df_delta[f"demand{i}"] - df_delta[f"load{i}"]
+    delta = df_delta[f"delta{i}"].apply(lambda x : x*x).sum()
+    deltas.append(delta)
+    return df_delta
 
 
 
@@ -125,7 +74,9 @@ if __name__ == '__main__':
         parameters = {'Population': 9}
 
         vars()['reho_' + str(transformer)] = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
-                    method=method, parameters=parameters, solver="gurobi")
+                    method=method, parameters=parameters, solver="baron")
+
+
 
 
     # Run optimization
@@ -133,104 +84,50 @@ if __name__ == '__main__':
     df_externalcharging = pd.DataFrame()
     variables = dict()
     parameters = dict()
+    deltas = list()
+    df_delta = pd.DataFrame()
 
-    # Init iteration 
-    i = 0
-    for transformer in districts:
-        vars()['reho_' + str(transformer)].single_optimization(Pareto_ID = i)
+    # Iterations
+    for i in range(5):
+        for transformer in districts:
+            # Add iterative parameters (only after init run i=0)
+            if i > 0:
+                for param in ["outside_charging_price","charging_externalload"]:
+                    vars()['reho_' + str(transformer)].parameters[param] = parameters[transformer][param]
 
-        # getting variables for iteration
-        pi = vars()['reho_' + str(transformer)].results_MP["totex"][0][0]["df_Dual_t"]["pi"].xs("Electricity")
+            # Run
+            vars()['reho_' + str(transformer)].single_optimization(Pareto_ID = i)
 
-        EV_E_charged_outside = vars()['reho_' + str(transformer)].results['totex'][0]['df_Unit_t'].reset_index()
-        EV_E_charged_outside = EV_E_charged_outside[EV_E_charged_outside.Layer.isin(['work', 'leisure', 'travel'])].set_index(['Layer','Unit','Period','Time'])[['EV_E_charged_outside']]
-        externaldemand = EV_E_charged_outside.reset_index().groupby(['Layer','Period','Time']).agg({"EV_E_charged_outside":'sum'})
+            # getting variables for iteration
+            pi = vars()['reho_' + str(transformer)].results_MP["totex"][0][0]["df_Dual_t"]["pi"].xs("Electricity")
+            df_Unit_t = vars()['reho_' + str(transformer)].results['totex'][0]['df_Unit_t']
+            df_Grid_t = vars()['reho_' + str(transformer)].results['totex'][0]['df_Grid_t']
 
-        print(pi, EV_E_charged_outside)
-        variables[transformer] = {  "pi": pi,
-                                    "EV_E_charged_outside" : EV_E_charged_outside,
-                                    "externaldemand" : externaldemand
-                                     }
+            EV_E_charged_outside = df_Unit_t.loc[:,df_Unit_t.columns.str.startswith("EV_E_charged_outside")][df_Unit_t.index.get_level_values('Layer') == 'Electricity']
+            externaldemand = EV_E_charged_outside.reset_index().groupby(['Period','Time']).agg('sum',numeric_only = True)
+            externaldemand.columns = [x.split('[')[1].split(']')[0] for x in externaldemand.columns]
+
+            externalload = df_Grid_t.loc[:,df_Grid_t.columns.str.startswith("charging_externalload")][(df_Grid_t.index.get_level_values('Layer') == 'Electricity') & (df_Grid_t.index.get_level_values('Hub') == 'Network')]
+            externalload = externalload.droplevel(['Layer','Hub'])
+            externalload.columns = [x.split('[')[1].split(']')[0] for x in externalload.columns]
+
+            print(pi, EV_E_charged_outside)
+            variables[transformer] = {  "pi": pi,
+                                        "EV_E_charged_outside" : EV_E_charged_outside,
+                                        "externaldemand" : externaldemand,
+                                        "externalload" : externalload
+                                        }
+            
+            # results formatting
+            pi = pd.DataFrame(pi).rename(columns = {"pi" : f"{i}_{transformer}"})
+            df_pi = pd.concat([df_pi,pi],axis = 1)
+            EV_E_charged_outside.columns = [col.replace("EV_E_charged_outside",f"{i}_{transformer}") for col in EV_E_charged_outside.columns] 
+            df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
         
-        # results formatting
-        pi = pd.DataFrame(pi).rename(columns = {"pi" : f"{i}_{transformer}"})
-        df_pi = pd.concat([df_pi,pi],axis = 1)
-        EV_E_charged_outside = EV_E_charged_outside.rename(columns = {"EV_E_charged_outside" : f"{i}_{transformer}"})
-        df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
-    
-    # Computing parameters for next iteration 
-    parameters[3658] = {    "outside_charging_price" : variables[3112]['pi'].rename("outside_charging_price"),
-                            "charging_externalload"  : variables[3112]["externaldemand"].rename(columns = {"EV_E_charged_outside" : "charging_externalload" })
-                        }
-    parameters[3112] = {    "outside_charging_price" : variables[3658]['pi'].rename("outside_charging_price"),
-                            "charging_externalload"  : variables[3658]["externaldemand"].rename(columns = {"EV_E_charged_outside" : "charging_externalload" })
-                        }
+        # Computing parameters for next iteration 
+        compute_iterative_parameters(variables,parameters)
 
-    # Iteration 1
-    i = 1
-    for transformer in districts:
-        for param in ["outside_charging_price","charging_externalload"]:
-            vars()['reho_' + str(transformer)].parameters[param] = parameters[transformer][param]
-        vars()['reho_' + str(transformer)].single_optimization(Pareto_ID = i)
-
-        # getting variables for iteration
-        pi = vars()['reho_' + str(transformer)].results_MP["totex"][0][0]["df_Dual_t"]["pi"].xs("Electricity")
-
-        EV_E_charged_outside = vars()['reho_' + str(transformer)].results['totex'][0]['df_Unit_t'].reset_index()
-        EV_E_charged_outside = EV_E_charged_outside[EV_E_charged_outside.Layer.isin(['work', 'leisure', 'travel'])].set_index(['Layer','Unit','Period','Time'])[['EV_E_charged_outside']]
-        externaldemand = EV_E_charged_outside.reset_index().groupby(['Layer','Period','Time']).agg({"EV_E_charged_outside":'sum'})
-
-        print(pi, EV_E_charged_outside)
-        variables[transformer] = {  "pi": pi,
-                                    "EV_E_charged_outside" : EV_E_charged_outside,
-                                    "externaldemand" : externaldemand
-                                     }
-        
-        # results formatting
-        pi = pd.DataFrame(pi).rename(columns = {"pi" : f"{i}_{transformer}"})
-        df_pi = pd.concat([df_pi,pi],axis = 1)
-        EV_E_charged_outside = EV_E_charged_outside.rename(columns = {"EV_E_charged_outside" : f"{i}_{transformer}"})
-        df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
-
+        df_delta = check_convergence(deltas,df_delta,variables)
 
     print(df_pi)
     print(df_externalcharging)
-
-
-    # for transformer in districts:
-    #     pi,EV_E_charged_outside = run_district(transformer)
-    #     EV_E_charged_outside = EV_E_charged_outside.reset_index().groupby(['Layer','Period','Time']).agg({"EV_E_charged_outside":'sum'})
-    #     variables[transformer] = {  "pi": pi,
-    #                                 "EV_E_charged_outside" : EV_E_charged_outside
-    #                                  }
-
-    #     pi = pd.DataFrame(pi).rename(columns = {"pi" : f"{i}_{transformer}"})
-    #     df_pi = pd.concat([df_pi,pi],axis = 1)
-    #     EV_E_charged_outside = EV_E_charged_outside.rename(columns = {"EV_E_charged_outside" : f"{i}_{transformer}"})
-    #     df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
-
-    # print(df_pi)
-    # print(df_externalcharging)
-    # parameters[3658] = {    "outside_charging_price" : variables[3112]['pi'].rename("outside_charging_price"),
-    #                         "charging_externalload"  : variables[3112]["EV_E_charged_outside"].rename(columns = {"EV_E_charged_outside" : "charging_externalload" })
-    #                     }
-    # parameters[3112] = {    "outside_charging_price" : variables[3658]['pi'].rename("outside_charging_price"),
-    #                         "charging_externalload"  : variables[3658]["EV_E_charged_outside"].rename(columns = {"EV_E_charged_outside" : "charging_externalload" })
-    #                     }
-
-    # i = 1
-    # for transformer in districts:
-    #     pi,EV_E_charged_outside = run_district(transformer,parameters[transformer]['outside_charging_price'],parameters[transformer]['charging_externalload'])
-
-    #     pi = pd.DataFrame(pi).rename(columns = {"pi" : f"{i}_{transformer}"})
-    #     df_pi = pd.concat([df_pi,pi],axis = 1)
-    #     EV_E_charged_outside = EV_E_charged_outside.reset_index().groupby(['Layer','Period','Time']).agg({"EV_E_charged_outside":'sum'})
-    #     EV_E_charged_outside = EV_E_charged_outside.rename(columns = {"EV_E_charged_outside" : f"{i}_{transformer}"})
-    #     df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
-    #     variables[transformer] = {  "pi": pi,
-    #                                 "EV_E_charged_outside" : EV_E_charged_outside
-    #                                  }
-        
-    print(df_pi)
-    print(df_externalcharging)
-

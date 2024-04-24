@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # Set method options
     method = {'building-scale': True}
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
-                method=method, parameters=parameters, solver="gurobi")
+                method=method, parameters=parameters, solver="baron")
 
     # Set specific parameters
     # reho.parameters['TransformerCapacity'] = np.array([1e6, 1e6, 0, 1e6])  # TODO : robustesse of mobility Network
@@ -49,27 +49,29 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='Mob')
-
-    # Mobility Formatting of results 
     date = datetime.datetime.now().strftime("%d_%H%M")
-    result_file_path = 'results/Mob_totex.xlsx'
-    df_Unit_t = pd.read_excel(result_file_path, sheet_name="df_Unit_t",
-                              index_col=[0, 1, 2, 3])  # refaire sans passer par le xlsx
-    df_Grid_t = pd.read_excel(result_file_path, sheet_name="df_Grid_t",
-                              index_col=[0, 1, 2, 3])
-    # df_Unit_t.index.name = ['Layer','Unit','Period','Time']
-    df_Unit_t = df_Unit_t[df_Unit_t.index.get_level_values("Layer") == "Mobility"]
-    df_Grid_t = df_Grid_t[df_Grid_t.index.get_level_values("Layer") == "Mobility"]
-    df_dd = df_Grid_t[df_Grid_t.index.get_level_values("Hub") == "Network"]
-    # df_dd.index = df_dd.index.droplevel('Hub')
-    df_dd.reset_index("Hub", inplace=True)
+    reho.save_results(format=['xlsx', 'pickle'], filename='Mob')
+    reho.save_mobility_results(filename = f"3f_mobility{date}")
 
-    df_mobility = df_Unit_t[['Units_demand', 'Units_supply']].unstack(level='Unit')
-    df_mobility['Domestic_energy'] = df_dd['Domestic_energy']
-    df_mobility.sort_index(inplace = True)
-    df_mobility.to_excel(f"results/3f_mobility{date}.xlsx")
-    print(f"Results are saved in 3f_mobility{date}")
+    # # Mobility Formatting of results 
+    # date = datetime.datetime.now().strftime("%d_%H%M")
+    # result_file_path = 'results/Mob_totex.xlsx'
+    # df_Unit_t = pd.read_excel(result_file_path, sheet_name="df_Unit_t",
+    #                           index_col=[0, 1, 2, 3])  # refaire sans passer par le xlsx
+    # df_Grid_t = pd.read_excel(result_file_path, sheet_name="df_Grid_t",
+    #                           index_col=[0, 1, 2, 3])
+    # # df_Unit_t.index.name = ['Layer','Unit','Period','Time']
+    # df_Unit_t = df_Unit_t[df_Unit_t.index.get_level_values("Layer") == "Mobility"]
+    # df_Grid_t = df_Grid_t[df_Grid_t.index.get_level_values("Layer") == "Mobility"]
+    # df_dd = df_Grid_t[df_Grid_t.index.get_level_values("Hub") == "Network"]
+    # # df_dd.index = df_dd.index.droplevel('Hub')
+    # df_dd.reset_index("Hub", inplace=True)
 
-    # getting parameters for iteration
+    # df_mobility = df_Unit_t[['Units_demand', 'Units_supply']].unstack(level='Unit')
+    # df_mobility['Domestic_energy'] = df_dd['Domestic_energy']
+    # df_mobility.sort_index(inplace = True)
+    # df_mobility.to_excel(f"results/3f_mobility{date}.xlsx")
+    # print(f"Results are saved in 3f_mobility{date}")
+
+    # # getting parameters for iteration
     print(reho.results_MP["totex"][0][0]["df_Dual_t"]["pi"].xs("Electricity"))

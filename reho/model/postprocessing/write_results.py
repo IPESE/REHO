@@ -171,8 +171,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_cd = get_parameter_in_pandas(ampl, 'Cost_demand_network', multi_index=True)
         df_es = get_parameter_in_pandas(ampl, 'GWP_supply', multi_index=True)
         df_ed = get_parameter_in_pandas(ampl, 'GWP_demand', multi_index=True)
-        # df_dd = get_parameter_in_pandas(ampl, 'Domestic_energy', multi_index=True)
-        # df_dd.columns = ['Domestic_demand']
 
         # Rename Network to Grid and therefore add Level 'Hub' = Network
         df3.columns = ['Grid_demand']
@@ -457,9 +455,13 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df5 = get_variable_in_pandas(df, 'Network_supply')
     df6 = get_variable_in_pandas(df, 'Network_demand')
     df7 = get_parameter_in_pandas(ampl,"Domestic_energy",multi_index = True)
+    df8 = get_parameter_in_pandas(ampl,"charging_externalload",multi_index = True)
+    df8 = df8[['charging_externalload']].unstack(level = 0)
+    df8.columns = [f'{i}[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
+    df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
 
     if binary:
-        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6,df7], axis=1).sort_index()
+        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6,df7,df8], axis=1).sort_index()
     else:
         df_District_t = pd.concat([df5, df6], axis=1)
     df_District_t.index.names = ['Layer', 'Period', 'Time']
@@ -510,19 +512,21 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         if "EV_district" in district.UnitsOfDistrict:
             df4 = get_variable_in_pandas(df, 'EV_E_stored')
             df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
-            df5 = get_parameter_in_pandas(ampl, 'EV_displacement', multi_index=True)
+            df5 = get_parameter_in_pandas(ampl, 'EV_V2V', multi_index=True)
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-            df6 = get_parameter_in_pandas(ampl, 'EV_V2V', multi_index=True)
+            df6 = get_parameter_in_pandas(ampl, 'EV_E_charging', multi_index=True) 
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             df7 = get_parameter_in_pandas(ampl, 'EV_E_charged_outside', multi_index=True)
-            # df8 = get_variable_in_pandas(df, 'travel_time')  # TODO : temp, to debug travel_time_c1
-            # df8 = pd.concat([df8], keys=['Time'], names=['Layer'])
-            # df8 = pd.concat([df8], keys=['Time'], names=['Unit'])
+            df7 = df7[['EV_E_charged_outside']].unstack(level = 0)
+            df7.columns = [f'{i}[{j}]' if j != '' else f'{i}' for i, j in df7.columns]
+            df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
+            df8 = get_parameter_in_pandas(ampl, 'EV_E_mob', multi_index=True) 
+            df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
 
-            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6,df7], axis=1)
+            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6, df7, df8], axis=1)
     df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-    # this bit does not let me export EV_E_charged_outside properly :
+    # this bit does not let me export EV_E_charged_outside properly (because I want a (Electricity, EV_disctrict) index even though EV_district i not connected to the Electricity Layer anymore
     # units_districts = district.UnitsOfDistrict
     # district_l_u = []
     # for l, units in district.UnitsOfLayer.items():

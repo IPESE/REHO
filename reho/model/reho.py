@@ -708,6 +708,113 @@ class reho(district_decomposition):
         EMOO_list=E_stop+(E_start-E_stop)/(1+np.exp(-k*(c-y_span)))
         return EMOO_list,y_span
 
+    def determine_max_constraint(self,precision=1e-3,lower_init=0, upper_init=1,EMOO='elec_export',constraint_type='lower'):
+        EMOO='EMOO_'+EMOO
+        Scn_ID=self.scenario['name']
+        # Initialization
+        lower = lower_init
+        upper = upper_init
+        upper_search = True
+        lower_search = True
+        flag = True
+        constraint = (upper + lower) / 2
+
+        # Constraint search
+        if 'EMOO' not in self.scenario.keys():
+            self.scenario['EMOO']={EMOO:constraint}
+        else:
+            self.scenario['EMOO'][EMOO] = constraint
+
+        while flag:
+            try:
+                print("The current constraint is at:%.3e" % constraint)
+                self.single_optimization(Pareto_ID=-1)
+            except:
+                if constraint_type=='lower':
+                    upper_search = False
+                elif constraint_type=='upper':
+                    lower_search = False
+
+                if lower_search and constraint_type=='lower':
+                    lower=lower-abs(upper-lower)
+                    upper=constraint
+                    constraint = (upper + lower) / 2
+                    self.scenario['EMOO'][EMOO] = constraint
+                elif (lower_search==False) and constraint_type=='lower':
+                    upper = constraint
+                    constraint = (upper + lower) / 2
+                    self.scenario['EMOO'][EMOO] = constraint
+                elif upper_search and constraint_type=='upper':
+                    upper = upper + abs(upper - lower)
+                    lower = constraint
+                    constraint = (upper + lower) / 2
+                    self.scenario['EMOO'][EMOO] = constraint
+                elif (upper_search==False) and constraint_type=='upper':
+                    lower = constraint
+                    constraint = (upper + lower) / 2
+                    self.scenario['EMOO'][EMOO] = constraint
+            else:
+                if constraint_type == 'lower':
+                    lower_search = False
+                if constraint_type == 'upper':
+                    upper_search = False
+
+                if upper_search and constraint_type=='lower':
+                    upper=upper+abs(upper-lower)
+                    lower = constraint
+                    constraint = (upper + lower) / 2
+                    self.scenario['EMOO'][EMOO] = constraint
+                elif (upper_search==False) and constraint_type=='lower':
+                    if abs(upper - constraint) < precision:
+                        flag = False
+                        # Compute max value of pathway
+                        if EMOO=='EMOO_elec_export':
+                            era = self.results[Scn_ID][-1]['df_Buildings']['ERA'].sum()
+                            if self.method['building-scale']:
+                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc['Network']
+                                max_export = (df_an['Demand_MWh'] - df_an['Supply_MWh']) / era
+                            else:
+                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc[
+                                    ['Network', 'Building1', 'Building2']]
+                                max_export = (df_an['Demand_MWh'].loc['Network'] - df_an['Demand_MWh'].loc['Building1'] -
+                                    df_an['Demand_MWh'].loc['Building2'] - df_an['Supply_MWh'].loc[
+                                    'Network']) / era
+
+                    else:
+                        lower = constraint
+                        constraint = (lower + upper) / 2
+                        self.scenario['EMOO'][EMOO] = constraint
+                elif lower_search and constraint_type=='upper':
+                    lower = lower - abs(upper - lower)
+                    upper = constraint
+                    constraint = (upper + lower) / 2
+                    self.scenario['EMOO'][EMOO] = constraint
+                elif (lower_search==False) and constraint_type=='upper':
+                    if abs(lower - constraint) < precision:
+                        flag = False
+                        # Compute max value of pathway
+                        if EMOO=='EMOO_elec_export':
+                            era = self.results[Scn_ID][-1]['df_Buildings']['ERA'].sum()
+                            if self.method['building-scale']:
+                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc['Network']
+                                max_export = (df_an['Demand_MWh'] - df_an['Supply_MWh']) / era
+                            else:
+                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc[
+                                    ['Network', 'Building1', 'Building2']]
+                                max_export = (df_an['Demand_MWh'].loc['Network'] - df_an['Demand_MWh'].loc['Building1'] -
+                                    df_an['Demand_MWh'].loc['Building2'] - df_an['Supply_MWh'].loc[
+                                    'Network']) / era
+                    else:
+                        upper = constraint
+                        constraint = (lower + upper) / 2
+                        self.scenario['EMOO'][EMOO] = constraint
+
+        print("The final constraint is: %.3e:" %constraint)
+        if EMOO=='EMOO_elec_export':
+            print("Max export is at: %.3e:" %max_export)
+
+        return constraint
+
     def add_df_Results(self, ampl, Scn_ID, Pareto_ID, scenario):
         if self.method['building-scale'] or self.method['district-scale']:
             df_Results = self.get_df_Results_from_MP_and_SPs(Scn_ID, Pareto_ID)

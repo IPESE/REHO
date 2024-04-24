@@ -1775,7 +1775,7 @@ def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename
 
     return fig
 
-def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short', save_path="", filename=None, export_format='html', objective=None, constraint=None):
+def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_span=[], label='EN_short', save_path="", filename=None, export_format='html', objective=None, constraint=None):
     """
         Generate a line plot showing the investment pathway for the respective Objective function and EMOO selected
 
@@ -1811,20 +1811,25 @@ def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short'
     if y_span==[]:
         raise SystemExit('Please enter the list of years used in the pathway optimization')
 
-    # Plot
-    #fig, (ax1, ax2) = plt.subplots(1, 2, sharex=False, figsize=(20,7))
-    fig, ax1=plt.subplots()
+    ###################################
+    ##### First plot: EMOO pathway ####
+    ###################################
 
-    # ax1.set_xlabel('Year',fontsize=20)
-    # ax1.set_xlim((min(y_span), max(y_span)))
+    # Initialize plot
+    fig, ax1=plt.subplots(figsize=(12,7))
+
+    # Set title
     ax1.set_title("Investment Pathway", fontsize=35)
+
+    # Set x-axis parameters
     ax1.tick_params(axis='x', labelsize=15)
 
+    # Retrieve and plot results
     obj=[]
     obj2=[]
     add_line=False
-    # if -1 in results[scn_id].keys():
     if objective=='CAPEX':
+        objective = 'Cumulative CAPEX'
         obj_label = 'Cumulative capital investment [CHF/m2/y]'
         for i in range(len(EMOO_list)):
             obj=obj+[results[scn_id][i]['df_KPIs']['capex_m2']['Network']]
@@ -1833,20 +1838,22 @@ def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short'
         for i in range(len(EMOO_list)):
             obj = obj + [results[scn_id][i]['df_KPIs']['capex_m2']['Network']]
             obj2= obj2 + [results[scn_id][i]['df_KPIs']['opex_m2']['Network']]
+        obj_old = objective
         objective='Cumulative CAPEX'
+
         add_line=True
         lns4 = ax1.plot(y_span, obj2, label='OPEX', color='C0', linewidth=2, linestyle='--')
-
     lns1 = ax1.plot(y_span, np.cumsum(obj), label=objective, color='C0', linewidth=2)
-
 
     # Left y-axis params
     ax1.set_ylabel(obj_label, color='C0', fontsize=20)
     ax1.tick_params(axis='y', labelcolor='C0', labelsize=15)
     ax1.set_ylim(bottom=0)
 
-    # Creating a second y-axis
+    # Creat a second y-axis for EMOO values
     ax11 = ax1.twinx()
+
+    # Retrieve data for second axis
     constr=[]
     if constraint=='GWP':
         constr_label='GWP [kgCO2-eq/m2]'
@@ -1855,19 +1862,30 @@ def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short'
 
     elif constraint == 'elec_export':
         constr_label='Electricity Exportation [MWh/m2/y]'
-        for i in range(len(EMOO_list)):
-            constr=constr+[(results[scn_id][i]['df_Annuals'].loc['Electricity'].loc['Network']['Demand_MWh']-results[scn_id][i]['df_Annuals'].loc['Electricity'].loc['Network']['Supply_MWh'])/results[scn_id][i]['df_Buildings']['ERA'].sum()]
+        era = results[scn_id][0]['df_Buildings']['ERA'].sum()
+        if method!='building-scale' and obj_old=='TOTEX':
+            for i in range(len(EMOO_list)):
+               df_an = results[scn_id][i]['df_Annuals'].loc['Electricity'].loc[['Network', 'Building1', 'Building2']]
+               current_constr = (df_an['Demand_MWh'].loc['Network'] - df_an['Demand_MWh'].loc['Building1'] -df_an['Demand_MWh'].loc['Building2'] - df_an['Supply_MWh'].loc['Network']) / era
+               constr = constr + [current_constr]
+        else:
+            for i in range(len(EMOO_list)):
+                df_an = results[scn_id][i]['df_Annuals'].loc['Electricity'].loc['Network']
+                current_constr = (df_an['Demand_MWh'] - df_an['Supply_MWh']) / era
+                constr = constr + [current_constr]
 
-    # Plotting the second set of data on the second y-axis
+
+
+    # Plot data on the second y-axis
     lns2 = ax11.plot(y_span, constr, label=constraint, color='C1', linewidth=2)
     lns3 = ax11.plot(y_span, EMOO_list, label='EMOO', color='C1', linestyle='--', linewidth=2)
 
-    # right y-axis param
+    # right y-axis parameters
     ax11.set_ylabel(constr_label, color='C1',fontsize=20)
     ax11.tick_params(axis='y', labelcolor='C1', labelsize=15)
     ax11.set_ylim(bottom=0)
 
-    # Adding legend
+    # Add legend
     if add_line:
         lns = lns1 + lns2 + lns3 + lns4
     else:
@@ -1875,48 +1893,76 @@ def plot_pathway(results, scn_id=None, EMOO_list=[], y_span=[], label='EN_short'
     labs = [l.get_label() for l in lns]
     ax1.legend(lns, labs, loc=5,fontsize=15)
 
-    # Fixing background grid
+    # specify xticks to be each year computed
+    ax1.set_xticks(np.round(y_span))
+    ax1.set_xlabel("Year",fontsize=20)
+
+    # Fix background grid
     nticks = 6
     ax1.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
     ax11.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
-    #ax1.set_xticks(np.array([0,1]))
-    #ax11.set_xticks(np.array([0, 1]))
     ax1.grid()
 
+    # Show resulting figure
     fig.tight_layout()
     fig.show()
 
-    fig, ax2 = plt.subplots()
+    # Save first figure
+    if filename is not None:
+        filename_set = os.path.join(save_path, filename + '_pathway_EMOO.'+export_format)
+        fig.savefig(filename_set)
+
+
+    ############################################
+    ##### Second plot: Installed capacities ####
+    ############################################
+
+    # Initialize plot
+    fig2, ax2 = plt.subplots(figsize=(max(len(EMOO_list)*2,10),8))
+    colors=['#B51F1F','#00A79F', '#007480','#CAC7C7','#000000','#cdc50a','#84b701','#8B2323','#800000','#800080','#FF0000','#008000']
+    # Retrieve results
     df = pd.DataFrame()
+    grouped=['WaterTank','ElectricalHeater']
     for i in range(0, len(EMOO_list)):
-        start = results[scn_id][i]['df_Unit']['Units_Mult'].reset_index().apply(
-            lambda x: x['Unit'].split('_Building')[0], axis=1)
-        # start = reho.results['1'][i]['df_Unit'].query("Units_Use==1").reset_index().apply(lambda x: x['Unit'].split('_Building')[0], axis=1)
+        start_df = pd.DataFrame(results[scn_id][i]['df_Unit']['Units_Mult'].reset_index().apply(
+            lambda x: x['Unit'].split('_Building')[0], axis=1),columns=['Unit'])
+        start_df=start_df.apply(lambda x: next((g for g in grouped if g in x['Unit']), x['Unit']), axis=1)
+        start=start_df.squeeze()
+        # start = reho.results[scn_id][i]['df_Unit'].query("Units_Use==1").reset_index().apply(lambda x: x['Unit'].split('_Building')[0], axis=1)
+        df_transformer=pd.DataFrame(data=[results[scn_id][i]['df_Grid'].loc['Network'].loc['Electricity']['Capacity'] -
+                           results[scn_id][0]['df_Grid'].loc['Network'].loc['Electricity']['Capacity']],
+                     columns=['Units_Mult'], index=['TransformerReinforcement'])
+        df_line=pd.DataFrame(data=[results[scn_id][i]['df_Grid'].drop(['Network']).drop(['NaturalGas'],level=1)['Capacity'].sum()-results[scn_id][0]['df_Grid'].drop(['Network']).drop(['NaturalGas'],level=1)['Capacity'].sum()],columns=['Units_Mult'],index=['LineReinforcement'])
         df = pd.concat([df, pd.concat([results[scn_id][i]['df_Unit']['Units_Mult'].reset_index().groupby(start).sum(
-            'Units_Mult'),pd.DataFrame(data=[results[scn_id][i]['df_Grid'].loc['Network'].loc['Electricity']['Capacity']],columns=['Units_Mult'],index=['Transformer_Reinforcement'])],axis=0).rename(columns={'Units_Mult': int(y_span[i])})], axis=1)
-        # df=pd.concat([df,reho.results['1'][0]['df_Unit'].query("Units_Use==1")['Units_Mult'].reset_index().groupby(start).sum('Units_Mult').rename(columns={'Units_Mult': str(y_span[i])})],axis=1)
-    df.transpose().loc[:, (df.transpose() != 0).any(axis=0)].plot(kind='bar', stacked=True,
-                                                                  title="Technology set for each period",
-                                                                  ylabel='Installed capacity', xlabel='Year', grid=True,
-                                                                  ax=ax2, width=0.8).set_xticklabels(ax2.get_xticklabels(),
-                                                                                         rotation=0, fontsize=15)
+            'Units_Mult'),df_transformer,df_line],axis=0).rename(columns={'Units_Mult': int(y_span[i])})], axis=1)
+        # df=pd.concat([df,reho.results[scn_id][0]['df_Unit'].query("Units_Use==1")['Units_Mult'].reset_index().groupby(start).sum('Units_Mult').rename(columns={'Units_Mult': str(y_span[i])})],axis=1)
 
-    ax2.set_xlabel(ax2.get_xlabel(), fontsize=20)
-    ax2.set_ylabel(ax2.get_ylabel(), fontsize=20)
-    ax2.set_title(ax2.get_title(), fontsize=30)
-    ax2.legend(fontsize=15, loc='center left', bbox_to_anchor=(1, 0.5))
-    #ax2.set_xticks(y_span)
-    #ax2.set_xlim((-500, 2500))
-    #ax2.set_xlim((-2,2050))
-    fig.tight_layout()
-    fig.show()
+    # Plot results
+    plotting_bool=(df.transpose() != 0).any(axis=0)
+    colors_to_plot=list(np.array(colors)[plotting_bool.values])
+    df.transpose().loc[:, plotting_bool].plot(kind='bar', stacked=True,
+                                                                  ylabel='Installed capacity [kW]', xlabel='Year', grid=True,
+                                                                  ax=ax2, width=0.6,color=colors_to_plot)
 
 
-    # if filename is not None:
-    #     filename = os.path.join(save_path, filename + '.')
-    #     if export_format == 'png':
-    #         fig.write_image(filename + export_format)
-    #     elif export_format == 'html':
-    #         fig.write_html(filename + export_format)
 
-    return fig
+    # plt.show()
+    # Set axis parameters
+    ax2.tick_params(axis='both', labelsize=17,rotation=0)
+    ax2.set_xlabel(ax2.get_xlabel(), fontsize=22)
+    ax2.set_ylabel(ax2.get_ylabel(), fontsize=22)
+
+    # Specify legend and title
+    ax2.legend(fontsize=15, loc='upper center', bbox_to_anchor=(0.5, -0.15),ncol=3)
+    ax2.set_title("Technology set for each period", fontsize=35)
+
+    # Show resulting figure
+    fig2.tight_layout()
+    fig2.show()
+
+    # Save second figure
+    if filename is not None:
+        filename_set = os.path.join(save_path, filename + '_pathway_install.'+export_format)
+        fig2.savefig(filename_set)
+
+    return fig,fig2

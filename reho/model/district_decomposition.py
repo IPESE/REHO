@@ -10,6 +10,7 @@ import pandas as pd
 import logging
 import coloredlogs
 
+
 class district_decomposition:
     """
     Applies the decomposition method.
@@ -71,16 +72,15 @@ class district_decomposition:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
         else:
             self.cluster = cluster
-        self.File_ID = WD.get_cluster_file_ID(self.cluster)
 
         # load SIA norms
         sia_data = dict()
         sia_data["df_SIA_380"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
-        sia_data["df_SIA_2024"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'], engine='openpyxl', index_col=[0],
-                                                     skiprows=[0, 2, 3, 4], header=[0])
+        sia_data["df_SIA_2024"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'],
+                                                engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
 
         # retrieve location data
-        self.local_data = return_local_data(cluster)
+        self.local_data = return_local_data(cluster, qbuildings_data)
 
         if parameters is None:
             self.parameters = {}
@@ -411,7 +411,7 @@ class district_decomposition:
             ampl_MP.read('DHN.mod')
 
         ampl_MP.cd(path_to_clustering)
-        ampl_MP.readData('frequency_' + self.File_ID + '.dat')
+        ampl_MP.readData('frequency_' + self.local_data['File_ID'] + '.dat')
         ampl_MP.cd(path_to_ampl_model)
 
         # -------------------------------------------------------------------------------------------------------------

@@ -9,7 +9,7 @@ if __name__ == '__main__':
                                       facades_filename='../template/data/facades.csv', roofs_filename='../template/data/roofs.csv')
 
     # Select weather data
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()

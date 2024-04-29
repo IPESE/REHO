@@ -310,13 +310,6 @@ documentation/sections/_autosummary
 
 # Data
 
-reho/data/weather/hour/*
-!reho/data/weather/hour/Bern-Liebefeld-hour.dat
-!reho/data/weather/hour/Disentis-hour.dat
-!reho/data/weather/hour/Geneva-hour.dat
-!reho/data/weather/hour/Lugano-hour.dat
-!reho/data/weather/hour/Piotta-hour.dat
-!reho/data/weather/hour/Zuerich-SMA-hour.dat
 
 # Scripts
 scripts/*

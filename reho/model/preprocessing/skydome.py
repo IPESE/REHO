@@ -103,7 +103,7 @@ def irradiation_to_df(ampl, df_irradiation, df_time):
         df_period = df_irradiation.loc[date1:date2]
 
         for t in np.arange(1, int(end) + 1):  # ampl starts at 1
-            list_timesteps.append((p + 1, t))  # create ample index
+            list_timesteps.append((p + 1, t))  # create ampl index
 
         df_p = pd.concat([df_p, df_period])
 

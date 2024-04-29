@@ -71,7 +71,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
     --------
     >>> my_profiles = {'electricity': 'my_folder/electricity.csv'}
     >>> file_id = 'Geneva_10_24_T_I_W'
-    >>> cluster = {'Location': 'Bruxelles', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    >>> cluster = {'Location': 'Bruxelles', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
     >>> people_gain, eud_dhw, eud_elec =
     >>>     eud_profiles(buildings_data, cluster, use_custom_profiles=my_profiles)
     """

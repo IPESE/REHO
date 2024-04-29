@@ -85,7 +85,8 @@ autodoc_mock_imports = ['amplpy',
                         'urllib3',
                         'dotenv',
                         'SALib',
-                        'qmcpy']
+                        'qmcpy',
+                        'pvlib']
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()
 sys.modules['sklearn.metrics'] = MagicMock()

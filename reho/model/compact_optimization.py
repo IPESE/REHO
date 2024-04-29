@@ -12,37 +12,37 @@ import logging
 
 class compact_optimization:
     """
-            Collects all the data input and sends it an AMPL model, solves the optimization.
+    Collects all the data input and sends it an AMPL model, solves the optimization.
 
-            Parameters
-            ----------
-            district : district
-                Instance of the class district, contains relevant structure in the district such as Units or grids.
-            buildings_data : dict
-                Dictionary containing relevant Building data.
-            local_data : dict
-                Dictionary containing relevant location-specific data.
-            parameters : dict, optional
-                Dictionary containing 'new' parameters for the AMPL model. If incomplete, uses data from buildings_data.
-            set_indexed : dict, optional
-                Dictionary containing new data which are indexed sets in the AMPL model.
-            cluster : dict, optional
-                Dictionary containing information about clustering.
-            scenario : dict, optional
-                Dictionary containing the objective function, EMOO constraints, and additional constraints.
-            method : dict, optional
-                Dictionary containing different options for methodology choices.
-            solver : str, optional
-                Chosen solver for AMPL (gurobi, cplex, highs, cbc...).
-            qbuildings_data : dict, optional
-                Dictionary containing input data for the buildings.
+    Parameters
+    ----------
+    district : district
+        Instance of the class district, contains relevant structure in the district such as Units or grids.
+    buildings_data : dict
+        Dictionary containing relevant Building data.
+    local_data : dict
+        Dictionary containing relevant location-specific data.
+    parameters : dict, optional
+        Dictionary containing 'new' parameters for the AMPL model. If incomplete, uses data from buildings_data.
+    set_indexed : dict, optional
+        Dictionary containing new data which are indexed sets in the AMPL model.
+    cluster : dict, optional
+        Dictionary containing information about clustering.
+    scenario : dict, optional
+        Dictionary containing the objective function, EMOO constraints, and additional constraints.
+    method : dict, optional
+        Dictionary containing different options for methodology choices.
+    solver : str, optional
+        Chosen solver for AMPL (gurobi, cplex, HiGHS, cbc...).
+    qbuildings_data : dict, optional
+        Dictionary containing input data for the buildings.
 
-            See also
-            --------
-            reho.model.reho.reho
-            reho.model.district_decomposition.district_decomposition
+    See also
+    --------
+    reho.model.reho.reho
+    reho.model.district_decomposition.district_decomposition
 
-            """
+    """
     def __init__(self, district, buildings_data, local_data, parameters, set_indexed, cluster, scenario, method, solver, qbuildings_data=None):
 
         self.buildings_data_compact = buildings_data
@@ -188,7 +188,7 @@ class compact_optimization:
             ampl.read('DHN_HEX.mod')
             ampl.read('DHN_pipes.mod')
         if 'PV' in self.infrastructure_compact.UnitTypes:
-            if self.method_compact['use_pv_orientation']:  # Choose the photovoltaics model if PV orientation - give hourly PV electricity profiles
+            if self.method_compact['use_pv_orientation']:
                 ampl.read('pv_orientation.mod')
             else:
                 ampl.read('pv.mod')
@@ -256,7 +256,7 @@ class compact_optimization:
         ampl.readData('frequency_' + File_ID + '.dat')
         ampl.readData('index_' + File_ID + '.dat')
         self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(path_to_clustering, 'T_' + File_ID + '.dat'))
-        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering, 'GHI_' + File_ID + '.dat'))
+        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering, 'Irr_' + File_ID + '.dat'))
 
         ampl.cd(path_to_ampl_model)
 
@@ -438,7 +438,6 @@ class compact_optimization:
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
-        #total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
         df_irr = SKD.irradiation_to_df(ampl, self.local_data["df_Irradiation"], self.local_data["df_Timestamp"])
         self.parameters_to_ampl['Irr'] = df_irr
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations

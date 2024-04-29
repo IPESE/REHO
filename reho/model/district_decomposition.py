@@ -32,6 +32,7 @@ class district_decomposition:
         The indexes used in the model.
     cluster : dict, optional
         Define location district, number of periods, and number of timesteps.
+        To use your own weather file, you can add a key ``custom_weather`` with the corresponding path.
     method : dict, optional
         The different methods to run the optimization (refer to :ref:`tbl-methods`).
     solver : str, optional
@@ -69,7 +70,7 @@ class district_decomposition:
         self.build_infrastructure_SP()
 
         if cluster is None:
-            self.cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+            self.cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
         else:
             self.cluster = cluster
 

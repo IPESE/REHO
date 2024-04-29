@@ -263,7 +263,7 @@ Yearly weather data has to be clustered to typical days. The :code:`cluster` dic
 
 .. code-block:: python
 
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
 Where:
 

@@ -6,10 +6,14 @@ import calendar
 import datetime as dt
 from reho.paths import *
 from reho.model.preprocessing.clustering import ClusterClass
+import pvlib
+import geopandas as gpd
+
 
 __doc__ = """
 Generates the meteorological data (temperature and solar irradiance).
 """
+
 
 def get_cluster_file_ID(cluster):
     """
@@ -36,22 +40,16 @@ def get_cluster_file_ID(cluster):
     - If one wants to use his own meteo file, he can add to the cluster dictionary a key ``weather_file`` with the path
       to the meteo. Should be a *.dat* with the same structure as the other weather_file.
     """
-    # get correct file ID for weather file
-    attributes = []
-
     if 'I' in cluster['Attributes']:
         I = '_I'
-        attributes.append('Irr')
     else:
         I = ''
     if 'T' in cluster['Attributes']:
         T = '_T'
-        attributes.append('Text')
     else:
         T = ''
     if 'W' in cluster['Attributes']:
         W = '_W'
-        attributes.append('Weekday')
     else:
         W = ''
     if 'E' in cluster['Attributes']:
@@ -62,19 +60,44 @@ def get_cluster_file_ID(cluster):
     File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + \
               T + I + W + E
 
-    among_cl_results = os.path.exists(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'))
-    if not among_cl_results or 'weather_file' in cluster.keys():
-        if 'weather_file' in cluster.keys():
-            df = read_hourly_dat(cluster['weather_file'])
-        else:
-            df = read_hourly_dat(cluster['Location'])
-        df = df[attributes]
-        cl = ClusterClass(data=df, Iter=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
-        cl.run_clustering()
-
-        generate_output_data(cl, attributes, cluster['Location'])
-
     return File_ID
+
+
+def generate_weather_data(cluster, qbuildings_data):
+    if 'weather_file' in cluster.keys():
+        df = read_hourly_dat(cluster['weather_file'])
+    else:
+        df = get_weather_data(qbuildings_data).reset_index(drop=True)
+
+    attributes = []
+    if 'I' in cluster['Attributes']:
+        attributes.append('Irr')
+    if 'T' in cluster['Attributes']:
+        attributes.append('Text')
+    if 'W' in cluster['Attributes']:
+        attributes.append('Weekday')
+
+    df = df[attributes]
+    cl = ClusterClass(data=df, Iter=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
+    cl.run_clustering()
+
+    generate_output_data(cl, attributes, cluster['Location'])
+
+
+def get_weather_data(qbuildings_data):
+    coord = gpd.GeoSeries(qbuildings_data['buildings_data']['Building1']['geometry'].centroid, crs=2056).to_crs(
+        {'init': 'epsg:4326'})
+    long, lat = (coord[0].x, coord[0].y)
+    weather_data = pvlib.iotools.get_pvgis_tmy(lat, long, outputformat='csv', startyear=2005, endyear=2016)[0]
+    weather_data = weather_data.rename(columns={'temp_air': 'Text', 'ghi': 'Irr'})
+    weather_data['Month'] = weather_data.index.month
+    weather_data['Day'] = weather_data.index.day
+    weather_data['Hour'] = weather_data.index.hour + 1
+    weather_data['id'] = (weather_data.reset_index().index+1).to_list()
+    weekday = pd.read_csv(os.path.join(path_to_weather, 'Weekday_2005.txt'), index_col=[0], header=None)
+    weather_data['Weekday'] = weekday[1].tolist()
+
+    return weather_data
 
 
 def read_hourly_dat(location):
@@ -506,6 +529,7 @@ def plot_LDC(cl, location, save_fig):
     else:
         plt.show()
 
+
 if __name__ == '__main__':
     cm = plt.cm.get_cmap('Spectral_r')
 
@@ -513,6 +537,7 @@ if __name__ == '__main__':
     Location = 'Pully'
     Attributes = ['Text', 'Irr']
     Iter = [10]
+
 
     df = read_hourly_dat(Location)
     df = df[Attributes]

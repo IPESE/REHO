@@ -19,3 +19,4 @@ requests>=2.0.0,<3.0.0
 coloredlogs>=>=15.0.1
 SALib>=1.4.8
 qmcpy>=1.4.5
+pvlib==0.10.*

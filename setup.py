@@ -11,7 +11,8 @@ from setuptools import setup, find_packages
 def read_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return file.read()
-    
+
+
 def install_dependencies():
     try:
         subprocess.run([sys.executable, '-m', 'pip', 'install', 'psycopg2'])
@@ -44,6 +45,7 @@ setup(
                       'coloredlogs>=15.0.1',
                       'SALib>=1.4.8',
                       'qmcpy>=1.4.5',
+                      'pvlib==0.10.*'
                       ],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod', '*.ini'],

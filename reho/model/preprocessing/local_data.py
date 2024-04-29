@@ -1,8 +1,8 @@
 from reho.model.preprocessing.QBuildings import *
-from reho.model.preprocessing.weather import get_cluster_file_ID
+import reho.model.preprocessing.weather as WD
 
 
-def return_local_data(cluster):
+def return_local_data(cluster, qbuildings_data):
     """
     Reads .csv, .txt and .xlsx files to retrieve the local data (carbon tag, solar irradiation) corresponding to the buildings' area (cluster).
 
@@ -22,15 +22,21 @@ def return_local_data(cluster):
     # Carbon emissions
     local_data["df_Emissions"] = file_reader(path_to_emissions, index_col=[0, 1, 2])
 
+    # Weather
+    File_ID = WD.get_cluster_file_ID(cluster)
+    local_data['File_ID'] = File_ID
+
+    among_cl_results = os.path.exists(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'))
+    if not among_cl_results or 'weather_file' in cluster.keys():
+        WD.generate_weather_data(cluster, qbuildings_data)
+    path_to_timestamp = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
+    local_data["df_Timestamp"] = pd.read_csv(path_to_timestamp, delimiter='\t', parse_dates=[0])
+
     # Solar
     # TODO: These files are specific to Rolle.
     local_data["df_Irradiation"] = pd.read_csv(path_to_irradiation, index_col=[0])
     local_data["df_Area"] = pd.read_csv(path_to_areas, header=None)
     local_data["df_Cenpts"] = pd.read_csv(path_to_cenpts, header=None)
-
-    File_ID = get_cluster_file_ID(cluster)
-    path_to_timestamp = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    local_data["df_Timestamp"] = pd.read_csv(path_to_timestamp, delimiter='\t', parse_dates=[0])
 
     path_to_westfacades_irr = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt')
     # check if irradiation already exists:

@@ -1,3 +1,5 @@
+import pandas as pd
+
 from reho.model.reho import *
 import datetime
 
@@ -6,10 +8,29 @@ def compute_iterative_parameters(variables,parameters):
     if len(variables.keys()) == 2:
         for d1,d2 in zip(variables.keys(),reversed(variables.keys())):
             parameters[d1] = {    "outside_charging_price" : variables[d2]['pi'].rename("outside_charging_price"),
-                            "charging_externalload"  : variables[d2]["externaldemand"].stack().to_frame(name = "charging_externalload")
+                            "charging_externalload"  : variables[d2]["externaldemand"].stack().to_frame(name = "charging_externalload").reorder_levels([2,0,1])
                         }
+    else:
+        # temporary weights
+        weights = pd.DataFrame(index=variables.keys(),columns=['leisure','work','travel']).fillna(1/len(variables.keys()))
+
+        df_load = pd.DataFrame(columns = variables.keys(),index=variables[list(variables.keys())[0]]['externalload'].stack().to_frame().reorder_levels([2,0,1]).index).fillna(0)
+        for d in variables.keys(): # TODO : a refaire avec pas des boucles un jour :/
+            for i in variables.keys():
+                if i != d:
+                    w = weights.loc[i]/(1-weights.loc[d])
+                    p = variables[d]['externaldemand'].mul(w)
+                    p.columns.name = 'Activity'
+                    p = p.stack().to_frame(name = i).reorder_levels([2,0,1])
+                    df_load[[i]] = df_load[[i]]  + p
+
+            parameters[d] = {"charging_externalload" : df_load[[d]].rename(columns={d :"charging_externalload"})}
+
+
 
 def check_convergence(deltas,df_delta,variables):
+    termination_threshold = 0.1 # 10% TODO : mettre ces tuning parametres somewhere else
+    termination_iter = 3
     
     # Compute Delta
     df_demand = pd.DataFrame()
@@ -29,7 +50,21 @@ def check_convergence(deltas,df_delta,variables):
     df_delta[f"delta{i}"] = df_delta[f"demand{i}"] - df_delta[f"load{i}"]
     delta = df_delta[f"delta{i}"].apply(lambda x : x*x).sum()
     deltas.append(delta)
-    return df_delta
+
+    # Check no_improvement criteria
+    count = 0
+    for n in range(len(deltas) - 1, -1, -1):
+        t = abs((deltas[i] - deltas[i-1])/deltas[i])
+        if t < termination_threshold:
+            count += 1
+        else:
+            break
+    if count >= termination_iter:
+        convergence_reached = True
+    else:
+        convergence_reached = False
+
+    return df_delta,convergence_reached
 
 
 
@@ -88,8 +123,9 @@ if __name__ == '__main__':
     df_delta = pd.DataFrame()
 
     # Iterations
-    for i in range(5):
+    for i in range(10):
         for transformer in districts:
+            print(f"iteration {i} : district {transformer}")
             # Add iterative parameters (only after init run i=0)
             if i > 0:
                 for param in ["outside_charging_price","charging_externalload"]:
@@ -99,9 +135,9 @@ if __name__ == '__main__':
             vars()['reho_' + str(transformer)].single_optimization(Pareto_ID = i)
 
             # getting variables for iteration
-            pi = vars()['reho_' + str(transformer)].results_MP["totex"][0][0]["df_Dual_t"]["pi"].xs("Electricity")
-            df_Unit_t = vars()['reho_' + str(transformer)].results['totex'][0]['df_Unit_t']
-            df_Grid_t = vars()['reho_' + str(transformer)].results['totex'][0]['df_Grid_t']
+            pi = vars()['reho_' + str(transformer)].results_MP["totex"][i][0]["df_Dual_t"]["pi"].xs("Electricity")
+            df_Unit_t = vars()['reho_' + str(transformer)].results['totex'][i]['df_Unit_t']
+            df_Grid_t = vars()['reho_' + str(transformer)].results['totex'][i]['df_Grid_t']
 
             EV_E_charged_outside = df_Unit_t.loc[:,df_Unit_t.columns.str.startswith("EV_E_charged_outside")][df_Unit_t.index.get_level_values('Layer') == 'Electricity']
             externaldemand = EV_E_charged_outside.reset_index().groupby(['Period','Time']).agg('sum',numeric_only = True)
@@ -127,7 +163,13 @@ if __name__ == '__main__':
         # Computing parameters for next iteration 
         compute_iterative_parameters(variables,parameters)
 
-        df_delta = check_convergence(deltas,df_delta,variables)
+        df_delta,c = check_convergence(deltas,df_delta,variables)
+        if c:
+            break
 
+    date = datetime.datetime.now().strftime("%d_%H%M")
+    for transformer in districts:
+        vars()['reho_' + str(transformer)].save_results(format=['xlsx', 'pickle'], filename='Iterative')
+        vars()['reho_' + str(transformer)].save_mobility_results(filename=f"iter_{date}")
     print(df_pi)
     print(df_externalcharging)

@@ -550,6 +550,7 @@ class district_decomposition:
                     ampl_MP.getVariable('Units_Use').get(str(i)).fix(1)
 
         for i in MP_parameters:
+
             if isinstance(MP_parameters[i], np.ndarray):
                 Para = ampl_MP.getParameter(i)
                 Para.setValues(MP_parameters[i])

@@ -8,35 +8,31 @@ if __name__ == '__main__':
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
 
+
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()
+    scenario['Objective']='CAPEX'
+    scenario['name']=0
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids,district_data=True)
 
     # Set method options
-    method = {'building-scale': True}
+    method = {'building-scale': True}#,'parallel_computation':True}
 
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
 
     # Scenarios
-    scn={'capex':'CAPEX'}
 
-    for name, obj in scn.items():
-        reho.scenario['Objective'] = obj
-        reho.scenario['name'] = name
-        reho.scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
-        reho.scenario['enforce_units'] = []
-        units = infrastructure.initialize_units(reho.scenario, grids)
-        reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
-        h=reho.single_optimization()
-        print(h)
+    reho.parameters['Units_Ext_district']=np.array([10,0])
+    reho.single_optimization()
+
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='1a')

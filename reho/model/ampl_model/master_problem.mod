@@ -489,3 +489,6 @@ lca_tot["Human_toxicity"] + penalties;
 
 minimize land_use:
 lca_tot["land_use"] + penalties;
+
+minimize MAX_EXPORT:
+-sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) / 1000 + penalties;

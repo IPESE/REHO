@@ -23,7 +23,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options
-    method = {'district-scale': True}
+    method = {'district-scale': True,'use_dynamic_emission_profiles':True}
     DW_params = {'max_iter': 2}
 
     # Run optimization

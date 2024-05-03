@@ -322,3 +322,4 @@ reho/data/weather/hour/*
 scripts/*
 !scripts/examples/
 !scripts/template/
+/reho/data/infrastructure/jasm-building-stock-2020-04-20/

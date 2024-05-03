@@ -88,7 +88,7 @@ class district_decomposition:
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
-                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2"],
+                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district"],
                          "list_constraints_MP": []
                          }
 
@@ -427,7 +427,11 @@ class district_decomposition:
 
         for key in self.lists_MP['list_parameters_MP']:
             if key in self.parameters.keys():
-                MP_parameters[key] = self.parameters[key]
+                if key == "Units_Ext_district":
+                    key2 = "Units_Ext"
+                    MP_parameters[key2] = self.parameters[key]
+                else:
+                    MP_parameters[key] = self.parameters[key]
 
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])

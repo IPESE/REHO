@@ -655,8 +655,14 @@ class reho(district_decomposition):
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
-    def pathway(self,EMOO_list=[400],EMOO_type="GWP",existing_init=None):
+    def pathway(self,EMOO_list=[400],EMOO_type="GWP",existing_init=None,EV=[],EV_battery=[]):
+
         if existing_init is None:
+            if EV != []:
+                self.parameters["n_vehicles"] = EV[0]
+            if EV_battery != []:
+                self.parameters["Units_Ext_district"] = np.array(
+                    [EV_battery[1] if "Battery_district" in u else 0 for u in self.infrastructure.UnitsOfDistrict])
             Scn_ID=self.scenario["name"]
             if 'EMOO' not in self.scenario.keys():
                 self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[0]}
@@ -664,12 +670,18 @@ class reho(district_decomposition):
                 self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
             self.single_optimization(Pareto_ID=0)
         else:
+            if EV != []:
+                self.parameters["n_vehicles"] = EV[0]
+            if EV_battery != []:
+                self.parameters["Units_Ext_district"] = np.array(
+                    [EV_battery[0] if "Battery_district" in u else 0 for u in self.infrastructure.UnitsOfDistrict])
             if 'Units' in existing_init.keys():
                 existing_units=existing_init['Units']
                 self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[
                                                              [s for s in self.infrastructure.Units if h in s]][
                                                              'Units_Mult'].to_list() for id, h in
                                                          enumerate(self.infrastructure.houses)])
+                self.parameters["Units_Ext_district"]=existing_units[existing_units.index.str.contains('district')]['Units_Mult'].values
             if 'Transformer' in existing_init.keys():
                 self.parameters["Transformer_Ext"]=existing_init['Transformer']
             if 'Lines' in existing_init.keys():
@@ -681,11 +693,20 @@ class reho(district_decomposition):
                 self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[0]}
             else:
                 self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[0]
+            if EV != []:
+                self.parameters["n_vehicles"] = EV[0]
+            if EV_battery != []:
+                Additional_battery = np.array([EV_battery[1] if "Battery_district" in u else 0 for u in
+                                               self.infrastructure.UnitsOfDistrict]) - np.array(
+                    [EV_battery[0] if "Battery_district" in u else 0 for u in self.infrastructure.UnitsOfDistrict])
+            else:
+                Additional_battery = np.array([0 for u in self.infrastructure.UnitsOfDistrict])
             existing_units = self.results[Scn_ID][-1]['df_Unit'][['Units_Mult']]
             self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[
                                                          [s for s in self.infrastructure.Units if h in s]][
                                                          'Units_Mult'].to_list() for id, h in
                                                      enumerate(self.infrastructure.houses)])
+            self.parameters["Units_Ext_district"] = existing_units[existing_units.index.str.contains('district')]['Units_Mult'].values+Additional_battery
             self.parameters["Transformer_Ext"]=self.results[Scn_ID][-1]['df_Grid']['Capacity'].loc['Network'].values
             self.parameters["Line_Ext"]=self.results[Scn_ID][-1]['df_Grid']['Capacity'].loc[[h for h in self.infrastructure.houses]].unstack().values
             self.single_optimization(Pareto_ID=0)
@@ -694,8 +715,15 @@ class reho(district_decomposition):
                 self.scenario['EMOO'] ={'EMOO_'+EMOO_type:EMOO_list[i]}
             else:
                 self.scenario['EMOO']['EMOO_'+EMOO_type]=EMOO_list[i]
+            if EV != []:
+                self.parameters["n_vehicles"] = EV[i]
+            if EV_battery != []:
+                Additional_battery = np.array([EV_battery[i+1] if "Battery_district" in u else 0 for u in self.infrastructure.UnitsOfDistrict])-np.array([EV_battery[i] if "Battery_district" in u else 0 for u in self.infrastructure.UnitsOfDistrict])
+            else:
+                Additional_battery = np.array([ 0 for u in self.infrastructure.UnitsOfDistrict])
             existing_units = self.results[Scn_ID][i - 1]['df_Unit'][['Units_Mult']]
-            self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[[s for s in self.infrastructure.Units if h in s]]['Units_Mult'].to_list() for id, h in enumerate(self.infrastructure.houses)])
+            self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[[s for s in self.infrastructure.Units if h==s.split('_')[-1]]]['Units_Mult'].to_list() for id, h in enumerate(self.infrastructure.houses)])
+            self.parameters["Units_Ext_district"] = existing_units[existing_units.index.str.contains('district')]['Units_Mult'].values+Additional_battery
             self.parameters["Transformer_Ext"] = self.results[Scn_ID][i-1]['df_Grid']['Capacity'].loc['Network'].values
             self.parameters["Line_Ext"] = self.results[Scn_ID][i-1]['df_Grid']['Capacity'].loc[
                 [h for h in self.infrastructure.houses]].unstack().values
@@ -708,6 +736,37 @@ class reho(district_decomposition):
         EMOO_list=E_stop+(E_start-E_stop)/(1+np.exp(-k*(c-y_span)))
         return EMOO_list,y_span
 
+    def get_battery_pathway_from_EV(self,N_EV_start=0,N_EV_stop=15,c_EV=2039,k_EV=1,y_start=2024,y_stop=2050,n=7,EV_battery_lifetime=10,battery_reuse_lifetime=10,EV_battery_capacity=70,EV_battery_degradation_factor=0.7):
+        goal, y_span3 = reho.get_logistic(self,E_start=N_EV_start, E_stop=N_EV_stop, y_start=y_start, y_stop=y_stop,
+                                          k=k_EV, c=c_EV, n=y_stop - y_start)
+        goal = np.round(goal)
+        goal = np.array([np.round(N_EV_start)] + list(goal))
+        y_span3 = np.array([y_start] + list(y_span3))
+        buy = np.zeros(len(goal))
+        buy[0] = goal[0]
+        for i in range(1, len(goal)):
+            if i <= EV_battery_lifetime:
+                buy[i] = goal[i] - sum(buy[0:i])
+            else:
+                buy[i] = goal[i] - sum(buy[i - EV_battery_lifetime:i])
+
+        Battery_pathway = np.zeros(len(goal))
+        for i in range(EV_battery_lifetime + 1, len(goal)):
+            if i < battery_reuse_lifetime + EV_battery_lifetime:
+                Battery_pathway[i] = sum(buy[:i - EV_battery_lifetime])
+            else:
+                Battery_pathway[i] = sum(buy[i - EV_battery_lifetime - battery_reuse_lifetime:i - EV_battery_lifetime])
+
+        EV_battery_capacity_reuse=EV_battery_capacity*EV_battery_degradation_factor
+        Battery_pathway = Battery_pathway * EV_battery_capacity_reuse
+
+        y_span_final = np.linspace(start=y_start, stop=y_stop, num=n + 1, endpoint=True)[1:]
+        y_span_final=np.round(np.array([y_start] + list(y_span_final)))
+        return Battery_pathway[[x in y_span_final for x in y_span3]],y_span_final,Battery_pathway,goal,y_span3
+
+
+
+        return Battery_pathway
     def determine_max_constraint(self,precision=1e-3,lower_init=0, upper_init=1,EMOO='elec_export',constraint_type='lower'):
         EMOO='EMOO_'+EMOO
         Scn_ID=self.scenario['name']
@@ -814,6 +873,8 @@ class reho(district_decomposition):
             print("Max export is at: %.3e:" %max_export)
 
         return constraint
+
+
 
     def add_df_Results(self, ampl, Scn_ID, Pareto_ID, scenario):
         if self.method['building-scale'] or self.method['district-scale']:

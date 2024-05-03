@@ -567,6 +567,7 @@ class compact_optimization:
         for i in self.parameters_to_ampl:
 
             if isinstance(self.parameters_to_ampl[i], np.ndarray):
+
                 Para = ampl.getParameter(i)
                 # print('Set Values for ' + str(Para))
                 Para.setValues(self.parameters_to_ampl[i])

@@ -131,7 +131,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df3 = tau[0] * get_variable_in_pandas(df, 'Costs_Unit_inv')
         df4 = get_variable_in_pandas(df, 'GWP_Unit_constr') # per year! For total- multiply with lifetime
         df5 = get_parameter_in_pandas(ampl, 'lifetime', multi_index=False)
-        df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
+        df6 = get_parameter_in_pandas(ampl, 'Units_Ext', multi_index=False)
+        df_Unit = pd.concat([df1, df2, df3, df4, df5,df6], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
         print(df_Unit)
@@ -178,7 +179,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Grid=df_12.swaplevel().sort_index()
         df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostLine_inv1']+(df_Grid['Capacity'] -df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df4['CostLine_inv2']*df8['Line_Length']
         df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Line1'] + (df_Grid['Capacity']-df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df6['GWP_Line2']*df8['Line_Length']
-        print(df_Grid)
         return df_Grid
 
 

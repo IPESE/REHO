@@ -36,6 +36,9 @@ lca_tot["mine_res"] + penalties;
 minimize Human_toxicity:
 lca_tot["Human_toxicity"] + penalties;
 
+minimize MAX_EXPORT:
+-sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) * dp[p] * dt[p] / 1000 + penalties;
+
 #--------------------------------------------------------------------------------------------------------------------#
 #---Decomposition
 #--------------------------------------------------------------------------------------------------------------------#

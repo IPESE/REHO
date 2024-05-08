@@ -517,8 +517,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             df6 = get_parameter_in_pandas(ampl, 'EV_E_charging', multi_index=True) 
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             df7 = get_parameter_in_pandas(ampl, 'EV_E_charged_outside', multi_index=True)
-            df7 = df7[['EV_E_charged_outside']].unstack(level = 0)
-            df7.columns = [f'{i}[{j}]' if j != '' else f'{i}' for i, j in df7.columns]
+            df7 = df7[['EV_E_charged_outside']].unstack(level = [0,1])
+            df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j,k in df7.columns]
             df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
             df8 = get_parameter_in_pandas(ampl, 'EV_E_mob', multi_index=True) 
             df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])

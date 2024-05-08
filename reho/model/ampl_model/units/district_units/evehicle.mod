@@ -59,11 +59,14 @@ param EV_charger_Power{uc in UnitsOfType['EVcharging']} default 7;			#kW	 	[5] a
 param EV_eff_ch default 0.9;				#-		[1] both charging station efficiency and battery efficiency
 param EV_eff_di default 0.9;				#-		[1]
 param charging_externalload{a in Activities, p in Period, t in Time[p]} default 0; #kWh
+param externalload_sellingprice{ p in PeriodStandard, t in Time[p]} default 0;
 
 # EV batteries charging outside the district
-param Out_charger_Power default 7; # kW - describes the mean charger power of the overall town (sum of districts)
+param Out_charger_Power{d in Districts} default 7; # kW - describes the mean charger power of the overall town (sum of districts)
 param frequency_outcharging{a in Activities} default 1; # - not all activities provide the same chance to have a charging station (ex : if you go hiking there's probably no charging station)
-param outside_charging_price{ p in PeriodStandard, t in Time[p]} default Cost_supply_network["Electricity",p,t];
+param share_district_activity{a in Activities, d in Districts} default 0; # to describe the distribution of EVs plugged out in the other disctricts : default 0 means that there is no interaction with other districts = run as standalone
+param outside_charging_price{d in Districts, p in PeriodStandard, t in Time[p]} default Cost_supply_network["Electricity",p,t];
+
 
 # Old, to be cleaned
 # param normalization_factor :=  max{p in PeriodStandard} ( sum{t in Time[p]}EV_plugging_in[p,t]);
@@ -87,7 +90,7 @@ var EV_E_charging{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
 var EV_E_supply{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
 
 # EV batteries charging outside the district
-var EV_E_charged_outside{a in Activities, u in UnitsOfType['EV'], p in Period, t in Time[p]} >= 0; # kWh
+var EV_E_charged_outside{a in Activities, d in Districts, u in UnitsOfType['EV'], p in Period, t in Time[p]} >= 0; # kWh
 
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 #--Energy balance
@@ -127,17 +130,22 @@ subject to EV_EB_mobility1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[
 Units_supply['Mobility',u,p,t] <= n_vehicles[u] * EV_activity['travel',u,p,t] * Mode_Speed[u];
 
 subject to EV_EB_mobility2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-EV_E_mob[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]/ ff_EV[u] / EV_mobeff  - sum{a in Activities}(EV_E_charged_outside[a,u,p,i]) ) * EV_plugging_in[u,p,t]; # pkm * car/pers * kWh/km * share of EV coming back
+EV_E_mob[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]/ ff_EV[u] / EV_mobeff  - sum{d in Districts}(sum{a in Activities}(EV_E_charged_outside[a,d,u,p,i])) ) * EV_plugging_in[u,p,t]; # pkm * car/pers * kWh/km * share of EV coming back
 
 
-subject to outside_charging_c1{a in Activities, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
-EV_E_charged_outside[a,u,p,t] <= EV_activity[a,u,p,t] * frequency_outcharging[a] * n_vehicles[u] * Out_charger_Power;
+subject to outside_charging_c1{a in Activities,d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
+EV_E_charged_outside[a,d,u,p,t] <= EV_activity[a,u,p,t]* share_district_activity[a,d] * frequency_outcharging[a] * n_vehicles[u] * Out_charger_Power[d];
 
-subject to outside_charging_c2{ u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
-EV_E_charged_outside["travel",u,p,t] <=0; # During the travel activity, EV can provide pkm, but they do not have charging opportunities. 
+subject to outside_charging_c2{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
+EV_E_charged_outside["travel",d,u,p,t] <=0; # During the travel activity, EV can provide pkm, but they do not have charging opportunities. 
+
+subject to outside_charging_c3{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
+EV_E_charged_outside["leisure",d,u,p,t] <=0; # for testing
+
 
 subject to outside_charging_costs{ p in PeriodStandard, t in Time[p]}:
-ExternalEV_Costs_op[p,t] = outside_charging_price[p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_E_charged_outside[a,u,p,t]));
+ExternalEV_Costs_op[p,t] = sum{d in Districts}( outside_charging_price[d,p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_E_charged_outside[a,d,u,p,t])))
+							- externalload_sellingprice[p,t] *sum {a in Activities}(charging_externalload[a,p,t] ) ;
 
 
 

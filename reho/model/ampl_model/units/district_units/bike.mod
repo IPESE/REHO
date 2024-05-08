@@ -34,4 +34,4 @@ subject to Bikes_cb2{u in UnitsOfType["Bike"]}:
 n_bikes[u] = Units_Mult[u];
 
 subject to Bikes_maxshare{u in UnitsOfType['Bike'],p in Period, t in Time[p]}:
-Units_supply['Mobility',u,p,t] = share_bike[u] * Daily_Profile[u,p,t]
+Units_supply['Mobility',u,p,t] = share_bike[u] * Daily_Profile[u,p,t];

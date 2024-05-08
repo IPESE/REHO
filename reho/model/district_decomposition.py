@@ -89,7 +89,7 @@ class district_decomposition:
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
-                                                "DailyDist","Mode_Speed","outside_charging_price","charging_externalload"],
+                                                "DailyDist","Mode_Speed","outside_charging_price","charging_externalload","Districts","share_district_activity"], # attention District is a SET
                          "list_constraints_MP": []
                          }
 
@@ -433,6 +433,8 @@ class district_decomposition:
 
 
         for key in self.lists_MP['list_parameters_MP']:
+            if key == "Districts": # bc it's a SET
+                continue
             if key in self.parameters.keys():
                 MP_parameters[key] = self.parameters[key]
 
@@ -507,6 +509,8 @@ class district_decomposition:
         if 'EV_district' in self.infrastructure.UnitsOfDistrict: # TODO : trouver une meilleure condition d'activation de la mobilité
             MP_set_indexed['transport_Units'] = np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport')
 
+        if "Districts" in self.lists_MP['list_parameters_MP']:
+            MP_set_indexed['Districts'] = np.array(self.parameters["Districts"])
 
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS

@@ -817,7 +817,7 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
 
     if save_fig:
         plt.tight_layout()
-        plt.savefig((name_fig + '_' + scenario + '.' + format_fig), format=format_fig, dpi=300)
+        plt.savefig((name_fig + '_' + str(scenario) + '.' + format_fig), format=format_fig, dpi=300)
 
     return plt
 
@@ -1027,7 +1027,7 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
     if plot_curtailment:
         curtailments['PV'] = moving_average(curtailments['PV'], items_average)
 
-    idx = list(range(1, len(list(demands.values())[0]) + 1))
+    idx = list(range(1, len(import_profile) + 1))
 
     title = 'Energy profiles with a ' + resolution + ' moving average'
     obj_x = 'Time [hours]'
@@ -1486,14 +1486,14 @@ def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
 
         style = ["-", "--", ":"][id_res]
         idx = list(data["EVs"]["Units_Mult"] / data["EVs"]["Units_Mult"].max() * 100)
-        ax2.plot(idx, data["SC"], marker='.', linestyle=style, color=layout.loc['Electricity', color],
+        ax2.plot(idx, data["SC"], linestyle=style, color=layout.loc['Electricity', color],
                  label="Self-consumption")
-        ax.plot(idx, data["C_tot"], marker='.', linestyle=style, color="red", label=layout.loc['TOTEX', label])
-        ax.plot(idx, data["E_sup"], marker='.', linestyle=style, color=layout.loc['self_cons', color],
+        ax.plot(idx, data["C_tot"], linestyle=style, color="red", label=layout.loc['TOTEX', label])
+        ax.plot(idx, data["E_sup"], linestyle=style, color=layout.loc['PV_SC', color],
                 label="Electricity retail")
-        ax.plot(idx, data["NG_sup"], marker='.', linestyle=style, color=layout.loc['NaturalGas', color],
-                label="Gas retail")
-        ax.plot(idx, data["E_dem"], marker='.', linestyle=style, color=layout.loc['Heat', color],
+       # ax.plot(idx, data["NG_sup"], linestyle=style, color=layout.loc['NaturalGas', color],
+        #        label="Gas retail")
+        ax.plot(idx, data["E_dem"], linestyle=style, color=layout.loc['Heat', color],
                 label="Electricity feed-in")
 
     # legend system design
@@ -1565,6 +1565,35 @@ def plot_load_duration_curve(results, ids, save_fig=False, label='EN_long', colo
     return plt
 
 
+def monthly_average(results, df_to_extract):
+    np_to_extract = np.array([])
+    np_month = np.array([])
+    ranges = divide_hours_into_months()
+    for i in range(1, 366):
+        hour = i * 24
+        month = len(np_to_extract)
+        id_period = results['df_Index'].PeriodOfYear[hour]
+        data_id = df_to_extract.xs(id_period)
+        np_month = np.concatenate((np_month, data_id))
+        if ranges[month][1] == hour:
+            np_to_extract = np.append(np_to_extract, np.sum(np_month) / (ranges[month][1] - ranges[month][0]))
+            np_month = np.array([])
+
+    return np_to_extract
+
+def divide_hours_into_months():
+    num_months = 12
+
+    month_ranges = []
+    start_hour = 1
+    for month in range(num_months):
+        days = calendar.monthrange(2023, month + 1)
+        end_hour = start_hour + days[1] * 24 - 1
+        month_ranges.append((start_hour, end_hour))
+        start_hour = end_hour + 1
+
+    return month_ranges
+
 def monthly_average_balance(results, to_plot):
     """
         return data to plot a monthly heat balance of the df_results, from REHO
@@ -1578,35 +1607,6 @@ def monthly_average_balance(results, to_plot):
         Returns:
             df series of House_Q_heating, -House_Q_cooling, House_Q_convection, HeatGains, SolarGains
     """
-
-    def monthly_average(results, df_to_extract):
-        np_to_extract = np.array([])
-        np_month = np.array([])
-        ranges = divide_hours_into_months()
-        for i in range(1, 366):
-            hour = i * 24
-            month = len(np_to_extract)
-            id_period = results['df_Index'].PeriodOfYear[hour]
-            data_id = df_to_extract.xs(id_period)
-            np_month = np.concatenate((np_month, data_id))
-            if ranges[month][1] == hour:
-                np_to_extract = np.append(np_to_extract, np.sum(np_month) / (ranges[month][1] - ranges[month][0]))
-                np_month = np.array([])
-
-        return np_to_extract
-
-    def divide_hours_into_months():
-        num_months = 12
-
-        month_ranges = []
-        start_hour = 1
-        for month in range(num_months):
-            days = calendar.monthrange(2023, month + 1)
-            end_hour = start_hour + days[1] * 24 - 1
-            month_ranges.append((start_hour, end_hour))
-            start_hour = end_hour + 1
-
-        return month_ranges
 
     df_units_t = remove_building_from_index(results['df_Unit_t'])
     pos_units = df_units_t.index.get_level_values('Unit').unique()

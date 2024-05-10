@@ -81,6 +81,8 @@ class sensitivity_analysis():
 
         default_units_values = self.reho_model.infrastructure.Units_Parameters  # Extract default unit values of the district
         units = np.unique([unit.split('_Building')[0] for unit in self.reho_model.infrastructure.Units_Parameters.index.to_list()]).tolist()
+        if "EV_district" in units:
+            units.remove("EV_district")
 
         for item in self.reho_model.scenario['exclude_units']:  # Removing excluded units
             try:
@@ -149,7 +151,8 @@ class sensitivity_analysis():
         # Extract all attributs of the reho model
         grids = self.reho_model.infrastructure.grids
         scenario = self.reho_model.scenario
-        units = infrastructure.initialize_units(scenario, grids)
+        district_units = len(self.reho_model.infrastructure.UnitsOfDistrict) != 0 # True or False
+        units = infrastructure.initialize_units(scenario, grids, district_data=district_units)
         n_houses = len(self.reho_model.buildings_data)
 
         # Modify the attributs of the model and run SA
@@ -176,7 +179,10 @@ class sensitivity_analysis():
                         if units['building_units'][unit_id]['name'] == parameter.split("___")[0]:
                             units['building_units'][unit_id][parameter.split("___")[1]] = value
                 else:
-                    self.reho_model.parameters[parameter] = np.array([value] * n_houses)
+                    if parameter in self.reho_model.lists_MP["list_parameters_MP"]:
+                        self.reho_model.parameters[parameter] = np.array([value])
+                    else:
+                        self.reho_model.parameters[parameter] = np.array([value] * n_houses)
 
             self.reho_model.infrastructure = infrastructure.infrastructure(self.reho_model.qbuildings_data, units, grids)
 

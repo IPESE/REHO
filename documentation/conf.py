@@ -42,8 +42,10 @@ bibtex_reference_sorting = None
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = 'pydata_sphinx_theme'
+
 html_sidebars = {
-  "**": []
+  "_autosummary": ["sidebar-nav-bs"],
+  "sections/*": []
 }
 
 html_theme_options = {
@@ -81,7 +83,10 @@ autodoc_mock_imports = ['amplpy',
                         'plotly',
                         'geopandas',
                         'urllib3',
-                        'dotenv']
+                        'dotenv',
+                        'SALib',
+                        'qmcpy',
+                        'pvlib']
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()
 sys.modules['sklearn.metrics'] = MagicMock()

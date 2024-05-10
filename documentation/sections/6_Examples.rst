@@ -1,13 +1,12 @@
 Examples
 ++++++++
 
-This section provides a brief overview of REHO's capabilities based on a few scripts examples
-(available in https://github.com/IPESE/REHO/tree/main/scripts/examples).
+This section reproduces the examples provided in the repository (these examples scripts are available in https://github.com/IPESE/REHO/tree/main/scripts/examples).
 
-These examples should allow you to test the various features of the tool.
+They should give you a brief overview of REHO's capabilities and to test the various features of the tool.
 
-You can create specific subfolders in the `scripts` directory for your own case-studies.
-The content there (code, results, and figures) will be ignored by the git versioning.
+.. note::
+    Since the content of the ``scripts/examples/`` subfolder is git-tracked, you should not modify these files directly, but rather copy their contents into any other subfolder of ``scripts/`` that you have yourself created. The content there (code, data, results, and figures) will be ignored by the git versioning.
 
 1. Building-scale
 --------------------
@@ -60,7 +59,7 @@ Change heat pump temperature
 
 Add other energy layers
 ====================================
-.. literalinclude:: ../../scripts/examples/3e_Layers.py
+.. literalinclude:: ../../scripts/examples/3e_Custom_infrastructure.py
    :language: python
 
 Include electric vehicles
@@ -78,7 +77,7 @@ Connect to ELCOM database for electricity prices
 .. literalinclude:: ../../scripts/examples/3h_Electricity_prices.py
    :language: python
 
-Progressive integrated system
+Comparing integrated systems
 ====================================
 .. literalinclude:: ../../scripts/examples/4a_Progressive_scenarios.py
    :language: python

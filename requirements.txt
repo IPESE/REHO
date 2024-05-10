@@ -1,6 +1,6 @@
 amplpy>=0.12.0,<0.13.0
---index-url https://pypi.ampl.com ampl_module_base
---index-url https://pypi.ampl.com ampl_module_highs
+--extra-index-url https://pypi.ampl.com ampl_module_base
+--extra-index-url https://pypi.ampl.com ampl_module_highs
 pandas>=1.5.3,<2.0.0
 openpyxl>=3.1.2,<4.0.0
 numpy>=1.23.4,<2.0.0
@@ -16,5 +16,7 @@ plotly>=5.10,<6.0.0
 kaleido>=0.2.1,<1.0.0
 python-dotenv>=1.0
 requests>=2.0.0,<3.0.0
-coloredlogs<=15.0.1,>=14.0
-pvlib<=0.10.4,>0.9.5
+coloredlogs>=15.0.1
+SALib>=1.4.8
+qmcpy>=1.4.5
+pvlib==0.10.*

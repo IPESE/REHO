@@ -10,7 +10,7 @@ if __name__ == '__main__':
     qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
 
     # Select weather data
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()
@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     # you can use prices coming from public databases
-    prices = electricity_prices.get_prices_from_elcom(canton=reader, category='H4')
+    prices = electricity_prices.get_prices_from_elcom_by_city(city=reader, category='H4')
     grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              })

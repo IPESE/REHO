@@ -4,7 +4,7 @@ import numpy as np
 import datetime
 
 __doc__ = """
-*Characterizes the CO2 emissions related to electricity generated from the grid.*
+Characterizes the CO2 emissions related to electricity generated from the grid.
 """
 
 def find_average_value(country, metric, emissions_matrix):

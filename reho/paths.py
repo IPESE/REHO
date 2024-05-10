@@ -1,4 +1,4 @@
-import os
+import os, re
 from csv import Sniffer
 from pathlib import Path
 from pandas import read_csv, read_table, read_excel
@@ -6,7 +6,7 @@ import sys
 from dotenv import load_dotenv
 
 __doc__ = """
-*File for managing file paths and configurations.*
+File for managing file paths and configurations.
 """
 
 
@@ -32,7 +32,7 @@ path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'h2_units')
 path_to_elcom = os.path.join(path_to_data, 'elcom')
 
 # emissions
-path_to_emissions_matrix = os.path.join(path_to_data, 'emissions', 'electricity_matrix_2019_reduced.csv')
+path_to_emissions = os.path.join(path_to_data, 'emissions', 'electricity_matrix_2019_reduced.csv')
 
 # infrastructure
 path_to_infrastructure = os.path.join(path_to_data, 'infrastructure')
@@ -42,6 +42,8 @@ path_to_qbuildings = os.path.join(path_to_data, 'QBuildings')
 
 # SIA
 path_to_sia = os.path.join(path_to_data, 'SIA')
+path_to_sia_equivalence = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
+path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
 
 # skydome
 path_to_skydome = os.path.join(path_to_data, 'skydome')
@@ -55,9 +57,7 @@ path_to_weather = os.path.join(path_to_data, 'weather')
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
 path_to_configurations = os.path.join(os.getcwd(), 'configurations')
-#path_to_timestamp = os.path.join(path_to_clustering, 'timestamp_'+ File_ID +'.dat')
-path_sia = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
-path_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
+
 
 
 def path_handler(path_given):

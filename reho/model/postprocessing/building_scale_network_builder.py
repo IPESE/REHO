@@ -2,13 +2,13 @@ import pandas as pd
 import numpy as np
 
 __doc__ = """
-*Manipulates results to have consistency between the building-scale and district-scale optimizations.*
+Manipulates results to have consistency between the building-scale and district-scale optimizations.
 """
 
 def correct_network_values(reho, scn_id=0, pareto_id=0):
     """
     This function is only useful to find KPIs from the district perspective with a building scale optimization.
-    It takes results from the reho object and correct df_KPI, df_Annuals and df_Performance
+    It takes results from the reho object and correct df_KPI, df_Annuals and df_Performance.
     """
     df_grid = reho.results[scn_id][pareto_id]["df_Grid_t"].xs(("Electricity", "Network"), level=("Layer", "Hub"))
     df_export, df_import = get_transformer_import_exports(df_grid)

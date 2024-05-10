@@ -4,7 +4,7 @@ import numpy as np
 from reho.paths import *
 
 __doc__ = """
-*Builds the dataframe for the visualization of annual flows from REHO results in the form of a Sankey diagram.*
+Builds the dataframe for the visualization of annual flows from REHO results in the form of a Sankey diagram.
 """
 
 # Colors and labels for units and layers

@@ -6,7 +6,7 @@ import geopandas as gpd
 import re
 import csv
 from reho.paths import *
-import reho.model.preprocessing.skydome as skd
+import reho.model.preprocessing.skydome as SKD
 import pandas as pd
 import numpy as np
 import math
@@ -38,9 +38,9 @@ class QBuildingsReader:
         self.load_facades = load_facades
         self.load_roofs = load_roofs
 
-        self.csv_data = dict()
-        self.csv_data["df_area"] = pd.read_csv(path_to_areas, header=None)
-        self.csv_data["df_cenpts"] = pd.read_csv(path_to_cenpts, header=None)
+        self.local_data = dict()
+        self.local_data["df_Area"] = pd.read_csv(path_to_areas, header=None)
+        self.local_data["df_Cenpts"] = pd.read_csv(path_to_cenpts, header=None)
 
     def establish_connection(self, db):
         """
@@ -73,8 +73,8 @@ class QBuildingsReader:
             self.connection = self.db_engine.connect()  # test connection
             print('Connected to database')
 
-        except:
-            print('Cannot connect to database engine')
+        except Exception as e:
+            print(f'Cannot connect to database engine: {e}')
 
         if 'database' in project:
             print('\thost: {}\n\tport: {}\n\tdatabase: {}\n\tusername: {}'.format(
@@ -158,7 +158,7 @@ class QBuildingsReader:
             self.data['facades'] = add_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'], self.csv_data)
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'], self.local_data)
 
         if self.load_roofs:
             self.data['roofs'] = file_reader(path_handler(roofs_filename))
@@ -170,7 +170,7 @@ class QBuildingsReader:
 
         return qbuildings
 
-    def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False, return_location=False):
+    def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False):
         """
         Reads the database and extract from it the buildings required, by the LV transformer's ID.
 
@@ -188,13 +188,11 @@ class QBuildingsReader:
             To specify a list of buildings to optimize with their EGIDs
         to_csv : bool
             To export the data into csv
-        return_location : bool
-            To obtain the corresponding meteo cluster
 
         Returns
         -------
         dict
-            A Dictionary that contains the qbuildings data. The default has only one key ``buildings_data``
+            A dictionary that contains the qbuildings data. The default has only one key ``buildings_data``
             with a dictionary of buildings, with their fields and corresponding values.
 
 
@@ -239,10 +237,6 @@ class QBuildingsReader:
             .where(self.tables[self.db_schema + '.' + 'transformers'].columns.id == transformer)
         self.data['transformers'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine,
                                                      geom_col='geometry').fillna(np.nan)
-        if return_location:
-            meteo_cluster = translate_meteo_to_period_cluster(self.data['transformers']['meteo'][0])
-        else:
-            meteo_cluster = None
 
         # Select buildings
         sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]) \
@@ -282,7 +276,7 @@ class QBuildingsReader:
                 self.data['facades'].to_csv('facades.csv', index=False)
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'], self.csv_data)
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'], self.local_data)
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
@@ -541,16 +535,6 @@ def translate_roofs_to_REHO(df_roofs):
     return df_roofs
 
 
-def translate_meteo_to_period_cluster(location):
-    dict_meteo = {'Zermatt': 'Disentis',
-                  'Geneva': 'Geneva',
-                  'Berne': 'Bern-Liebefeld',
-                  'CHDF': 'Piotta',
-                  'Zurich': 'Zuerich-SMA',
-                  'Gruyères': 'Lugano'}  # TODO set real cluster
-    return dict_meteo[location]
-
-
 def get_roofs(self, buildings):
     selected_roofs = []
     for i, building in buildings.iterrows():
@@ -571,22 +555,22 @@ def get_facades(self, buildings):
     return self.data['facades']
 
 
-def calculate_id_building_shadows(df_angles, id_building, csv_data):
+def calculate_id_building_shadows(df_angles, id_building, local_data):
     df_angles['to_id_building'] = pd.to_numeric(df_angles['to_id_building'])
     df_angles = df_angles.set_index('to_id_building')
     df_angles = df_angles.xs(id_building)
 
-    df_dome = skd.skydome_to_df(csv_data)
+    df_dome = SKD.skydome_to_df(local_data)
 
     df_shadow = pd.DataFrame()
 
     for az in df_dome.azimuth.unique():
-        df_angles.loc[:, 'cosa2'] = df_angles.apply(lambda x: skd.f_cos([x['azimuth'], az]), axis=1)
-        # df_cosa2 = df_id_building.apply(lambda x: skd.f_cos([x['azimuth'], az]), axis=1)
+        df_angles.loc[:, 'cosa2'] = df_angles.apply(lambda x: SKD.f_cos([x['azimuth'], az]), axis=1)
+        # df_cosa2 = df_id_building.apply(lambda x: SKD.f_cos([x['azimuth'], az]), axis=1)
         df = df_angles.loc[(df_angles['cosa2'] > 0)].copy()
         # filter buildings which are more than 180 degree apart from patch with az
         df.loc[:, 'tanba'] = df.tanb * df.cosa2
-        # calculate tan(beta) for all buildings. Assumption: dxy is shortest distance and buildings infinite wide
+        # calculate tan(beta) for all buildings. Assumption: dxy is the shortest distance and buildings infinite wide
 
         max_tanba = df['tanba'].max()  # get max obscurance tan(beta, alpha)
         max_b = math.degrees(math.atan(max_tanba))  # get angle
@@ -617,7 +601,7 @@ def neighbourhood_angles(buildings, facades):
         # exclude current building to avoid division with zero
         facades_build = facades[facades.id_building == id_building]  # facades of building
         for f in facades_build.index:
-            df_c = pd.DataFrame(index=df_district.index)  # df for calculating values for each facades
+            df_c = pd.DataFrame(index=df_district.index)  # df for calculating values for each facade
             df_c['dx'] = df_district.x.values - facades_build.loc[f]['CX']
             df_c['dy'] = df_district.y.values - facades_build.loc[f]['CY']
             df_c['dxy'] = (df_c.dx * df_c.dx + df_c.dy * df_c.dy) ** 0.5
@@ -629,8 +613,8 @@ def neighbourhood_angles(buildings, facades):
             # facades.loc[f]['HEIGHT_Z'] + facades.loc[f]['HEIGHT'] #take foot of facades/ HEIGHT_Z is upperbound
             df_c['tanb'] = df_c.dz / df_c.dxy
             df_c['cosa'] = df_c.dy / df_c.dxy
-            df_c['azimuth'] = df_c[['dx', 'dy']].apply(skd.f_atan, axis=1)
-            df_c['beta'] = df_c[['dz', 'dxy']].apply(skd.f_atan, axis=1)
+            df_c['azimuth'] = df_c[['dx', 'dy']].apply(SKD.f_atan, axis=1)
+            df_c['beta'] = df_c[['dz', 'dxy']].apply(SKD.f_atan, axis=1)
             df_c = pd.concat([df_c], keys=[f], names=['UID'])
             df_BUI = pd.concat((df_BUI, df_c))
 
@@ -645,7 +629,7 @@ def neighbourhood_angles(buildings, facades):
     return df_angles
 
 
-def return_shadows_district(buildings, facades, csv_data):
+def return_shadows_district(buildings, facades, local_data):
     df_shadows = pd.DataFrame()
 
     if os.path.exists('data/angles.csv'):
@@ -656,7 +640,7 @@ def return_shadows_district(buildings, facades, csv_data):
     for b in buildings:
         id_building = int(buildings[b]['id_building'])
         if id_building in df_angles['id_building'].values:  # check if angle calculation for id_building exists
-            df_id_building = calculate_id_building_shadows(df_angles, id_building, csv_data)
+            df_id_building = calculate_id_building_shadows(df_angles, id_building, local_data)
             idx = np.repeat(id_building, len(df_id_building))
             df_id_building = df_id_building.set_index(idx)
         else:
@@ -671,7 +655,7 @@ def return_shadows_district(buildings, facades, csv_data):
     return df_shadows
 
 
-def return_shadows_id_building(id_building, df_district, csv_data):
+def return_shadows_id_building(id_building, df_district, local_data):
     id_building = int(id_building)
 
     if os.path.isfile('data/shadows.csv'):
@@ -679,7 +663,7 @@ def return_shadows_id_building(id_building, df_district, csv_data):
     else:
         df = df_district
     df = df.xs(id_building)
-    df_dome = skd.skydome_to_df(csv_data)
+    df_dome = SKD.skydome_to_df(local_data)
 
     df_beta_dome = pd.DataFrame()
     for az in df_dome.azimuth:
@@ -691,9 +675,8 @@ def return_shadows_id_building(id_building, df_district, csv_data):
 
 
 def add_geometry(df):
-    """
-    Avoid issues with geometry when read from a csv
-    """
+
+    # Avoid issues with geometry when reading data from a csv
     try:
         geom = gpd.GeoSeries.from_wkb(df['geometry'])
     except KeyError:

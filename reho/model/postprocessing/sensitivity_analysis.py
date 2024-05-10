@@ -10,26 +10,28 @@ from qmcpy import Sobol
 
 
 class sensitivity_analysis():
+    """
+    Perform a sensitivity analysis (SA): sampling, problem, store all optimizations results and the
+    sensitivity of each tested parameters.
+
+    Parameters
+    ----------
+    reho_model : model of the district, obtain via the reho() function
+    SA_type : type of SA (Morris or Sobol)
+    sampling_parameters : number of trajectory for the sampling of the solution space
+    list_parameter_unit : List of the unit parameter, by default all parameters are added to the problem, to remove
+        all units parameters set to "None"
+    list_parameter_global : List of the global parameter (energy tariffs, etc.), by default all parameters are added to the problem, to remove
+        all global parameters set to "None"
+
+    Notes
+    -------
+    The framework is designed to be performed using TOTEX minimization but can easily be modified,
+    just change the objective function of the reho_model and the KPI saved into OBJ in the function run_SA()
+    """
 
     def __init__(self, district_name, reho_model, SA_type, sampling_parameters=0, upscaling_factor=1):
-        """
-        Description:
-        - Initialize the sensitivity_analysis class.
-        - Store the reho_model, the sensitivity analysis (SA): sampling, problem, all optimizations results and the
-         sensitivity of each tested parameters
-        -----------
-        Inputs:
-        reho_model : model of the district, obtain via the reho() function
-        SA_type : type of SA (Morris or Sobol)
-        sampling_parameters : number of trajectory for the sampling of the solution space
-        list_parameter_unit : List of the unit parameter, by default all parameters are added to the problem, to remove
-            all units parameters set to "None"
-        list_parameter_global : List of the global parameter (energy tariffs, etc.), by default all parameters are added to the problem, to remove
-            all global parameters set to "None"
 
-        NB: The framework is designed to be performed using TOTEX minimization but can easily be modified,
-            just change the objective function of the reho_model and the KPI saved into OBJ in the function run_SA()
-        """
         self.district_name = district_name
         self.reho_model = reho_model
         self.SA_type = SA_type  # Type of SA, Morris or Sobol
@@ -63,18 +65,23 @@ class sensitivity_analysis():
     def build_SA(self, unit_parameter=['Cost_inv1', 'Cost_inv2'], SA_parameter={}):
         """
         Description:
-        1) Generate the list of parameters for the SA, their values and type of variation range
-        2) Generate the problem of the SA, ie. define the parameters and theirs bounds
-        3) Generate the sampling scheme of the SA
+        - Generate the list of parameters for the SA, their values and type of variation range
+        - Generate the problem of the SA, ie. define the parameters and theirs bounds
+        - Generate the sampling scheme of the SA
+
+        Parameters
         ----------
-        Inputs:
         unit_parameter [list]: Units parameters wanted in the SA, by default all parameters are included
         SA_parameter [dict]: Parameters with their bounds set by the script
+
+        Returns
         ---------
-        Outputs/Results:
-        self.parameter [dict]: dictionary of parameters
-        self.problem [dict]: Parameters with their bounds
-        self.sampling [array]: Sampling values
+        parameter : dict
+            Parameters
+        problem : dict
+            Parameters with their bounds
+        sampling : array
+            Sampling values
         """
 
         # 1) Generate the list of parameters
@@ -126,19 +133,26 @@ class sensitivity_analysis():
 
     def run_SA(self, save_inter=True, save_inter_nb_iter=50, save_time_opt=True, intermediate_start=0):
         """
-        Description:
         Launch all optimizations of the SA and store their results
+
+        Parameters
         -----------
-        Inputs:
-        save_inter [boolean]: enable intermediary save
-        save_inter_nb_iter [int]: step at which the intermediary save is done
-        save_time_opt [boolean]: boolean, create a .txt file and write the time for each optimization
-        intermediate_start [int]: start the SA from a specific sampling point
-        -----------
-        Outputs/Results:
-        self.SA_results [dict]: contain the number of the optimization and a dictionary regrouping all main
-        results of the optimizations
-        self.OBJ [list]: values of the objective function for each optimization
+
+        save_inter : boolean
+            Enable intermediary save
+        save_inter_nb_iter : int
+            Step at which the intermediary save is done
+        save_time_opt : boolean
+            Ceates a .txt file and write the time for each optimization
+        intermediate_start :int
+            Starts the SA from a specific sampling point
+
+        Returns
+        ---------
+        SA_results : dict
+            Contains the number of the optimization and a dictionary regrouping all main results of the optimizations
+        OBJ : list
+            Values of the objective function for each optimization
         """
 
         path_to_SA_results = 'results/'

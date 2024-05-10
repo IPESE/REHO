@@ -1,12 +1,11 @@
 import pandas as pd
-from reho.paths import *
 import numpy as np
 
 __doc__ = """
-*Collects data from "SIA" Swiss Norms, which are used to distinguish between eight different building types in their usage and behavior.*
+Collects data from the `SIA Swiss norms <https://www.sia.ch/fr/services/sia-norm/>`_ , which are used to distinguish between eight different building types in their usage and behavior.
 """
 
-def read_sia2024_rooms_sia380_1(digit, sia_file):
+def read_sia2024_rooms_sia380_1(digit, df_SIA_380):
 
     dict_affiliation2digit = {'collective housing': 'I',
                               'individual housing': 'II',
@@ -22,9 +21,9 @@ def read_sia2024_rooms_sia380_1(digit, sia_file):
                               'covered swimming-pool': 'XII',
                               'other': 'XIII'}
 
-    sia_file = sia_file.rename(columns=dict_affiliation2digit)
+    df_SIA_380 = df_SIA_380.rename(columns=dict_affiliation2digit)
 
-    return sia_file[digit]
+    return df_SIA_380[digit]
 
 
 def read_sia_2024_profiles(status, df):

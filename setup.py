@@ -11,7 +11,8 @@ from setuptools import setup, find_packages
 def read_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
         return file.read()
-    
+
+
 def install_dependencies():
     try:
         subprocess.run([sys.executable, '-m', 'pip', 'install', 'psycopg2'])
@@ -22,7 +23,7 @@ def install_dependencies():
 setup(
 
     name='REHO',
-    version='1.0.2',
+    version='1.0.3',
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',
@@ -41,8 +42,10 @@ setup(
                       'kaleido>=0.2.1,<1.0.0',
                       'python-dotenv>=1.0',
                       'requests>=2.0.0,<3.0.0',
-                      'coloredlogs<=15.0.1,>=14.0',
-                      'pvlib<=0.10.4,>0.9.5'
+                      'coloredlogs>=15.0.1',
+                      'SALib>=1.4.8',
+                      'qmcpy>=1.4.5',
+                      'pvlib==0.10.*'
                       ],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod', '*.ini'],

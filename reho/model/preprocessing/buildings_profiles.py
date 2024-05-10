@@ -1,43 +1,12 @@
-import numpy as np
-import pandas as pd
 from datetime import timedelta
-from reho.model.preprocessing.weather import get_cluster_file_ID
 from reho.model.preprocessing.sia_parser import *
 from reho.model.preprocessing.QBuildings import *
 
 __doc__ = """
-*Generates the buildings profiles : 1) Domestic hot water (DHW), 2) Domestic electricity, 3) Heat gains, 4) Solar gains.*
+Generates the buildings profiles for domestic hot water (DHW) demand, domestic electricity demand, internal heat gains, and solar gains.
 """
 
-def annual_to_typical(cluster, annual_file, timestamp_data, typical_file=None):
-    """
-    From an annual profile, with 8760 values, extracts the values corresponding to the typical days.
-    """
-
-    # Get which days are the typical ones
-    typical_days = pd.Series([i.strftime("%m/%d/%Y") for i in timestamp_data.Date]).values
-    df_annual = file_reader(annual_file)
-    t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
-
-    # hour 1 is between 0:00 - 1:00 and is indexed with starting hour so 0:00
-    for h in df_annual.index.values:
-        df_annual.loc[h, 'h'] = t1 + timedelta(hours=(int(h) - 1))
-
-    df_annual = df_annual.set_index('h')
-    df_typical = pd.DataFrame()
-    for i, td in enumerate(typical_days):
-        df_typical = pd.concat([df_typical, df_annual.loc[td]], sort=True)
-    periods = list(range(1, len(typical_days) + 1))
-    hours = list(range(1, cluster['PeriodDuration'] + 1))
-    df_typical = df_typical.reset_index(drop=True)
-    df_typical = df_typical.set_index(pd.MultiIndex.from_product([periods, hours], names=['Period', 'Hour']))
-    if typical_file:
-        df_typical.to_csv(typical_file)
-
-    return df_typical
-
-
-def profile_reference_temperature(parameters_to_ampl, cluster):
+def reference_temperature_profile(parameters_to_ampl, cluster):
     # TODO: time dependent indoor temperature f.e. lower at night
 
     total_timesteps = cluster['Periods'] * cluster['PeriodDuration'] + 2
@@ -50,14 +19,14 @@ def profile_reference_temperature(parameters_to_ampl, cluster):
     return np_temperature
 
 
-def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
+def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
                        include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
-    Except if electricity, SH and DHW profiles are given by the user, REHO computes the End Use Demands from
-    `SIA 2024 <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_.
+    Generates building-specific profiles for internal heat gains, DHW demand, and domestic electricity demand based on
+    `SIA 2024 norms <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_.
 
     The SIA profiles are daily profiles with coefficient attributed to each month.
-    This function extends the profiles to the periods used, according the building's affectation.
+    This function extends the profiles to the periods used, according to the building's affectation.
 
     Parameters
     ----------
@@ -85,14 +54,13 @@ def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
     reho.model.preprocessing.QBuildings.QBuildingsReader :
         Class used to handle the buildings' data.
     reho.model.reho.reho :
-        Wrapper Class that manages the optimization.
+        Wrapper class that manages the optimization.
 
     Notes
     -----
     - One building can have several affectations. In that case, the building is divided by the share of ERA by
       affectations and the profiles are summed.
     - To use custom profiles, use csv files with 8760 rows. The name of the columns should be the same as the buildings keys in `buildings_data`.
-    -
 
     .. caution::
 
@@ -103,9 +71,9 @@ def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
     --------
     >>> my_profiles = {'electricity': 'my_folder/electricity.csv'}
     >>> file_id = 'Geneva_10_24_T_I_W'
-    >>> cluster = {'Location': 'Bruxelles', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    >>> cluster = {'Location': 'Bruxelles', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
     >>> people_gain, eud_dhw, eud_elec =
-    >>>     build_eud_profiles(buildings_data, cluster, use_custom_profiles=my_profiles)
+    >>>     eud_profiles(buildings_data, cluster, use_custom_profiles=my_profiles)
     """
     # get cluster information
     df_timestamp.Date = pd.to_datetime(df_timestamp['Date'], format="%m/%d/%Y/%H")
@@ -132,7 +100,7 @@ def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
         np_el_class = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
-            rooms = read_sia2024_rooms_sia380_1(class_380, sia_file)
+            rooms = read_sia2024_rooms_sia380_1(class_380, df_SIA_380)
             status = ''.join(filter(str.isalnum, status_buildings[i]))
             if class_380 == 'I' or class_380 == 'II':
                 area_net_floor = buildings_data[b]['ERA'] / 1.245
@@ -148,7 +116,7 @@ def build_eud_profiles(buildings_data, cluster, sia_file, df_SIA, df_timestamp,
 
             for p in df_timestamp.index:  # get profiles for each typical day
 
-                df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df_timestamp.xs(p).Date, df_SIA)
+                df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df_timestamp.xs(p).Date, df_SIA_2024)
                 if include_stochasticity:
                     df_profiles = apply_stochasticity(df_profiles, RV_scaling, SF)
 
@@ -266,8 +234,35 @@ def create_random_var(sd_amplitude, sd_timeshift):
 
     return RV_scaling, SF
 
+def annual_to_typical(cluster, annual_file, timestamp_data, typical_file=None):
+    """
+    From an annual profile, with 8760 values, extracts the values corresponding to the typical days.
+    """
 
-def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
+    # Get which days are the typical ones
+    typical_days = pd.Series([i.strftime("%m/%d/%Y") for i in timestamp_data.Date]).values
+    df_annual = file_reader(annual_file)
+    t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
+
+    # hour 1 is between 0:00 - 1:00 and is indexed with starting hour so 0:00
+    for h in df_annual.index.values:
+        df_annual.loc[h, 'h'] = t1 + timedelta(hours=(int(h) - 1))
+
+    df_annual = df_annual.set_index('h')
+    df_typical = pd.DataFrame()
+    for i, td in enumerate(typical_days):
+        df_typical = pd.concat([df_typical, df_annual.loc[td]], sort=True)
+    periods = list(range(1, len(typical_days) + 1))
+    hours = list(range(1, cluster['PeriodDuration'] + 1))
+    df_typical = df_typical.reset_index(drop=True)
+    df_typical = df_typical.set_index(pd.MultiIndex.from_product([periods, hours], names=['Period', 'Hour']))
+    if typical_file:
+        df_typical.to_csv(typical_file)
+
+    return df_typical
+
+
+def solar_gains_profile(buildings_data, sia_data, local_data):
     """
     Computes the solar heat gains from the irradiance.
 
@@ -287,25 +282,8 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
     -------
     A Numpy array of shape (242,) with the solar gains for each timesteps.
     """
-    # Number of days computation
-    PeriodDuration = ampl.getParameter('TimeEnd').getValues().toPandas()
-    df = csv_data["timestamp"]
-    df.Date = pd.to_datetime(df['Date'], format="%m/%d/%Y/%H")
 
-    frequency_dict = pd.Series(df.Frequency.values, index=df.Date).to_dict()
-    frequency_dict['PeriodDuration'] = {}
-    for p in ampl.getSet('PeriodStandard').getValues().toList():
-        frequency_dict['PeriodDuration'][p] = PeriodDuration.loc[p].TimeEnd
-
-    # get west_facades irradiation
-    # check if irradiation already exists:
-    filename = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt') # substitute filename, since it is in district_decomposition?
-    if not os.path.exists(filename):
-        total_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
-        df_annual, irr_west = skd.calc_orientation_profiles(270, 90, 0, csv_data, total_irradiation, frequency_dict)
-        np.savetxt(filename, irr_west)
-    else:
-        irr_west = csv_data["westfacades_irr"]
+    irr_west = local_data["df_Westfacades_irr"]
 
     g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
     g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
@@ -321,8 +299,8 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
         glass_fraction_building = 0
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
-            rooms = read_sia2024_rooms_sia380_1(class_380, csv_data["df_sia"])
-            df = csv_data["sia2024_data"]['data']
+            rooms = read_sia2024_rooms_sia380_1(class_380, sia_data["df_SIA_380"])
+            df = sia_data["df_SIA_2024"]['data']
             glass_fraction_2024 = df['Taux de surface vitrée']
             glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
             glass_fraction_building += glass_fraction_rooms * float(ratios[i])
@@ -331,3 +309,4 @@ def solar_gains_profile(ampl, buildings_data, File_ID, csv_data):
         np_gains = np.append(np_gains, gains)
 
     return np_gains
+

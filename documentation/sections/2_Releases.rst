@@ -6,7 +6,7 @@ How to cite
 
 .. caution::
 
-    REHO will soon be submitted to `Journal of Open Source Software <https://joss.theoj.org/>`_ for review.
+    REHO has been submitted to `Journal of Open Source Software <https://joss.theoj.org/>`_ for review.
 
     In the meantime, the tool can be cited by mentioning the GitHub repository directly,
     or by referring to the relevant academic work (see below)
@@ -204,12 +204,6 @@ Contributions and projects
 An important number of research projects have been carried out using REHO.
 While the following reports did not experience a peer-review process, they still offer interesting applications of REHO.
 
-.. caution::
-
-    Links to Vergers and Jardin des Nations case studies ? (normally these reports should not contain confidential data)
-
-    Links to Cost of heating article ?
-
 .. dropdown:: :bdg-primary-line:`Research` The energy cost of accommodation, Loustau 2024
     :icon: mortar-board
 
@@ -260,7 +254,7 @@ While the following reports did not experience a peer-review process, they still
 
     Investigations on the potential of decentralization of data centers for waste heat valorization.
 
-.. dropdown:: :bdg-primary-line:`Research` Optimal Design and Operation of District Energy Systems using Dantzig Wolfe Decomposition, Terrier 2021 :cite:`terrierOptimalDesignOperation2021`
+.. dropdown:: :bdg-primary-line:`Research` Optimal Design and Operation of District Energy Systems using Dantzig Wolfe Decomposition, Terrier 2021
     :icon: organization
 
     Development of a decomposition algorithm for district-scale optimization.

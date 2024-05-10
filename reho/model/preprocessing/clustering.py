@@ -4,25 +4,29 @@ import scipy.spatial
 from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import pairwise_distances
 
+
 class ClusterClass:
     """
     This class executes the data reduction for meteorological data.
+    It will execute a clustering for each number of clusters desired among an interval (nb_clusters), and select the optimal one according to the MAPE criterion (Maximum Average Pairwise Euclidean distance).
 
     Parameters
     ----------
     data : pd.DataFrame
-        Input data (.dat file)
+        Annual weather data
+    nb_clusters : list
+        Interval for the number of clusters tested.
 
     """
 
-    def __init__(self, data, Iter=None,  option=None, pd=None, outliers=None):
+    def __init__(self, data, nb_clusters=None,  option=None, pd=None, outliers=None):
         super().__init__()
-        if Iter == None:
-            self.Iter = [3]
+        if nb_clusters is None:
+            self.nb_clusters = [8]
         else:
-            self.Iter = Iter
+            self.nb_clusters = nb_clusters
 
-        #org - original, nor-normalized, clu-clustered
+        # org - original, nor - normalized, clu - clustered
 
         self.outlier_removal = outliers
 
@@ -34,7 +38,7 @@ class ClusterClass:
         self.modula = None
         self.mod_org =[]  # modulo data, f.e. last day of year (24hrs) for  pd = 7*24
         self.mod_nor =[]
-        if option == None:
+        if option is None:
             self.option = {"year-to-day": True, "extreme": [(1, "min"), (2, "max")]}
         else:
             self.option= option
@@ -44,7 +48,7 @@ class ClusterClass:
         self.kpis_clu = None
         self.nbr_opt = None
 
-        if pd == None:              # period duration, f.e. 1 period = 1 day => pd =  24 (default)
+        if pd is None:              # period duration, f.e. 1 period = 1 day => pd =  24 (default)
             self.pd = 24
         else:
             self.pd = pd
@@ -108,12 +112,12 @@ class ClusterClass:
 
         df_res = pd.DataFrame()  # initialize df for results
 
-        for i, c in enumerate(self.Iter):
+        for i, c in enumerate(self.nb_clusters):
             df = self.__run_KMedoids(self.attr_nor, c)
             df_res[str(c)] = df[str(c)]
 
         if self.outlier_removal:
-            for i, c in enumerate(self.Iter):
+            for i, c in enumerate(self.nb_clusters):
                 ncluster = c
 
                 medoids = df_res[str(ncluster)].unique()  # Warning periods start with 1, python with 0
@@ -250,7 +254,7 @@ class ClusterClass:
         # - Define local variables
         kpis = self.kpis_clu.stack(["dimension"])
         diff = pd.DataFrame(index=kpis.index, columns=kpis.columns)
-        self.nbr_opt = max(self.Iter)
+        self.nbr_opt = max(self.nb_clusters)
         # - Iterate over solutions
         for id, n_k in enumerate(kpis):
             if id < kpis.shape[1] - 1:

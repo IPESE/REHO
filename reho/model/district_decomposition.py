@@ -423,7 +423,7 @@ class district_decomposition:
             ids = self.number_SP_solutions.iloc[-1]
             df = df_Grid_t[['GWP_supply']].xs("Electricity", level="Layer", drop_level=False)
             MP_parameters['GWP_supply'] = df.xs((ids["FeasibleSolution"], ids["House"]), level=("FeasibleSolution", "house"))
-
+            MP_parameters['GWP_demand'] = MP_parameters['GWP_supply'].rename(columns={"GWP_supply": "GWP_demand"}) * (1 - 1e-9)
 
         for key in self.lists_MP['list_parameters_MP']:
             if key in self.parameters.keys():

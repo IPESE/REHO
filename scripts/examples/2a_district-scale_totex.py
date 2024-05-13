@@ -13,17 +13,18 @@ if __name__ == '__main__':
 
     # Set scenario
     scenario = dict()
-    scenario['Objective'] = 'TOTEX'
-    scenario['name'] = 'totex'
+    scenario['Objective'] = 'GWP'
+    scenario['name'] = 0
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
+    #scenario['EMOO']={'EMOO_GWP':-1}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids,district_data=True)
 
     # Set method options
-    method = {'district-scale': True,'use_dynamic_emission_profiles':True}
+    method = {'building-scale': True,'use_dynamic_emission_profiles':True}
     DW_params = {'max_iter': 2}
 
     # Run optimization

@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    qbuildings_data = reader.read_csv(transformer=3658, nb_buildings=2)
 
 
     # Select weather data

@@ -796,7 +796,7 @@ def plot_pareto_units(results, objectives=["CAPEX", "OPEX"], label='EN_long', co
     if objectives[1] == "OPEX":
         obj_y = "Costs [CHF/m$^2$yr]"
     elif objectives[1] == "GWP":
-        obj_y = "GWP [kgkgCO2/m$^2$yr]"
+        obj_y = "GWP [kgCO2/m$^2$yr]"
 
     plt.xlabel(obj_x)
     plt.ylabel(obj_y)
@@ -1518,12 +1518,13 @@ def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
     return plt
 
 
-def plot_load_duration_curve(results, ids, save_fig=False, label='EN_long', color='ColorPastel'):
+def plot_load_duration_curve(results, ids, save_fig=False, label='EN_long', color='ColorPastel',scenarios=[]):
     fig, ax = plt.subplots(figsize=(9, 6))
-    axx = ax.twinx()
+
     linstyles = ["-", ":"]
     idx = list(range(1, 8761))
     col = 0.2
+    iter=0
     for res in results:
         for id in ids:
             profile = dict()
@@ -1535,28 +1536,32 @@ def plot_load_duration_curve(results, ids, save_fig=False, label='EN_long', colo
                 expanded_profile = np.repeat(profile[id].xs(i, level="Period").values, int(res[0][id]["df_Time"].dp[i]))
                 periods_profile = np.concatenate((periods_profile, expanded_profile))
             profile[id] = np.sort(periods_profile)
-            ax.plot(idx, profile[id][::-1], linstyles[0], color=[1.0 - col, 0.1, col], label="EV " + str(id - 1) + "0%")
+            ax.plot(idx, profile[id][::-1], linstyles[0],  label="District " +scenarios[iter],color='C'+str(iter))
+
+            iter=iter+1
             col = col + 0.3
     ax.set_ylabel('transformer exchange [kW]', fontsize=19)
     ax.set_xlabel('time [hours]', fontsize=19)
-    ax.legend(loc="upper right", fontsize=17)
-    ax.hlines(570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
-    ax.hlines(-570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
-    ax.text(5400, 600, 'transformer capacity', color=layout.loc['Electrical_grid', color], fontsize=18)
-    ax.text(3700, 380, 'grid export', color="grey", fontsize=18)
-    ax.text(3700, -520, 'grid import', color="grey", fontsize=18)
-    ax.set_xlim([-2, 8800])
-    ax.set_ylim([-1000, 2000])
+    ax.legend(loc="lower left", fontsize=17)
+    ax.grid()
+    ax.set_title('Load duration curve of each district',fontsize=25)
+    # ax.hlines(570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
+    # ax.hlines(-570, -20, 12000, linewidth=1.0, linestyle="--", color=layout.loc['Electrical_grid', color])
+    # ax.text(5400, 600, 'transformer capacity', color=layout.loc['Electrical_grid', color], fontsize=18)
+    # ax.text(3700, 380, 'grid export', color="grey", fontsize=18)
+    # ax.text(3700, -520, 'grid import', color="grey", fontsize=18)
+    # ax.set_xlim([-2, 8800])
+    # ax.set_ylim([-1000, 2000])
     plt.rc('xtick', labelsize=16)
     plt.rc('xtick', labelsize=16)
-    rect = mpatches.Rectangle((0, 0.15), 8800, 0.37, color="grey", alpha=0.1)
-    plt.gca().add_patch(rect)
+    # rect = mpatches.Rectangle((0, 0.15), 8800, 0.37, color="grey", alpha=0.1)
+    # plt.gca().add_patch(rect)
 
     custom_lines = [Line2D([0], [0], color='black', linewidth=1.5, ),
                     Line2D([0], [0], color='black', linewidth=1.5, linestyle=':')]
-    axx.legend(custom_lines, ['centralized', 'decentralized'], bbox_to_anchor=(0.86, -0.12), frameon=False, ncol=2,
-               title='design strategy', fontsize=18, title_fontsize=18)
-    axx.set_axis_off()
+    # axx.legend(custom_lines, ['centralized', 'decentralized'], bbox_to_anchor=(0.86, -0.12), frameon=False, ncol=2,
+    #            title='design strategy', fontsize=18, title_fontsize=18)
+    # axx.set_axis_off()
 
     if save_fig:
         plt.tight_layout()
@@ -1775,7 +1780,7 @@ def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename
 
     return fig
 
-def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_span=[],Battery_yearly=[],EV_yearly=[],y_span_yearly=[],label='EN_short', save_path="", filename=None, export_format='html', objective=None, constraint=None):
+def plot_pathway(results,scn_id=None, EMOO_list=[], y_span=[],Battery_yearly=[],EV_yearly=[],y_span_yearly=[],label='EN_short', save_path="", filename=None, export_format='html', objective=None, constraint=None):
     """
         Generate a line plot showing the investment pathway for the respective Objective function and EMOO selected
 
@@ -1827,29 +1832,31 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
     # Retrieve and plot results
     obj=[]
     obj2=[]
-    add_line=False
+    add_line=True
+    era = results[scn_id][0]['df_Buildings']['ERA'].sum()
     if objective=='CAPEX':
-        obj_old = objective
-        objective = 'Cumulative CAPEX'
-        obj_label = 'Cumulative capital investment [CHF/m2/y]'
+        obj_label = 'Cost [CHF/m$^2$/y]'
         for i in range(len(EMOO_list)):
             obj=obj+[results[scn_id][i]['df_KPIs']['capex_m2']['Network']]
+            obj2 = obj2 + [results[scn_id][i]['df_KPIs']['opex_m2']['Network']]
+        obj_old = objective
+        objective = 'Cumulative CAPEX'
+        lns4 = ax1.plot(y_span, obj2, label='OPEX', color='C0', linewidth=2, linestyle='--')
     elif objective=='TOTEX':
-        obj_label = 'Investment [CHF/m2/y]'
+        obj_label = 'Cost [CHF/m$^2$/y]'
         for i in range(len(EMOO_list)):
             obj = obj + [results[scn_id][i]['df_KPIs']['capex_m2']['Network']]
             obj2= obj2 + [results[scn_id][i]['df_KPIs']['opex_m2']['Network']]
         obj_old = objective
         objective='Cumulative CAPEX'
-
-        add_line=True
         lns4 = ax1.plot(y_span, obj2, label='OPEX', color='C0', linewidth=2, linestyle='--')
+
     lns1 = ax1.plot(y_span, np.cumsum(obj), label=objective, color='C0', linewidth=2)
 
     # Left y-axis params
     ax1.set_ylabel(obj_label, color='C0', fontsize=20)
     ax1.tick_params(axis='y', labelcolor='C0', labelsize=15)
-    ax1.set_ylim(bottom=0)
+    ax1.set_ylim(bottom=min(min(obj),min(obj2)))
 
     # Creat a second y-axis for EMOO values
     ax11 = ax1.twinx()
@@ -1857,17 +1864,21 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
     # Retrieve data for second axis
     constr=[]
     if constraint=='GWP':
-        constr_label='GWP [kgCO2-eq/m2]'
+        constr_label='GWP [kgCO2/m$^2$yr]'
         for i in range(len(EMOO_list)):
             constr=constr+[results[scn_id][i]['df_KPIs']['gwp_tot_m2']['Network']]
 
     elif constraint == 'elec_export':
-        constr_label='Electricity Exportation [MWh/m2/y]'
-        era = results[scn_id][0]['df_Buildings']['ERA'].sum()
+        constr_label='Electricity Exportation [MWh/m$^2$2y]'
+
         for i in range(len(EMOO_list)):
             df_an = results[scn_id][i]['df_Annuals'].loc['Electricity'].loc['Network']
             current_constr = (df_an['Demand_MWh'] - df_an['Supply_MWh']) / era
             constr = constr + [current_constr]
+    elif constraint == 'EV':
+        constr_label='Number of EV'
+        constr=EV_yearly[[True if x in np.round(y_span) else False for x in y_span_yearly]]
+        EMOO_list=constr
 
 
 
@@ -1881,10 +1892,8 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
     ax11.set_ylim(bottom=min(min(constr),min(EMOO_list)))
 
     # Add legend
-    if add_line:
-        lns = lns1 + lns2 + lns3 + lns4
-    else:
-        lns = lns1 + lns2 + lns3
+
+    lns = lns1 + lns2 + lns3 + lns4
     labs = [l.get_label() for l in lns]
     ax1.legend(lns, labs, loc=5,fontsize=15)
 
@@ -1956,8 +1965,8 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
         df = pd.concat([df, results[scn_id][i]['df_Unit']['Costs_Unit_inv'].reset_index().groupby(start).sum(
             'Costs_Unit_inv').rename(columns={'Costs_Unit_inv': int(y_span[i])})], axis=1)
         df_reinforcement=pd.concat([df_reinforcement,pd.concat([df_transformer,df_line]).rename(columns={'Units_Mult': int(y_span[i])})],axis=1)
-    df_buildings=df[~(df.index.str.contains('district'))]
-    df_district=df[df.index.str.contains('district')]
+    df_buildings=df[~(df.index.str.contains('district'))]/era*100
+    df_district=df[df.index.str.contains('district')]/era*100
     df_district=round(df_district,2)
         # df=pd.concat([df,reho.results[scn_id][0]['df_Unit'].query("Units_Use==1")['Units_Mult'].reset_index().groupby(start).sum('Units_Mult').rename(columns={'Units_Mult': str(y_span[i])})],axis=1)
 
@@ -1970,7 +1979,7 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
     if df_buildings_to_plot.empty == False:
         color_buildings_to_plot=color_buildings.loc[list(df_buildings_to_plot.index)]['color'].to_list()
         df_buildings_to_plot.transpose().plot(kind='bar', stacked=True,
-                                                                  ylabel='Additional investment [CHF/y]', xlabel='Year', grid=True,
+                                                                  ylabel='Additional investment [CHF/y/100$m^2$]', xlabel='Year', grid=True,
                                                                   ax=ax2, width=0.6,color=color_buildings_to_plot)
 
 
@@ -1981,6 +1990,19 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
     # Specify legend and title
     ax2.legend(fontsize=15, loc='upper center', bbox_to_anchor=(0.5, -0.15),ncol=3)
     ax2.set_title("Buildings additional investment", fontsize=35)
+
+    if constraint=='GWP':
+        # Add cumulative GWP
+        ax22 = ax2.twinx()
+        ax22.plot(np.cumsum(constr),label='Cumulative GWP', color='C0',linewidth=2)
+        ax22.set_ylabel("Cumulative GWP [kgCO2/m$^2$yr]", fontsize=22,color='C0')
+        ax22.grid()
+
+        # Fix background grid
+        nticks = 6
+        ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+        ax22.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+        ax22.grid()
     # Show resulting figure
     fig2.tight_layout()
     fig2.show()
@@ -1993,7 +2015,7 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
     if df_district_to_plot.empty==False:
         color_district_to_plot = color_district.loc[list(df_district_to_plot.index)]['color'].to_list()
         df_district_to_plot.transpose().plot(kind='bar', stacked=True,
-                                          ylabel='Additional investment [CHF/y]', xlabel='Year', grid=True,
+                                          ylabel='Additional investment [CHF/y/100$m^2$]', xlabel='Year', grid=True,
                                           ax=ax3, width=0.6, color=color_district_to_plot)
 
 
@@ -2051,9 +2073,13 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
         # Set x-axis parameters
         ax5.tick_params(axis='x', labelsize=15)
 
+        # Fix background grid
+        nticks = 6
+        ax5.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+
 
         ax5.plot(y_span_yearly,EV_yearly,label='EV objective',color='C0')
-
+        ax5.set_yticks(ax5.get_yticks(), np.arange(0, np.ceil(max(EV_yearly) / 6) * 6, np.ceil(max(EV_yearly) / 6)))
         # Left y-axis params
         ax5.set_ylabel('Number of EVs in the district', color='C0', fontsize=20)
         ax5.tick_params(axis='y', labelcolor='C0', labelsize=15)
@@ -2071,7 +2097,9 @@ def plot_pathway(results, method='district-scale',scn_id=None, EMOO_list=[], y_s
         # Fix background grid
         nticks = 6
         ax5.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+        ax5.set_yticks(ax5.get_yticks(), np.arange(0, np.ceil(max(EV_yearly) / 6) * 6, np.ceil(max(EV_yearly) / 6)))
         ax55.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
+
         ax5.grid()
 
         # Show resulting figure

@@ -88,9 +88,13 @@ var EV_E_mob{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
 var n_chargingpoints{uc in UnitsOfType['EVcharging']} integer >= 0;
 var EV_E_charging{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
 var EV_E_supply{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
+var C2V{uc in UnitsOfType['EVcharging'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ;
+var V2C{uc in UnitsOfType['EVcharging'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ;
 
 # EV batteries charging outside the district
 var EV_E_charged_outside{a in Activities, d in Districts, u in UnitsOfType['EV'], p in Period, t in Time[p]} >= 0; # kWh
+var C2A{uc in UnitsOfType['EVcharging'],a in Activities,p in Period,t in Time[p]}>= 0 ;
+
 
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 #--Energy balance
@@ -190,13 +194,22 @@ Units_demand['Electricity',uc,p,t] + Units_supply['Electricity',uc,p,t] <= EV_ch
 # subject to chargingstation_c2{uc in UnitsOfType['EVcharging'],p in Period,t in Time[p]}:
 # Units_supply['Electricity',uc,p,t] <= EV_charger_Power[uc] * n_chargingpoints[uc];								#kW
 
-subject to chargingstation_c3{p in Period,t in Time[p]}:
-sum{uc in UnitsOfType['EVcharging']}(Units_demand['Electricity',uc,p,t]) * EV_eff_ch  = sum {u in UnitsOfType['EV']}(EV_E_charging[u,p,t])+ sum{a in Activities} (charging_externalload[a,p,t] );
+subject to chargingstation_c2{uc in UnitsOfType['EVcharging'],p in Period,t in Time[p]}:
+Units_demand['Electricity',uc,p,t] * EV_eff_ch  = sum {u in UnitsOfType['EV']}(C2V[uc,u,p,t])+ sum{a in Activities} (C2A[uc,a,p,t] );
 
-subject to chargingstation_supply{p in Period,t in Time[p]}:
-sum{uc in UnitsOfType['EVcharging']}(Units_supply['Electricity',uc,p,t]) * (1/EV_eff_di)  = sum {u in UnitsOfType['EV']}(EV_E_supply[u,p,t] );			
+subject to chargingstation_c3{uc in UnitsOfType['EVcharging'],p in Period,t in Time[p]}:
+Units_supply['Electricity',uc,p,t] * (1/EV_eff_di)  = sum {u in UnitsOfType['EV']}(V2C[uc,u,p,t] );			
 
-subject to chargingstation_c4{uc in UnitsOfType['EVcharging']}:
+subject to chargingstation_c4{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
+EV_E_charging[u,p,t]  = sum {uc in UnitsOfType['EVcharging']}(C2V[uc,u,p,t] );	
+
+subject to chargingstation_c5{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
+EV_E_supply[u,p,t]  = sum {uc in UnitsOfType['EVcharging']}(V2C[uc,u,p,t] );	
+
+subject to chargingstation_c6{a in Activities,p in Period,t in Time[p]}:
+charging_externalload[a,p,t]  = sum {uc in UnitsOfType['EVcharging']}(C2A[uc,a,p,t] );	
+
+subject to chargingstation_capacity{uc in UnitsOfType['EVcharging']}:
 Units_Mult[uc] = EV_charger_Power[uc] * n_chargingpoints[uc];  #kWh
 
 #--Cyclic

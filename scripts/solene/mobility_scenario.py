@@ -27,7 +27,7 @@ if __name__ == '__main__':
                                              })
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    parameters = {'Population': 12}
+    parameters = {'Population': 9}
 
     # Set method options
     method = {'building-scale': True}

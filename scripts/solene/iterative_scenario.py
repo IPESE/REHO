@@ -32,7 +32,7 @@ def compute_iterative_parameters(variables,parameters):
     for d in variables.keys():
             parameters[d] = {   "charging_externalload"     : df_load[[str(d)]].rename(columns={str(d) :"charging_externalload"}),
                                 "outside_charging_price"    : df_prices[df_prices.index.get_level_values(level="district") != d].rename(columns = {'pi' : 'outside_charging_price'}),
-                                "externalload_sellingprice" : variables[d]['pi'].rename("externalload_sellingprice")}
+                                "externalload_sellingprice" : variables[d]['pi'].to_frame(name = "externalload_sellingprice")}
 
 
     # # for 2 districts:
@@ -183,10 +183,10 @@ if __name__ == '__main__':
             print(f"iteration {i} : district {transformer}")
             # Add iterative parameters (only after init run i=0)
             if i > 0 :
-                for param in ["outside_charging_price","charging_externalload"]:
+                for param in parameters[transformer].keys():
                     vars()['reho_' + str(transformer)].parameters[param] = parameters[transformer][param]
             elif PARAM_INIT:
-                for param in ["outside_charging_price","charging_externalload"]:
+                for param in parameters_init[transformer].keys():
                     vars()['reho_' + str(transformer)].parameters[param] = parameters_init[transformer][param]
             
 

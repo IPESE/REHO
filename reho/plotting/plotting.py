@@ -1516,6 +1516,46 @@ def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
 
     return plt
 
+def plot_pkm(results):
+    """
+    results : reho.results[Scn_ID][Pareto_ID] ex: reho.results['totex'][0]
+    """
+    # dataframe
+    df_Unit_t = results['df_Unit_t']
+    df_Grid_t = results['df_Grid_t']
+
+    df_Unit_t_pkm = df_Unit_t[df_Unit_t.index.get_level_values("Layer") == "Mobility"]
+    df_Grid_t_pkm = df_Grid_t[(df_Grid_t.index.get_level_values("Layer") == "Mobility") & (df_Grid_t.index.get_level_values("Hub") == "Network") ]
+    df_Grid_t_pkm.reset_index("Hub", inplace=True)
+
+    df_pkm = df_Unit_t_pkm[['Units_supply']].unstack(level='Unit')
+    df_pkm['PT'] = df_Grid_t_pkm['Grid_supply']
+    df_pkm['Domestic_energy'] = df_Grid_t_pkm['Domestic_energy']
+
+    # plot
+    fig, axs = plt.subplots(2, 5,sharey=True,figsize  = (15,10))
+    for axe,i in zip(axs.ravel(),range(1,11)):
+        df_plot = df_pkm.xs(level="Period",key = i).applymap(lambda x: max(x, 0))
+        df_plot.columns = [x if y=="" else y.strip('_district') for x,y in df_plot.columns]
+        df_plot.loc[:,df_plot.columns != 'Domestic_energy'].plot.area(ax=axe)
+    plt.show()
+    
+    return df_pkm,fig
+
+def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex'):
+    Pareto_ID_number = len(rehos_dict[list(rehos_dict.keys())[0]].results[scenario].keys())
+
+    fig = make_subplots(rows=Pareto_ID_number, cols=1)
+
+    for Pareto_ID in range(Pareto_ID_number):
+        r = Pareto_ID + 1
+        for name, reho in rehos_dict.items():
+            df_pi = reho.results_MP["totex"][Pareto_ID][0]["df_Dual_t"]["pi"].xs("Electricity")
+            df_pi.index = [f"{x}_{y}" for x,y in df_pi.index ]
+            fig.add_trace(go.Scatter(x=df_pi.index, y=df_pi.values, mode='lines', name=name),row=r, col=1)
+
+    fig.update_layout(height=600, width=800, title_text="Test")
+    return fig
 
 def plot_load_duration_curve(results, ids, save_fig=False, label='EN_long', color='ColorPastel'):
     fig, ax = plt.subplots(figsize=(9, 6))

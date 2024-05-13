@@ -30,9 +30,9 @@ class sensitivity_analysis():
     just change the objective function of the reho_model and the KPI saved into OBJ in the function run_SA()
     """
 
-    def __init__(self, district_name, reho_model, SA_type, sampling_parameters=0, upscaling_factor=1):
+    def __init__(self, reho_model, SA_type, sampling_parameters=0, upscaling_factor=1):
 
-        self.district_name = district_name
+        self.district_name = reho_model.scenario["name"]
         self.reho_model = reho_model
         self.SA_type = SA_type  # Type of SA, Morris or Sobol
         self.upscaling_factor = upscaling_factor    # to represent the effective ERA of the typical district (if typical district )
@@ -198,7 +198,8 @@ class sensitivity_analysis():
                     else:
                         self.reho_model.parameters[parameter] = np.array([value] * n_houses)
 
-            self.reho_model.infrastructure = infrastructure.infrastructure(self.reho_model.qbuildings_data, units, grids)
+            qbuilding = {'buildings_data': self.reho_model.buildings_data}
+            self.reho_model.infrastructure = infrastructure.infrastructure(qbuilding, units, grids)
 
             try:
                 tic = time.perf_counter()

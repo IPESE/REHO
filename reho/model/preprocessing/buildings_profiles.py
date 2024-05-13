@@ -6,6 +6,7 @@ __doc__ = """
 Generates the buildings profiles for domestic hot water (DHW) demand, domestic electricity demand, internal heat gains, and solar gains.
 """
 
+
 def reference_temperature_profile(parameters_to_ampl, cluster):
     # TODO: time dependent indoor temperature f.e. lower at night
 
@@ -19,8 +20,7 @@ def reference_temperature_profile(parameters_to_ampl, cluster):
     return np_temperature
 
 
-def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
-                       include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
+def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp, include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):
     """
     Generates building-specific profiles for internal heat gains, DHW demand, and domestic electricity demand based on
     `SIA 2024 norms <https://shop.sia.ch/collection%20des%20normes/architecte/2024_2021_f/F/Product>`_.
@@ -32,8 +32,12 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
     ----------
     buildings_data : dict
         Dictionary of buildings data from QBuildingsReader class.
-    File_ID : str
-        File ID of the clustering results, used to know the periods and period duration.
+    df_SIA_380 : pd.DataFrame
+        SIA norms.
+    df_SIA_2024 : pd.DataFrame
+        SIA norms.
+    df_Timestamp : pd.DataFrame
+        Information for clustering results, used to know the periods and period duration.
     cluster : dict
         cluster parameter from the reho.model.reho.reho class
     include_stochasticity : bool
@@ -72,11 +76,10 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
     >>> my_profiles = {'electricity': 'my_folder/electricity.csv'}
     >>> file_id = 'Geneva_10_24_T_I_W'
     >>> cluster = {'Location': 'Bruxelles', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-    >>> people_gain, eud_dhw, eud_elec =
-    >>>     eud_profiles(buildings_data, cluster, use_custom_profiles=my_profiles)
+    >>> people_gain, eud_dhw, eud_elec = eud_profiles(buildings_data, cluster, use_custom_profiles=my_profiles)
     """
     # get cluster information
-    df_timestamp.Date = pd.to_datetime(df_timestamp['Date'], format="%m/%d/%Y/%H")
+    df_Timestamp.Date = pd.to_datetime(df_Timestamp['Date'], format="%m/%d/%Y/%H")
 
     np_gain_all = np.array([])
     np_dhw_all = np.array([])
@@ -85,7 +88,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
     if use_custom_profiles:
         # Replace filepath in dictionary to typical profiles
         for key, val in use_custom_profiles.items():
-            use_custom_profiles[key] = annual_to_typical(cluster, annual_file=val, timestamp_data=df_timestamp)
+            use_custom_profiles[key] = annual_to_typical(cluster, annual_file=val, df_Timestamp=df_Timestamp)
 
     for b in buildings_data:  # iterate over buildings
         # get SIA Profiles
@@ -114,9 +117,9 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
             if include_stochasticity:
                 [RV_scaling, SF] = create_random_var(sd_stochasticity[0], sd_stochasticity[1])
 
-            for p in df_timestamp.index:  # get profiles for each typical day
+            for p in df_Timestamp.index:  # get profiles for each typical day
 
-                df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df_timestamp.xs(p).Date, df_SIA_2024)
+                df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df_Timestamp.xs(p).Date, df_SIA_2024)
                 if include_stochasticity:
                     df_profiles = apply_stochasticity(df_profiles, RV_scaling, SF)
 
@@ -149,9 +152,9 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
                 hot_water_day = hotwater  # L profiles for each typical day
                 electric_day = elec / 1000  # kW profiles for each typical day
 
-                if p not in df_timestamp.index.tolist()[-2:]:
+                if p not in df_Timestamp.index.tolist()[-2:]:
                     # sort it correctly (if first hour is not 12:00)
-                    begin = df_timestamp.xs(p).Date.hour
+                    begin = df_Timestamp.xs(p).Date.hour
 
                     # Size = 24 hours
                     heat_day = np.concatenate((heatgain_day.iloc[begin:].values, heatgain_day.iloc[:begin].values))
@@ -163,7 +166,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_timestamp,
                     dhw_period = np.tile(dhw_day, round(cluster['PeriodDuration'] / 24))
                     el_period = np.tile(el_day, round(cluster['PeriodDuration'] / 24))
 
-                elif p == df_timestamp.index.tolist()[-2:][0]:  # Minimum period
+                elif p == df_Timestamp.index.tolist()[-2:][0]:  # Minimum period
                     heat_period = np.array([min(heatgain_day)])
                     dhw_period = np.array([max(dhw_day)])
                     el_period = np.array([max(el_day)])
@@ -220,13 +223,16 @@ def create_random_var(sd_amplitude, sd_timeshift):
     apply_stochasticity
     """
     # constraints
-    if sd_amplitude < 0: sd_amplitude = 0
-    if sd_timeshift < 0: sd_timeshift = 0
+    if sd_amplitude < 0:
+        sd_amplitude = 0
+    if sd_timeshift < 0:
+        sd_timeshift = 0
 
     # create the random variable for the intensity variation
     mu = 1
     RV_scaling = np.random.normal(mu, sd_amplitude, 5)
-    if RV_scaling.argmin() < 0: print("-------------- Negative value in the intensity variation --------------")
+    if RV_scaling.argmin() < 0:
+        print("-------------- Negative value in the intensity variation --------------")
 
     # create the random variable for time-shift in standard profiles
     mu = 0
@@ -234,13 +240,14 @@ def create_random_var(sd_amplitude, sd_timeshift):
 
     return RV_scaling, SF
 
-def annual_to_typical(cluster, annual_file, timestamp_data, typical_file=None):
+
+def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     """
     From an annual profile, with 8760 values, extracts the values corresponding to the typical days.
     """
 
     # Get which days are the typical ones
-    typical_days = pd.Series([i.strftime("%m/%d/%Y") for i in timestamp_data.Date]).values
+    typical_days = pd.Series([i.strftime("%m/%d/%Y") for i in df_Timestamp.Date]).values
     df_annual = file_reader(annual_file)
     t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
 
@@ -271,16 +278,16 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
 
     Parameters
     ----------
-    ampl : AMPL
-        The AMPL object created in the reho.model.reho.reho class.
     buildings_data : dict
-        Dictionary of buildings data from QBuildingsReader class.
-    File_ID : str
-        File ID of the clustering results, used to know the periods and period duration.
+        Building-specific data.
+    sia_data : dict
+        SIA norms.
+    local_data : dict
+        Location-specific data.
 
     Returns
     -------
-    A Numpy array of shape (242,) with the solar gains for each timesteps.
+    A Numpy array with the solar gains for each timesteps.
     """
 
     irr_west = local_data["df_Westfacades_irr"]
@@ -309,4 +316,3 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
         np_gains = np.append(np_gains, gains)
 
     return np_gains
-

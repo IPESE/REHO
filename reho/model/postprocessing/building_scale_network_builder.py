@@ -5,6 +5,7 @@ __doc__ = """
 Manipulates results to have consistency between the building-scale and district-scale optimizations.
 """
 
+
 def correct_network_values(reho, scn_id=0, pareto_id=0):
     """
     This function is only useful to find KPIs from the district perspective with a building scale optimization.
@@ -25,7 +26,7 @@ def correct_network_values(reho, scn_id=0, pareto_id=0):
     df_unit_t = reho.results[scn_id][pareto_id]["df_Unit_t"]
     df_KPI = reho.results[scn_id][pareto_id]["df_KPIs"]
 
-    OPEX_m2 = return_correct_OPEX(df_grid,  df_time, surface)
+    OPEX_m2 = return_correct_OPEX(df_grid, df_time, surface)
     SS_SC = correct_SS_SC(df_grid, df_unit_t, df_time, nb_periods)
     GWP = return_BUI_GWPop(df_grid, surface, df_time, df_KPI)
     GM_GU = correct_grid_param(df_grid)
@@ -34,7 +35,7 @@ def correct_network_values(reho, scn_id=0, pareto_id=0):
 
 
 def get_transformer_import_exports(df_grid):
-    typical_profile = df_grid.Grid_demand - df_grid.Grid_supply #attention! Supply is negative, feed in is positive
+    typical_profile = df_grid.Grid_demand - df_grid.Grid_supply  # attention! Supply is negative, feed in is positive
     df = pd.DataFrame(typical_profile, columns=['Grid_profile'])
     df_export = df.copy()
     df_import = df.copy()
@@ -48,8 +49,8 @@ def return_annual_exports_imports(df_el, df_t):
     df_aim = {}
     df_export = df_el.Grid_demand.mul(df_t.dp, level='Period', axis=0)
     df_import = df_el.Grid_supply.mul(df_t.dp, level='Period', axis=0)
-    df_aim['MWh_imp_el'] = df_import.sum() /1000 #MWh
-    df_aim['MWh_exp'] = df_export.sum() /1000 #MWh
+    df_aim['MWh_imp_el'] = df_import.sum() / 1000  # MWh
+    df_aim['MWh_exp'] = df_export.sum() / 1000  # MWh
     return df_aim['MWh_imp_el'], df_aim['MWh_exp']
 
 
@@ -61,7 +62,7 @@ def get_unit_use_annual_profile(df_unit, df_t, unit, nb_periods):
     return df_PV
 
 
-def return_correct_OPEX(df_grid,  df_time, total_area):
+def return_correct_OPEX(df_grid, df_time, total_area):
     opex = 0
     for layer in df_grid.groupby(level=[0]).nunique().index:
         df = df_grid.xs((layer, 'Network'), level=('Layer', 'Hub'))
@@ -77,12 +78,12 @@ def correct_grid_param(df_Grid):
     df_grid = df_Grid.xs(('Electricity', "Network"), level=('Layer', 'Hub'))[:-2]
     uncontrollable_load = df_Grid.xs("Electricity", level="Layer")["Uncontrollable_load"].drop("Network", level="Hub")
     uncontrollable_load = uncontrollable_load.groupby(level=["Period", "Time"]).sum().max()
-    GM_GU['GUd'] = np.round(np.max(df_grid['Grid_demand'] - df_grid['Grid_supply'])/uncontrollable_load, 2)
-    GM_GU['GUs'] = np.round(np.max(df_grid['Grid_supply'] - df_grid['Grid_demand'])/uncontrollable_load, 2)
+    GM_GU['GUd'] = np.round(np.max(df_grid['Grid_demand'] - df_grid['Grid_supply']) / uncontrollable_load, 2)
+    GM_GU['GUs'] = np.round(np.max(df_grid['Grid_supply'] - df_grid['Grid_demand']) / uncontrollable_load, 2)
 
     df = df_Grid.xs('Electricity', level=0)[['Grid_demand', 'Grid_supply']].xs("Network", level="Hub", drop_level=False)
     df_max = df.groupby(level=['Hub', 'Period']).max()
-    df_mean = df.groupby(level=['Hub', 'Period']).mean().replace(0, 1) # replace 0 with 1 to avoid div by 0,  profiles >0, in case av = 0- whole profile is 0
+    df_mean = df.groupby(level=['Hub', 'Period']).mean().replace(0, 1)  # replace 0 with 1 to avoid div by 0,  profiles >0, in case av = 0- whole profile is 0
     GM = df_max.div(df_mean, level='Hub').max()
 
     GM_GU['GMd'] = np.round(GM["Grid_demand"], 2)
@@ -99,21 +100,21 @@ def correct_SS_SC(df_grid, df_unit, df_t, nb_periods=10):
     df_el = df_grid.xs(('Electricity', 'Network'), level=('Layer', 'Hub'))
     df_imp, df_exp = return_annual_exports_imports(df_el, df_t)
 
-    df_aim = {}
-    df_aim['SC'] = (onsite_elec - df_exp * 1000) / onsite_elec
-    df_aim['SS'] = (onsite_elec - df_exp * 1000) / (onsite_elec - df_exp * 1000 + df_imp * 1000)
-    df_aim["PVP"] = df_PV.Units_supply / (df_PV.Units_supply - df_exp * 1000 + df_imp * 1000)
-    df_aim["MWh_imp_el"] = df_imp
-    df_aim["MWh_exp"] = df_exp
+    df_aim = {'SC': (onsite_elec - df_exp * 1000) / onsite_elec,
+              'SS': (onsite_elec - df_exp * 1000) / (onsite_elec - df_exp * 1000 + df_imp * 1000),
+              "PVP": df_PV.Units_supply / (df_PV.Units_supply - df_exp * 1000 + df_imp * 1000),
+              "MWh_imp_el": df_imp,
+              "MWh_exp": df_exp}
+
     return df_aim
 
 
 def return_BUI_GWPop(df_grid, surface, df_time, df_KPI):
     df_el = df_grid.xs(('Electricity', 'Network'), level=('Layer', 'Hub'))
     emissions_el_dy = df_el.GWP_supply * df_el.Grid_supply - df_el.GWP_demand * df_el.Grid_demand
-    emissions_el_dy = emissions_el_dy.mul(df_time.dp, level='Period', axis=0).sum()/surface
+    emissions_el_dy = emissions_el_dy.mul(df_time.dp, level='Period', axis=0).sum() / surface
     emissions_el_av = df_el.GWP_supply.mean() * df_el.Grid_supply - df_el.GWP_demand.mean() * df_el.Grid_demand
-    emissions_el_av = emissions_el_av.mul(df_time.dp, level='Period', axis=0).sum()/surface
+    emissions_el_av = emissions_el_av.mul(df_time.dp, level='Period', axis=0).sum() / surface
 
     df_resource = df_grid.xs("Network", level="Hub")
     emissions = df_resource.GWP_supply * df_resource.Grid_supply - df_resource.GWP_demand * df_resource.Grid_demand
@@ -123,12 +124,12 @@ def return_BUI_GWPop(df_grid, surface, df_time, df_KPI):
     gwp_constr_m2 = df_KPI["gwp_constr_m2"].xs("Network")
     gwp_tot_m2 = gwp_op_m2 + gwp_constr_m2
 
-    df_aim = {}
-    df_aim['gwp_elec_av'] = emissions_el_av
-    df_aim['gwp_elec_dy'] = emissions_el_dy
-    df_aim['gwp_op_m2'] = gwp_op_m2
-    df_aim['gwp_constr_m2'] = gwp_constr_m2
-    df_aim['gwp_tot_m2'] = gwp_tot_m2
+    df_aim = {'gwp_elec_av': emissions_el_av,
+              'gwp_elec_dy': emissions_el_dy,
+              'gwp_op_m2': gwp_op_m2,
+              'gwp_constr_m2': gwp_constr_m2,
+              'gwp_tot_m2': gwp_tot_m2}
+
     return df_aim
 
 

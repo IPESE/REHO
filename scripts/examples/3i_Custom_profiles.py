@@ -7,7 +7,7 @@ if __name__ == '__main__':
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -22,12 +22,12 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids=grids)
 
     # Set method options
-    # You can provide here a profile for domestic electricity, domestic hot water, or occupancy
+    # You can provide here a profile for domestic electricity, domestic hot water, or building occupancy
     path_to_custom_elec_profile = '../template/data/profiles/electricity.csv'
     method = {'building-scale': True, 'use_custom_profiles': {'electricity': path_to_custom_elec_profile}}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

@@ -457,7 +457,7 @@ The ``reho`` instance is initialized with:
 
 .. code-block:: python
 
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
 
 One or several optimization(s) can then be conducted:
 

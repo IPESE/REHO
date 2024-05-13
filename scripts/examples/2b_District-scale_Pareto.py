@@ -6,16 +6,17 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    qbuildings_data = reader.read_db(3658, nb_buildings=2)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()
-    scenario['Objective'] = 'TOTEX'
-    scenario['name'] = 'totex'
-    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
+    scenario['Objective'] = ['OPEX', 'CAPEX']
+    scenario['nPareto'] = 2
+    scenario['name'] = 'pareto'
+    scenario['exclude_units'] = ['NG_Cogeneration', 'OIL_Boiler']
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
@@ -27,8 +28,8 @@ if __name__ == '__main__':
     DW_params = {'max_iter': 2}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params=DW_params, solver="gurobi")
-    reho.single_optimization()
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params=DW_params, solver="gurobi")
+    reho.generate_pareto_curve()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='2a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='2b')

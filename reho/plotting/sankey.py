@@ -10,6 +10,7 @@ Builds the dataframe for the visualization of annual flows from REHO results in 
 # Colors and labels for units and layers
 layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Name').dropna(how='all')
 
+
 def update_label(source_name, target_name, df_label):
     """
         update labels of df_label if source_name or target_name not in index of df_label
@@ -17,7 +18,7 @@ def update_label(source_name, target_name, df_label):
         Parameters:
             source_name (string) : first name to update
             target_name (string) : second name to update
-            df_label (df): dataframe with labels
+            df_label (df) : pd.DataFrame with labels
 
         Returns:
             df_label (df) updated
@@ -28,14 +29,15 @@ def update_label(source_name, target_name, df_label):
         df_label.loc[target_name, 'pos'] = len(df_label)
     return df_label
 
+
 def add_label_value(df_label, df_stv, precision, units):
     """
         add the values from df_stv to the labels of df_labels
         The value of the nodes are thus available in the nodes name for the sankey diagram
 
         Parameters:
-            df_label (df): dataframe of labels
-            df_stv (df): dataframe of source, target and value
+            df_label (df) : pd.DataFrame of labels
+            df_stv (df) : pd.DataFrame of source, target and value
             precision (int): precision of the displayed numbers (default = 2)
             units (string): unit of the values (default MWh)
 
@@ -52,8 +54,9 @@ def add_label_value(df_label, df_stv, precision, units):
         df_source_value.loc[i, 'value'] = max(source_val, target_val)
 
     df_label = df_label.merge(df_source_value, left_on='pos', right_index=True)
-    df_label.label = df_label.label+"\n"+df_label.value.round(precision).astype(str)+units
+    df_label.label = df_label.label + "\n" + df_label.value.round(precision).astype(str) + units
     return df_label
+
 
 def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, check_dest_2=False, dest_2=None, adjustment=0, fact=1):
     """
@@ -76,24 +79,26 @@ def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, ch
         Returns:
             df_label updated (df), df_stv updated (df), value added (float, 0 if nothing added)
     """
-    source_to_dest = df_annuals.loc[(df_annuals['Layer'] == layer) & (df_annuals['Hub'] == hub)][dem_sup].sum() # .sum() to add all the values of the buildings if multiple buildings
-    if source_to_dest != 0:                                                     # if data available
-        if check_dest_2:                                                        # if True apply the second dest
+    source_to_dest = df_annuals.loc[(df_annuals['Layer'] == layer) & (df_annuals['Hub'] == hub)][
+        dem_sup].sum()  # .sum() to add all the values of the buildings if multiple buildings
+    if source_to_dest != 0:  # if data available
+        if check_dest_2:  # if True apply the second dest
             dest = dest_2
-        df_label = update_label(source, dest, df_label)                         # update label list
-        df_stv[source+'_to_'+dest] = [df_label.loc[source, 'pos'],              # source, create a source to target column
-                                      df_label.loc[dest, 'pos'],                # target
-                                      float(fact*source_to_dest+adjustment)]    # value
+        df_label = update_label(source, dest, df_label)  # update label list
+        df_stv[source + '_to_' + dest] = [df_label.loc[source, 'pos'],  # source, create a source to target column
+                                          df_label.loc[dest, 'pos'],  # target
+                                          float(fact * source_to_dest + adjustment)]  # value
 
-    return df_label, df_stv, fact*source_to_dest+adjustment
+    return df_label, df_stv, fact * source_to_dest + adjustment
+
 
 def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, units='MWh', display_label_value=True, scaling_factor=1):
-    # Hypothèses :
+    # Hypotheses :
     # 1. DHW demand taken as the supply of the watertank DHW
     # 2. no flow: electrical storage system to grid feed in, all to 'feed in electrical grid ' is from PV
     # 3. Small losses of NG, heat, wood,... between network and devices not accounted
     # 4. Electricity for 'Data heat' fully accounted as electricity consumption (Layer Data: not in sankey)
-    # 5. Electricity produced by technologies can be stored (eg. NG_cogen elec -> battery)
+    # 5. Electricity produced by technologies can be stored (e.g. NG_cogen elec -> battery)
 
     # Multi building :
     # supported
@@ -104,32 +109,30 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     # Electrical storage device
     elec_storage_list = ['Battery', 'EV_district']
     # Manual handled devices (list below not used, just here for the information)
-    manual_device     = ['PV', 'WaterTankSH']
+    # manual_device = ['PV', 'WaterTankSH']
     # Semi automatic handled devices
-    semi_auto_device  = ['HeatPump_Air', 'HeatPump_DHN', 'NG_Boiler', 'ThermalSolar', 'OIL_Boiler',
-                         'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'NG_Cogeneration', 'DHN_in',
-                         'HeatPump_Lake', 'WOOD_Stove', 'HeatPump_Geothermal', 'Air_Conditioner',
-                         'DataHeat_DHW'] # name must be the same as used by REHO
+    semi_auto_device = ['HeatPump_Air', 'HeatPump_DHN', 'NG_Boiler', 'ThermalSolar', 'OIL_Boiler',
+                        'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'NG_Cogeneration', 'DHN_in',
+                        'HeatPump_Lake', 'WOOD_Stove', 'HeatPump_Geothermal', 'Air_Conditioner',
+                        'DataHeat_DHW']  # name must be the same as used by REHO
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 
-
-
     # Select only not null lines in df_annuals
-    df_annuals = scaling_factor*df_results['df_Annuals']
+    df_annuals = scaling_factor * df_results['df_Annuals']
     df_annuals = df_annuals.replace(0, np.nan)
     df_annuals = df_annuals.loc[df_annuals['Demand_MWh'].notnull() | df_annuals['Supply_MWh'].notnull()]
     df_annuals = df_annuals.replace(np.nan, 0).reset_index()
 
     # "Building" string management in data to deal with data uniformly regarding buildings
     for x in list(df_annuals.index):
-        if df_annuals.loc[x, "Hub"].startswith('Building'): #all Buildingx -> Building
+        if df_annuals.loc[x, "Hub"].startswith('Building'):  # all Buildingx -> Building
             df_annuals.loc[x, "Hub"] = "Building"
-        else:                                               #else remove '_Buildingx' of the hub name
+        else:  # else remove '_Buildingx' of the hub name
             df_annuals.loc[x, "Hub"] = re.sub("_Building\d+", "", df_annuals.loc[x, "Hub"])
 
     # Creating the dataframe for the following
-    df_label = pd.DataFrame(columns=['pos'])                      # df for labels, position number (pos) and colors
-    df_stv   = pd.DataFrame(index=['source', 'target', 'value'])  # df for source,target,value
+    df_label = pd.DataFrame(columns=['pos'])  # df for labels, position number (pos) and colors
+    df_stv = pd.DataFrame(index=['source', 'target', 'value'])  # df for source,target,value
 
     # check if electricity storage
     elec_storage_use = False
@@ -164,7 +167,7 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
                                             df_annuals, df_label, df_stv)
 
     # Calculation of Losses in the watertank
-    heat_tot_sh  = df_annuals.loc[(df_annuals['Layer'] == 'SH') & (df_annuals['Hub'] == 'Building')].Demand_MWh.sum()
+    heat_tot_sh = df_annuals.loc[(df_annuals['Layer'] == 'SH') & (df_annuals['Hub'] == 'Building')].Demand_MWh.sum()
     heat_tot_sup = df_annuals.loc[(df_annuals['Layer'] == 'SH')].Supply_MWh.sum() - wtsh_to_sh
     heat_loss_wt = heat_tot_sup - heat_tot_sh
 
@@ -174,9 +177,9 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
 
     # 7 SH Heat to SH if watertank
     df_label, df_stv, _ = add_flow('SH_heat', 'SH', 'SH', 'WaterTankSH', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv, adjustment=heat_tot_sup-heat_loss_wt, fact=-1)
+                                   df_annuals, df_label, df_stv, adjustment=heat_tot_sup - heat_loss_wt, fact=-1)
 
-    elec_storage_energy_in  = 0
+    elec_storage_energy_in = 0
     elec_storage_energy_out = 0
     for elec_storage in elec_storage_list:
         # 8 Electrical cons before elec storage to storage device
@@ -192,15 +195,15 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     # 10 Electrical cons before elec storage to Electr cons
     if elec_storage_use:
         df_label = update_label('Electrical_consumption_bp', 'Electrical_consumption', df_label)
-        Ec_after_bp =  df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] != 'Network')].Demand_MWh.sum()
+        Ec_after_bp = df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] != 'Network')].Demand_MWh.sum()
         Ec_after_bp -= elec_storage_energy_out
         df_stv['Electrical_consumption_bp_to_Electrical_consumption'] = [df_label.loc['Electrical_consumption_bp', 'pos'],
                                                                          df_label.loc['Electrical_consumption', 'pos'],
-                                                                         float(Ec_after_bp-elec_storage_energy_in)]
+                                                                         float(Ec_after_bp - elec_storage_energy_in)]
 
     # Semi-Auto for the followings devices
     for device in semi_auto_device:
-        abr_hp = device
+        
         # 1 Ele Cons to Device
         df_label, df_stv, _ = add_flow('Electrical_consumption', device, 'Electricity', device, 'Demand_MWh',
                                        df_annuals, df_label, df_stv)

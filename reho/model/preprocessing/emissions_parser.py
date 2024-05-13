@@ -7,14 +7,15 @@ __doc__ = """
 Characterizes the CO2 emissions related to electricity generated from the grid.
 """
 
+
 def find_average_value(country, metric, emissions_matrix):
     # sort city to country
     emissions_matrix.columns = np.arange(1, 8761)
-    emissions_matrix = emissions_matrix.xs((country, metric), level=(0,2))
+    emissions_matrix = emissions_matrix.xs((country, metric), level=(0, 2))
 
-    average = emissions_matrix.mean(axis = 1)
+    average = emissions_matrix.mean(axis=1)
     if (metric == 'GWP100a') or (metric == 'GWP20a'):
-        average = average/1000 #g/kWh to kg/kWh
+        average = average / 1000  # g/kWh to kg/kWh
     return average
 
 
@@ -63,7 +64,6 @@ def annual_to_typical_emissions(cluster, country, metric, df_time, df_emission):
 
 
 def return_typical_emission_profiles(cluster, File_ID, metric, timestamp_file, emissions_matrix):
-
     country = 'CH'
     emission_file = os.path.join(path_to_clustering, metric + '_' + File_ID + '.dat')
 
@@ -74,4 +74,3 @@ def return_typical_emission_profiles(cluster, File_ID, metric, timestamp_file, e
         df_E.to_csv(emission_file)
 
     return df_E
-

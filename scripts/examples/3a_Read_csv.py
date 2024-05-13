@@ -4,11 +4,11 @@ from reho.model.reho import *
 if __name__ == '__main__':
 
     # Set building parameters
-    # you can as well define your district from a csv file instead of reading the database
+    # You can as well define your district from a csv file instead of reading the database
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

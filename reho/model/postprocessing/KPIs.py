@@ -1,11 +1,12 @@
 import pandas as pd
 import numpy as np
 import reho.model.preprocessing.emissions_parser as emissions
-import reho.model.preprocessing.weather as WD
+import reho.model.preprocessing.weather as weather
 
 __doc__ = """
 Calculates the KPIs resulting from the optimization.
 """
+
 
 def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network, df_profiles, df_external, df_Time):
     # --------------------------------------------------------------------
@@ -135,7 +136,7 @@ def postcompute_security_indicators(df_annual, df_annual_network):
             SC = df_SC / 1
             SC_net = df_SC_net / 1
         else:
-            # one building has PV -> district has a SC neq 1
+            # one building has PV -> district has SC neq 1
             SC_net = df_SC_net / df_gen.sum()
             # make sure to set SC 1 for buildings without PV
             df_gen[df_gen == 0] = 1
@@ -245,8 +246,8 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
         if kWh_PV == 0:
             LCoE1 = np.nan
         else:
-            LCoE1 = (C_PV + C_BAT + C_el1[house]) / (kWh_PV)  # CHF/kWh
-        LCoE2 = (C_PV + C_BAT + C_el2[house]) / (kWh_house)
+            LCoE1 = (C_PV + C_BAT + C_el1[house]) / kWh_PV  # CHF/kWh
+        LCoE2 = (C_PV + C_BAT + C_el2[house]) / kWh_house
 
         df_LCoE.at[house, 'LCoE1'] = LCoE1
         df_LCoE.at[house, 'LCoE2'] = LCoE2
@@ -267,12 +268,9 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
     return df_LCoE
 
 
-def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, cluster,
-                                 infrastructure, timestamp_file, emissions_matrix):
-    # --------------------------------------------------------------------
-    # emissions
-    # --------------------------------------------------------------------
+def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, cluster, timestamp_file, emissions_matrix):
 
+    # Emissions
     em_supply_dy = df_profiles_net.GWP_supply.xs('Electricity')
     em_demand_dy = df_profiles_net.GWP_demand.xs('Electricity')
 
@@ -308,7 +306,7 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
     # --------------------------------------------------------------------
     df_el_net = df_profiles_net.xs('Electricity', level=0)
 
-    File_ID = WD.get_cluster_file_ID(cluster)
+    File_ID = weather.get_cluster_file_ID(cluster)
     res_profile = emissions.return_typical_emission_profiles(df_Time, File_ID, 'method 1', timestamp_file, emissions_matrix)
     res_av = emissions.find_average_value('CH', 'method 1', emissions_matrix)
     s_RES_dy = pd.Series(dtype='float')
@@ -410,7 +408,7 @@ def build_df_profiles_house(df_Results, infrastructure):
     df_PV = units_power_profiles_per_building(df_Results, infrastructure, 'PV')
     df_BAT = units_power_profiles_per_building(df_Results, infrastructure, 'Battery')
 
-    df_grid_profile = df_Results["df_Grid_t"].xs(('Electricity'), level=('Layer'))
+    df_grid_profile = df_Results["df_Grid_t"].xs('Electricity', level='Layer')
 
     df_profiles_house = df_grid_profile.drop('Network', level='Hub')
     df_profiles_house['PV'] = df_PV['Units_supply']
@@ -556,8 +554,7 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestam
     df_KPI['gwp_constr_m2'] = df_Results["df_Performance"]['GWP_constr'].div(df_hsA.ERA)
     df_KPI['gwp_tot_m2'] = df_KPI['gwp_op_m2'] + df_KPI['gwp_constr_m2']  # [kgCO2-eq/m2/yr]
 
-    df_G_RES = postcompute_average_emission(df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time,
-                                            cluster, infrastructure, timestamp_file, emissions_matrix)
+    df_G_RES = postcompute_average_emission(df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time, cluster, timestamp_file, emissions_matrix)
     df_KPI = pd.concat([df_KPI, df_G_RES[['gwp_elec_av', 'gwp_elec_dy']].div(df_hsA.ERA, axis=0)], axis=1)
     df_KPI = df_KPI.rename(
         columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})  # gwp_elec_av_m2    gwp_elec_dy_m2
@@ -699,3 +696,56 @@ def build_df_Economics(df_Results, df_profiles):
     df_Economics = pd.concat([df_op, df_inv], keys=['operation', 'investment'], names=['Category'], axis=1)
 
     return df_Economics
+
+
+def temperature_profile(df_Results, daily_averaging=False):
+    """
+    Return a pd.Series of the indoor temperature profile, one column per building.
+    TODO : check if multi-buildings works fine
+
+    Parameters:
+        df_Results (df) : pd.DataFrame of a scenario
+        daily_averaging (bool) : to average over days
+
+    Returns:
+        df_Tin
+    """
+    # Extract the data
+    buildings_list = list(df_Results['df_Buildings'].index)
+    df_buildings_t = df_Results['df_Buildings_t']
+
+    # Prepare the df to store the Tin
+    df_Tin = pd.DataFrame()
+
+    # list of the two last periods used for design purpose to drop later
+    period_to_drop = list(df_buildings_t.xs('Building1').index.get_level_values('Period').unique()[-2:])
+
+    # For each building: calculation of the Tin series
+    for b in buildings_list:
+        # Take Tin for the building in df_buildings_t
+        df_Tin_building = pd.DataFrame()
+        df_Tin_building['T_in'] = df_buildings_t.xs(b)['T_in']
+
+        # drop the last two periods for design
+        for i in period_to_drop:
+            df_Tin_building = df_Tin_building.drop(i, level='Period')
+
+        # array to work for a building
+        Tin_building = np.array([])
+
+        for j in range(1, 366):
+            id = df_Results['df_Index'].PeriodOfYear[j * 24]
+            data_id = df_Tin_building.xs(id)
+            Tin_building = np.concatenate((Tin_building, data_id['T_in']))
+
+        if daily_averaging:
+            items_average = 24
+            Tin_building = np.mean(Tin_building.reshape(-1, items_average), axis=1)
+
+        # Store the data in df_Tin (one col per building)
+        df_Tin['T_in_' + str(b)] = Tin_building
+
+    # create idx
+    idx = list(df_Tin.index + 1)
+
+    return df_Tin.to_numpy(), idx

@@ -161,16 +161,16 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.preprocessing.weather
     :members: get_cluster_file_ID, generate_output_data, write_dat_files
 
-*compact_optimization.py*
+*sub_problem.py*
 ------------------------------
 
-.. automodule:: reho.model.compact_optimization
+.. automodule:: reho.model.sub_problem
     :members:
 
-*district_decomposition.py*
+*master_problem.py*
 ------------------------------
 
-.. autoclass:: reho.model.district_decomposition.district_decomposition
+.. autoclass:: reho.model.master_problem.master_problem
 
 *infrastructure.py*
 ------------------------------
@@ -198,7 +198,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ---------------
 
 .. automodule:: reho.plotting.plotting
-   :members: plot_performance, plot_expenses, plot_sankey, sunburst_eud, unit_monthly_plot
+   :members: plot_performance, plot_expenses, plot_sankey, plot_sunburst_eud, plot_unit_monthly
 
 *rainbow_plots.py*
 ------------------
@@ -210,10 +210,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.plotting.sankey
 
-`yearly_profile_builder.py`
----------------------------
-
-.. automodule:: reho.plotting.yearly_profile_builder
 
 *paths.py*
 ==================

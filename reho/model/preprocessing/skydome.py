@@ -255,8 +255,8 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data, typic
 
 
 def calc_orientated_surface(azimuth, tilt, design_lim_angle, local_data, irradiation_file, typical_frequency):
-    df_irradiation_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data,
-                                                                   irradiation_file, typical_frequency)
+
+    df_irradiation_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data, irradiation_file, typical_frequency)
 
     # construct annual sum
     df_period = pd.DataFrame()

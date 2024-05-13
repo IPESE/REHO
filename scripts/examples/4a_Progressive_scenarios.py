@@ -8,7 +8,7 @@ if __name__ == '__main__':
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(transformer=3658, nb_buildings=1)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Data': {}})
     units = infrastructure.initialize_units(scenario, grids)
 
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # SCENARIO 2 HP + PV #
@@ -41,7 +41,7 @@ if __name__ == '__main__':
 
     reho.scenario = scenario
     reho.units = units
-    reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
+    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.buildings_data['Building1']['temperature_heating_supply_C'] = 42
     reho.buildings_data['Building1']['temperature_heating_return_C'] = 34
     reho.single_optimization()
@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
     reho.scenario = scenario
     reho.units = units
-    reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
+    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
     # SCENARIO 4 Data #
@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     reho.scenario = scenario
     reho.units = units
-    reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
+    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
     # SCENARIO 5 PV + HP + isolation #

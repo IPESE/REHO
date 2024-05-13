@@ -1,11 +1,12 @@
 import os.path
-import math
+
 import numpy as np
 import pandas as pd
+
 from reho.paths import *
 
 
-class infrastructure():
+class Infrastructure:
     """
     Characterize all the sets and parameters which are connected to buildings, units and grids.
 
@@ -18,6 +19,7 @@ class infrastructure():
     grids : dict
         Grids characterization
     """
+
     def __init__(self, qbuildings_data, units, grids):
 
         self.units = units["building_units"]
@@ -84,7 +86,6 @@ class infrastructure():
 
         self.generate_structure()
         self.generate_parameter()
-    
 
     def generate_structure(self):
 
@@ -105,7 +106,8 @@ class infrastructure():
                     self.UnitsOfService[s] = np.append(self.UnitsOfService[s], [complete_name])
 
                 # Streams---------------------------------------------------------
-                self.StreamsOfBuilding[h] = np.array([h + '_c_lt', h + '_c_mt', h + '_h_lt'])  # c_mt  c_lt - space heat demand discretized in 2 streams, _- h_lt for cooling
+                self.StreamsOfBuilding[h] = np.array(
+                    [h + '_c_lt', h + '_c_mt', h + '_h_lt'])  # c_mt  c_lt - space heat demand discretized in 2 streams, _- h_lt for cooling
                 self.StreamsOfUnit[complete_name] = np.array([])
                 for s in u['StreamsOfUnit']:
                     stream = u['name'] + '_' + h + '_' + s
@@ -252,8 +254,8 @@ class infrastructure():
             self.Set[key] = self.TemperatureSets[key]
 
         # TODO select the AC and HP units without number place in the self.units array
-        #self.Set['AC_Tsupply'] = np.array(self.units[2]['stream_Tin'])
-        #self.Set['HP_Tsupply'] = np.array(self.units[0]['stream_Tin'])
+        # self.Set['AC_Tsupply'] = np.array(self.units[2]['stream_Tin'])
+        # self.Set['HP_Tsupply'] = np.array(self.units[0]['stream_Tin'])
 
         # Streams------------------------------------------------------------
 
@@ -261,10 +263,10 @@ class infrastructure():
         Hout = {}
         for unitstreams in dict(self.StreamsOfUnit, **self.StreamsOfBuilding).values():  # union of dict
             for s in unitstreams:
-                if s.count('_h_') == 1:  # check if its a hot stream
+                if s.count('_h_') == 1:  # check if it's a hot stream
                     Hin[s] = 1
                     Hout[s] = 0
-                elif s.count('_c_') == 1:  # check if its a cold stream
+                elif s.count('_c_') == 1:  # check if it's a cold stream
                     Hin[s] = 0
                     Hout[s] = 1
                 else:
@@ -297,19 +299,17 @@ class infrastructure():
 
     def set_discretize_unit_size(self):
 
-        sizes = {}
-        sizes['Air_Conditioner'] = [0]
-        sizes['HeatPump'] = [0, 2.7, 3.4, 5.5]
-        sizes['WaterTankDHW'] = [0, 0.07, 0.125, 0.20, 0.8]
-        sizes['WaterTankSH'] = [0, 0.20, 0.40, 0.60, 0.75]
-        sizes['ElectricalHeater'] = [0, 3.0, 6.0, 9.0, 12.0, 15, 20, 22]
-        sizes['ElectricalHeater'] = [0, 3.0, 6.0, 9.0, 12.0, 15, 20, 22]
-        sizes['NG_Boiler'] = [0, 11.8]
-        sizes['Battery'] = [0, 2.5, 5, 10]
-        sizes['NG_Cogeneration'] = [0, 0.7]
-        sizes['EV'] = []
-        sizes['PV'] = []
-        sizes['ThermalSolar'] = []
+        sizes = {'Air_Conditioner': [0],
+                 'HeatPump': [0, 2.7, 3.4, 5.5],
+                 'WaterTankDHW': [0, 0.07, 0.125, 0.20, 0.8],
+                 'WaterTankSH': [0, 0.20, 0.40, 0.60, 0.75],
+                 'ElectricalHeater': [0, 3.0, 6.0, 9.0, 12.0, 15, 20, 22],
+                 'NG_Boiler': [0, 11.8],
+                 'Battery': [0, 2.5, 5, 10],
+                 'NG_Cogeneration': [0, 0.7],
+                 'EV': [],
+                 'PV': [],
+                 'ThermalSolar': []}
 
         for h in self.House:
             for u in self.houses[h]['units']:
@@ -335,7 +335,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     Returns
     -------
     np.array
-        Array that contains the one dictionary by cell, containing the units information.
+        Array that contains the one dictionary by cell, containing the units' information.
 
     See also
     --------
@@ -348,6 +348,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     - The name of the units, which will be used as keys, do not matter but the *UnitOfType* must be along a defined
       list of possibilities.
     """
+
     def transform_into_list(column):
         for idx, row in column.items():
             try:
@@ -539,4 +540,3 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
             grids[idx] = grid_dict
 
     return grids
-

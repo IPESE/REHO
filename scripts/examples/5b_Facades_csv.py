@@ -8,7 +8,7 @@ if __name__ == '__main__':
     qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2,
                                       facades_filename='../template/data/facades.csv', roofs_filename='../template/data/roofs.csv')
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     method = {'use_pv_orientation': True, 'use_facades': True, 'building-scale': True}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

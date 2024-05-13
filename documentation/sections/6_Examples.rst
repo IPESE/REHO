@@ -13,12 +13,12 @@ They should give you a brief overview of REHO's capabilities and to test the var
 
 Single-optimization
 ====================================
-.. literalinclude:: ../../scripts/examples/1a_building-scale_totex.py
+.. literalinclude:: ../../scripts/examples/1a_Building-scale_totex.py
    :language: python
 
 Pareto curve
 ====================================
-.. literalinclude:: ../../scripts/examples/1b_building-scale_Pareto.py
+.. literalinclude:: ../../scripts/examples/1b_Building-scale_Pareto.py
    :language: python
 
 2. District-scale
@@ -26,12 +26,12 @@ Pareto curve
 
 Single-optimization
 ====================================
-.. literalinclude:: ../../scripts/examples/2a_district-scale_totex.py
+.. literalinclude:: ../../scripts/examples/2a_District-scale_totex.py
    :language: python
 
 Pareto curve
 ====================================
-.. literalinclude:: ../../scripts/examples/2b_district-scale_Pareto.py
+.. literalinclude:: ../../scripts/examples/2b_District-scale_Pareto.py
    :language: python
 
 3. Various features
@@ -77,6 +77,11 @@ Connect to ELCOM database for electricity prices
 .. literalinclude:: ../../scripts/examples/3h_Electricity_prices.py
    :language: python
 
+Use custom profiles for electricity consumption
+===========================================================
+.. literalinclude:: ../../scripts/examples/3i_Custom_profiles.py
+   :language: python
+
 Comparing integrated systems
 ====================================
 .. literalinclude:: ../../scripts/examples/4a_Progressive_scenarios.py
@@ -89,6 +94,3 @@ Include photovoltaics on facades
 ====================================
 .. literalinclude:: ../../scripts/examples/5a_Facades.py
    :language: python
-
-
-

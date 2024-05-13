@@ -18,5 +18,6 @@ def test_run_examples_without_errors():
     if not test_succeeded:
         assert False
 
+
 if __name__ == "__main__":
     test_run_examples_without_errors()

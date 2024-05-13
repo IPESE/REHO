@@ -1,4 +1,4 @@
-import os, re
+import os
 from csv import Sniffer
 from pathlib import Path
 from pandas import read_csv, read_table, read_excel
@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 __doc__ = """
 File for managing file paths and configurations.
 """
-
 
 load_dotenv()
 if "AMPL_PATH" not in os.environ:
@@ -57,7 +56,6 @@ path_to_weather = os.path.join(path_to_data, 'weather')
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
 path_to_configurations = os.path.join(os.getcwd(), 'configurations')
-
 
 
 def path_handler(path_given):

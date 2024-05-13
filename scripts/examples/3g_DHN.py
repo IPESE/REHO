@@ -1,6 +1,7 @@
 from reho.model.reho import *
 from reho.plotting import plotting
 
+
 if __name__ == '__main__':
 
     # Set building parameters
@@ -8,7 +9,7 @@ if __name__ == '__main__':
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(transformer=10889, nb_buildings=4)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -33,7 +34,7 @@ if __name__ == '__main__':
     parameters = {'T_DHN_supply_cst': np.repeat(20.0, 4), "T_DHN_return_cst": np.repeat(15.0, 4)}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.get_DHN_costs()  # run one optimization forcing DHN to find costs DHN connection per house
     reho.single_optimization()  # run optimization with DHN costs
 

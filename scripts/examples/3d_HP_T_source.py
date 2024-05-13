@@ -1,14 +1,14 @@
 from reho.model.reho import *
 
-# Heat pump can have different sources such as air, lake, geothermal
 
 if __name__ == '__main__':
+
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -26,12 +26,12 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Set specific parameters
+    # Heat pump can have different sources such as air, lake, geothermal
     parameters = {"T_source": np.repeat({"Geothermal": 17.0}, 2)}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='3d')
-

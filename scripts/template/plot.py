@@ -1,6 +1,7 @@
 from reho.plotting import plotting
 import pandas as pd
 
+
 results = pd.read_pickle('results/my_case_study.pickle')
 
 # Performance plot : Costs and Global Warming Potential

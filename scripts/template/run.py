@@ -7,7 +7,7 @@ if __name__ == '__main__':
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='data/buildings.csv', nb_buildings=1)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'custom_weather': 'data/profiles/Sion.csv', 'Location': 'Sion', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
     reho.single_optimization()
 
     # Save results

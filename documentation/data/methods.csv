@@ -21,6 +21,6 @@
 *extract_parameters*;To extract all the parameters used in the optimization;False
 *print_logs*;Prints the logs of the optimization(s);True
 **Other**;;
-*actors_cost*;Changes the MP to solve: instead of considering the district as a single entity to optimize, different stakeholders portfolios are considered where the objective function is the minimization of the costs for one particular actor, while the costs of the other actors are constrained with parameterized epsilon values;False
+*actors_problem*;Changes the MP to solve: instead of considering the district as a single entity to optimize, different stakeholders portfolios are considered where the objective function is the minimization of the costs for one particular actor, while the costs of the other actors are constrained with parameterized epsilon values;False
 *DHN_CO2*;To use CO2 in the DHN as heat carrier (default fluid is water);False
 *use_Storage_Interperiod*;Allows the usage of long-term storage units;False

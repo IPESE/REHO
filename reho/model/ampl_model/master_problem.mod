@@ -20,7 +20,7 @@ set HousesOfLayer{Layers} within House;
 set FeasibleSolutions ordered;
 
 set Period;				# Set of periods (days)
-set PeriodStandard; # TODO set time as function of period as in model.mod
+set PeriodStandard; # TODO set time as function of period as in sub_problem.mod
 set PeriodExtrem := {Period diff PeriodStandard};
 
 param TimeStart default 1;

@@ -129,12 +129,6 @@ Main contributors
    :align: right
    :class: only-dark
 
-
-* Paul **Stadler** (2016-2019)
-* Luise **Middelhauve** (2018-2021)
 * Dorsan **Lepour** (2020-...)
+* Joseph **Loustau** (2022-2024)
 * Cédric **Terrier** (2021-...)
-* Joseph **Loustau** (2022-...)
-
-
-

@@ -16,7 +16,7 @@ class SensitivityAnalysis:
     Parameters
     ----------
     reho : reho object
-        Model of the district, obtained via the reho class.
+        Model of the district, obtained via the REHO class.
     SA_type : str
         Type of SA (Morris or Sobol).
     sampling_parameters : int

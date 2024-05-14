@@ -274,7 +274,7 @@ class MasterProblem:
             print('INITIATE HOUSE: ' + h)
 
         # find district structure and parameter for one single building
-        buildings_data_SP, parameters_SP = self.__split_parameter_sets_per_building(h)
+        buildings_data_SP, parameters_SP = self.split_parameter_sets_per_building(h)
 
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
         if epsilon_init is not None and self.method['building-scale']:
@@ -383,8 +383,8 @@ class MasterProblem:
         # Load Master Problem (MP) Formulation
         ampl_MP.cd(path_to_ampl_model)
         ampl_MP.read('master_problem.mod')
-        if self.method["actors_cost"]:
-            ampl_MP.read('master_problem_actors.mod')
+        if self.method["actors_problem"]:
+            ampl_MP.read('actors_problem.mod')
 
         if len(self.infrastructure.UnitsOfDistrict) > 0:
             ampl_MP.cd(path_to_district_units)
@@ -499,7 +499,7 @@ class MasterProblem:
 
         MP_set_indexed['FeasibleSolutions'] = df_Performance.index.unique('FeasibleSolution').to_numpy()  # index to array as set
 
-        if self.method['actors_cost']:
+        if self.method['actors_problem']:
             # MP_parameters['Costs_tot_actors_min'] = df_Performance[["Costs_op", "Costs_inv", "Costs_rep"]].sum(axis=1).groupby("house").min()
             MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
 
@@ -645,7 +645,7 @@ class MasterProblem:
 
         self.feasible_solutions += 1  # after each 'round' of SP execution-> increase
 
-    def SP_execution(self, scenario, Scn_ID, Pareto_ID, House):
+    def SP_execution(self, scenario, Scn_ID, Pareto_ID, h):
         """
         Insert dual variables in ampl model, apply scenario, adapt model depending on the methods and get results.
 
@@ -657,7 +657,7 @@ class MasterProblem:
             scenario ID
         Pareto_ID : int
             pareto ID
-        House : string
+        h : string
             house ID
 
         Returns
@@ -671,13 +671,13 @@ class MasterProblem:
         ------
         ValueError: If the SP optimization did not converge
         """
-        self.logger.info('iterate HOUSE: ' + House + 'iteration: ' + str(self.iter))
+        self.logger.info('iterate HOUSE: ' + h + 'iteration: ' + str(self.iter))
 
         # Give dual variables to Subproblem
-        pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
-        pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
-        pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'pi_lca')
-        pi_h = pd.concat([pi], keys=[House], names=['House']).reorder_levels(['House', 'Layer', 'Period', 'Time'])
+        pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
+        pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
+        pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_lca')
+        pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
 
         parameters_SP = {'Cost_supply_network': pi,
                          'Cost_demand_network': pi * (1 - 1e-9),
@@ -689,17 +689,17 @@ class MasterProblem:
                          }
 
         # find district structure, objective, beta and parameter for one single building
-        buildings_data_SP, parameters_SP = self.__split_parameter_sets_per_building(House, parameters_SP)
-        beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, House, 'beta')
+        buildings_data_SP, parameters_SP = self.split_parameter_sets_per_building(h, parameters_SP)
+        beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = SubProblem(self.infrastructure_SP[House], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster,
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster,
                               scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = SubProblem(self.infrastructure_SP[House], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster,
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster,
                               scenario, self.method, self.solver)
 
         ampl = REHO.build_model_without_solving()
@@ -707,11 +707,11 @@ class MasterProblem:
         if self.method['fix_units']:
             for unit in self.fix_units_list:
                 if unit == 'PV':
-                    ampl.getVariable('Units_Mult').get('PV_' + House).fix(self.df_fix_Units.Units_Mult.loc['PV_' + House] * 0.999)
-                    ampl.getVariable('Units_Use').get('PV_' + House).fix(float(self.df_fix_Units.Units_Use.loc['PV_' + House]))
+                    ampl.getVariable('Units_Mult').get('PV_' + h).fix(self.df_fix_Units.Units_Mult.loc['PV_' + h] * 0.999)
+                    ampl.getVariable('Units_Use').get('PV_' + h).fix(float(self.df_fix_Units.Units_Use.loc['PV_' + h]))
                 else:
-                    ampl.getVariable('Units_Mult').get(unit + '_' + House).fix(self.df_fix_Units.Units_Mult.loc[unit + '_' + House])
-                    ampl.getVariable('Units_Use').get(unit + '_' + House).fix(float(self.df_fix_Units.Units_Use.loc[unit + '_' + House]))
+                    ampl.getVariable('Units_Mult').get(unit + '_' + h).fix(self.df_fix_Units.Units_Mult.loc[unit + '_' + h])
+                    ampl.getVariable('Units_Use').get(unit + '_' + h).fix(float(self.df_fix_Units.Units_Use.loc[unit + '_' + h]))
 
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
@@ -1146,7 +1146,7 @@ class MasterProblem:
         col = self.number_SP_solutions.columns.difference(["House"])
         self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean(numeric_only=True)
 
-    def __split_parameter_sets_per_building(self, h, parameters_SP=dict({})):
+    def split_parameter_sets_per_building(self, h, parameters_SP=dict({})):
         """
         Some inputs are for the district and some other for the houses. This function fuses the two
         and gives the parameters per house. This is important to run an optimization on a single building

@@ -138,7 +138,7 @@ class SubProblem:
         #  MODEL FILES
         # -----------------------------------------------------------------------------------------------------#
         ampl.cd(path_to_ampl_model)
-        ampl.read('model.mod')
+        ampl.read('sub_problem.mod')
 
         # Energy conversion Units
         ampl.cd(path_to_units)
@@ -716,9 +716,9 @@ def initialize_default_methods(method):
     if 'print_logs' not in method:
         method['print_logs'] = True
 
-    if 'actors_cost' not in method:
-        method['actors_cost'] = False
-    if method['actors_cost']:
+    if 'actors_problem' not in method:
+        method['actors_problem'] = False
+    if method['actors_problem']:
         method["include_all_solutions"] = True
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False

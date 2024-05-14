@@ -62,7 +62,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 - `data_stream.dat` contains values that specify the operating temperatures of streams and energy conversion units.
 - `data_stream_storage.dat` specifies the operating temperatures of the energy storage units.
 - `master_problem.mod` contains the modeling of the problem for the decomposition approach.
-- `model.mod` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
+- `sub_problem.mod` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
 - `scenario.mod` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
 
 **postprocessing/**

@@ -566,7 +566,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
         df_Results["df_lca_operation"] = LCA_op
 
-    if method["actors_cost"]:
+    if method["actors_problem"]:
         df1 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True).groupby(level=(0, 2)).sum()
         df2 = get_ampl_data(ampl, 'Cost_supply_district', multi_index=True).groupby(level=(0, 2)).sum()
         df3 = get_ampl_data(ampl, 'Cost_self_consumption', multi_index=True).groupby(level=1).sum()

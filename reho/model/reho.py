@@ -11,18 +11,16 @@ from reho.paths import *
 
 class REHO(MasterProblem):
     """
-    Wrapper class used to perform the single or multi-objective optimization.
+    Wrapper class used to perform the single or multi-objective optimization (Pareto curve).
 
-    Parameters are inherited from `MasterProblem`
+    Parameters are inherited from `MasterProblem`.
 
     See also
     --------
     reho.model.master_problem.MasterProblem
-
     """
 
-    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
-                 cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
+    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
@@ -55,415 +53,12 @@ class REHO(MasterProblem):
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
 
-    def add_constraints_from_self_scenario(self):
-        scenario = {'EMOO': {'EMOO_grid': self.scenario['EMOO']['EMOO_grid']},
-                    'specific': self.scenario['specific'],
-                    'exclude_units': self.scenario['exclude_units'],
-                    'enforce_units': self.scenario['enforce_units'],
-                    }
-        return scenario
-
-    def return_epsilon_init(self, C_max, C_min, pareto_max, pareto, objective):
-        if self.method['building-scale']:
-            if objective == self.scenario["Objective"][0]:
-                epsilon_init = (C_max - C_min) / (pareto_max + 1) * (pareto - 1) + C_min
-            elif objective == self.scenario["Objective"][1]:
-                epsilon_init = (C_max - C_min) / (pareto_max + 1) * (pareto + 1) + C_min
-            else:
-                epsilon_init = None
-        else:
-            epsilon_init = None
-        return epsilon_init
-
-    def __annualized_investment(self, ampl, surfaces, Scn_ID, Pareto_ID):
-
-        if self.method['building-scale'] or self.method['district-scale']:
-            df_inv = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-            district = (df_inv.Costs_inv[-1] + df_inv.Costs_rep[-1]) / self.ERA
-            buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
-        else:
-            tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
-            df_h = write_results.get_ampl_data(ampl, 'Costs_House_inv', multi_index=False)
-            df1_h = write_results.get_ampl_data(ampl, 'Costs_House_rep', multi_index=False)
-            df = write_results.get_ampl_data(ampl, 'Costs_inv', multi_index=False)
-            df1 = write_results.get_ampl_data(ampl, 'Costs_rep', multi_index=False)
-            # annualized investment costs with replacements (important for BAT and NG_Cogeneration)
-            district = (df.sum()[0] + df1.sum()[0]) * tau[0] / surfaces.sum()[0]  # for compact formulation
-            buildings = (df_h.Costs_House_inv.div(surfaces.ERA) + df1_h.Costs_House_rep.div(surfaces.ERA)) * tau[0]  # for decomposition formulation
-        return district, buildings
-
-    def __opex_per_house(self, ampl, surfaces, Scn_ID, Pareto_ID):
-        if self.method['building-scale'] or self.method['district-scale']:
-            df_op = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-            district = df_op.Costs_op[-1] / self.ERA
-            building = df_op.Costs_op[:-1].div(surfaces.ERA)
-        else:
-            df_h = write_results.get_ampl_data(ampl, 'Costs_House_op', multi_index=False)
-            df = write_results.get_ampl_data(ampl, 'Costs_op', multi_index=False)
-            district = df.sum()[0] / surfaces.sum()[0]  # normalized OPEX CHF/m2, for compact formulation
-            building = df_h.Costs_House_op.div(surfaces.ERA)
-        return district, building
-
-    def __totex_per_house(self, ampl, surfaces, Scn_ID, Pareto_ID):
-        capex_district, capex_building = self.__annualized_investment(ampl, surfaces, Scn_ID, Pareto_ID)
-        opex_district, opex_building = self.__opex_per_house(ampl, surfaces, Scn_ID, Pareto_ID)
-        totex_district = capex_district + opex_district
-        totex_house = capex_building + opex_building
-        return totex_district, totex_house
-
-    def __gwp_per_house(self, surfaces, Scn_ID, Pareto_ID):
-        df_perf = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-        df_GWP = (df_perf["GWP_op"] + df_perf["GWP_constr"])
-        GWP_district = df_GWP["Network"] / surfaces.sum()[0]
-        GWP_house = df_GWP.drop("Network").div(surfaces.ERA)
-        return GWP_district, GWP_house
-
-    def get_objectives_values(self, ampl, objectives, Scn_ID, Pareto_ID):
-
-        obj_values = {}
-        surfaces = pd.DataFrame.from_dict({bui: self.buildings_data[bui]["ERA"] for bui in self.buildings_data}, orient="index")
-        surfaces.columns = ["ERA"]
-        for i, obj in enumerate(objectives):
-            if "CAPEX" == obj:
-                obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = self.__annualized_investment(ampl, surfaces, Scn_ID,
-                                                                                                                                Pareto_ID)
-            elif "OPEX" == obj:
-                obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = self.__opex_per_house(ampl, surfaces, Scn_ID, Pareto_ID)
-            elif "TOTEX" == obj:
-                obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = self.__totex_per_house(ampl, surfaces, Scn_ID, Pareto_ID)
-            elif "GWP" == obj:
-                obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = self.__gwp_per_house(surfaces, Scn_ID, Pareto_ID)
-            else:
-                obj_values["district_obj" + str(i + 1)] = self.results[Scn_ID][Pareto_ID]["df_lca_Performance"][obj]["Network"] / np.sum(surfaces)[0]
-                obj_values["building_obj" + str(i + 1)] = self.results[Scn_ID][Pareto_ID]["df_lca_Performance"][obj].drop("Network").div(surfaces.ERA)
-
-        return obj_values
-
-    def __find_obj1_lower_bound(self, Scn_ID):
-
-        scenario = self.add_constraints_from_self_scenario()
-        objective1 = self.scenario["Objective"][0]
-        scenario['Objective'] = objective1
-
-        if self.method['district-scale']:
-            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
-        else:
-            if self.method['use_facades'] or self.method['use_pv_orientation']:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                  scenario, self.method, self.solver, self.qbuildings_data)
-            else:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                  scenario, self.method, self.solver)
-            ampl, exitcode = reho.solve_model()
-
-        scenario = {'Objective': objective1}
-        self.add_df_Results(ampl, Scn_ID, 1, scenario)
-        self.get_KPIs(Scn_ID, Pareto_ID=1)
-
-        obj_values = self.get_objectives_values(ampl, self.scenario["Objective"], Scn_ID, Pareto_ID=1)
-
-        gc.collect()  # free memory
-        self.logger.info('The lower bound of the ' + str(objective1) + 'value is: ' + str(obj_values["district_obj1"]))
-        return obj_values
-
-    def __find_obj2_lower_bound(self, Scn_ID):
-        scenario = self.add_constraints_from_self_scenario()
-        objective2 = self.scenario["Objective"][1]
-        scenario['Objective'] = objective2
-
-        if not self.method["switch_off_second_objective"]:
-            Pareto_ID = self.total_Pareto
-        else:
-            Pareto_ID = self.nPareto + 2
-
-        if self.method['district-scale']:
-            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
-        else:
-            if self.method['use_facades'] or self.method['use_pv_orientation']:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                  scenario, self.method, self.solver, self.qbuildings_data)
-            else:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                  scenario, self.method, self.solver)
-            ampl, exitcode = reho.solve_model()
-
-        scenario = {'Objective': objective2}
-        self.add_df_Results(ampl, Scn_ID, Pareto_ID, scenario)
-        self.get_KPIs(Scn_ID, Pareto_ID=Pareto_ID)
-
-        obj_values = self.get_objectives_values(ampl, self.scenario["Objective"], Scn_ID, Pareto_ID=Pareto_ID)
-
-        gc.collect()  # free memory
-        self.logger.info('The upper bound of the ' + str(self.scenario["Objective"][0]) + 'value is: ' + str(obj_values["district_obj1"]))
-        return obj_values
-
-    def generate_pareto_curve(self):
-
-        Scn_ID = self.scenario['name']
-
-        # Bounds Paretocurve
-        obj1_lower_bound = self.__find_obj1_lower_bound(Scn_ID)  # lower bound
-        obj1_upper_bound = self.__find_obj2_lower_bound(Scn_ID)  # upper bound capex
-
-        obj1_max = obj1_upper_bound["district_obj1"]
-        obj1_min = obj1_lower_bound["district_obj1"]
-        obj1_house_max = obj1_upper_bound["building_obj1"]
-        obj1_house_min = obj1_lower_bound["building_obj1"]
-
-        # Intermediate Pareto points: OPEX optimization with CAPEX constraint
-        scenario = self.add_constraints_from_self_scenario()
-        scenario['Objective'] = self.scenario["Objective"][1]
-        self.epsilon_constraints['EMOO_obj1'] = np.array([])
-
-        for nParetoIT in range(2, self.nPareto + 2):
-            # Computation of the intermediate RES values
-            obj1_eps_lim = (obj1_max - obj1_min) / (self.nPareto + 1) * (nParetoIT - 1) + obj1_min
-            epsilon_init = self.return_epsilon_init(obj1_house_max, obj1_house_min, self.nPareto, nParetoIT, self.scenario["Objective"][0])
-
-            if self.scenario["Objective"][0] in ["OPEX", "CAPEX", "TOTEX", "GWP"]:
-                scenario['EMOO']['EMOO_' + self.scenario["Objective"][0]] = obj1_eps_lim
-            else:
-                scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][0]: obj1_eps_lim}
-
-            self.epsilon_constraints['EMOO_obj1'] = np.append(self.epsilon_constraints['EMOO_obj1'], obj1_eps_lim)
-            self.logger.info('---------------> ' + str(self.scenario["Objective"][0]) + ' LIMIT: ' + str(obj1_eps_lim))
-
-            # Results computation
-            if self.method['district-scale']:
-                ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
-            else:
-                if self.method['use_facades'] or self.method['use_pv_orientation']:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                      self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
-                else:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                      self.cluster, scenario, self.method, self.solver)
-                ampl, exitcode = reho.solve_model()
-
-            self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
-            self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
-
-            del ampl
-            gc.collect()  # free memory
-
-        if not self.method['switch_off_second_objective']:
-            ################################################################################################
-            # Intermediate Pareto points nParetoIT OPEX constraint CAPEX optimization
-            scenario = self.add_constraints_from_self_scenario()
-            scenario['Objective'] = self.scenario["Objective"][0]
-            self.epsilon_constraints['EMOO_obj2'] = np.array([])
-
-            obj2_min = obj1_upper_bound["district_obj2"]
-            obj2_max = obj1_lower_bound["district_obj2"]
-            obj2_house_min = obj1_upper_bound["building_obj2"]
-            obj2_house_max = obj1_lower_bound["building_obj2"]
-
-            for point, nParetoIT in enumerate(range(self.nPareto + 2, self.total_Pareto)):
-
-                # Computation of the intermediate RES values
-                obj2_eps_lim = (obj2_max - obj2_min) / (self.nPareto + 1) * (point + 1) + obj2_min
-                epsilon_init = self.return_epsilon_init(obj2_house_max, obj2_house_min, self.nPareto, point, self.scenario["Objective"][1])
-
-                if self.scenario["Objective"][1] in ["OPEX", "CAPEX", "TOTEX", "GWP"]:
-                    scenario['EMOO']['EMOO_' + self.scenario["Objective"][1]] = obj2_eps_lim
-                else:
-                    scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][1]: obj2_eps_lim}
-
-                self.epsilon_constraints['EMOO_obj2'] = np.append(self.epsilon_constraints['EMOO_obj2'], obj2_eps_lim)
-                self.logger.info('---------------> ' + str(self.scenario["Objective"][1]) + ' LIMIT: ' + str(obj2_eps_lim))
-                # results computation
-                if self.method['district-scale']:
-                    ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
-                else:
-                    if self.method['use_facades'] or self.method['use_pv_orientation']:
-                        reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
-                                          self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
-                    else:
-                        reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
-                                          self.set_indexed, self.cluster, scenario, self.method, self.solver)
-                    ampl, exitcode = reho.solve_model()
-
-                self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
-                self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
-
-                del ampl
-                gc.collect()  # free memory
-
-        self.sort_pareto_points(Scn_ID)
-
-        self.logger.info(str(obj1_min) + " " + str(obj1_max))
-
-    def sort_pareto_points(self, Scn_ID):
-
-        df = pd.DataFrame()
-        for i in self.results[Scn_ID].keys():
-            if self.scenario["Objective"][0] in self.infrastructure.lca_kpis:
-                df2 = pd.DataFrame([self.results[Scn_ID][i]["df_lca_Performance"][self.scenario["Objective"][0]].xs("Network")], index=[i])
-            else:
-                df2 = pd.DataFrame([self.results[Scn_ID][i]["df_Performance"]['Costs_op'].xs("Network")], index=[i])
-            df = pd.concat([df, df2])
-        df = df.sort_values([0], ascending=False).reset_index()
-
-        new_order_results = {}
-
-        rename_dict = {}
-        for n, idx in enumerate(df['index'].values):
-            new_order_results[n + 1] = self.results[Scn_ID][idx]
-            rename_dict[idx] = n + 1
-
-        self.results[Scn_ID] = new_order_results
-
-        if self.method['district-scale']:
-            self.sort_decomp_result(Scn_ID, df['index'].values)
-
-    def fix_utilities_OPEX_curve(self):
-        Scn_ID = self.scenario['name']
-        scenario = self.add_constraints_from_self_scenario()
-
-        for Pareto_ID in range(1, self.total_Pareto + 1):
-            df_u = self.results[Scn_ID][Pareto_ID]["df_Unit"]
-
-            scenario['Objective'] = 'OPEX'
-            # -----------------------------------------------------------------------------------------------------#
-            # -Execution
-            # -----------------------------------------------------------------------------------------------------#
-
-            # REHOExecution, returns ampl library containing the whole model
-            if self.method['use_facades'] or self.method['use_pv_orientation']:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                  self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
-            else:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                  self.cluster, scenario, self.method, self.solver)
-            ampl = reho.build_model_without_solving()
-
-            for i, value in ampl.getVariable('Units_Mult').instances():
-                ampl.getVariable('Units_Mult').get(str(i)).fix(
-                    1.00001 * df_u.Units_Mult.loc[i])  # To avoid infeasibilities caused by numerical issues - Be careful with integer Mult
-
-            for i, value in ampl.getVariable('Units_Use').instances():
-                ampl.getVariable('Units_Use').get(str(i)).fix(df_u.Units_Use.loc[i])
-
-            ampl.solve()
-            exitcode = exitcode_from_ampl(ampl)
-            if exitcode == 'infeasible':
-                sys.exit(exitcode)
-
-            self.add_df_Results(ampl, Scn_ID, Pareto_ID + 100, self.scenario)
-            self.get_KPIs(Scn_ID, Pareto_ID=self.total_Pareto)
-
-            del ampl
-            gc.collect()  # free memory
-
-    def fix_utilities(self, Pareto_ID, Scn_ID, df_Unit=None, scenario=None):
-
-        if self.method['district-scale']:
-            if 'FeasibleSolution' in df_Unit.index.names:
-                df_unit = df_Unit.reset_index(level=['FeasibleSolution', 'Hub'], drop=True)
-            else:
-                df_unit = df_Unit
-        else:
-            if df_Unit.empty:
-                df_unit = self.results[Scn_ID][Pareto_ID]["df_Unit"]
-            else:
-                df_unit = df_Unit
-
-        scenario_fix_uti = scenario.copy()
-        if 'Objective' in scenario_fix_uti:
-            if 'GWP' in scenario_fix_uti['Objective'] or 'GWP_Dantzig' in scenario_fix_uti['Objective']:
-                scenario_fix_uti['Objective'] = 'GWP'
-            else:
-                scenario_fix_uti['Objective'] = 'OPEX'
-        else:
-            scenario_fix_uti['Objective'] = 'OPEX'
-
-        parameters_district = {}
-        for key in self.parameters:
-            parameters_district[key] = self.parameters[key]
-
-        # -----------------------------------------------------------------------------------------------------#
-        # -Execution
-        # -----------------------------------------------------------------------------------------------------#
-        # REHOExecution, returns ampl library containing the whole model
-        if self.method['use_facades'] or self.method['use_pv_orientation']:
-            reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                              self.cluster, scenario_fix_uti, self.method, self.solver, self.qbuildings_data)
-        else:
-            reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                              self.cluster, scenario_fix_uti, self.method, self.solver)
-        ampl = reho.build_model_without_solving()
-
-        for i, value in ampl.getVariable('Units_Mult').instances():
-            # ## To avoid  infeasibilities caused by  numerical issues - increase unitsize, if not HP or already Fmax -Be careful  with integer Mult
-            if i in self.infrastructure.UnitsOfType['HeatPump']:
-                ampl.getVariable('Units_Mult').get(str(i)).fix(df_unit.Units_Mult.loc[i])
-            elif i in self.infrastructure.UnitsOfType['PV']:
-                ampl.getVariable('Units_Mult').get(str(i)).fix(0.999 * df_unit.Units_Mult.loc[i])
-            elif i in self.infrastructure.UnitsOfType['WaterTankDHW']:
-                ampl.getVariable('Units_Mult').get(str(i)).fix(0.999 * df_unit.Units_Mult.loc[i])
-            elif df_unit.Units_Mult.loc[i] == self.infrastructure.Units_Parameters.loc[i].Units_Fmax:
-                ampl.getVariable('Units_Mult').get(str(i)).fix(df_unit.Units_Mult.loc[i])
-            else:
-                ampl.getVariable('Units_Mult').get(str(i)).fix(1.00001 * df_unit.Units_Mult.loc[i])
-
-        for i, value in ampl.getVariable('Units_Use').instances():
-            ampl.getVariable('Units_Use').get(str(i)).fix(df_unit.Units_Use.loc[i])
-
-        # constraints_to_drop =['DHW_c1','DHW_c2','DHW_c3','DHW_c4','DHW_c5','PVO_c3']
-        constraints_to_drop = ['EMOO_grid_constraint', "DHW_c2"]
-        for constr in constraints_to_drop:
-            ampl.getConstraint(constr).drop()
-
-        ampl.solve()
-        exitcode = exitcode_from_ampl(ampl)
-        if exitcode == 'infeasible':
-            sys.exit(exitcode)
-
-        return ampl, exitcode
-
-    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
-        # -----------------------------------------------------------------------------------------------------------
-        # INITIATION
-        # -----------------------------------------------------------------------------------------------------------
-        self.pool = mp.Pool(mp.cpu_count())
-        self.iter = 0  # new scenario has to start at iter = 0
-        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
-
-        self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
-        self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
-
-        # -----------------------------------------------------------------------------------------------------------
-        # ITERATION
-        # -----------------------------------------------------------------------------------------------------------
-        while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
-            self.iter += 1
-            self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
-            self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
-
-            if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
-                break
-
-        # -----------------------------------------------------------------------------------------------------------
-        # FINALIZATION
-        # -----------------------------------------------------------------------------------------------------------
-        self.logger.info(self.stopping_criteria)
-        self.iter += 1
-        self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
-        self.pool.close()
-
-        return None, None
-
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
-        if self.method['district-scale'] or self.method['building-scale']:
+        if self.method['district-scale'] or self.method['building-scale']:  # decomposition formulation
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
-        else:
+        else:  # compact formulation
             if self.method['use_facades'] or self.method['use_pv_orientation']:
                 reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
                                   self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
@@ -493,8 +88,311 @@ class REHO(MasterProblem):
         if exitcode == 'infeasible':
             sys.exit(exitcode)
 
+    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
+
+        # Initiation
+        self.pool = mp.Pool(mp.cpu_count())
+        self.iter = 0  # new scenario has to start at iter = 0
+        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
+
+        self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+        self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
+        self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+
+        # Iteration
+        while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
+            self.iter += 1
+            self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+            self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
+            self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+
+            if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
+                break
+
+        # Finalization
+        self.logger.info(self.stopping_criteria)
+        self.iter += 1
+        self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
+        self.pool.close()
+
+        return None, None
+    
+    def generate_pareto_curve(self):
+
+        Scn_ID = self.scenario['name']
+
+        def get_objectives_values(ampl, objectives, Pareto_ID):
+
+            obj_values = {}
+            surfaces = pd.DataFrame.from_dict({bui: self.buildings_data[bui]["ERA"] for bui in self.buildings_data}, orient="index")
+            surfaces.columns = ["ERA"]
+
+            def annualized_investment():
+                if self.method['building-scale'] or self.method['district-scale']:
+                    df_inv = self.results[Scn_ID][Pareto_ID]["df_Performance"]
+                    district = (df_inv.Costs_inv[-1] + df_inv.Costs_rep[-1]) / self.ERA
+                    buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
+                else:
+                    tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
+                    df_h = write_results.get_ampl_data(ampl, 'Costs_House_inv', multi_index=False)
+                    df1_h = write_results.get_ampl_data(ampl, 'Costs_House_rep', multi_index=False)
+                    df = write_results.get_ampl_data(ampl, 'Costs_inv', multi_index=False)
+                    df1 = write_results.get_ampl_data(ampl, 'Costs_rep', multi_index=False)
+                    # annualized investment costs with replacements (important for BAT and NG_Cogeneration)
+                    district = (df.sum()[0] + df1.sum()[0]) * tau[0] / surfaces.sum()[0]  # for compact formulation
+                    buildings = (df_h.Costs_House_inv.div(surfaces.ERA) + df1_h.Costs_House_rep.div(surfaces.ERA)) * tau[0]  # for decomposition formulation
+                return district, buildings
+
+            def opex_per_house():
+                if self.method['building-scale'] or self.method['district-scale']:
+                    df_op = self.results[Scn_ID][Pareto_ID]["df_Performance"]
+                    district = df_op.Costs_op[-1] / self.ERA
+                    building = df_op.Costs_op[:-1].div(surfaces.ERA)
+                else:
+                    df_h = write_results.get_ampl_data(ampl, 'Costs_House_op', multi_index=False)
+                    df = write_results.get_ampl_data(ampl, 'Costs_op', multi_index=False)
+                    district = df.sum()[0] / surfaces.sum()[0]  # normalized OPEX CHF/m2, for compact formulation
+                    building = df_h.Costs_House_op.div(surfaces.ERA)
+                return district, building
+
+            def totex_per_house():
+                capex_district, capex_building = annualized_investment()
+                opex_district, opex_building = opex_per_house()
+                totex_district = capex_district + opex_district
+                totex_house = capex_building + opex_building
+                return totex_district, totex_house
+
+            def gwp_per_house():
+                df_perf = self.results[Scn_ID][Pareto_ID]["df_Performance"]
+                df_GWP = (df_perf["GWP_op"] + df_perf["GWP_constr"])
+                GWP_district = df_GWP["Network"] / surfaces.sum()[0]
+                GWP_house = df_GWP.drop("Network").div(surfaces.ERA)
+                return GWP_district, GWP_house
+
+            for i, obj in enumerate(objectives):
+                if "CAPEX" == obj:
+                    obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = annualized_investment()
+                elif "OPEX" == obj:
+                    obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = opex_per_house()
+                elif "TOTEX" == obj:
+                    obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = totex_per_house()
+                elif "GWP" == obj:
+                    obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = gwp_per_house()
+                else:
+                    obj_values["district_obj" + str(i + 1)] = self.results[Scn_ID][Pareto_ID]["df_lca_Performance"][obj]["Network"] / np.sum(surfaces)[0]
+                    obj_values["building_obj" + str(i + 1)] = self.results[Scn_ID][Pareto_ID]["df_lca_Performance"][obj].drop("Network").div(surfaces.ERA)
+            return obj_values
+
+        def add_constraints_from_self_scenario():
+            scenario = {'EMOO': {'EMOO_grid': self.scenario['EMOO']['EMOO_grid']},
+                        'specific': self.scenario['specific'],
+                        'exclude_units': self.scenario['exclude_units'],
+                        'enforce_units': self.scenario['enforce_units'],
+                        }
+            return scenario
+
+        def find_obj1_lower_bound():
+            scenario = add_constraints_from_self_scenario()
+            objective1 = self.scenario["Objective"][0]
+            scenario['Objective'] = objective1
+
+            if self.method['district-scale']:
+                ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
+            else:
+                if self.method['use_facades'] or self.method['use_pv_orientation']:
+                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
+                                      scenario, self.method, self.solver, self.qbuildings_data)
+                else:
+                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
+                                      scenario, self.method, self.solver)
+                ampl, exitcode = reho.solve_model()
+
+            scenario = {'Objective': objective1}
+            self.add_df_Results(ampl, Scn_ID, 1, scenario)
+            self.get_KPIs(Scn_ID, Pareto_ID=1)
+
+            obj_values = get_objectives_values(ampl, self.scenario["Objective"], Pareto_ID=1)
+
+            gc.collect()  # free memory
+            self.logger.info('The lower bound of the ' + str(objective1) + 'value is: ' + str(obj_values["district_obj1"]))
+            return obj_values
+
+        def find_obj2_lower_bound():
+            scenario = add_constraints_from_self_scenario()
+            objective2 = self.scenario["Objective"][1]
+            scenario['Objective'] = objective2
+
+            if not self.method["switch_off_second_objective"]:
+                Pareto_ID = self.total_Pareto
+            else:
+                Pareto_ID = self.nPareto + 2
+
+            if self.method['district-scale']:
+                ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
+            else:
+                if self.method['use_facades'] or self.method['use_pv_orientation']:
+                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
+                                      scenario, self.method, self.solver, self.qbuildings_data)
+                else:
+                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
+                                      scenario, self.method, self.solver)
+                ampl, exitcode = reho.solve_model()
+
+            scenario = {'Objective': objective2}
+            self.add_df_Results(ampl, Scn_ID, Pareto_ID, scenario)
+            self.get_KPIs(Scn_ID, Pareto_ID=Pareto_ID)
+
+            obj_values = get_objectives_values(ampl, self.scenario["Objective"], Pareto_ID=Pareto_ID)
+
+            gc.collect()  # free memory
+            self.logger.info('The upper bound of the ' + str(self.scenario["Objective"][0]) + 'value is: ' + str(obj_values["district_obj1"]))
+            return obj_values
+
+        def return_epsilon_init(C_max, C_min, pareto_max, pareto, objective):
+            if self.method['building-scale']:
+                if objective == self.scenario["Objective"][0]:
+                    epsilon_init = (C_max - C_min) / (pareto_max + 1) * (pareto - 1) + C_min
+                elif objective == self.scenario["Objective"][1]:
+                    epsilon_init = (C_max - C_min) / (pareto_max + 1) * (pareto + 1) + C_min
+                else:
+                    epsilon_init = None
+            else:
+                epsilon_init = None
+            return epsilon_init
+
+        def sort_pareto_points():
+
+            df = pd.DataFrame()
+            for i in self.results[Scn_ID].keys():
+                if self.scenario["Objective"][0] in self.infrastructure.lca_kpis:
+                    df2 = pd.DataFrame([self.results[Scn_ID][i]["df_lca_Performance"][self.scenario["Objective"][0]].xs("Network")], index=[i])
+                else:
+                    df2 = pd.DataFrame([self.results[Scn_ID][i]["df_Performance"]['Costs_op'].xs("Network")], index=[i])
+                df = pd.concat([df, df2])
+            df = df.sort_values([0], ascending=False).reset_index()
+
+            new_order_results = {}
+
+            rename_dict = {}
+            for n, idx in enumerate(df['index'].values):
+                new_order_results[n + 1] = self.results[Scn_ID][idx]
+                rename_dict[idx] = n + 1
+
+            self.results[Scn_ID] = new_order_results
+
+            if self.method['district-scale']:
+                self.sort_decomp_result(Scn_ID, df['index'].values)
+
+        # Bounds Pareto curve
+        obj1_lower_bound = find_obj1_lower_bound() 
+        obj1_upper_bound = find_obj2_lower_bound()
+
+        obj1_max = obj1_upper_bound["district_obj1"]
+        obj1_min = obj1_lower_bound["district_obj1"]
+        obj1_house_max = obj1_upper_bound["building_obj1"]
+        obj1_house_min = obj1_lower_bound["building_obj1"]
+
+        # Intermediate Pareto points: OPEX optimization with CAPEX constraint
+        scenario = add_constraints_from_self_scenario()
+        scenario['Objective'] = self.scenario["Objective"][1]
+        self.epsilon_constraints['EMOO_obj1'] = np.array([])
+
+        for nParetoIT in range(2, self.nPareto + 2):
+            # Computation of the intermediate RES values
+            obj1_eps_lim = (obj1_max - obj1_min) / (self.nPareto + 1) * (nParetoIT - 1) + obj1_min
+            epsilon_init = return_epsilon_init(obj1_house_max, obj1_house_min, self.nPareto, nParetoIT, self.scenario["Objective"][0])
+
+            if self.scenario["Objective"][0] in ["OPEX", "CAPEX", "TOTEX", "GWP"]:
+                scenario['EMOO']['EMOO_' + self.scenario["Objective"][0]] = obj1_eps_lim
+            else:
+                scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][0]: obj1_eps_lim}
+
+            self.epsilon_constraints['EMOO_obj1'] = np.append(self.epsilon_constraints['EMOO_obj1'], obj1_eps_lim)
+            self.logger.info('---------------> ' + str(self.scenario["Objective"][0]) + ' LIMIT: ' + str(obj1_eps_lim))
+
+            # Results computation
+            if self.method['district-scale']:
+                ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
+            else:
+                if self.method['use_facades'] or self.method['use_pv_orientation']:
+                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
+                                      self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+                else:
+                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
+                                      self.cluster, scenario, self.method, self.solver)
+                ampl, exitcode = reho.solve_model()
+
+            self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
+            self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
+
+            del ampl
+            gc.collect()  # free memory
+
+        if not self.method['switch_off_second_objective']:
+
+            # Intermediate Pareto points: CAPEX optimization with OPEX constraint
+            scenario = add_constraints_from_self_scenario()
+            scenario['Objective'] = self.scenario["Objective"][0]
+            self.epsilon_constraints['EMOO_obj2'] = np.array([])
+
+            obj2_min = obj1_upper_bound["district_obj2"]
+            obj2_max = obj1_lower_bound["district_obj2"]
+            obj2_house_min = obj1_upper_bound["building_obj2"]
+            obj2_house_max = obj1_lower_bound["building_obj2"]
+
+            for point, nParetoIT in enumerate(range(self.nPareto + 2, self.total_Pareto)):
+                # Computation of the intermediate RES values
+                obj2_eps_lim = (obj2_max - obj2_min) / (self.nPareto + 1) * (point + 1) + obj2_min
+                epsilon_init = return_epsilon_init(obj2_house_max, obj2_house_min, self.nPareto, point, self.scenario["Objective"][1])
+
+                if self.scenario["Objective"][1] in ["OPEX", "CAPEX", "TOTEX", "GWP"]:
+                    scenario['EMOO']['EMOO_' + self.scenario["Objective"][1]] = obj2_eps_lim
+                else:
+                    scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][1]: obj2_eps_lim}
+
+                self.epsilon_constraints['EMOO_obj2'] = np.append(self.epsilon_constraints['EMOO_obj2'], obj2_eps_lim)
+                self.logger.info('---------------> ' + str(self.scenario["Objective"][1]) + ' LIMIT: ' + str(obj2_eps_lim))
+                # results computation
+                if self.method['district-scale']:
+                    ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
+                else:
+                    if self.method['use_facades'] or self.method['use_pv_orientation']:
+                        reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
+                                          self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+                    else:
+                        reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
+                                          self.set_indexed, self.cluster, scenario, self.method, self.solver)
+                    ampl, exitcode = reho.solve_model()
+
+                self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
+                self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
+
+                del ampl
+                gc.collect()  # free memory
+
+        sort_pareto_points()
+
+        self.logger.info(str(obj1_min) + " " + str(obj1_max))
+
     def generate_pareto_actors(self, n_sample=10, bounds=None, actor="Owners"):
-        self.method["actors_cost"] = True
+
+        def run_actors_opti(samples, ids):
+            if any([samples[col][0] for col in samples]):  # if samples contain values
+                param = samples.iloc[ids]
+                self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_min': param['owner_portfolio']}
+            scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
+            try:
+                scn = self.scenario["name"]
+                self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=0)
+                self.add_df_Results(None, scn, 0, self.scenario)
+                return self.results[scn][0], self.results_MP[scn][0]
+            except:
+                return None, None
+
+        self.method["actors_problem"] = True
         self.method["include_all_solutions"] = True
         self.method['building-scale'] = True
         self.scenario["Objective"] = "TOTEX_bui"
@@ -511,7 +409,7 @@ class REHO(MasterProblem):
 
         Scn_ID = self.scenario['name']
         self.pool = mp.Pool(mp.cpu_count())
-        results = {ids: self.pool.apply_async(self.run_actors_opti, args=(self.samples, ids)) for ids in self.samples.index}
+        results = {ids: self.pool.apply_async(run_actors_opti, args=(self.samples, ids)) for ids in self.samples.index}
         while len(results[list(self.samples.index)[-1]].get()) != 2:
             time.sleep(1)
         for ids in self.samples.index:
@@ -529,19 +427,12 @@ class REHO(MasterProblem):
 
         gc.collect()  # free memory
 
-    def run_actors_opti(self, samples, ids):
-
-        if any([samples[col][0] for col in samples]):  # if samples contain values
-            param = samples.iloc[ids]
-            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_min': param['owner_portfolio']}
-        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
-        try:
-            scn = self.scenario["name"]
-            self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=0)
-            self.add_df_Results(None, scn, 0, self.scenario)
-            return self.results[scn][0], self.results_MP[scn][0]
-        except:
-            return None, None
+    def read_configurations(self, path=None):
+        if path is None:
+            filename = 'tr_' + str(self.buildings_data["Building1"]["transformer"] + '_' + str(len(self.buildings_data))) + '.pickle'
+            path = os.path.join(path_to_configurations, filename)
+        with open(path, 'rb') as f:
+            [self.results_SP, self.feasible_solutions, self.number_SP_solutions] = pickle.load(f)
 
     def generate_configurations(self, n_sample=5, tariffs_ranges=None, delta_feed_in=0.15):
         if tariffs_ranges is None:
@@ -600,13 +491,6 @@ class REHO(MasterProblem):
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], f)
 
         return
-
-    def read_configurations(self, path=None):
-        if path is None:
-            filename = 'tr_' + str(self.buildings_data["Building1"]["transformer"] + '_' + str(len(self.buildings_data))) + '.pickle'
-            path = os.path.join(path_to_configurations, filename)
-        with open(path, 'rb') as f:
-            [self.results_SP, self.feasible_solutions, self.number_SP_solutions] = pickle.load(f)
 
     def get_DHN_costs(self):
 
@@ -674,7 +558,7 @@ class REHO(MasterProblem):
             df_Performance.loc[:, column] = last_results["df_District"][column]
         df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
 
-        if self.method["actors_cost"]:
+        if self.method["actors_problem"]:
             df_actor = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_District"][
                 ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
                  'owner_portfolio']]
@@ -817,7 +701,7 @@ class REHO(MasterProblem):
             df = pd.concat([df, df_idx])
         return df
 
-    def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
+    def get_KPIs(self, Scn_ID, Pareto_ID):
         if self.method["save_timeseries"]:
             df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster,
                                                   self.local_data["df_Timestamp"], self.local_data["df_Emissions"])

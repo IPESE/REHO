@@ -82,6 +82,11 @@ Use custom profiles for electricity consumption
 .. literalinclude:: ../../scripts/examples/3i_Custom_profiles.py
    :language: python
 
+Conduct a sensitivity analysis
+===========================================================
+.. literalinclude:: ../../scripts/examples/3j_sensitivity_analysis.py
+   :language: python
+
 Comparing integrated systems
 ====================================
 .. literalinclude:: ../../scripts/examples/4a_Progressive_scenarios.py

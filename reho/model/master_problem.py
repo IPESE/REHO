@@ -168,7 +168,7 @@ class MasterProblem:
 
         """
         SP_scenario = scenario.copy()
-        SP_scenario['EMOO'] = scenario['EMOO'].copy()
+        SP_scenario['EMOO'] = {}
         SP_scenario['specific'] = scenario['specific'].copy()
 
         SP_scenario_init = scenario.copy()
@@ -177,7 +177,6 @@ class MasterProblem:
 
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
-        SP_scenario['EMOO']['EMOO_grid'] = 0.0
 
         if "TransformerCapacity" in self.parameters:
             nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
@@ -454,6 +453,7 @@ class MasterProblem:
             ids = self.number_SP_solutions.iloc[-1]
             df = df_Grid_t[['GWP_supply']].xs("Electricity", level="Layer", drop_level=False)
             MP_parameters['GWP_supply'] = df.xs((ids["FeasibleSolution"], ids["House"]), level=("FeasibleSolution", "house"))
+            MP_parameters['GWP_demand'] = MP_parameters['GWP_supply'].rename(columns={"GWP_supply": "GWP_demand"}) * (1-1e-9)
 
         for key in self.lists_MP['list_parameters_MP']:
             if key in self.parameters.keys():
@@ -803,8 +803,9 @@ class MasterProblem:
             mu = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'mu')
             Cop_house = Cop.xs((self.iter, self.feasible_solutions - 1, h))
             Cinv_house = Cinv.xs((self.iter, self.feasible_solutions - 1, h))
-            obj_fct = pd.Series([Cinv_house["TOTEX"], Cop_house["TOTEX"]], index=["CAPEX", "OPEX"])
-            obj_fct = pd.concat([obj_fct, Cop_house + Cinv_house])
+            obj_fct = pd.Series( [Cinv_house["TOTEX"], Cop_house["TOTEX"]], index=["CAPEX", "OPEX"])
+            impacts = Cop_house + Cinv_house
+            obj_fct = pd.concat([obj_fct, impacts.replace(np.nan, 0)])
 
             beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, "beta")
             if beta.sum() == 0 and len(scenario["EMOO"].keys()) > 1:
@@ -960,7 +961,7 @@ class MasterProblem:
         return ampl
 
     def get_beta_values(self, scenario, beta=None):
-
+        scenario = scenario.copy()
         if isinstance(beta, (float, int, type(None))):
             index = list(self.flags.keys())  # list of objective function
             beta_list = pd.Series(np.zeros(len(index)), index=index) + 1e-6  # default penalty on other objectives
@@ -980,7 +981,7 @@ class MasterProblem:
         # add beta values on emoo constraint
         if isinstance(beta, (float, int)) and not self.method['building-scale']:
             emoo = scenario["EMOO"].copy()
-            for cst in ["EMOO_grid", "EMOO_GU_supply", "EMOO_GU_demand"]:
+            for cst in [k for k in scenario["EMOO"].keys() if k not in ['EMOO_TOTEX', 'EMOO_CAPEX', 'EMOO_OPEX','EMOO_GWP','EMOO_lca']]:
                 emoo.pop(cst, None)
             if 'EMOO_lca' in scenario["EMOO"].keys():
                 key = list(emoo['EMOO_lca'].keys())[0].replace("EMOO_", "")

@@ -8,7 +8,7 @@ import datetime
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
-    districts = [3658,3112,277]
+    districts = [8538,13219,13228,13569]
 
     # Initialization of scenarios - Generic parameters
     ## Set building parameters
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     # Initialization of scenarios - District parameters
     for transformer in districts:
         ## Set building parameters
-        qbuildings_data = reader.read_db(transformer=transformer, nb_buildings=10)
+        qbuildings_data = reader.read_db(transformer=transformer, nb_buildings=30)
         functionnal_area = np.sum([qbuildings_data["buildings_data"][bui]["ERA"] for bui in qbuildings_data["buildings_data"]])
         population = functionnal_area / 46.5 # average m2/pers in Switzerland
         ## District parameters

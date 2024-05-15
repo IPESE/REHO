@@ -1543,18 +1543,74 @@ def plot_pkm(results):
     return df_pkm,fig
 
 def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex'):
-    Pareto_ID_number = len(rehos_dict[list(rehos_dict.keys())[0]].results[scenario].keys())
+    """"
+    This function can accomodate reho object in the reho_dict or reho.results directly
+    """
+    try: # if reho
+        Pareto_ID_number = len(rehos_dict[list(rehos_dict.keys())[0]].results[scenario].keys())
+        REHO = True
+    except: # if reho.results
+        Pareto_ID_number = len(rehos_dict[list(rehos_dict.keys())[0]][scenario].keys())
+        REHO = False
 
-    fig = make_subplots(rows=Pareto_ID_number, cols=1)
+    fig = make_subplots(rows=Pareto_ID_number, cols=1+len(rehos_dict),
+                        subplot_titles=['pi'] + list(rehos_dict.keys()),
+                        horizontal_spacing = 0.05,
+                        shared_yaxes= 'columns')
 
+    # pi
     for Pareto_ID in range(Pareto_ID_number):
         r = Pareto_ID + 1
-        for name, reho in rehos_dict.items():
-            df_pi = reho.results_MP["totex"][Pareto_ID][0]["df_Dual_t"]["pi"].xs("Electricity")
-            df_pi.index = [f"{x}_{y}" for x,y in df_pi.index ]
-            fig.add_trace(go.Scatter(x=df_pi.index, y=df_pi.values, mode='lines', name=name),row=r, col=1)
+        if REHO:
+            for name, reho in rehos_dict.items():
+                df_pi = reho.results_MP["totex"][Pareto_ID][0]["df_Dual_t"]["pi"].xs("Electricity")
+                df_pi.index = [f"{x}_{y}" for x,y in df_pi.index ]
+                fig.add_trace(go.Scatter(x=df_pi.index, y=df_pi.values, mode='lines', name=name),row=r, col=1)
 
-    fig.update_layout(height=600, width=800, title_text="Test")
+        # load
+
+        # gathering data from other districts
+        df_loads = pd.DataFrame()
+        for name, reho in rehos_dict.items():
+            if REHO:
+                df = reho.results["totex"][Pareto_ID]["df_Unit_t"].copy()
+            else:
+                df = reho["totex"][Pareto_ID]["df_Unit_t"].copy()
+            df = df.loc[:,df.columns.str.contains('EV_E_charged_outside')].xs('Electricity').dropna()
+            df['demand'] = name
+            df.set_index("demand",append=True,inplace=True)
+            new_columns = [x.split('[')[1].split(']')[0].split(',') for x in df.columns ]
+            df.columns = pd.MultiIndex.from_tuples(new_columns,names=('activity','load'))
+            df = df.stack(['load']).unstack(level = ['demand','Unit'])
+
+            df_loads = pd.concat([df_loads,df])
+
+        col = 1
+        for name, reho in rehos_dict.items():
+            col+=1
+            try:
+                df_plot = df_loads.xs(str(name),level = 'load').loc[:,df_loads.columns.get_level_values('demand') != name]
+            except:
+                print(f"Iter {Pareto_ID}: No load for {name}")
+                continue
+            df_plot.index = [f"{int(x)}_{int(y)}" for x,y in df_plot.index ]
+            df_plot = df_plot.groupby('demand',axis = 1).agg('sum')
+            for district in df_plot.columns:
+                fig.add_trace(go.Bar(x=df_plot.index, y=df_plot[district].values, name=district),row=r, col=col)
+            
+            # external load (i.e the total)
+            if REHO:
+                df_extload = reho.results["totex"][Pareto_ID]["df_Grid_t"].copy()
+            else:
+                df_extload = reho["totex"][Pareto_ID]["df_Grid_t"].copy()
+            df_extload = df_extload.loc[:,df_extload.columns.str.startswith('charging_externalload')].xs(('Electricity','Network')).agg('sum',axis = 1)
+            df_extload.index = [f"{int(x)}_{int(y)}" for x,y in df_extload.index ]
+            fig.add_trace(go.Scatter(x=df_extload.index, y=df_extload.values, mode='lines', name='total load'),row=r, col=col)
+
+
+    
+    fig.update_layout(title_text="Loads and prices",barmode = "stack",
+                      height = Pareto_ID_number*300 , width = (1+len(rehos_dict)) * 400 )
     return fig
 
 def plot_load_duration_curve(results, ids, save_fig=False, label='EN_long', color='ColorPastel'):

@@ -65,7 +65,7 @@ solar_premium,Solar premium,SC Premium,Premium auto-consommation,#ffd980,yellow_
 Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark,#EEAD0E,darkyellow
 Battery,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue
-,,,,,,,
+EVcharging_district,EV charging station,EVchrg,Stations de recharge,#008080,teal,#008080,teal
 Air_Conditioner,Air conditioner,AC,Climatiseur,#00008B,darkblue,#9AC0CD,bluegrey
 Cooling,Fossil-fuel boiler,BO,Chaudière fossile,#00008B,darkblue,#9AC0CD,bluegrey
 ,,,,,,,
@@ -73,3 +73,4 @@ Isolation,Thermal insulation,INS,Isolation,#69B58A,green,#9AC0CD,bluegrey
 Isolation_roof,Roof insulation,INS1,Isolation toiture,#a9d6bc,green_light,#9AC0CD,bluegrey
 Isolation_facade,Facade insulation,INS2,Isolation façade,#87c5a1,green_medium,#9AC0CD,bluegrey
 Isolation_full,Complete insulation,INS3,Isolation complète,#53ac7a,green_dark,#9AC0CD,bluegrey
+,,,,,,,

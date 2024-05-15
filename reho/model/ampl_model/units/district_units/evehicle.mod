@@ -114,14 +114,14 @@ EV_E_stored[u,p,t] =  EV_E_stored_plug_in[u,p,t] + EV_E_stored_plug_out[u,p,t];
 subject to EV_EB_upper_bound1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] <= EV_capacity * n_vehicles[u];
 
-subject to EV_EB_upper_bound2{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
+subject to EV	_EB_upper_bound2{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored_plug_out[u,p,t] <= EV_capacity * n_vehicles[u];
 
 subject to EV_EB_upper_bound3{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored_plug_in[u,p,t] <= EV_capacity * n_vehicles[u];
 
-subject to EV_V2V_1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-EV_V2V[u,p,t] >= EV_E_mob[u,p,t] - EV_E_charging[u,p,t]; #question : pq ici il y avait pas le d[t] dans EV_displacement[] * Unit_use * dt ?
+# subject to EV_V2V_1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
+# EV_V2V[u,p,t] >= EV_E_mob[u,p,t] - EV_E_charging[u,p,t]; #question : pq ici il y avait pas le d[t] dans EV_displacement[] * Unit_use * dt ?
 
 subject to unidirectional_service{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_supply[u,p,t] = 0;
@@ -143,8 +143,8 @@ EV_E_charged_outside[a,d,u,p,t] <= EV_activity[a,u,p,t]* share_district_activity
 subject to outside_charging_c2{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
 EV_E_charged_outside["travel",d,u,p,t] <=0; # During the travel activity, EV can provide pkm, but they do not have charging opportunities. 
 
-subject to outside_charging_c3{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
-EV_E_charged_outside["leisure",d,u,p,t] <=0; # for testing
+# subject to outside_charging_c3{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
+# EV_E_charged_outside["leisure",d,u,p,t] <=0; 																# for testing
 
 
 subject to outside_charging_costs{ p in PeriodStandard, t in Time[p]}:

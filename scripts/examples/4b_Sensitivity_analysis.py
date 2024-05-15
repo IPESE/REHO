@@ -1,13 +1,13 @@
-from reho.model.reho import *
-from reho.model.preprocessing import electricity_prices
+from reho.model.postprocessing.sensitivity_analysis import *
+from reho.plotting import plotting
 
 
 if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    reader.establish_connection('Geneva')
+    qbuildings_data = reader.read_db(transformer=234, nb_buildings=1)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -20,19 +20,20 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    # you can use prices coming from public databases
-    prices = electricity_prices.get_prices_from_elcom_by_city(city=reader, category='H4')
-    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
-                                             'NaturalGas': {"Cost_supply_cst": 0.15},
-                                             })
+    grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options
     method = {'building-scale': True}
 
-    # Run optimization
+    # Run sensitivity analysis
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
-    reho.single_optimization()
+    SA = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=8)
+
+    SA_parameters = {'Elec_retail': [0.2, 0.45], 'Elec_feedin': [0.0, 0.15], 'NG_retail': [0.2, 0.4]}
+    SA.build_SA(unit_parameter=['Cost_inv1', 'Cost_inv2'], SA_parameters=SA_parameters)
+    SA.run_SA()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='3h')
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long').show()
+    reho.save_results(format=['xlsx', 'pickle'], filename='4b')

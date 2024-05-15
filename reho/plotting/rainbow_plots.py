@@ -198,7 +198,7 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
 
 
 def plot_rainbow(df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced, bounds, save_fig, plot_type):
-    # plotting
+
     fig, ax = plt.subplots()
     for demand_price in df_plot_last.columns:
         if plot_type == "demand_feed_in_E_gen_pv":

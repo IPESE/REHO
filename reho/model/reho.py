@@ -654,10 +654,10 @@ class REHO(MasterProblem):
         if self.method["save_data_input"]:
             df_Results["df_Buildings"] = df_Buildings
 
-            # df_External
+            # df_Weather
             ids = self.number_SP_solutions.iloc[0]
-            df_External = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][ids["House"]]["df_External"]
-            df_Results["df_External"] = df_External
+            df_Weather = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][ids["House"]]["df_Weather"]
+            df_Results["df_Weather"] = df_Weather
 
             # df_Index
             ids = self.number_SP_solutions.iloc[0]

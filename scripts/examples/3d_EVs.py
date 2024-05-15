@@ -5,8 +5,8 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    reader.establish_connection('Geneva')
+    qbuildings_data = reader.read_db(transformer=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -16,21 +16,21 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
-    scenario['enforce_units'] = []
+    scenario['enforce_units'] = ['EV_district']
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     method = {'building-scale': True}
 
     # Set specific parameters
-    # Heat pump can have different sources such as air, lake, geothermal
-    parameters = {"T_source": np.repeat({"Geothermal": 17.0}, 2)}
+    parameters = {'n_vehicles': 6}
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, parameters=parameters,
+                solver="gurobi")
     reho.single_optimization()
 
     # Save results

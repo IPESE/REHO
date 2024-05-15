@@ -336,27 +336,27 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         # External
         df1 = get_ampl_data(ampl, 'T_ext', multi_index=True)
         df2 = get_ampl_data(ampl, 'I_global', multi_index=True)
-        df_External = pd.concat([df1, df2], axis=1)
-        df_External.index.names = ['Period', 'Time']
-        df_External = df_External.sort_index()
+        df_Weather = pd.concat([df1, df2], axis=1)
+        df_Weather.index.names = ['Period', 'Time']
+        df_Weather = df_Weather.sort_index()
 
         # Index
         df_Index = get_ampl_data(ampl, 'PeriodOfYear')
         df_Index.index.names = ['HourOfYear']
         df_Index = df_Index.sort_index()
 
-        return df_Time, df_External, df_Index
+        return df_Time, df_Weather, df_Index
 
     df_Results = dict()
     df_Results["df_Performance"] = set_df_performance(ampl, scenario)
     df_Results["df_Annuals"] = set_df_annuals(ampl)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
     df_Results["df_Grid_t"] = set_df_grid(ampl, method)
-    df_Results["df_Time"], df_External, df_Index = set_dfs_other(ampl)
+    df_Results["df_Time"], df_Weather, df_Index = set_dfs_other(ampl)
 
     if method['save_data_input']:
         df_Results["df_Buildings"] = set_df_buildings(buildings_data)
-        df_Results["df_External"] = df_External
+        df_Results["df_Weather"] = df_Weather
         df_Results["df_Index"] = df_Index
 
     if method["save_timeseries"]:

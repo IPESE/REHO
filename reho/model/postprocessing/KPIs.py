@@ -8,7 +8,7 @@ Calculates the KPIs resulting from the optimization.
 """
 
 
-def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network, df_profiles, df_external, df_Time):
+def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network, df_profiles, df_Weather, df_Time):
     # --------------------------------------------------------------------
     # energy
     # --------------------------------------------------------------------
@@ -24,7 +24,7 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
 
     # -----------------------------eta_I including PV
     # annual irradiation density
-    irr_p = df_external['I_global'].groupby(level='Period').sum() / 1000  # kWh /m2
+    irr_p = df_Weather['I_global'].groupby(level='Period').sum() / 1000  # kWh /m2
     irr_a = irr_p.mul(df_Time.dp, axis=0)
     irr_a = irr_a.sum() / 1000  # MWh/m2
     # reference efficiency PV panel - default 0.14 if no value as input
@@ -61,7 +61,7 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
 
     # domestic hot water
     T_dhw = 55 + 273.15
-    eta_carnot_dhw = (1 - ((df_external['T_ext'] + 273.15) / (T_dhw + 273.15)))
+    eta_carnot_dhw = (1 - ((df_Weather['T_ext'] + 273.15) / (T_dhw + 273.15)))
     E_dhw = df_profiles['Q_DHW'] * eta_carnot_dhw
 
     E_dhw_p = E_dhw.groupby(level=['Hub', 'Period']).sum()
@@ -71,7 +71,7 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
     # space heating
     df_E_sh_a = pd.DataFrame()
     for house in df_profiles.index.unique(level=0):
-        eta_carnot_sh = (1 - ((df_external['T_ext'] + 273.15) / (df_profiles['T_in'].xs(house, level=0) + 273.15)))
+        eta_carnot_sh = (1 - ((df_Weather['T_ext'] + 273.15) / (df_profiles['T_in'].xs(house, level=0) + 273.15)))
 
         E_sh = df_profiles['House_Q_heating'].xs(house, level=0) * eta_carnot_sh
 
@@ -96,9 +96,9 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
 
     # -----------------------------eta_II including PV
 
-    eta_carnot_irr = (1 - ((df_external['T_ext'] + 273.15) / (
+    eta_carnot_irr = (1 - ((df_Weather['T_ext'] + 273.15) / (
         6000)))  # Temperature sun 6000k - source: book: McEnvoy: Practical Handbook of Photovoltaics 2nd edition page 64
-    E_irr = eta_carnot_irr * df_external['I_global'] / 1000  # kW/m2
+    E_irr = eta_carnot_irr * df_Weather['I_global'] / 1000  # kW/m2
     E_irr_p = E_irr.groupby(level='Period').sum()
     E_irr_a = E_irr_p.mul(df_Time.dp, axis=0)
     E_irr_a = E_irr_a.sum() / 1000  # MWh
@@ -564,7 +564,7 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestam
     # Technical KPIs
     # ------------------------------------------------------------------------------------------------------
     df_eta = postcompute_efficiency(df_Results["df_Unit"], buildings_data, df_annual, df_annual_network, df_profiles,
-                                    df_Results["df_External"], df_Time)
+                                    df_Results["df_Weather"], df_Time)
     df_KPI = pd.concat([df_KPI, df_eta], axis=1)  # eta_I    eta_II   eta_Ipv  eta_IIpv
 
     if 'HeatPump' in infrastructure.UnitsOfType:  # Check if HP DHN is used

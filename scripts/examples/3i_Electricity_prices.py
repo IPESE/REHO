@@ -1,13 +1,13 @@
 from reho.model.reho import *
+from reho.model.preprocessing import electricity_prices
 
 
 if __name__ == '__main__':
 
     # Set building parameters
-    # roof orientations and PV on facades can be considered
-    reader = QBuildingsReader(load_facades=True, load_roofs=True)
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(3658, nb_buildings=2)
+    reader = QBuildingsReader()
+    reader.establish_connection('Geneva')
+    qbuildings_data = reader.read_db(transformer=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -20,16 +20,19 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    # You can use prices coming from the ELCOM public database
+    prices = electricity_prices.get_prices_from_elcom_by_city(city=reader, category='H4')
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
+                                             'NaturalGas': {"Cost_supply_cst": 0.15},
+                                             })
     units = infrastructure.initialize_units(scenario, grids)
 
     # Set method options
-    # select PV orientation and/or facades methods
-    method = {'use_pv_orientation': True, 'use_facades': True}
+    method = {'building-scale': True}
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='5a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='3i')

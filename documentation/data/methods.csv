@@ -14,7 +14,7 @@
 *use_custom_profiles*;Allows to replace SIA profiles for DHW [L/h], electricity demands [W/h] and people gains [W/h] by custom ones, via a dictionary where the key is among [‘electricity’, ‘dhw’, ‘occupancy’] and the value is the path to the file;False
 **Saving options**;;
 *include_all_solutions*;For a district-scale optimization, gives the results from the SPs;False
-*save_input_data*;Adds in the results file the input data (df_Buildings, df_External, df_Index);True
+*save_input_data*;Adds in the results file the input data (df_Buildings, df_Weather, df_Index);True
 *save_timeseries*;Adds in the results file the timeseries results (df_Buildings_t and df_Unit_t);True
 *save_streams*;Adds in the results file the streams-timeseries results (df_Streams_t);False
 *save_lca*;dds in the results file the impact in terms of LCA indicators by units, hubs and energy carriers;False

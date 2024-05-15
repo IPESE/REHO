@@ -383,6 +383,7 @@ class MasterProblem:
         # Load Master Problem (MP) Formulation
         ampl_MP.cd(path_to_ampl_model)
         ampl_MP.read('master_problem.mod')
+
         if self.method["actors_problem"]:
             ampl_MP.read('actors_problem.mod')
 

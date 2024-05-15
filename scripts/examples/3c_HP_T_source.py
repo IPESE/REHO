@@ -5,8 +5,9 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    reader.establish_connection('Geneva')
+    qbuildings_data = reader.read_db(transformer=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
+    n_buildings = len(qbuildings_data['buildings_data'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -25,16 +26,12 @@ if __name__ == '__main__':
     # Set method options
     method = {'building-scale': True}
 
-    # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
-    reho.single_optimization()
+    # Set specific parameters
+    # Heat pump can have different sources such as air, lake, geothermal
+    parameters = {"T_source": np.repeat({"Geothermal": 17.0}, n_buildings)}
 
-    # Run new optimization with the capacity of PV and electrical heater fixed with the size of the first optimization
-    reho.df_fix_Units = reho.results['totex'][0]["df_Unit"]  # load data on the capacity of units
-    reho.fix_units_list = ['PV', 'ElectricalHeater_DHW', 'ElectricalHeater_SH']  # select the ones being fixed
-    reho.scenario['Objective'] = 'CAPEX'
-    reho.scenario['name'] = 'fixed'
-    reho.method['fix_units'] = True  # select the method fixing the unit sizes
+    # Run optimization
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

@@ -8,7 +8,7 @@ if __name__ == '__main__':
     qbuildings_data = reader.read_csv(buildings_filename='data/buildings.csv', nb_buildings=1)
 
     # Select clustering options for weather data
-    cluster = {'custom_weather': 'data/profiles/Sion.csv', 'Location': 'Sion', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Sion', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()

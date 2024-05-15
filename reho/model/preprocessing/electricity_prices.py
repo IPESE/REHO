@@ -586,11 +586,13 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
     cat_link = 'https://energy.ld.admin.ch/elcom/electricityprice/category/'
 
     if isinstance(city, QBuildingsReader):
-        city = city.data['transformers']['id_city'][0]
+        try:
+            city = city.data['transformers']['id_city'][0]
+        except KeyError:
+            city = 6621  # if id_city is missing from database, set Geneva by default
         city_query = '<' + city_link + str(city) + '>'
     elif isinstance(city, str):
-        cities = pd.read_csv(os.path.join(path_to_elcom, 'correspondance_table_municipality_operator.csv'),
-                             index_col=0)
+        cities = pd.read_csv(os.path.join(path_to_elcom, 'correspondance_table_municipality_operator.csv'), index_col=0)
         mask = (cities['id_city'] == city) + (cities['commune'] == city)
         cities = cities[mask]
         if cities.empty:

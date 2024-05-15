@@ -34,68 +34,76 @@ Pareto curve
 .. literalinclude:: ../../scripts/examples/2b_District-scale_Pareto.py
    :language: python
 
-3. Various features
+3. Specific features
 --------------------
 
-Buildings as .csv files
+Buildings from .csv files
 ====================================
 .. literalinclude:: ../../scripts/examples/3a_Read_csv.py
    :language: python
 
-Stochastic profiles for EUD
+Add other energy layers
 ====================================
-.. literalinclude:: ../../scripts/examples/3b_Stochastic_profiles.py
-   :language: python
-
-Fix units size
-====================================
-.. literalinclude:: ../../scripts/examples/3c_Fix_units.py
+.. literalinclude:: ../../scripts/examples/3b_Custom_infrastructure.py
    :language: python
 
 Change heat pump temperature
 ====================================
-.. literalinclude:: ../../scripts/examples/3d_HP_T_source.py
-   :language: python
-
-Add other energy layers
-====================================
-.. literalinclude:: ../../scripts/examples/3e_Custom_infrastructure.py
+.. literalinclude:: ../../scripts/examples/3c_HP_T_source.py
    :language: python
 
 Include electric vehicles
 ====================================
-.. literalinclude:: ../../scripts/examples/3f_EVs.py
+.. literalinclude:: ../../scripts/examples/3d_EVs.py
    :language: python
 
 Integrate a district heating network
 ====================================
-.. literalinclude:: ../../scripts/examples/3g_DHN.py
+.. literalinclude:: ../../scripts/examples/3e_DHN.py
+   :language: python
+
+Use custom profiles
+=====================================
+.. literalinclude:: ../../scripts/examples/3f_Custom_profiles.py
+   :language: python
+
+Include stochasticity into profiles
+====================================
+.. literalinclude:: ../../scripts/examples/3g_Stochastic_profiles.py
+   :language: python
+
+Fix units size
+====================================
+.. literalinclude:: ../../scripts/examples/3h_Fix_units.py
    :language: python
 
 Connect to ELCOM database for electricity prices
 ===========================================================
-.. literalinclude:: ../../scripts/examples/3h_Electricity_prices.py
+.. literalinclude:: ../../scripts/examples/3i_Electricity_prices.py
    :language: python
 
-Use custom profiles for electricity consumption
-===========================================================
-.. literalinclude:: ../../scripts/examples/3i_Custom_profiles.py
-   :language: python
-
-Conduct a sensitivity analysis
-===========================================================
-.. literalinclude:: ../../scripts/examples/3j_sensitivity_analysis.py
-   :language: python
+4. Global features
+--------------------
 
 Comparing integrated systems
 ====================================
 .. literalinclude:: ../../scripts/examples/4a_Progressive_scenarios.py
    :language: python
 
-.. literalinclude:: ../../scripts/examples/4b_Progressive_scenarios_csv.py
+Conduct a sensitivity analysis
+====================================
+.. literalinclude:: ../../scripts/examples/4b_Sensitivity_analysis.py
+   :language: python
+
+5. Photovoltaics
+--------------------
+
+Consider roofs orientation
+====================================
+.. literalinclude:: ../../scripts/examples/5a_PV_orientation.py
    :language: python
 
 Include photovoltaics on facades
 ====================================
-.. literalinclude:: ../../scripts/examples/5a_Facades.py
+.. literalinclude:: ../../scripts/examples/5b_PV_facades.py
    :language: python

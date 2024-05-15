@@ -146,14 +146,16 @@ REHO can connect to QBuildings and read the data it contains with the following 
 .. code-block:: python
 
     reader = QBuildingsReader()             # load QBuildingsReader class
-    reader.establish_connection('Suisse')   # connect to QBuildings database
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)      # read data
+    reader.establish_connection('Geneva')   # connect to QBuildings database
+    qbuildings_data = reader.read_db(transformer=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])      # read data
 
 
 See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_db` for further description.
 
 .. warning::
-    Note that you need to be connected to EPFL network or VPN to access the database
+    The QBuildings-Suisse database will soon be available for full access. At present, you need to be connected to EPFL intranet to access the complete database.
+
+    However, a reduced version (QBuildings-Geneva) is already available to the public and serves as a demo for all the examples.
 
 CSV files
 ~~~~~~~~~~~~~~~~~
@@ -443,7 +445,7 @@ These lines of code will enable PV orientation and PV on facades:
     reader = QBuildingsReader(load_roofs=True, load_facades=True)
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
-    method = {'use_pv_orientation': True, 'use_facades': False, 'district-scale': True}
+    method = {'use_pv_orientation': True, 'use_facades': True, 'district-scale': True}
 
 
 .. warning::
@@ -499,7 +501,7 @@ And browsing through ``Scn_ID`` and ``Pareto_ID`` with:
     Pareto_ID = list(results[Scn_ID[0]].keys())
     df_Results = results[Scn_ID[0]][Pareto_ID[0]]
 
-Where ``df_Results`` corresponds to the output of one single-optimization, and is a dictionary containing the following dataframes: ``df_Performance``, ``df_Annuals``, ``df_Buildings``, ``df_Unit``, ``df_Unit_t``, ``df_Grid_t``, ``df_Buildings_t``, ``df_Time``, ``df_External``, ``df_Index``, ``df_KPIs``, ``df_Economics``.
+Where ``df_Results`` corresponds to the output of one single-optimization, and is a dictionary containing the following dataframes: ``df_Performance``, ``df_Annuals``, ``df_Buildings``, ``df_Unit``, ``df_Unit_t``, ``df_Grid_t``, ``df_Buildings_t``, ``df_Time``, ``df_Weather``, ``df_Index``, ``df_KPIs``, ``df_Economics``.
 
 Refer to :mod:`reho.model.postprocessing.write_results.py` for more information about the content of these dataframes.
 

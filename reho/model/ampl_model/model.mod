@@ -437,11 +437,11 @@ var Costs_rep >= 0;
 
 #-CONSTRAINTS
 
-#subject to transformer_additional_capacity_c1{l in ResourceBalances}:
-#Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
+subject to transformer_additional_capacity_c3{l in ResourceBalances}:
+Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
 
-#subject to transformer_additional_capacity_c2{l in ResourceBalances}:
-#TransformerCapacity[l]>=Transformer_Ext[l];
+subject to transformer_additional_capacity_c4{l in ResourceBalances}:
+TransformerCapacity[l]>=Transformer_Ext[l];
 
 subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
 Use_LineCapacity[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacity[l,hl]-Line_Ext[hl,l];
@@ -655,10 +655,10 @@ Grid_demand[l,hl,p,t] <= LineCapacity[l,hl];
 
 
 subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_supply[l,p,t] <= TransformerCapacity[l];#+TransformerCapacityAdd[l];
+Network_supply[l,p,t] <= TransformerCapacity[l];
 
 subject to TransformerCapacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_demand[l,p,t] <= TransformerCapacity[l];#+TransformerCapacityAdd[l];
+Network_demand[l,p,t] <= TransformerCapacity[l];
 
 #--------------------------------------------------------------------------------------------------------------------#
 #---No exchanges between buildings

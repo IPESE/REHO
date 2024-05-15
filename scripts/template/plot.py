@@ -11,3 +11,4 @@ plotting.plot_performance(results, plot='combined', indexed_on='Scn_ID', filenam
 
 # Sankey diagram
 plotting.plot_sankey(results['totex'][0], label='EN_long', color='ColorPastel').show()
+# donkey diagram

@@ -410,6 +410,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_DW.index.names = ['FeasibleSolution', 'Hub']
     df_Results["df_DW"] = df_DW.sort_index()
 
+    #print("Penalties:")
+    #print(get_variable_in_pandas(df,'penalties'))
+
     # Building_t
     df1 = get_parameter_in_pandas(ampl, 'Grid_supply', multi_index=True)
     df2 = get_parameter_in_pandas(ampl, 'Grid_demand', multi_index=True)

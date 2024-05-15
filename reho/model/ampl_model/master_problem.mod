@@ -216,6 +216,7 @@ param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
 param GWP_Transformer1{l in ResourceBalances} default 0;
 param GWP_Transformer2{l in ResourceBalances} default 0;
 param Transformer_Ext{l in ResourceBalances} default 1e8;
+param Transformer_Lifetime{l in ResourceBalances} default 20;
 
 # Lines additional capacities
 set ReinforcementLineOfLayer{ResourceBalances} default {};
@@ -300,7 +301,7 @@ subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
 
 subject to CO2_construction:
-GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacity[l]+GWP_Transformer2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l])));
+GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacity[l]+GWP_Transformer2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l])))/Transformer_Lifetime[l];
 
 subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} (GWP_supply[l,p,t] * Network_supply_GWP[l,p,t] - GWP_demand[l,p,t] * Network_demand_GWP[l,p,t]);
@@ -466,7 +467,7 @@ var penalties default 0;
 
 subject to penalties_contraints:
 penalties = penalty_ratio * (Costs_inv + Costs_op + sum{k in Lca_kpi} lca_tot[k] +
-            sum{l in ResourceBalances,p in PeriodExtrem,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t])) + Costs_cft;
+            sum{l in ResourceBalances,p in PeriodExtrem,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]) );
 
 
 # objective functions

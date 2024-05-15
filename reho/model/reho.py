@@ -681,6 +681,7 @@ class reho(district_decomposition):
                                                              [s for s in self.infrastructure.Units if h in s]][
                                                              'Units_Mult'].to_list() for id, h in
                                                          enumerate(self.infrastructure.houses)])
+                self.parameters["Units_Ext"] = self.parameters["Units_Ext"] * 0.999
                 self.parameters["Units_Ext_district"]=existing_units[existing_units.index.str.contains('district')]['Units_Mult'].values
             if 'Transformer' in existing_init.keys():
                 self.parameters["Transformer_Ext"]=existing_init['Transformer']
@@ -706,6 +707,7 @@ class reho(district_decomposition):
                                                          [s for s in self.infrastructure.Units if h in s]][
                                                          'Units_Mult'].to_list() for id, h in
                                                      enumerate(self.infrastructure.houses)])
+            self.parameters["Units_Ext"] = self.parameters["Units_Ext"] * 0.999
             self.parameters["Units_Ext_district"] = existing_units[existing_units.index.str.contains('district')]['Units_Mult'].values+Additional_battery
             self.parameters["Transformer_Ext"]=self.results[Scn_ID][-1]['df_Grid']['Capacity'].loc['Network'].values
             self.parameters["Line_Ext"]=self.results[Scn_ID][-1]['df_Grid']['Capacity'].loc[[h for h in self.infrastructure.houses]].unstack().values
@@ -723,6 +725,7 @@ class reho(district_decomposition):
                 Additional_battery = np.array([ 0 for u in self.infrastructure.UnitsOfDistrict])
             existing_units = self.results[Scn_ID][i - 1]['df_Unit'][['Units_Mult']]
             self.parameters["Units_Ext"] = np.array([existing_units[existing_units.index.map(lambda x: h in x)].loc[[s for s in self.infrastructure.Units if h==s.split('_')[-1]]]['Units_Mult'].to_list() for id, h in enumerate(self.infrastructure.houses)])
+            self.parameters["Units_Ext"] = self.parameters["Units_Ext"] * 0.999
             self.parameters["Units_Ext_district"] = existing_units[existing_units.index.str.contains('district')]['Units_Mult'].values+Additional_battery
             self.parameters["Transformer_Ext"] = self.results[Scn_ID][i-1]['df_Grid']['Capacity'].loc['Network'].values
             self.parameters["Line_Ext"] = self.results[Scn_ID][i-1]['df_Grid']['Capacity'].loc[

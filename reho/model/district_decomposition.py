@@ -88,9 +88,8 @@ class district_decomposition:
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
-                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district"],
-                         "list_constraints_MP": [],
-                         "list_parameters_MP_and_SP": ["Transformer_Ext"]
+                                                "area_district", "velocity", "density", "delta_enthalpy", 'cinv1_dhn', 'cinv2_dhn', "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
+                         "list_constraints_MP": []
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -1153,8 +1152,6 @@ class district_decomposition:
                         parameters_SP[key] = profile_building_x[ID]
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
-            if key in self.lists_MP["list_parameters_MP_and_SP"]:
-                parameters_SP[key] = self.parameters[key]
 
 
         infrastructure_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District

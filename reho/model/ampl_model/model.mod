@@ -317,6 +317,7 @@ param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
 param GWP_Transformer1{l in ResourceBalances} default 0;
 param GWP_Transformer2{l in ResourceBalances} default 0;
 param Transformer_Ext{l in ResourceBalances} default 1e8;
+param Transformer_Lifetime{l in ResourceBalances} default 20;
 
 
 # Lines additional capacities
@@ -329,6 +330,7 @@ param Line_Length{h in House,l in ResourceBalances} default 10;
 param GWP_Line1{l in ResourceBalances} default 0;
 param GWP_Line2{l in ResourceBalances} default 0;
 param Line_Ext{h in House, l in ResourceBalances} default 1e8;
+param Line_Lifetime{h in House, l in ResourceBalances} default 20;
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -370,10 +372,10 @@ GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*G
 #GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
-GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);
+GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]/Line_Lifetime[h,l]);
 
 subject to Annual_CO2_construction:
-GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);
+GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]/Line_Lifetime[h,l]);
 
 
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
@@ -437,11 +439,11 @@ var Costs_rep >= 0;
 
 #-CONSTRAINTS
 
-subject to transformer_additional_capacity_c3{l in ResourceBalances}:
-Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
+#subject to transformer_additional_capacity_c3{l in ResourceBalances}:
+#Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
 
-subject to transformer_additional_capacity_c4{l in ResourceBalances}:
-TransformerCapacity[l]>=Transformer_Ext[l];
+#subject to transformer_additional_capacity_c4{l in ResourceBalances}:
+#TransformerCapacity[l]>=Transformer_Ext[l];
 
 subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
 Use_LineCapacity[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacity[l,hl]-Line_Ext[hl,l];

@@ -458,10 +458,8 @@ Costs_tot + EMOO_slack_totex = EMOO_TOTEX * Area_tot;
 subject to EMOO_lca_constraint{k in Lca_kpi} :
 lca_tot[k] <= EMOO_lca[k] * Area_tot;
 
-subject to EMOO_elec_export_constraint{l in ResourceBalances: l = 'Electricity'}:
-sum{p in PeriodStandard,t in Time[p]} ( Network_demand[l,p,t] - Network_supply[l,p,t] ) / 1000  =  EMOO_slack_elec_export + EMOO_elec_export * (sum{h in House} ERA[h]);
-
-
+subject to EMOO_elec_export_constraint:
+sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]} ( Network_demand[l,p,t] - Network_supply[l,p,t] ) / 1000  =  EMOO_slack_elec_export + EMOO_elec_export * (sum{h in House} ERA[h]);
 
 param penalty_ratio default 1e-6;
 var penalties default 0;

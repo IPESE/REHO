@@ -9,6 +9,7 @@ from reho.model.preprocessing.clustering import ClusterClass
 import pvlib
 from pyproj import Transformer
 
+
 __doc__ = """
 Generates the meteorological data (temperature and solar irradiance).
 """
@@ -58,7 +59,7 @@ def get_cluster_file_ID(cluster):
 def generate_weather_data(cluster, qbuildings_data):
     """
     This function is called if the clustered weather data specified by File_ID do not exist yet.
-    Run the ClusterClass and create the required files.
+    Runs the ClusterClass and create the required files.
     """
 
     if 'custom_weather' in cluster.keys():
@@ -85,7 +86,7 @@ def generate_weather_data(cluster, qbuildings_data):
 
 def get_weather_data(qbuildings_data):
     """
-    Using the pvlib library, connect to the PVGIS dabatase to extract the weather data based on the building's coordinates.
+    Using the pvlib library, connects to the PVGIS dabatase to extract the weather data based on the building's coordinates.
     """
     lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'],
                                                                          qbuildings_data['buildings_data']['Building1']['y'])

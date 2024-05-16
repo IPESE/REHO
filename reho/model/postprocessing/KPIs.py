@@ -402,7 +402,7 @@ def postcompute_annual_COP(df_annuals, infrastructure):
 
 def build_df_profiles_house(df_Results, infrastructure):
     """
-    Build hourly profiles for demand and consumption of units and buildings.
+    Builds hourly profiles for demand and consumption of units and buildings.
     """
 
     df_PV = units_power_profiles_per_building(df_Results, infrastructure, 'PV')
@@ -436,8 +436,16 @@ def build_df_profiles_house(df_Results, infrastructure):
 
 def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
     """
-    Transform profiles to annual values, convert to MWh and insert additional values (costs, net resource exchanges).
-    Outputs: Annual parameter for each building and for the network.
+    Transforms profiles to annual values, convert to MWh and insert additional values (costs, net resource exchanges).
+
+    Parameters:
+        df_Results (df) : results of a scenario
+        df_profiles_house (df)
+        infrastructure (df)
+        df_Time (df)
+
+    Returns:
+        Annual parameters for each building and for the network.
     """
 
     df_period = df_profiles_house.groupby(level=['Hub', 'Period']).sum()  # 'daily' sum
@@ -700,7 +708,7 @@ def build_df_Economics(df_Results, df_profiles):
 
 def temperature_profile(df_Results, daily_averaging=False):
     """
-    Return a pd.Series of the indoor temperature profile, one column per building.
+    Returns a pd.Series of the indoor temperature profile, one column per building.
     TODO : check if multi-buildings works fine
 
     Parameters:

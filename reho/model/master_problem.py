@@ -12,11 +12,16 @@ from reho.model.preprocessing.local_data import *
 from reho.model.sub_problem import *
 
 
+__doc__ = """
+File for handling data and optimization for an AMPL master problem.
+"""
+
+
 class MasterProblem:
     """
     Applies the decomposition method.
 
-    Store district attributes, scenario, method, attributes for the decomposition, and initiate an attribute
+    Stores district attributes, scenario, method, attributes for the decomposition, and initiate an attribute
     that will store results.
 
     Parameters
@@ -199,7 +204,7 @@ class MasterProblem:
         Either the epsilon constraint is applied on the SPs, or the initialization is done with beta.
         The former has the risk to be infeasible for certain SPs, therefore the latter is preferred.
         Three beta values are given to mark the extreme points and an average point.
-        Set up the parallel optimization if needed
+        Sets up the parallel optimization if needed
 
         Parameters
         ----------
@@ -246,7 +251,7 @@ class MasterProblem:
 
     def SP_initiation_execution(self, scenario, Scn_ID=0, Pareto_ID=1, h=None, epsilon_init=None, beta=None):
         """
-        Adapt the model depending on the method, execute the optimization and get the results
+        Adapts the model depending on the method, execute the optimization and get the results
 
         Parameters
         ----------
@@ -326,14 +331,14 @@ class MasterProblem:
     def MP_iteration(self, scenario, binary, Scn_ID=0, Pareto_ID=1, read_DHN=False):
         """
 
-        Run the optimization of the Master Problem (MP):
+        Runs the optimization of the Master Problem (MP):
 
-        - Create the ampl_MP master problem
-        - Set the sets and the parameters in ampl
-        - Actualise the grid exchanges and the costs of each sub problem (house) without the grid costs
-        - Run the optimization
-        - Extract the results (lambda, dual variables pi and mu, objective value of the MP (TOTEX, grid exchanges, ...)
-        - Delete the ampl_MP model
+        - Creates the ampl_MP master problem
+        - Sets the sets and the parameters in ampl
+        - Actualises the grid exchanges and the costs of each sub problem (house) without the grid costs
+        - Runs the optimization
+        - Extracts the results (lambda, dual variables pi and mu, objective value of the MP (TOTEX, grid exchanges, ...)
+        - Deletes the ampl_MP model
 
         Parameters
         -----------
@@ -617,7 +622,7 @@ class MasterProblem:
 
     def SP_iteration(self, scenario, Scn_ID=0, Pareto_ID=1):
         """
-        Set up the parallel optimization if needed.
+        Sets up the parallel optimization if needed.
 
         Parameters
         ----------
@@ -648,7 +653,7 @@ class MasterProblem:
 
     def SP_execution(self, scenario, Scn_ID, Pareto_ID, h):
         """
-        Insert dual variables in ampl model, apply scenario, adapt model depending on the methods and get results.
+        Inserts dual variables in ampl model, apply scenario, adapt model depending on the methods and get results.
 
         Parameters
         ----------
@@ -732,7 +737,7 @@ class MasterProblem:
 
     def check_Termination_criteria(self, scenario, Scn_ID=0, Pareto_ID=1):
         """
-        Verify a number of termination criteria:
+        Verifies a number of termination criteria:
 
         - Optimal solution found based on reduced costs -> last solutions proposed by the SPs did not improve the MP
         - No improvements
@@ -868,7 +873,7 @@ class MasterProblem:
 
     def get_final_MP_results(self, Pareto_ID=1, Scn_ID=0):
         """
-        Build the final design and operating results based on the optimal set of lambdas.
+        Builds the final design and operating results based on the optimal set of lambdas.
         """
 
         # select the result chosen by the MP
@@ -1013,7 +1018,7 @@ class MasterProblem:
 
     def get_dual_values_SPs(self, Scn_ID, Pareto_ID, iter, House, dual_variable):
         """
-        Select the right dual variables for the given Scn_ID, Pareto_ID, iter and house IDs.
+        Selects the right dual variables for the given Scn_ID, Pareto_ID, iter and house IDs.
 
         Parameters
         ----------

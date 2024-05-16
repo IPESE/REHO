@@ -6,9 +6,14 @@ import pandas as pd
 from reho.paths import *
 
 
+__doc__ = """
+File for handling infrastructure parameters.
+"""
+
+
 class Infrastructure:
     """
-    Characterize all the sets and parameters which are connected to buildings, units and grids.
+    Characterizes all the sets and parameters which are connected to buildings, units and grids.
 
     Parameters
     ----------
@@ -415,7 +420,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
 def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
                      district_data=None, storage_data=None):
     """
-    Initialize the available units for the energy system.
+    Initializes the available units for the energy system.
 
     Parameters
     ----------
@@ -485,7 +490,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
                      file=os.path.join(path_to_infrastructure, "grids.csv")):
     """
-    Initialize grid information for the energy system.
+    Initializes grid information for the energy system.
 
     Parameters
     ----------

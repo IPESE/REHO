@@ -96,7 +96,7 @@ class QBuildingsReader:
 
     def read_csv(self, buildings_filename='buildings.csv', nb_buildings=None, roofs_filename='roofs.csv', facades_filename='facades.csv'):
         """
-        Read buildings-related data from CSV files and prepare it for the REHO model.
+        Reads buildings-related data from CSV files and prepare it for the REHO model.
 
         If not all the buildings from the file should be extracted, one can give a number of buildings.
         The fields from the files are translated to the corresponding ones used in REHO.

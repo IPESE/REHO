@@ -9,12 +9,13 @@ How to cite
     REHO has been submitted to `Journal of Open Source Software <https://joss.theoj.org/>`_ for review.
 
     In the meantime, the tool can be cited by mentioning the GitHub repository directly,
-    or by referring to the relevant academic work (see below)
+    or by referring to the relevant academic work (see below).
 
     .. code-block:: bash
 
         @online{REHO,
             title={Renewable Energy Hub Optimizer (REHO) - A Comprehensive Decision Support Tool for Sustainable Energy System Planning},
+            author={Lepour, Dorsan and Terrier, Cédric and Loustau, Joseph},
             url={https://github.com/IPESE/REHO},
             urldate={...},
             publisher={IPESE-EPFL}
@@ -43,13 +44,13 @@ A Zenodo archive will be available soon, once the current version has been fully
 Applications using REHO
 ============================
 
-.. dropdown:: :bdg-primary:`Web-app` REHO-fm, Fayt & Lepour & Loustau 2023
+.. dropdown:: :bdg-primary:`Web-app` REHO-fm, Fayt, Lepour & Loustau 2023
     :icon: gear
 
     `REHO-fm <https://ipese-test.epfl.ch/reho-fm/>`_ is a web application that compares energy scenarios for the entire Swiss building stock.
     The application is based on the REHO open-source optimization model and its input data comes from the `QBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database.
 
-    .. note:: REHO-fm can only be accessed through the EPFL network. A public version will soon be released.
+    .. note:: REHO-fm can only be accessed through the EPFL intranet. A public version will soon be released.
 
 .. dropdown:: :bdg-primary:`Web-app` SIG - VarÉlec, Lepour & Loustau 2022
     :icon: gear
@@ -73,34 +74,11 @@ which presents the buildings modellization framework and serves as a basis for t
 
         **Abstract**
 
-        The built environment currently represents the largest sector in terms of final energy consumption, both in
-        Switzerland and the European Union. Most of the associated energy services, such as space heating and potable hot
-        water preparation, are mainly satisfied by the combustion of fossil fuels, typically oil and natural gas. Hence,
-        within the current context of national energy transition towards a sustainable and environment-friendly service
-        provision, the building sector is facing a major challenge to integrate both efficient conversion technologies and
-        additional renewable energy sources. Nevertheless, an increasing penetration of the latter is not a straightforward
-        task; solar power, a typical resource available in urban areas, is indeed intrinsically volatile which renders a
-        full exploitation of the generated electricity highly compelling. The implementation of advanced mathematical
-        modelling methods during the phases of both design and operation represent a promising cornerstone to successfully
-        reach the objectives targeted by the transition program.
+        The built environment currently represents the largest sector in terms of final energy consumption, both in  Switzerland and the European Union. Most of the associated energy services, such as space heating and potable hot  water preparation, are mainly satisfied by the combustion of fossil fuels, typically oil and natural gas. Hence,  within the current context of national energy transition towards a sustainable and environment-friendly service  provision, the building sector is facing a major challenge to integrate both efficient conversion technologies and  additional renewable energy sources. Nevertheless, an increasing penetration of the latter is not a straightforward  task; solar power, a typical resource available in urban areas, is indeed intrinsically volatile which renders a  full exploitation of the generated electricity highly compelling. The implementation of advanced mathematical  modelling methods during the phases of both design and operation represent a promising cornerstone to successfully  reach the objectives targeted by the transition program.
 
-        Using a model-based approach, the following thesis therefore attempts in contributing to the latter challenge
-        through three main targets. The first aims at the development of a holistic and modular modelling framework to
-        optimally size and operate building energy systems. In order to provide multiple good trade-off system solutions to
-        the various stakeholders, the proposed method relies on an epsilon-constraint multi-objective optimisation
-        techniques and ad hoc defined key performance indicators. A systematic implementation of the thus developed
-        framework finally allows the large-scale analysis of modern and efficient building energy systems, both in view of
-        future market opportunities and national environmental targets.
+        Using a model-based approach, the following thesis therefore attempts in contributing to the latter challenge  through three main targets. The first aims at the development of a holistic and modular modelling framework to  optimally size and operate building energy systems. In order to provide multiple good trade-off system solutions to  the various stakeholders, the proposed method relies on an epsilon-constraint multi-objective optimisation  techniques and ad hoc defined key performance indicators. A systematic implementation of the thus developed  framework finally allows the large-scale analysis of modern and efficient building energy systems, both in view of  future market opportunities and national environmental targets.
 
-        The second topic focuses on the study of multi-building energy systems and analyses the potential benefits from
-        involving multiple end-users during the sizing process. Through an extended system scope, potential synergies of
-        neighbouring building types arise and hence, the initial modelling framework is further developed accordingly.
-        Additional shared unit technologies, such as inter-day storage and heating networks become interesting elements for
-        buildings interaction and therefore are also integrated in the modelling framework. Finally, the third target
-        addresses the quantification of potential ancillary services performed by different energy system configurations to
-        power network operators. Using a representative set of flexibility request profiles, the modelling framework is
-        systematically solved to assess the associated temporal load shifting potential in comparison to standard electrical
-        battery energy storage systems.
+        The second topic focuses on the study of multi-building energy systems and analyses the potential benefits from  involving multiple end-users during the sizing process. Through an extended system scope, potential synergies of  neighbouring building types arise and hence, the initial modelling framework is further developed accordingly.  Additional shared unit technologies, such as inter-day storage and heating networks become interesting elements for  buildings interaction and therefore are also integrated in the modelling framework. Finally, the third target  addresses the quantification of potential ancillary services performed by different energy system configurations to  power network operators. Using a representative set of flexibility request profiles, the modelling framework is  systematically solved to assess the associated temporal load shifting potential in comparison to standard electrical  battery energy storage systems.
 
 The extension towards a district-scale energy hub is the contribution of Luise Middelhauve's thesis,
 which applies the Dantzig-Wolfe decomposition algorithm to bypass the computation effort associated with numerous interacting buildings.
@@ -111,64 +89,75 @@ The thesis also focuses in particular on the role of integrating photovoltaic pa
 
         **Abstract**
 
-        Although inevitable, the process of transforming urban areas into sustainable living environments presents many
-        challenges. The decentralization of the energy system, the interconnection of multiple energy carriers, and the need
-        to account for conflicting interests renders it a complex task. As key stakeholders, authorities often lack
-        appropriate decision tools to frame and encourage the transition and to monitor the impact of implemented policies.
+        Although inevitable, the process of transforming urban areas into sustainable living environments presents many challenges. The decentralization of the energy system, the interconnection of multiple energy carriers, and the need to account for conflicting interests renders it a complex task. As key stakeholders, authorities often lack appropriate decision tools to frame and encourage the transition and to monitor the impact of implemented policies.
 
-        This work aims to provide useful insights into the role of districts as renewable energy hubs by showing
-        requirements and highlighting constraints, leading to an increase in renewable energy penetration. The benefits and
-        trade-offs between centralized and decentralized renewable energy hubs are emphasized to contribute to the ongoing
-        discussion regarding sustainable urban planning.
+        This work aims to provide useful insights into the role of districts as renewable energy hubs by showing requirements and highlighting constraints, leading to an increase in renewable energy penetration. The benefits and trade-offs between centralized and decentralized renewable energy hubs are emphasized to contribute to the ongoing discussion regarding sustainable urban planning.
 
-        Mathematical programming is used to build a multi-objective optimization platform that integrates several renewable
-        technologies with a special focus on solar integration. Specifically, this approach includes the role of the
-        orientation of PV panels and the use of facades, including mounting partly shadowed PV panels and
-        receiving solar heat gain. A decomposition algorithm (Dantzig-Wolfe) is used to bypass the computation effort
-        associated with centralized energy hubs at the district scale.
+        Mathematical programming is used to build a multi-objective optimization platform that integrates several renewable technologies with a special focus on solar integration. Specifically, this approach includes the role of the orientation of PV panels and the use of facades, including mounting partly shadowed PV panels and receiving solar heat gain. A decomposition algorithm (Dantzig-Wolfe) is used to bypass the computation effort associated with centralized energy hubs at the district scale.
 
-        The results highlight that a low-emission electrical grid mix has a high impact on sustainable design of renewable
-        energy hubs at the building scale and led to less independent system configurations. Optimally integrating of solar
-        systems had a significant impact on their interaction with the electrical grid: rotating the panels 20° westwards
-        reduced the grid exchange peak by 50% while increasing cost by only 8.3%. Moreover, the studied district could
-        achieve carbon neutrality based on PV energy alone, whereas self-sufficiency is more ambitious that confirmed
-        the importance of storage systems: even with 100% round-trip efficiency of storage systems, the required ratio of
-        area covered in PV modules to the ERA was 0.44 and 16% of available facades were needed to be covered with PV modules
-        . However, energy demand reduction through thermal renovation would allow self-sufficiency with half of the PV and
-        storage capacity.  Overall, this work demonstrates that moving from a decentralized to coordinated and centralized
-        design strategy allows a higher electrification rate and an increased integration of renewable energy in the
-        district for the same total expenses. The centralized investment strategy differed most from the decentralized
-        strategy for PV panels; using the centralized strategy, a wide range of PV installation on less--optimal surfaces
-        became economically interesting. The most economically convenient solution to overcome transformer limitations were
-        district storage for peak shaving and photovoltaic curtailment. The cost increase were around 600 CHF per kWyr annual
-        capacity shortage, regardless of the considered district energy system.
+        The results highlight that a low-emission electrical grid mix has a high impact on sustainable design of renewable energy hubs at the building scale and led to less independent system configurations. Optimally integrating of solar systems had a significant impact on their interaction with the electrical grid: rotating the panels 20° westwards reduced the grid exchange peak by 50% while increasing cost by only 8.3%. Moreover, the studied district could achieve carbon neutrality based on PV energy alone, whereas self-sufficiency is more ambitious that confirmed the importance of storage systems: even with 100% round-trip efficiency of storage systems, the required ratio of area covered in PV modules to the ERA was 0.44 and 16% of available facades were needed to be covered with PV modules . However, energy demand reduction through thermal renovation would allow self-sufficiency with half of the PV and storage capacity.  Overall, this work demonstrates that moving from a decentralized to coordinated and centralized design strategy allows a higher electrification rate and an increased integration of renewable energy in the district for the same total expenses. The centralized investment strategy differed most from the decentralized strategy for PV panels; using the centralized strategy, a wide range of PV installation on less--optimal surfaces became economically interesting. The most economically convenient solution to overcome transformer limitations were district storage for peak shaving and photovoltaic curtailment. The cost increase were around 600 CHF per kWyr annual capacity shortage, regardless of the considered district energy system.
 
 
 Acamedic publications
 ------------------------
 
-.. dropdown:: :bdg-primary:`Journal` From Local Energy Communities Towards National Energy System: A Grid-Aware Techno-Economic Analysis, Terrier 2024 :cite:`terrierLocalEnergyCommunities2023`
+.. dropdown:: :bdg-primary:`Journal` Identification of typical district configurations: A two-step global sensitivity analysis framework, Chuat 2024 :cite:`chuatIdentificationTypicalDistrict2024`
     :icon: file-badge
-
-    Analysis over the decision-making trends within energy communities and their integration in the national energy infrastructure.
 
     **Abstract**
 
-    (soon published)
+    The recent geopolitical conflicts in Europe have underscored the vulnerability of the current energy system to the volatility of energy carrier prices. In the prospect of defining robust energy systems ensuring sustainable energy supply in the future, the imperative of leveraging renewable indigenous energy sources becomes evident. However, as such technologies are integrated into the existing system, it is necessary to shift from the current centralized infrastructure to a decentralized production strategy. This paper presents a method to identify a panel of technological solutions at the district level, intended to reduce complexity for the integration of decentralized models into a national-scale model. The framework’s novelty lies in combining a global sensitivity analysis for solution generation with clustering to identify typical configurations. The global sensitivity analysis is performed on a mixed integer linear programming model, which optimally sizes and operates district energy systems. The sensitivity analysis determines the most influential parameters of the model using the Morris method and provides a representative sampling of the solution space by leveraging the Sobol sampling strategy. The latter is then clustered using a density-based algorithm to identify typical solutions. The framework is applied to a suburban and residential Swiss neighborhood. The first outcome of the research is the high sensitivity of the model to energy carrier prices. As a result, Sobol’s sampling space separates itself into two system types: those based on a natural gas boiler and those relying on a combination of electrical heaters and heat pumps. For both types, the electricity demand is either fulfilled by PV panels or electricity imports. The identified configurations showcase that the framework successfully generates a panel of solutions composed of various system configurations and operations being representative of the overall solution space.
 
-.. dropdown:: :bdg-primary:`Journal` Electrification and digitalization effects on sectoral energy demand and consumption: A prospective study towards 2050, Li 2023 :cite:`li2023electrification`
+
+.. dropdown:: :bdg-primary:`Journal` Power to the People: On the Role of Districts in Decentralized Energy Systems, Schnidrig 2024 :cite:`schnidrigPowerPeopleRole2024`
+    :icon: file-badge
+
+    **Abstract**
+
+    The transition towards renewable and decentralized energy systems is propelled by the urgent need to address climate concerns and advance sustainable development globally. This transformation requires innovative methods to integrate stochastic renewable sources such as solar and wind power and challenging traditional energy paradigms rooted in centralized and continuous energy production. The present study focuses on the Swiss energy system to explore the optimization of energy planning strategies that incorporate decentralized energy production within a centralized framework. Here, we show that a strategic approach to decentralization can significantly reduce annual system costs by 10\% to CHF 1230 per capita and increase self-consumption to 68\% of the decentralized PV production, emphasizing the need for a hybrid energy-planning model that balances centralized and decentralized models for enhanced system resilience, efficiency, and cost-effectiveness. This research underscores the strategic importance of diversifying energy sources, enhancing energy storage, improving grid flexibility, and laying a foundational framework for policy making and strategic planning. It encourages further investigation into climate impacts, technology synergy, and the integration of district heating, aiming to establish a resilient, sustainable, and autonomous energy future.
+
+
+.. dropdown:: :bdg-primary:`Journal` From Local Energy Communities Towards National Energy System: A Grid-Aware Techno-Economic Analysis, Terrier 2024 :cite:`terrierLocalEnergyCommunities2023`
+    :icon: file-badge
+
+    **Abstract**
+
+    Energy communities are key actors in the energy transition since they optimally interconnect renewable energy capacities with the consumers. Despite versatile objectives, they usually aim at improving the self-consumption of renewable electricity within low-voltage grids to maximize revenues. In addition, energy communities are an excellent opportunity to supply renewable electricity to regional and national energy systems. However, effective price signals have to be designed to coordinate the needs of the energy infrastructure with the interests of these local stakeholders. The aim of this paper is to demonstrate the integration of energy communities at the national level with a bottom–up approach. District energy systems with a building scale resolution are modeled in a mixed-integer linear programming problem. The Dantzig–Wolfe decomposition is applied to reduce the computational time. The methodology lies within the framework of a renewable energy hub, characterized by a high share of photovoltaic capacities. Both investments into equipment and its operation are considered. The model is applied on a set of five typical districts and weather locations representative of the Swiss building stock. The extrapolation to the national scale reveals a heterogeneous photovoltaic potential throughout the country. Present electricity tariffs promote a maximal investment into photovoltaic panels in every region, reaching an installed capacity of 67.2 GW and generating 80 TWh per year. Placed in perspective with the optimal PV capacity forecast at 15.4 GW at the national level, coordinated investment between local and national actors is needed to prevent dispensable expenses. An uncoordinated design is expected to increase the total costs for residential energy systems from 12% to 83% and curtails 48% of local renewable electricity.
+
+.. dropdown:: :bdg-primary:`Conference` Clustering and Typification of Urban Districts for Energy System Modelling, Loustau 2023 :cite:`loustauClusteringTypificationUrban2023`
+    :icon: globe
+
+    **Abstract**
+
+    The interest in Urban Systems has been growing due to the necessary decarbonisation of city energy systems. Decision tools are developed using mathematical optimisation to enable proper decision-making in the transition process. The concept of energy communities - or district energy hub - is expected to have an impact on the energy system at both regional and national scales. However, the shift towards distributed energy systems complexifies the model due to more integrated subsystems and requires larger spatial boundaries to increase self-consumption and decrease grid stresses. The computational power required to model and optimise such systems is to rise drastically. This work proposes to curtail the large computing needs by typifying the districts of a city, using clustering techniques. Accordingly clustered districts can be optimised by solving a typical district from the group and scaling its solution to the others. The clustering features considered are the districts energetic characteristics: the energy demands on one side, and the endogenous resources on the other. Data are normalised and a principal component analysis is conducted. Two clustering algorithms are investigated: a centroid-based (Kmedoids) and a density-based (GaussianMixture). The ideal number of clusters is determined by maximising the intra-cluster similarity and minimising the inter-cluster similarity, and the final clustering stability is evaluated through the Rand Index. The method is applied on the case study of a typical European urban area and the two algorithms lead to two distinct typification. The clusterings are used to run an energy hub optimisation for the whole region and the results are compared to the one obtained without archetypes for validation. The results between the two approaches show no significant differences while a considerable computing time reduction is achieved.
+
+.. dropdown:: :bdg-primary:`Journal` Electrification and digitalization effects on sectoral energy demand and consumption: A prospective study towards 2050, Li & Lepour 2023 :cite:`li2023electrification`
     :icon: file-badge
 
     **Abstract**
 
     Energy transition is blurring the boundaries between the demand and supply sides with growing participation of prosumer resources. The intensifying pace of electrification and digitalization during the past decade tends to continue, leading to potential techno-economic-social challenges in energy strategy. However, it remains difficult to quantify their impacts on a national-level energy system, due to the trade-offs between increasing energy applications and decreasing energy consumption thanks to efficiency improvement. Using Switzerland as a case study, this work unveils the combined effects of (a) macro-economic drivers, (b) climate temperature rise, (c) system optimization, and (d) digitalization, on the end-use demand and final energy consumption in four major energy sectors, considering: industry, residence, mobility, and services. A systematic bottom-up and top-down approach was adopted, taking into account historical data by sector. The results show that: (1) the overall electricity consumption tends to increase by 20%–32%, while fuel consumption drops by 38%–95%, leading to (2) a total energy consumption reduction by 16%–59%, including the contribution from digitalization 10%–30%. (3) ICT (Information and Communication Technologies) is likely to become increasingly energy intensive, accounting for 25%–35% of electricity consumption, but can play an energy-supplying role through (4) data center heat recovery, promising to cut 15% national heating demand. Finally, the study highlights the importance of an early planning on investment decision and system operation to accommodate the development of electrification and digitalization, in order to meet the carbon neutrality target by 2050.
 
-.. dropdown:: :bdg-primary:`Journal` Decomposition Strategy for Districts as Renewable Energy Hubs, Middelhauve 2022 :cite:`middelhauve2023decomposition`
+.. dropdown:: :bdg-primary:`Journal` Decomposition Strategy for Districts as Renewable Energy Hubs, Middelhauve 2022 :cite:`middelhauveDecompositionStrategyDistricts2022`
     :icon: file-badge
 
     **Abstract**
 
     In light of the energy transition, it becomes a widespread solution to decentralize and to decarbonize energy systems. However, limited transformer capacities are a hurdle for large-scale integration of solar energy in the electricity grid. The aim of this paper is to define a novel concept of renewable energy hubs and to optimize its design strategy at the district scale in an appropriate computational time. To overcome runtime issues, the Dantzig–Wolfe decomposition method is applied to a mixed-integer linear programming framework of the renewable energy hub. Distributed energy units as well as centralized district units are considered. In addition, a method to perform multi-objective optimization as well as respecting district grid constraints in the decomposition algorithm is presented. The decomposed formulation leads to a convergence below 20 min for 31 buildings and a mip gap lower than 0.2%. The centralized design enhances the photovoltaic penetration in the energy mix and reduces the global warming potential and necessary curtailment in order to respect transformer capacity constraints.
+
+.. dropdown:: :bdg-primary:`Conference` Decentralized ICT integration in residential buildings, Lepour 2022
+    :icon: globe
+
+    **Abstract**
+
+    To answer the growing demand for data computing, data storage and data transmission, the current trend is to construct centralized hyperscale data centers, whose power usage effectiveness (PUE) has substantially improved in recent years. Still, the operation of hyperscale data centers has economic and environmental impacts on society, especially if their residual heat is not reused. This study aims to present the economic and environmental rationales of decentralized computing capacities integrated into the building stock. The proposed solution simultaneously tackles the mitigation of greenhouse gas emissions from the residential sector and the ever-increasing global data demand, by exploiting the synergy between domestic thermal needs and digital services, while integrating PV production. The originality of this work resides in its holistic approach and multi-services (data, heat and electricity) dimension. A Mixed Integer Linear Programming (MILP) energy modelling optimization framework is developed to assess the economic and environmental performance of centralized hyperscale infrastructures versus decentralized building-integrated computing units with heat recovery. Results for the decentralized solution underline the reduction of environmental impact (-16.3%) and global cost (-27.7%) for the benefits of the whole society. As part of an integrated system, these decentralized computing units foster PV penetration, avoid the oversizing of a heat pump, and achieve high self-consumption (96%), while preventing the installation of a battery through coordination between thermal storage, data services and solar availability. This efficient solution offering an unmatched energy reuse effectiveness (ERE) shows the whole potential of the digitalization of energy systems, is a key contribution to building energy systems design, and reveals a promising approach to mitigate the increasing energy consumption of the ICT sector.
+
+.. dropdown:: :bdg-primary:`Conference` Potential of electric mobility as service to the grid in renewable energy hubs, Terrier 2022
+    :icon: globe
+
+    **Abstract**
+
+    The electrification of private mobility is becoming a popular solution to reduce the reliance on fossil fuels. However, uncontrollable charging of a large electric vehicle fleet challenges the distribution grid due to transmission bottlenecks, voltage limit violation or excessive wearing. In contrast, the additional storage capacities represent a potential flexibility service for grid operators. Therefore, the optimal integration of electric vehicles in urban multi-energy systems is key to minimize the power grid reliance and to maximize the self-consumption of renewable energy resources. The aim of this paper is to integrate electric mobility in the concept of a renewable energy hub formulated at the district scale. The model is a mixed-integer linear programming problem, and the Dantzig-Wolfe decomposition is applied to reduce the computational time. The electric vehicles are considered as controllable reserves offering services to grid operators. An electric mobility integration of 20% is considered. The results demonstrated the economic feasibility of electric mobility integration where services to the grid allowed for a 70% reduction in charging costs and a 50% reduction in global warming potential. The grid services allowed for an increase in self-consumption (70% with respect to 55%) and the charging of the vehicle was managed by up to 82% of renewable electricity. The optimal battery management of the vehicles demonstrated peak load reductions and promoted a grid-aware design of the renewable energy hub.
 
 .. dropdown:: :bdg-primary:`Journal` Potential of Photovoltaic Panels on Building Envelopes for Decentralized District Energy Systems, Middelhauve 2021 :cite:`middelhauve2021potential`
     :icon: file-badge
@@ -204,25 +193,39 @@ Contributions and projects
 An important number of research projects have been carried out using REHO.
 While the following reports did not experience a peer-review process, they still offer interesting applications of REHO.
 
-.. dropdown:: :bdg-primary-line:`Research` The energy cost of accommodation, Loustau 2024
-    :icon: mortar-board
+.. dropdown:: :bdg-primary-line:`Research` The energy cost of living, Loustau 2024
+    :icon: organization
+
+    **Abstract**
+
+    The households have consented to pay a certain amount of money to heat and light themselves. How much money does it represent and what could be done with that money?
+
+    Based on the energy expenses reported in energy statistics for the last 20 years, it is possible to determine the cost of energy in constant Swiss francs of the energy used in buildings and therefore to calculate how much Swiss citizens have agreed to pay to be heated in the last years. Based on the building inventory and considering the reported heating system in the building, one can calculate for each building what would be the cost of heating the buildings based on the cost of the past. This allows indeed to calculate the cost of the business as usual case where the energy system and the building’s envelop are not retrofitted. This value is then used as a reference to test different business models for the renovation of the buildings.
 
     https://ipese-web.epfl.ch/ipese-blog/urban_systems/2023-10-29-The-energy-cost-of-living/
 
 .. dropdown:: :bdg-primary-line:`Research` Techno-Economic Study of Local Energy Community in the Canton of Geneva, Suermondt 2023 :cite:`suermondtTechnoeconomicStudyLocal2023`
     :icon: organization
 
-    Case study over the canton of Geneva.
+    **Abstract**
+
+    In a context of climate change, energy saving becomes a priority. The residential sector accounts for 20% of the final global energy use, which underlines the imperative to decarbonize city energy systems. This trend is anticipated to be driven by increased electrification, the development of distributed renewable energy and the emergence of prosumers who both consume and supply electricity to the grid. Maximizing self-consumption and self-sufficiency at the building level can help manage the issue of renewable energy penetration in the energy mix but may not fully address it. Implementing local energy communities (CEL), offers perspectives by sharing energy among nearby stakeholders inside a neighborhood. However, CEL implementation would require changes in business models of power utilities and distribution system operators (DSO) as they are expected to sell less energy. Besides, it also implies having a proper delineation of a neighborhood which is for the moment unclear. This work aims to answer those two problems at the level of the canton of Geneva.
+
+    First, the GIREC subdivision of the canton was found to be the most appropriate after comparing different zonings. Clustering with Gaussian mixture model (GMM) allowed to found 4 neighborhood archetypes that give energetic characteristics for each GIREC neighborhood. Second, the financial analysis of a CEL implementation in a residential neighborhood (Les Vergers) allowed to estimate the changes in business models that would be required for the different stakeholders of the grouping. The DSO is the only stakeholder who faces revenue losses: it looses at least 10% compared to a simple RCP (Regroupement de Consommation Propre) scenario but the local distribution charge allows to mitigate its losses. The DSO captures at least 33 kCHF in the case study compared to a RCP microgrid scenario. Increasing the power component of the DSO pricing with a cheaper electricity price for PV panel production than in a RCP could transfer revenue from PV panels owners to the DSO while ensuring fairness among stakeholders.
 
 .. dropdown:: :bdg-primary-line:`Research` Grid integration of PV systems: a comprehensive study of the effects of heating and mobility electrification on the low voltage grid of Geneva, Chrysanthou 2023
     :icon: organization
 
-    Case study over three neighbourhoods in Geneva with different grid structures.
+    **Abstract**
+
+    Many energy policies set a goal of decreasing the carbon emissions of the energy sector by up to 100%, including the electricity grid. This is a long term and gradual process. Energy systems in neighbourhoods will likely be the starting point for greenhouse gas emissions mitigation since they account for 70% of global carbon emissions. This work, in collaboration with the Industrial Services of Geneva (SIG) and the IPESE laboratory at EPFL, examines the influence of grid-connected PV systems, heating electrification, and mobility electrification on the low voltage grid. The study utilizes the Renewable Energy Hub Optimizer (REHO) to simulate neighbourhood behaviors under diverse horizons and technologies penetrations. A case study is performed in three neighbourhoods in Geneva with different grid structures namely Rural, Villa and Residential. The Rural having lower density and high PV potential, Villa more density but lower PV potential and Residential with high density and low PV potential. The results are then extrapolated, with the help of clustering, to offer a global view of the future needs and PV production of the canton of Geneva. A financial analysis is then conducted to propose tailored solutions to the local Distribution System Operator (DSO). Results suggest that District Heating Networks (DHN) are particularly important in Residential neighbourhoods in order to optimise their CO2 emissions and energy demand. Furthermore this study shows that without a DHN, the Residential neighbourhood can support only 30% of electric mobility with the current grid structure. It also suggests that with the current grid structure the Rural and Villa neighbourhoods will have to curtail part of the PV production. Finally the study argues that for the Rural cluster network expansion is the most suitable solution in the long-term, and for the Villa cluster a combination of transformer replacement and paid flexibility is best. Nevertheless, the study shows that the expansion of the grid without storage does not offer significant advantages in exploiting the full potential of PV production.
 
 .. dropdown:: :bdg-primary-line:`Development` Demand Aggregation in a District Energy System Perspective, Lacorte 2023 :cite:`lacorteDemandAggregationDistrict`
     :icon: organization
 
-    Development of a methodology to aggregate electricity demand in neighbourhoods.
+    **Abstract**
+
+    The discrepancy between energy production and consumption poses a challenge in optimizing energy systems. This mismatch often results in imbalances, where energy surplus or deficit occurs at different times. The objective is therefore to find a solution to compensate for this time difference. To address this issue, the concept of pooling of energy balance through energy communities has emerged as a solution. By sharing energy demand and equipment within a district, energy communities enable the compensation between excess and deficit. One crucial aspect of pooling energy balance is the consideration of the stochastic effect. The consumption curve, affected by the variability in individual behaviors, can be smoothed through the mutualisation of buildings within an energy community. This smoothing effect reduces peak consumption and enhances the overall stability of the energy system. This article contributes to highlight the benefits of pooling energy demand and equipment sharing at the district level. By analyzing the benefits of energy communities and incorporating the stochastic effect, the article exposes the potential for optimising energy systems within districts. The findings contribute to a better understanding of how pooling of energy balance can lead to improved energy efficiency, resource management and sustainability within urban communities.
 
 .. dropdown:: :bdg-primary-line:`Development` Integration of cooling service in buildings energetics, Aviolat 2022 :cite:`aviolat2022cooling`
     :icon: organization
@@ -230,29 +233,25 @@ While the following reports did not experience a peer-review process, they still
     Integration of the cooling technologies in the model.
 
 .. dropdown:: :bdg-primary-line:`Research` Analyse énergétique du quartier des Vergers à Genève, Lepour 2022
-    :icon: mortar-board
+    :icon: organization
+
+    Ce rapport propose une analyse énergétique du Quartier des Vergers, situé dans le canton de Genève, à l’aide des outils QBuildings et Renewable Energy Hub Optimizer (REHO) développés au sein du laboratoire Industrial Process and Energy Systems Engineering (IPESE) de l’EPFL.
 
     https://ipese-web.epfl.ch/lepour/vergers.html
 
 .. dropdown:: :bdg-primary-line:`Research` Analyse énergétique du quartier du Jardin des Nations à Genève, Lepour 2022
-    :icon: mortar-board
+    :icon: organization
+
+    Ce rapport propose une analyse énergétique du Jardin des Nations, situé dans le canton de Genève, à l’aide des outils QBuildings et Renewable Energy Hub Optimizer (REHO) développés au sein du laboratoire Industrial Process and Energy Systems Engineering (IPESE) de l’EPFL.
 
     https://ipese-web.epfl.ch/lepour/nations.html
 
-.. dropdown:: :bdg-primary-line:`Research` Clustering and typification of urban districts for Energy System Modelling, Loustau 2022 :cite:`loustauClusteringTypificationUrban2023`
-    :icon: mortar-board
-
-    Development of a methodology to identify district archetypes that can be optimized with REHO. Allows to extrapolate REHO results at larger scale.
-
-.. dropdown:: :bdg-primary-line:`Research` Contribution of Storage Technologies to Renewable Energy Hubs, Mathieu 2021 :cite:`mathieuContributionStorageTechnologies`
+.. dropdown:: :bdg-primary-line:`Research` Contribution of Storage Technologies to Renewable Energy Hubs, Mathieu 2021 :cite:`mathieuContributionStorageTechnologies2022`
     :icon: organization
 
-    Integration of building-scale and district-scale long-term storage technologies.
+    **Abstract**
 
-.. dropdown:: :bdg-primary-line:`Research` Integration of Computing Units in Residential Buildings, Saracco 2021
-    :icon: organization
-
-    Investigations on the potential of decentralization of data centers for waste heat valorization.
+    A holistic approach, considering all the energy needs of a territory, should be adopted in the challenge of the energy transition. Synergies between the different end-use demand sectors must be developed, in order to optimize the efficient use of resources. The multi-energy system of the future will be integrated and coordinated, with renewable energy sources and decentralized capacities. Indeed, in a context of increasing urbanization worldwide, decentralized renewable capacities appear to be the key driver to decarbonize urban environments and foster the emergence of renewable energy hubs. Mutualized infrastructures need to be deployed at every stage of these hubs: from energy harvesting, transport, and storage; to mobility services and goods production. The most suited scope to study the deployment and promotion of these local capacities and shared infrastructures appears to be the district perspective. The financial and environmental benefits of a district integrated approach for the mutualization of capacities have been proved, but their implementation mechanisms remain understudied. The aim of this study is to characterize the contribution of storage technologies to ensure the energy balance of a territory, assess the associated investments to be made, and discuss the techno-economic and environmental performance of the whole system. Firstly, a district is defined as a renewable energy hub, by identifying the energy needs of the residents and the potential of endogenous resources. Then, a Mixed Integer Linear Programming (MILP) model is developed to offer a multi-objective optimization of energy resources at district-level. Finally, a characterization of the storage technologies available under the horizon 2050 is conducted and a set of technological solutions is created to serve as input to the optimization model. Although their robustness has not been assessed, the obtained results show several interesting impacts. First, storage implantation allows to foster Photovoltaic (PV) deployment until full penetration. Sides effects to this increased penetration are a growth of the exported electricity together with a reduction of the imports. While the the latter is beneficial, the export increase might put the electric grid at risk. Second, synergies between electric and heat storage technologies where demonstrated through an increased use of heat technologies. Lastly, long term storage was not demonstrated and additional work should be undertaken to validate the overall model. Finally, once the developed model is corrected with the proposed improvements, it aims to be integrated in a global comprehensive model whose final purpose is to assess the optimal level of mutualization of energy conversion and storage capacities in urban areas.
 
 .. dropdown:: :bdg-primary-line:`Research` Optimal Design and Operation of District Energy Systems using Dantzig Wolfe Decomposition, Terrier 2021
     :icon: organization

@@ -49,8 +49,8 @@ As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_.
 
 .. warning:: VScode
 
-    If you are a VScode user, you may have path issues, either when importing the REHO module or by providing a path.
-    Follow the instructions from `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_.
+    If you are a VScode user, you may have path issues, either when importing the REHO module or when providing a relative path.
+    Please refer to the instructions in `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_.
 
 AMPL
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,7 +58,7 @@ AMPL
 As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solver.
 
 - The `AMPL Community Edition <https://ampl.com/ce/>`_ offers a free, full-powered AMPL license for personal, academic, and commercial-prototyping use.
-- The `HiGHS <https://highs.dev/>`_ solver is automatically installed via the `amplpy <https://amplpy.ampl.com/en/latest/>`_ library and REHO's requirements, and is chosen by default when performing an optimization.
+- The `HiGHS <https://highs.dev/>`_ solver is automatically installed via the `amplpy <https://amplpy.ampl.com/en/latest/>`_ library and REHO's requirements, and is chosen by default by the ``REHO()`` constructor when performing an optimization.
 - However, using the `Gurobi <https://www.gurobi.com/>`_ solver reduces calculation time by a factor of 3, and its use is therefore recommended.
 
 Plenty of text editors exist which feature AMPL. We recommend using `Sublime Text <https://www.sublimetext.com/>`_, which provides the `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_.
@@ -84,6 +84,10 @@ You need to include a ``.env`` file at the project root folder. This one should 
 
    AMPL_PATH = "path_to_your_license"
 
+.. warning:: Relative path error
+
+    Getting a *"AMPL_PATH is not defined"* error is frequent for VScode users. Please refer to `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_ to overcome this problem.
+
 Git tracking
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -101,7 +105,7 @@ If your installation is correct, you should:
 
 - Receive twice the final message *“Process finished with exit code 0”*.
 - See files appear in the newly created subfolders ``scripts/template/data/clustering/``, ``scripts/template/results/`` and ``scripts/template/figures/``.
-- Have an overview of the results in your web browser (3 tabs showing figures such as below).
+- Have an overview of the results in your web browser (different tabs showing figures such as below).
 
 .. figure:: ../images/sankey.png
    :width: 1000
@@ -129,10 +133,10 @@ Set building parameters
 ---------------------------
 
 Each building needs to be characterized to estimate its energy demand, its renewable potential, and its sector coupling potential.
-Such information about the buildings involved in the analysis can be provided to REHO in two ways:
+Such information about the buildings involved in the analysis can be provided to REHO in two different ways:
 
 1. By connecting to the `QBuildings database <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ ;
-2. Or by reading CSV files.
+2. By reading CSV files.
 
 QBuildings
 ~~~~~~~~~~~~~~~~~
@@ -171,97 +175,102 @@ See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_csv` for fu
 
 .. warning::
 
-    To work properly, the *.csv* given should contain the same fields as the ones defined in QBuildings.
+    To work properly, the .csv given should contain the same fields as the ones defined in QBuildings.
 
     The order does not matter. It can be helpful to explore the files ``scripts/template/data/buildings.csv``,
     ``scripts/template/data/roofs.csv`` and ``scripts/template/data/facades.csv``.
 
-    .. dropdown:: List of buildings parameters
+Buildings input data
+~~~~~~~~~~~~~~~~~~~~~
+
+.. dropdown:: List of buildings parameters
+    :icon: list-unordered
+
+    .. table:: Table of mandatory buildings parameters
+        :name: tbl-csv-buildings
+
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | Parameters                              | Description                                                                                                                                                                                                                        | Example          |
+        +=========================================+====================================================================================================================================================================================================================================+==================+
+        | id_class                                | Building's class, from :ref:`tbl-sia380`. If several, separate them with   /                                                                                                                                                       | I/II/I           |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | ratio                                   | Share of the ERA attributed to each id_class. If one class   should be 1, else should follow the order of the id_class                                                                                                             | 0.4/0.25/0.35    |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | status                                  | From SIA2024, characterize the electricity consumption in REHO. Put   'standard' by default.                                                                                                                                       | standard         |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | area_era_m2                             | Energetic Reference Area                                                                                                                                                                                                           | 279.4            |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | area_facade_m2                          | area of vertical facades                                                                                                                                                                                                           | 348              |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | area_roof_solar_m2                      | Roof area suitable for solar panels installation. See   `Sonnendach   <https://www.bfe.admin.ch/bfe/en/home/supply/statistics-and-geodata/geoinformation/geodata/solar-energy/suitability-of-roofs-for-use-of-solar-energy.html>`_ | 148.3            |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | height_m                                | Height up to the last ceiling. Use to determine shadowing in   *use_facades*.                                                                                                                                                      | 12.83            |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | thermal_transmittance_signature_kW_m2_K | Averaged conductance                                                                                                                                                                                                               | 0.00202          |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | thermal_specific_capacity_Wh_m2_K       | Thermal inertia                                                                                                                                                                                                                    | 119.4            |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | temperature_interior_C                  | Target temperature to reach                                                                                                                                                                                                        | 20.0             |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | temperature_cooling_supply_C            |                                                                                                                                                                                                                                    | 12.0             |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | temperature_cooling_return_C            |                                                                                                                                                                                                                                    | 17.0             |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | temperature_heating_supply_C            |                                                                                                                                                                                                                                    | 65.0             |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+        | temperature_heating_return_C            |                                                                                                                                                                                                                                    | 50.0             |
+        +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
+
+.. dropdown:: List of roofs parameters
+    :icon: list-unordered
+
+    .. table:: Table of mandatory roofs parameters
+        :name: tbl-csv-roofs
+
+        +--------------------+----------------------------------------------------+------------------+
+        | Parameters         | Description                                        | Example          |
+        +====================+====================================================+==================+
+        | tilt               | Inclination of the roof, in degree                 | 30               |
+        +--------------------+----------------------------------------------------+------------------+
+        | azimuth            | Orientation of the roof, in degree                 | 12               |
+        +--------------------+----------------------------------------------------+------------------+
+        | id_roof            | Unique identifier                                  | 1                |
+        +--------------------+----------------------------------------------------+------------------+
+        | area_roof_solar_m2 | Surface suitable for solar panels                  | 210.3            |
+        +--------------------+----------------------------------------------------+------------------+
+        | id_building        | Use to identify to which building the roof belongs | 10               |
+        +--------------------+----------------------------------------------------+------------------+
+
+.. dropdown:: List of facades parameters
         :icon: list-unordered
 
-        .. table:: Table of mandatory buildings parameters
-            :name: tbl-csv-buildings
+        .. table:: Table of mandatory facades parameters
+            :name: tbl-csv-facades
 
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | Parameters                              | Description                                                                                                                                                                                                                        | Example          |
-            +=========================================+====================================================================================================================================================================================================================================+==================+
-            | id_class                                | Building's class, from :ref:`tbl-sia380`. If several, separate them with   /                                                                                                                                                       | I/II/I           |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | ratio                                   | Share of the ERA attributed to each id_class. If one class   should be 1, else should follow the order of the id_class                                                                                                             | 0.4/0.25/0.35    |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | status                                  | From SIA2024, characterize the electricity consumption in REHO. Put   'standard' by default.                                                                                                                                       | standard         |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | area_era_m2                             | Energetic Reference Area                                                                                                                                                                                                           | 279.4            |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | area_facade_m2                          | area of vertical facades                                                                                                                                                                                                           | 348              |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | area_roof_solar_m2                      | Roof area suitable for solar panels installation. See   `Sonnendach   <https://www.bfe.admin.ch/bfe/en/home/supply/statistics-and-geodata/geoinformation/geodata/solar-energy/suitability-of-roofs-for-use-of-solar-energy.html>`_ | 148.3            |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | height_m                                | Height up to the last ceiling. Use to determine shadowing in   *use_facades*.                                                                                                                                                      | 12.83            |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | thermal_transmittance_signature_kW_m2_K | Averaged conductance                                                                                                                                                                                                               | 0.00202          |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | thermal_specific_capacity_Wh_m2_K       | Thermal inertia                                                                                                                                                                                                                    | 119.4            |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | temperature_interior_C                  | Target temperature to reach                                                                                                                                                                                                        | 20.0             |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | temperature_cooling_supply_C            |                                                                                                                                                                                                                                    | 12.0             |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | temperature_cooling_return_C            |                                                                                                                                                                                                                                    | 17.0             |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | temperature_heating_supply_C            |                                                                                                                                                                                                                                    | 65.0             |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-            | temperature_heating_return_C            |                                                                                                                                                                                                                                    | 50.0             |
-            +-----------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------+
-
-    .. dropdown:: List of roofs parameters
-        :icon: list-unordered
-
-        .. table:: Table of mandatory roofs parameters
-            :name: tbl-csv-roofs
-
-            +--------------------+----------------------------------------------------+------------------+
-            | Parameters         | Description                                        | Example          |
-            +====================+====================================================+==================+
-            | tilt               | Inclination of the roof, in degree                 | 30               |
-            +--------------------+----------------------------------------------------+------------------+
-            | azimuth            | Orientation of the roof, in degree                 | 12               |
-            +--------------------+----------------------------------------------------+------------------+
-            | id_roof            | Unique identifier                                  | 1                |
-            +--------------------+----------------------------------------------------+------------------+
-            | area_roof_solar_m2 | Surface suitable for solar panels                  | 210.3            |
-            +--------------------+----------------------------------------------------+------------------+
-            | id_building        | Use to identify to which building the roof belongs | 10               |
-            +--------------------+----------------------------------------------------+------------------+
-
-    .. dropdown:: List of facades parameters
-            :icon: list-unordered
-
-            .. table:: Table of mandatory facades parameters
-                :name: tbl-csv-facades
-
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
-                | Parameters           | Description                                                                                        | example of value                                     |
-                +======================+====================================================================================================+======================================================+
-                | azimuth              | Orientation of the roof, in degree                                                                 | 12                                                   |
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
-                | id_facade            | Unique identifier                                                                                  | 1                                                    |
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
-                | area_facade_solar_m2 | Surface suitable for solar panels                                                                  | 145.6                                                |
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
-                | id_building          | Use to identify to which building the roof belongs                                                 | 10                                                   |
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
-                | cx                   | Coordinate x of the facade centroid                                                                | 2592822.33                                           |
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
-                | cy                   | Coordinate y of the facade centroid                                                                | 2592809.46                                           |
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
-                | geometry             | Geometry of the facade, useful if centroid is not available. Should be in   *wkb* or *wkt* format. | MULTILINESTRING ((2592822 1120151, 2592809 1120182)) |
-                +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | Parameters           | Description                                                                                        | example of value                                     |
+            +======================+====================================================================================================+======================================================+
+            | azimuth              | Orientation of the roof, in degree                                                                 | 12                                                   |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | id_facade            | Unique identifier                                                                                  | 1                                                    |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | area_facade_solar_m2 | Surface suitable for solar panels                                                                  | 145.6                                                |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | id_building          | Use to identify to which building the roof belongs                                                 | 10                                                   |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | cx                   | Coordinate x of the facade centroid                                                                | 2592822.33                                           |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | cy                   | Coordinate y of the facade centroid                                                                | 2592809.46                                           |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
+            | geometry             | Geometry of the facade, useful if centroid is not available. Should be in   *wkb* or *wkt* format. | MULTILINESTRING ((2592822 1120151, 2592809 1120182)) |
+            +----------------------+----------------------------------------------------------------------------------------------------+------------------------------------------------------+
 
 Select weather data
 -----------------------
 
-Yearly weather data has to be clustered to typical days. The :code:`cluster` dictionary contains the weather information:
+Based on the building's coordinates, REHO automatically connects to the PVGIS dabatase (using the `pvlib <https://pvlib-python.readthedocs.io/en/stable/>`__ library) to extract annual weather data.
+
+Yearly weather data is then clustered into typical days. The :code:`cluster` dictionary contains the clustering specifications:
 
 .. code-block:: python
 
@@ -269,10 +278,13 @@ Yearly weather data has to be clustered to typical days. The :code:`cluster` dic
 
 Where:
 
-- 'Location' can be chosen among the files available in :code:`reho/data/weather/hour`. *(NB: A few locations are available as template; more are available on request.)*
-- 'Attributes' indicates the features among which the clustering is applied (I refers to Irradiance, T to Temperature, and W to Weekday).
-- 'Periods' relates to desired number of typical days.
-- 'PeriodDuration' the typical period duration (24h is the default choice, corresponding to a typical day).
+- 'Location' will be the name of the files produced.
+- 'Attributes' indicates the features among which the clustering is applied (T refers to Temperature, I to Irradiance, and W to Weekday).
+- 'Periods' relates to the desired number of typical periods.
+- 'PeriodDuration' is the typical period duration (24h is the default choice, corresponding to a typical day).
+
+.. note::
+    ``scripts/examples/3f_Custom_profiles.py`` shows how to provide custom weather data.
 
 Set scenario
 -----------------------
@@ -332,7 +344,7 @@ The number of intermediate points for each objective is specified with:
 The total number of optimizations will be ``2 + 2 * nPareto`` (2 extreme points plus 2 times a discretized interval of ``nPareto`` points.
 
 .. note::
-    The files ``1b_building-scale_Pareto.py`` and ``2b_district-scale_Pareto.py``in ``scripts/examples/`` can be run to obtain an OPEX-CAPEX Pareto front, at building-scale or district-scale respectively.
+    Examples ``1b_building-scale_Pareto.py`` and ``2b_district-scale_Pareto.py`` can be run to obtain an OPEX-CAPEX Pareto front, at building-scale or district-scale respectively.
 
 
 Initialize available units and grids
@@ -390,9 +402,9 @@ Where:
 
 - ``scenario['exclude_units']`` is a list containing the units excluded from the available technologies.
 - ``scenario['enforce_units']`` is a list containing the units forced to be installed.
-    - Your unit has to match the *Unit* column of ``building_units.csv``.
+    - The unit name has to match the *Unit* column of ``building_units.csv``.
     - If you do not want to exclude or enforce any unit, give empty lists.
-- :code:`grids` is the dictionary formerly returned by :code:`initialize_grids()`
+- :code:`grids` is the dictionary formerly returned by :code:`initialize_grids()`.
 - ``building_units.csv`` contains the default parameters for units characteristics (specific cost, LCA indicators...).
 
 District units can be enabled with the argument :code:`district_data`:
@@ -401,7 +413,7 @@ District units can be enabled with the argument :code:`district_data`:
 
     units = infrastructure.initialize_units(scenario, grids, building_data, district_data="district_units.csv")
 
-Here ``district_units.csv``" contains the default parameters for district-size units.
+Here ``district_units.csv`` contains the default parameters for district-size units.
 
 Set method options
 -----------------------

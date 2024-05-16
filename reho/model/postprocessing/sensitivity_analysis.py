@@ -10,7 +10,7 @@ from reho.model.reho import *
 
 class SensitivityAnalysis:
     """
-    Perform a sensitivity analysis (SA): sampling, problem, store all optimizations results and the
+    Performs a sensitivity analysis (SA): sampling, problem, store all optimizations results and the
     sensitivity of each tested parameters.
 
     Parameters
@@ -133,7 +133,7 @@ class SensitivityAnalysis:
 
     def run_SA(self, save_inter=True, save_inter_nb_iter=50, save_time_opt=True, intermediate_start=0):
         """
-        Launch all optimizations of the SA and store their results.
+        Launches all optimizations of the SA and store their results.
 
         Parameters
         -----------
@@ -225,7 +225,7 @@ class SensitivityAnalysis:
 
     def calculate_SA(self):
         """
-        Description: Compute the sensitivity indices with the objective values and the problem
+        Computes the sensitivity indices with the objective values and the problem.
         """
         if self.SA_type == "Sobol":
             sensitivity = sobol_analyze.analyze(self.problem, np.array(self.OBJ), print_to_console=True, calc_second_order=False)

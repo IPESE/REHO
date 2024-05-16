@@ -748,7 +748,7 @@ def get_vese_key():
 
 def get_injection_prices(city=None, year=2024, category=None, tva=None):
     """
-    Retrieve injection prices from the `pvtarif.ch <https://www.vese.ch/fr/pvtarif/>`_  API.
+    Retrieves injection prices from the `pvtarif.ch <https://www.vese.ch/fr/pvtarif/>`_  API.
 
     The year, municipality and consumer category can be given to query at a more precise level.
     TVA is applied by default or can be adapted as a scaling factor.

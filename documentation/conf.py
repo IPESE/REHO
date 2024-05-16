@@ -34,10 +34,8 @@ exclude_patterns = ['LICENSE']
 
 # -- Bibliography ------------------------------------------------------------
 bibtex_bibfiles = ['refs.bib']
-bibtex_default_style = 'plain'
+bibtex_default_style = 'unsrt'
 bibtex_reference_style = 'super'
-bibtex_reference_sorting = None
-
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -52,7 +50,7 @@ html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
   'header_links_before_dropdown': 7,
   'navbar_align': 'left',
-  "external_links": [{"name": "REHO FM", "url": "https://ipese-test.epfl.ch/reho-fm/"},],
+  "external_links": [{"name": "REHO FM", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
                   "icon": "https://github.com/IPESE/REHO/blob/documentation/documentation/images/logos/ipese_square.png?raw=true",
@@ -69,6 +67,7 @@ toc_object_entries_show_parents = 'all'
 
 
 # ------------ Autodoc ------------------------------------
+autodoc_member_order = 'bysource'
 autodoc_mock_imports = ['amplpy',
                         'pandas',
                         'openpyxl',

@@ -4,7 +4,7 @@ import reho.model.preprocessing.weather as weather
 
 def return_local_data(cluster, qbuildings_data):
     """
-    Retrieve the data (weather and carbon emissions) corresponding to the buildings' location.
+    Retrieves the data (weather and carbon emissions) corresponding to the buildings' location.
 
     Parameters
     ----------

@@ -37,12 +37,12 @@ Pareto curve
 3. Specific features
 --------------------
 
-Buildings from .csv files
+Load buildings from a .csv file
 ====================================
 .. literalinclude:: ../../scripts/examples/3a_Read_csv.py
    :language: python
 
-Add other energy layers
+Add diverse energy layers
 ====================================
 .. literalinclude:: ../../scripts/examples/3b_Custom_infrastructure.py
    :language: python
@@ -85,7 +85,7 @@ Connect to ELCOM database for electricity prices
 4. Global features
 --------------------
 
-Comparing integrated systems
+Compare various scenarios
 ====================================
 .. literalinclude:: ../../scripts/examples/4a_Progressive_scenarios.py
    :language: python

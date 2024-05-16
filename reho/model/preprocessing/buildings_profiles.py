@@ -243,7 +243,7 @@ def create_random_var(sd_amplitude, sd_timeshift):
 
 def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     """
-    From an annual profile, with 8760 values, extracts the values corresponding to the typical days.
+    From an annual profile (8760 values), extracts the values corresponding to the typical days.
     """
 
     # Get which days are the typical ones

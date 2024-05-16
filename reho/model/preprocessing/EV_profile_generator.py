@@ -27,7 +27,9 @@ def generate_EV_plugged_out_profiles_district(cluster, df_Timestamp):
     EV_plugging_in : array
         Hourly profile of the share of vehicles connecting to the district LV grid.
 
-    Notes ----- - Data are taken from `UK Department for Transport 2013
+    Notes
+    ------
+    Data are taken from `UK Department for Transport 2013
     <https://www.gov.uk/government/collections/energy-and-environment-statistics#publications>`_ and `Swiss Federal Statistical Office 2015
     <https://www.bfs.admin.ch/asset/fr/1840478>`_.
 

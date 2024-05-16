@@ -10,6 +10,11 @@ import reho.model.preprocessing.weather as weather
 from reho.model.preprocessing.QBuildings import *
 
 
+__doc__ = """
+File for handling data and optimization for an AMPL sub-problem.
+"""
+
+
 class SubProblem:
     """
     Collects all the data input and sends it an AMPL model, solves the optimization.

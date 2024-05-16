@@ -39,13 +39,13 @@ REHO exploits the benefits of two programming languages:
 
 Directory for data-related files.
 
-- **elcom/**
-- **emissions/**
-- **infrastructure/**
-- **QBuildings/**
-- **SIA/**
-- **skydome/**
-- **weather/**
+- ``elcom/``
+- ``emissions/``
+- ``infrastructure/``
+- ``QBuildings/``
+- ``SIA/``
+- ``skydome/``
+- ``weather/``
 
 
 **model/**
@@ -58,12 +58,12 @@ Directory for data-related files.
 
 Core of the optimization model (model objectives, constraints, modelling equations), containing all AMPL files:
 
-- **units/** contains the model files specific to each technology that can be used in the system. Three subfolders (`district_units`, `h2_units`, and `storage`) are used for easier classification.
-- `data_stream.dat` contains values that specify the operating temperatures of streams and energy conversion units.
-- `data_stream_storage.dat` specifies the operating temperatures of the energy storage units.
-- `master_problem.mod` contains the modeling of the problem for the decomposition approach.
-- `sub_problem.mod` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
-- `scenario.mod` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
+- ``units/`` contains the model files specific to each technology that can be used in the system. Three subfolders (``district_units``, ``h2_units``, and ``storage``) are used for easier classification.
+- ``data_stream.dat`` contains values that specify the operating temperatures of streams and energy conversion units.
+- ``data_stream_storage.dat`` specifies the operating temperatures of the energy storage units.
+- ``master_problem.mod`` contains the modeling of the problem for the decomposition approach.
+- ``sub_problem.mod`` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
+- ``scenario.mod`` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
 
 **postprocessing/**
 -----------------------
@@ -159,7 +159,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.weather
-    :members: get_cluster_file_ID, generate_output_data, write_dat_files
+    :members:
 
 *sub_problem.py*
 ------------------------------
@@ -170,7 +170,8 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 *master_problem.py*
 ------------------------------
 
-.. autoclass:: reho.model.master_problem.master_problem
+.. automodule:: reho.model.master_problem
+    :members:
 
 *infrastructure.py*
 ------------------------------
@@ -191,14 +192,14 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.plotting
 
-- `layout.csv`: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
-- `sia380_1.csv`: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
+- ``layout.csv``: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
+- ``sia380_1.csv``: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
 
 *plotting.py*
 ---------------
 
 .. automodule:: reho.plotting.plotting
-   :members: plot_performance, plot_expenses, plot_sankey, plot_sunburst_eud, plot_unit_monthly
+   :members:
 
 *rainbow_plots.py*
 ------------------

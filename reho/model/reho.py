@@ -9,9 +9,14 @@ from reho.model.postprocessing.building_scale_network_builder import *
 from reho.paths import *
 
 
+__doc__ = """
+File for constructing and solving the optimization problem.
+"""
+
+
 class REHO(MasterProblem):
     """
-    Wrapper class used to perform the single or multi-objective optimization (Pareto curve).
+    Performs the single or multi-objective optimization.
 
     Parameters are inherited from `MasterProblem`.
 
@@ -712,7 +717,7 @@ class REHO(MasterProblem):
 
     def save_results(self, format='pickle', filename='results', erase_file=True, filter=True):
         """
-        Save the results in the desired format: pickle file or Excel sheet.
+        Saves the results in the desired format: pickle file or Excel sheet.
 
         The results are indexed on the scenarios and pareto IDs.
 

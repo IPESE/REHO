@@ -3,8 +3,6 @@
 # This work can be distributed under the Apache Software License.
 # See the LICENSE file for more details.
 
-import subprocess
-import sys
 from setuptools import setup, find_packages
 
 
@@ -13,17 +11,10 @@ def read_file(file_path):
         return file.read()
 
 
-def install_dependencies():
-    try:
-        subprocess.run([sys.executable, '-m', 'pip', 'install', 'psycopg2'])
-    except subprocess.CalledProcessError:
-        subprocess.run([sys.executable, '-m', 'pip', 'install', 'psycopg2-binary'])
-
-
 setup(
 
     name='REHO',
-    version='1.0.3',
+    version='1.1.0',
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',

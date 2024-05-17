@@ -1,9 +1,6 @@
 Getting started
 ++++++++++++++++
 
-Installation
-============
-
 .. grid:: 1 2 2 2
     :gutter: 4
 
@@ -35,25 +32,17 @@ Installation
 
             git clone https://github.com/IPESE/REHO.git
 
-.. note::
-    The REHO repository can be forked or cloned depending on the intended use. As soon as the repository is cloned, don't forget to check out your own branch from the ``main`` latest version!
+Prerequisites
+=============
 
-Requirements
+Python 3
 ------------------
-
-Python
-~~~~~~~~~~~~~~~~~~~~~~~~
 
 You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
 As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_.
 
-.. warning:: VScode
-
-    If you are a VScode user, you may have path issues, either when importing the REHO module or when providing a relative path.
-    Please refer to the instructions in `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_.
-
 AMPL
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------
 
 As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solver.
 
@@ -63,20 +52,8 @@ As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solv
 
 Plenty of text editors exist which feature AMPL. We recommend using `Sublime Text <https://www.sublimetext.com/>`_, which provides the `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_.
 
-Setup environment
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-Requirements
-^^^^^^^^^^^^^^^^^^^^^^^
-
-The Python packages required by REHO can be installed with:
-
-.. code-block:: bash
-
-   pip install -r requirements.txt
-
 AMPL license path
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~
 
 You need to include a ``.env`` file at the project root folder. This one should contain the path to your AMPL license (cf. file ``example.env``):
 
@@ -84,22 +61,34 @@ You need to include a ``.env`` file at the project root folder. This one should 
 
    AMPL_PATH = "path_to_your_license"
 
-.. warning:: Relative path error
+.. warning:: Running code from VScode or Terminal
 
-    Getting a *"AMPL_PATH is not defined"* error is frequent for VScode users. Please refer to `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_ to overcome this problem.
+    Running scripts from VScode or from a standalone terminal may lead to path issues, either when importing the REHO module or when providing the path to ``.env``.
 
-Git tracking
-^^^^^^^^^^^^^^^^^^^^^^^
+    Please refer to the instructions in `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_.
 
-The subfolders ``scripts/examples/`` and ``scripts/template/`` are both git-tracked.
 
-For your future work and own case-studies with REHO, you can create any additional subfolders in ``scripts/``. These will not be git-tracked.
+Installation
+============
 
+From PyPI
+---------
+
+Command
+~~~~~~~
+
+Select the project root containing a Python environment and install the latest stable release of REHO with:
+
+.. code-block:: bash
+
+    pip install --extra-index-url https://pypi.ampl.com REHO
 
 Checking proper installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run the scripts ``scripts/template/run.py`` and then ``scripts/template/plot.py``
+Download the ``scripts/template/`` folder from the `repository <https://github.com/IPESE/REHO/tree/main/scripts/template>`__, and include them at the project root.
+
+Run the files ``scripts/template/run.py`` and then ``scripts/template/plot.py``
 
 If your installation is correct, you should:
 
@@ -114,14 +103,94 @@ If your installation is correct, you should:
 
    Sankey diagram resulting from a basic REHO single-optimization.
 
+From source
+------------------
+
+Command
+~~~~~~~
+
+Select your project directory and clone the REHO repository with:
+
+.. code-block:: bash
+
+    git clone https://github.com/IPESE/REHO.git
+
+.. warning::
+    The REHO repository can be forked or cloned depending on the intended use. If you simply clone the repository do not forget to check out your own branch from the ``main``.
+
+Requirements
+~~~~~~~~~~~~~~~~~~
+
+Please include a ``venv`` at the project root folder and install dependencies with:
+
+.. code-block:: bash
+
+   pip install -r requirements.txt
+
+.. warning::
+    The ``psycopg2`` dependency is known to cause some issues, as some prerequisites are fequently missing (i.e. the PostgreSQL library and Python development tools). For Windows users, there are binary wheels for Windows in PyPI so this should no longer be an issue. But for Linux and Mac users, 2 options are suggested:
+
+    1. Install the psycopg2-binary PyPI package instead, as it has Python wheels for Linux and Mac OS.
+
+    .. code-block:: bash
+
+        pip install psycopg2-binary
+
+    2. Install the prerequisites for building the ``psycopg2`` package from source:
+
+    .. grid:: 1 2 2 2
+        :gutter: 4
+
+        .. grid-item-card:: Linux users
+            :class-card: install-card
+            :columns: 12 12 6 6
+            :padding: 3
+
+            .. code-block:: bash
+
+                sudo apt install python3-dev libpq-dev
+
+        .. grid-item-card:: Mac users
+            :class-card: install-card
+            :columns: 12 12 6 6
+            :padding: 3
+
+            .. code-block:: bash
+
+                brew install postgresql
+
+    You may refer to `How to install psycopg2 with "pip" on Python? <https://stackoverflow.com/questions/5420789/how-to-install-psycopg2-with-pip-on-python/5450183#5450183>`__ for further investigations.
+
+
+Checking proper installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run any of the files in ``scripts/template/`` or in ``scripts/examples/``.
+
+If your installation is correct, each run should end with *“Process finished with exit code 0”*.
+Some files will also render some results in your web browser and open different tabs showing the outcome of your optimization.
+
+The file ``scripts/examples/test_examples.py`` can also be used to run all the examples and check that they are all functional.
+
+.. warning::
+
+    In ``scripts/examples/``, the solver is explicitly defined as Gurobi to reduce calculation time. Simply remove the ``REHO(solver="gurobi")`` argument and it will by default substitute the open-source solver HiGHS.
+
+
+Git tracking
+~~~~~~~~~~~~~
+
+You will also see some files appear in some newly created subfolders such as ``data/clustering/``, ``results/`` and ``figures/``. These are not git-tracked. But all the other Python files in ``scripts/examples/`` and ``scripts/template/`` are git-tracked.
+
+You should then be careful to not modify the content of these files.
+
+However, for your future work and own case-studies with REHO, you can create any additional subfolders in ``scripts/``. These will be ignored by the git versioning.
+
 
 Running REHO
 ================
 
 The following paragraphs describe the content of ``scripts/template/run.py`` and ``scripts/template/plot.py``. These latter should allow you to get started with the tool and conduct your first optimizations.
-
-.. note::
-    Since the content of the ``scripts/template/`` subfolder is git-tracked, you should not modify these files directly, but rather copy their contents into any other subfolder of ``scripts/`` that you have yourself created. The content there (code, data, results, and figures) will be ignored by the git versioning.
 
 .. literalinclude:: ../../scripts/template/run.py
    :language: python

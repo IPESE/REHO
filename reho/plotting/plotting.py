@@ -4,6 +4,7 @@ import numpy as np
 from reho.paths import *
 from reho.plotting import sankey
 import plotly.graph_objects as go
+import plotly.express as px
 from plotly.subplots import make_subplots
 from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
@@ -1516,9 +1517,11 @@ def plot_EVs(results, era, label='EN_long', color='ColorPastel'):
 
     return plt
 
-def plot_pkm(results):
+def plot_pkm(results,run_label = ""):
     """
     results : reho.results[Scn_ID][Pareto_ID] ex: reho.results['totex'][0]
+
+    run_label : used for the title of the graph
     """
     # dataframe
     df_Unit_t = results['df_Unit_t']
@@ -1532,17 +1535,34 @@ def plot_pkm(results):
     df_pkm['PT'] = df_Grid_t_pkm['Grid_supply']
     df_pkm['Domestic_energy'] = df_Grid_t_pkm['Domestic_energy']
 
+    modes = [x if y=="" else y.strip('_district') for x,y in df_pkm.columns]
+    colors = dict()
+    for m,c in zip(modes,px.colors.qualitative.Plotly):
+        colors[m] = c
+
+
     # plot
-    fig, axs = plt.subplots(2, 5,sharey=True,figsize  = (15,10))
-    for axe,i in zip(axs.ravel(),range(1,11)):
+    # fig, axs = plt.subplots(2, 5,sharey=True,figsize  = (15,10))
+    fig = make_subplots(rows=2, cols=5, shared_yaxes= True,
+                        shared_xaxes=True,subplot_titles = range(1,11))
+    # for axe,i in zip(axs.ravel(),range(1,11)):
+    for (r,c),i in zip(fig._get_subplot_coordinates(),range(1,11)):
         df_plot = df_pkm.xs(level="Period",key = i).applymap(lambda x: max(x, 0))
         df_plot.columns = [x if y=="" else y.strip('_district') for x,y in df_plot.columns]
-        df_plot.loc[:,df_plot.columns != 'Domestic_energy'].plot.area(ax=axe)
-    plt.show()
-    
+        # df_plot.loc[:,df_plot.columns != 'Domestic_energy'].plot.area(ax=axe)
+        df_plot = df_plot.loc[:,df_plot.columns != 'Domestic_energy']
+        df_plot = df_plot.droplevel("Layer")
+        for mode in df_plot:
+            fig.add_trace(go.Scatter(x=df_plot.index, y=df_plot[mode].values, mode='lines', 
+                                     name=mode,marker=dict(color=colors[mode]),stackgroup='one'),
+                            row=r, col=c)
+
+        # px.line(df_plot.loc[:,df_plot.columns != 'Domestic_energy'],row = row, col = col)
+    # plt.show()
+    fig.update_layout(title_text=f"{run_label} - Mobility demand [pkm]")
     return df_pkm,fig
 
-def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex'):
+def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
     """"
     This function can accomodate reho object in the reho_dict or reho.results directly
     """
@@ -1556,7 +1576,13 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex'):
     fig = make_subplots(rows=Pareto_ID_number, cols=1+len(rehos_dict),
                         subplot_titles=['pi'] + list(rehos_dict.keys()),
                         horizontal_spacing = 0.05,
-                        shared_yaxes= 'columns')
+                        shared_yaxes= 'columns',
+                        shared_xaxes=True)
+    
+    # setting colors 
+    colors = dict()
+    for k,c in zip(rehos_dict.keys(),px.colors.qualitative.Plotly):
+        colors[k] = c
 
     # pi
     for Pareto_ID in range(Pareto_ID_number):
@@ -1565,7 +1591,7 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex'):
             for name, reho in rehos_dict.items():
                 df_pi = reho.results_MP["totex"][Pareto_ID][0]["df_Dual_t"]["pi"].xs("Electricity")
                 df_pi.index = [f"{x}_{y}" for x,y in df_pi.index ]
-                fig.add_trace(go.Scatter(x=df_pi.index, y=df_pi.values, mode='lines', name=name),row=r, col=1)
+                fig.add_trace(go.Scatter(x=df_pi.index, y=df_pi.values, mode='lines', name=name,marker=dict(color=colors[name])),row=r, col=1)
 
         # load
 
@@ -1596,7 +1622,7 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex'):
             df_plot.index = [f"{int(x)}_{int(y)}" for x,y in df_plot.index ]
             df_plot = df_plot.groupby('demand',axis = 1).agg('sum')
             for district in df_plot.columns:
-                fig.add_trace(go.Bar(x=df_plot.index, y=df_plot[district].values, name=district),row=r, col=col)
+                fig.add_trace(go.Bar(x=df_plot.index, y=df_plot[district].values, name=district,marker=dict(color=colors[district])),row=r, col=col)
             
             # external load (i.e the total)
             if REHO:
@@ -1605,11 +1631,11 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex'):
                 df_extload = reho["totex"][Pareto_ID]["df_Grid_t"].copy()
             df_extload = df_extload.loc[:,df_extload.columns.str.startswith('charging_externalload')].xs(('Electricity','Network')).agg('sum',axis = 1)
             df_extload.index = [f"{int(x)}_{int(y)}" for x,y in df_extload.index ]
-            fig.add_trace(go.Scatter(x=df_extload.index, y=df_extload.values, mode='lines', name='total load'),row=r, col=col)
+            fig.add_trace(go.Scatter(x=df_extload.index, y=df_extload.values, mode='lines', name='total load',marker=dict(color=colors[name])),row=r, col=col)
 
 
     
-    fig.update_layout(title_text="Loads and prices",barmode = "stack",
+    fig.update_layout(title_text=f"{run_label} - Loads and prices",barmode = "stack",
                       height = Pareto_ID_number*300 , width = (1+len(rehos_dict)) * 400 )
     return fig
 

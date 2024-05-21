@@ -114,7 +114,7 @@ EV_E_stored[u,p,t] =  EV_E_stored_plug_in[u,p,t] + EV_E_stored_plug_out[u,p,t];
 subject to EV_EB_upper_bound1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored[u,p,t] <= EV_capacity * n_vehicles[u];
 
-subject to EV	_EB_upper_bound2{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
+subject to EV_EB_upper_bound2{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored_plug_out[u,p,t] <= EV_capacity * n_vehicles[u];
 
 subject to EV_EB_upper_bound3{u in UnitsOfType['EV'],p in Period,t in Time[p]}:

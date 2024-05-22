@@ -5,7 +5,6 @@ import pandas as pd
 
 from reho.paths import *
 
-
 __doc__ = """
 File for handling infrastructure parameters.
 """
@@ -326,7 +325,7 @@ class Infrastructure:
 
 def prepare_units_array(file, exclude_units=[], grids=None):
     """
-    Prepares the array that will be used in the initialize_units.
+    Prepares the array that will be used by initialize_units.
 
     Parameters
     ----------
@@ -340,7 +339,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     Returns
     -------
     np.array
-        Array that contains the one dictionary by cell, containing the units' information.
+        Contains one dictionary in each cell, with the parameters for a specific unit.
 
     See also
     --------
@@ -349,7 +348,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     Notes
     -----
     - Make sure the name of the columns you are using are the same as the one from the default files, that can be found
-      in *data/infrastructure*.
+      in ``data/infrastructure``.
     - The name of the units, which will be used as keys, do not matter but the *UnitOfType* must be along a defined
       list of possibilities.
     """
@@ -440,7 +439,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     Returns
     -------
     dict
-        A dictionary containing building_units and district_units.
+        Contains building_units and district_units.
 
     See also
     --------
@@ -448,8 +447,8 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 
     Notes
     -----
-    - The default files are located at *reho/data/parameters*.
-    - The custom files can be given as absolute or relative path
+    - The default files are located in ``reho/data/parameters``.
+    - The custom files can be given as absolute or relative path.
 
     Examples
     --------
@@ -504,7 +503,7 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
     Returns
     -------
     dict
-        A dictionary containing information about the initialized grids.
+        Contains information about the initialized grids.
 
     See also
     --------

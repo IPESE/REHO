@@ -9,7 +9,6 @@ import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as weather
 from reho.model.preprocessing.QBuildings import *
 
-
 __doc__ = """
 File for handling data and optimization for an AMPL sub-problem.
 """
@@ -44,7 +43,7 @@ class SubProblem:
 
     See also
     --------
-    reho.model.reho.reho
+    reho.model.reho.REHO
     reho.model.master_problem.MasterProblem
 
     """
@@ -674,6 +673,9 @@ class SubProblem:
 
 
 def initialize_default_methods(method):
+    """
+    Sets the default options for an optimization.
+    """
     if method is None:
         method = {}
 

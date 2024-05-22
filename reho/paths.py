@@ -9,6 +9,7 @@ __doc__ = """
 File for managing file paths and configurations.
 """
 
+
 load_dotenv()
 if "AMPL_PATH" not in os.environ:
     print("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")

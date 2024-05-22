@@ -1,6 +1,10 @@
 from reho.model.preprocessing.QBuildings import *
 import reho.model.preprocessing.weather as weather
 
+__doc__ = """
+Handles data specific to the location.
+"""
+
 
 def return_local_data(cluster, qbuildings_data):
     """
@@ -9,20 +13,20 @@ def return_local_data(cluster, qbuildings_data):
     Parameters
     ----------
     cluster : dict
-        Define location of the buildings, and attributes for the data reduction process (clustering).
+        Defines location of the buildings, and clustering attributes for the data reduction process.
     qbuildings_data : dict
         Buildings characterization
 
     Returns
     -------
-    local_data : dict
-        A dictionary containing the File_ID (string) and the following pandas dataframe:
-        - df_Timestamp
-        - df_Irradiation
-        - df_Area
-        - df_Cenpts
-        - df_Westfacades_irr
-        - df_Emissions
+    dict
+        File_ID (string) to identify the location and clustering attritutes, and the following pandas dataframes:
+            - df_Timestamp
+            - df_Irradiation
+            - df_Area
+            - df_Cenpts
+            - df_Westfacades_irr
+            - df_Emissions
     """
 
     local_data = dict()

@@ -13,10 +13,14 @@ from sqlalchemy.dialects import postgresql
 import reho.model.preprocessing.skydome as skydome
 from reho.paths import *
 
+__doc__ = """
+Handles data for buildings characterization.
+"""
+
 
 class QBuildingsReader:
     """
-    This class is used to handle and prepare the data related to buildings.
+    Handles and prepares the data related to buildings.
 
     There usually come from `GBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database. However,
     one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in
@@ -94,7 +98,7 @@ class QBuildingsReader:
 
         return
 
-    def read_csv(self, buildings_filename='buildings.csv', nb_buildings=None, roofs_filename='roofs.csv', facades_filename='facades.csv'):
+    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
         """
         Reads buildings-related data from CSV files and prepare it for the REHO model.
 
@@ -120,13 +124,8 @@ class QBuildingsReader:
 
         Notes
         -----
-        - If `nb_buildings` is not provided, all buildings in the 'buildings' data are considered.
+        - If ``nb_buildings`` is not provided, all buildings in the 'buildings' data are considered.
         - If ``load_roofs = True``, `roofs_filename` must be provided, else it is not useful. Same goes for the facades.
-        - This function can be used with default files in case one does not want to connect to the database and does
-          not need a particular building.
-          In that case, do not fill any filename. `buildings.csv`, `roofs.csv` and `facades.csv`
-          will be used by default.
-          It should be noted that those names are therefore reserved for the default and cannot be used for your own files.
 
         Example
         -------

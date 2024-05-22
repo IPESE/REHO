@@ -16,9 +16,7 @@ sys.path.insert(0, os.path.abspath('../'))
 project = 'REHO'
 copyright = '2021, IPESE, EPFL'
 author = 'D. Lepour, J. Loustau, C. Terrier'
-
-# The full version, including alpha/beta/rc tags
-release = '1.0'
+release = '1.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,7 +48,7 @@ html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
   'header_links_before_dropdown': 7,
   'navbar_align': 'left',
-  "external_links": [{"name": "REHO FM", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
+  "external_links": [{"name": "REHO-fm", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
                   "icon": "https://github.com/IPESE/REHO/blob/documentation/documentation/images/logos/ipese_square.png?raw=true",
@@ -72,20 +70,23 @@ autodoc_mock_imports = ['amplpy',
                         'pandas',
                         'openpyxl',
                         'numpy',
+                        'scipy',
                         'scikit-learn',
                         'scikit-learn-extra',
-                        'psycopg2',
-                        'requests',
                         'sqlalchemy',
-                        'scipy',
+                        'psycopg2',
+                        'geopandas',
                         'matplotlib',
                         'plotly',
-                        'geopandas',
-                        'urllib3',
+                        'kaleido',
                         'dotenv',
+                        'requests',
+                        'coloredlogs',
                         'SALib',
                         'qmcpy',
-                        'pvlib']
+                        'pvlib',
+                        'pyproj',
+                        'shapely']
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()
 sys.modules['sklearn.metrics'] = MagicMock()
@@ -94,4 +95,3 @@ sys.modules['sklearn_extra'] = MagicMock()
 sys.modules['sklearn_extra.cluster'] = MagicMock()
 sys.modules['sqlalchemy'] = MagicMock()
 sys.modules['sqlalchemy.dialects'] = MagicMock()
-sys.modules['shapely'] = MagicMock()

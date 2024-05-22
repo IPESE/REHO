@@ -7,6 +7,11 @@ import requests as rq
 from shapely import wkt
 import json
 
+__doc__ = """
+Queries the electricity retail and injection prices, from the `ELCOM <https://www.prix-electricite.elcom.admin.ch/>`_ database and `pvtarif.ch <https://www.vese.ch/fr/pvtarif/>`_ database respectively.
+"""
+
+
 FIND_PATTERN = "PREFIX\\s*(.*?)\n"
 SPLIT_PATTERN = ":\\s*"
 
@@ -291,7 +296,9 @@ def get_providers_by_municipality_id(city=None, from_csv=False):
 
     Returns
     -------
-    pd.DataFrame which columns are ['id_city', 'commune', 'id_operator', 'operator'] for the given city.
+    pd.DataFrame
+        Columns are ['id_city', 'commune', 'id_operator', 'operator'] for the given city.
+
     Notes
     -----
     - The correspondance table is dated from 01.02.2024
@@ -427,7 +434,8 @@ def get_prices_from_elcom_by_canton(year=2024, canton=None, category=None, tva=N
 
     Returns
     -------
-    pd.DataFrame with the electricity price and its components.
+    pd.DataFrame
+        Electricity price and its components.
 
     See also
     --------
@@ -560,7 +568,8 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
 
     Returns
     -------
-    pd.DataFrame with the electricity price and its components.
+    pd.DataFrame
+        Electricity price and its components.
 
     See also
     --------
@@ -767,7 +776,7 @@ def get_injection_prices(city=None, year=2024, category=None, tva=None):
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing injection prices information for each city.
+        Contains injection prices information for each city.
 
     Raises
     ------
@@ -866,7 +875,8 @@ def get_electricity_prices(city, year=2024, category=None, tva=None):
 
     Returns
     -------
-    pd.DataFrame with prices for the given parameters which columns are ['Year', 'City', 'Provider', 'Category', 'Elec_demand_cts_kWh', 'Elec_supply_cts_kWh'].
+    pd.DataFrame
+        Prices for the given parameters which columns are ['Year', 'City', 'Provider', 'Category', 'Elec_demand_cts_kWh', 'Elec_supply_cts_kWh'].
 
     See also
     --------

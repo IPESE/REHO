@@ -8,6 +8,9 @@ Generates the buildings profiles for domestic hot water (DHW) demand, domestic e
 
 
 def reference_temperature_profile(parameters_to_ampl, cluster):
+    """
+    Returns a reference temperature timeseries.
+    """
     # TODO: time dependent indoor temperature f.e. lower at night
 
     total_timesteps = cluster['Periods'] * cluster['PeriodDuration'] + 2
@@ -31,7 +34,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
     Parameters
     ----------
     buildings_data : dict
-        Dictionary of buildings data from QBuildingsReader class.
+        Buildings data from QBuildingsReader class.
     df_SIA_380 : pd.DataFrame
         SIA norms.
     df_SIA_2024 : pd.DataFrame
@@ -39,26 +42,26 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
     df_Timestamp : pd.DataFrame
         Information for clustering results, used to know the periods and period duration.
     cluster : dict
-        cluster parameter from the reho.model.reho.reho class
+        Clustering parameters.
     include_stochasticity : bool
-        Activate the method `include_stochasticity`, from the reho.model.reho.reho class, that includes variability
-        in the values given by the SIA profiles.
-    sd_stochasticity : dict
-        Dictionary, from the reho.model.reho.reho class, that precises the parameters of the stochasticity (see :ref:`tbl-methods`).
+        Includes variability in the standard values given by the SIA profiles (see :ref:`tbl-methods`).
+    sd_stochasticity : list
+        Parameters of the stochasticity: first value is the standard deviation on the peak demand, second value is the standard deviation on the time-shift (see :ref:`tbl-methods`).
     use_custom_profiles : dict
-        Dictionary, from the reho.model.reho.reho class, that allows to give custom profiles (see :ref:`tbl-methods`).
+        Allows to give custom profiles (see :ref:`tbl-methods`).
 
     Returns
     -------
-    Three Numpy arrays of shape (242,): the 1st one for the heat gains from people, the 2nd for DHW and the 3rd for
-    the electricity demand.
+    np.array
+        Heat gains from people
+    np.array
+        DHW demand
+    np.array
+        Electricity demand
 
     See also
     --------
-    reho.model.preprocessing.QBuildings.QBuildingsReader :
-        Class used to handle the buildings' data.
-    reho.model.reho.reho :
-        Wrapper class that manages the optimization.
+    reho.model.preprocessing.QBuildings.QBuildingsReader
 
     Notes
     -----
@@ -191,6 +194,9 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
 
 
 def apply_stochasticity(df_profiles, scale, SF):
+    """
+    Returns the daily profiles where an intensity variation (scale) and time shift factor (SF) have been applied.
+    """
     # implement the intensity variation in standard profiles
     df_profiles = df_profiles * scale
 
@@ -215,12 +221,12 @@ def create_random_var(sd_amplitude, sd_timeshift):
 
     Notes
     -----
-    - The array is hard-coded to be of dimension 1,5 so it the stochasticity should apply to a df of another dimension,
-      one should adapt the function.
+    The array is hard-coded to be of dimension [1,5], as it applies on the daily profiles for electricity demand, DHW demand, occupancy, electricity heat gains, and heat gains from people.
 
     See also
     --------
-    apply_stochasticity
+    reho.model.preprocessing.buildings_profiles.apply_stochasticity
+    reho.model.preprocessing.sia_parser.daily_profiles_with_monthly_deviation
     """
     # constraints
     if sd_amplitude < 0:
@@ -287,7 +293,8 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
 
     Returns
     -------
-    A Numpy array with the solar gains for each timesteps.
+    np.array
+        Solar gains for each timesteps.
     """
 
     irr_west = local_data["df_Westfacades_irr"]

@@ -11,7 +11,6 @@ import reho.model.postprocessing.write_results as write_results
 from reho.model.preprocessing.local_data import *
 from reho.model.sub_problem import *
 
-
 __doc__ = """
 File for handling data and optimization for an AMPL master problem.
 """

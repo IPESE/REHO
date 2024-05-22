@@ -8,7 +8,6 @@ from reho.model.postprocessing.KPIs import *
 from reho.model.postprocessing.building_scale_network_builder import *
 from reho.paths import *
 
-
 __doc__ = """
 File for constructing and solving the optimization problem.
 """
@@ -18,7 +17,7 @@ class REHO(MasterProblem):
     """
     Performs the single or multi-objective optimization.
 
-    Parameters are inherited from `MasterProblem`.
+    Parameters are inherited from ``MasterProblem``.
 
     See also
     --------
@@ -384,19 +383,6 @@ class REHO(MasterProblem):
 
     def generate_pareto_actors(self, n_sample=10, bounds=None, actor="Owners"):
 
-        def run_actors_opti(samples, ids):
-            if any([samples[col][0] for col in samples]):  # if samples contain values
-                param = samples.iloc[ids]
-                self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_min': param['owner_portfolio']}
-            scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
-            try:
-                scn = self.scenario["name"]
-                self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=0)
-                self.add_df_Results(None, scn, 0, self.scenario)
-                return self.results[scn][0], self.results_MP[scn][0]
-            except:
-                return None, None
-
         self.method["actors_problem"] = True
         self.method["include_all_solutions"] = True
         self.method['building-scale'] = True
@@ -414,7 +400,7 @@ class REHO(MasterProblem):
 
         Scn_ID = self.scenario['name']
         self.pool = mp.Pool(mp.cpu_count())
-        results = {ids: self.pool.apply_async(run_actors_opti, args=(self.samples, ids)) for ids in self.samples.index}
+        results = {ids: self.pool.apply_async(self.run_actors_opti, args=(self.samples, ids)) for ids in self.samples.index}
         while len(results[list(self.samples.index)[-1]].get()) != 2:
             time.sleep(1)
         for ids in self.samples.index:
@@ -432,9 +418,20 @@ class REHO(MasterProblem):
 
         gc.collect()  # free memory
 
+    def run_actors_opti(self, samples, ids):
+        if any([samples[col][0] for col in samples]):  # if samples contain values
+            param = samples.iloc[ids]
+            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_min': param['owner_portfolio']}
+        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
+
+        scn = self.scenario["name"]
+        self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=0)
+        self.add_df_Results(None, scn, 0, self.scenario)
+        return self.results[scn][0], self.results_MP[scn][0]
+
     def read_configurations(self, path=None):
         if path is None:
-            filename = 'tr_' + str(self.buildings_data["Building1"]["transformer"] + '_' + str(len(self.buildings_data))) + '.pickle'
+            filename = 'tr_' + str(self.buildings_data["Building1"]["transformer"]) + '_' + str(len(self.buildings_data)) + '.pickle'
             path = os.path.join(path_to_configurations, filename)
         with open(path, 'rb') as f:
             [self.results_SP, self.feasible_solutions, self.number_SP_solutions] = pickle.load(f)

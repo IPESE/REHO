@@ -13,15 +13,17 @@ layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Na
 
 def update_label(source_name, target_name, df_label):
     """
-        update labels of df_label if source_name or target_name not in index of df_label
+    Updates labels of df_label if source_name or target_name not in index of df_label.
 
-        Parameters:
-            source_name (string) : first name to update
-            target_name (string) : second name to update
-            df_label (df) : pd.DataFrame with labels
+    Parameters
+    ----------
+    source_name (string) : first name to update
+    target_name (string) : second name to update
+    df_label (df) : pd.DataFrame with labels
 
-        Returns:
-            df_label (df) updated
+    Returns
+    -------
+    df_label (df) updated
     """
     if not (source_name in df_label.index):  # create label 'source' if not existing yet
         df_label.loc[source_name, 'pos'] = len(df_label)
@@ -32,17 +34,19 @@ def update_label(source_name, target_name, df_label):
 
 def add_label_value(df_label, df_stv, precision, units):
     """
-        add the values from df_stv to the labels of df_labels
-        The value of the nodes are thus available in the nodes name for the sankey diagram
+    Adds the values from df_stv to the labels of df_labels.
+    The value of the nodes are thus available in the nodes name for the Sankey diagram.
 
-        Parameters:
-            df_label (df) : pd.DataFrame of labels
-            df_stv (df) : pd.DataFrame of source, target and value
-            precision (int): precision of the displayed numbers (default = 2)
-            units (string): unit of the values (default MWh)
+    Parameters
+    __________
+    df_label (df) : pd.DataFrame of labels
+    df_stv (df) : pd.DataFrame of source, target and value
+    precision (int): precision of the displayed numbers (default = 2)
+    units (string): unit of the values (default MWh)
 
-        Returns:
-            df label updated with the label values
+    Returns
+    _______
+    df label updated with the label values
     """
     df_source_value = pd.DataFrame()
     df_source_value.index = df_label.pos
@@ -60,24 +64,32 @@ def add_label_value(df_label, df_stv, precision, units):
 
 def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, check_dest_2=False, dest_2=None, adjustment=0, fact=1):
     """
-        Add an energy flow for the sankey diagramm for 'sankey_plot' according (a) cell(s) of df_annuals if cell not null
+    Adds an energy flow for the sankey diagramm for 'sankey_plot' according (a) cell(s) of df_annuals if cell not null
 
-        Parameters:
-            source (string) : name of the source
-            dest (string) : name of the destination
-            layer (string) : name of the layer of the considered cell(s)
-            hub (string) : name of the hub of the considered cell(s)
-            dem_sup (string) : 'Supply_MWh' or 'Demand_MWh', column to take (! no control)
-            df_annuals (df) : df_annuals dataframe
-            df_label (df) : df_label dataframe of labels
-            df_stv (df) : df_stv dataframe of source,target,value
-            check_dest_2 (bool) : if True dest_2 substitute dest (default false)
-            dest_2 (string) : second possible destination (default none)
-            adjustment (float) : offset added to the cell value (default 0)
-            fact (float) : factor multiplied to the cell value (default 1)
+    Parameters
+    ----------
 
-        Returns:
-            df_label updated (df), df_stv updated (df), value added (float, 0 if nothing added)
+    source (string) : name of the source
+    dest (string) : name of the destination
+    layer (string) : name of the layer of the considered cell(s)
+    hub (string) : name of the hub of the considered cell(s)
+    dem_sup (string) : 'Supply_MWh' or 'Demand_MWh', column to take (! no control)
+    df_annuals (df) : df_annuals dataframe
+    df_label (df) : df_label dataframe of labels
+    df_stv (df) : df_stv dataframe of source,target,value
+    check_dest_2 (bool) : if True dest_2 substitute dest (default false)
+    dest_2 (string) : second possible destination (default none)
+    adjustment (float) : offset added to the cell value (default 0)
+    fact (float) : factor multiplied to the cell value (default 1)
+
+    Returns
+    -------
+    pd.DataFrame
+        df_label updated
+    pd.DataFrame
+        df_stv updated
+    float
+        value added (0 if nothing added)
     """
     source_to_dest = df_annuals.loc[(df_annuals['Layer'] == layer) & (df_annuals['Hub'] == hub)][
         dem_sup].sum()  # .sum() to add all the values of the buildings if multiple buildings

@@ -7,18 +7,21 @@ from qmcpy import Sobol
 
 from reho.model.reho import *
 
+__doc__ = """
+Performs a sensitivity analysis on the optimization.
+"""
+
 
 class SensitivityAnalysis:
     """
-    Performs a sensitivity analysis (SA): sampling, problem, store all optimizations results and the
-    sensitivity of each tested parameters.
+    Performs a sensitivity analysis (SA): sampling, solving, storing all optimizations results and the sensitivity of each tested parameter.
 
     Parameters
     ----------
     reho : reho object
         Model of the district, obtained via the REHO class.
     SA_type : str
-        Type of SA (Morris or Sobol).
+        Type of SA, choose between 'Morris', 'Sobol', and 'Monte_Carlo'.
     sampling_parameters : int
         Number of trajectories for the sampling of the solution space.
     upscaling_factor : int
@@ -26,8 +29,7 @@ class SensitivityAnalysis:
 
     Notes
     -------
-    The framework is designed to be performed using TOTEX minimization but can easily be modified,
-    just change the objective function of the reho and the KPI saved into OBJ in the function run_SA()
+    The framework is designed to be performed using TOTEX minimization but can easily be modified: simply change the objective function in the REHO object initialization, and adapt the calculation for ``objective_values`` in ``extract_results()``.
     """
 
     def __init__(self, reho, SA_type, sampling_parameters=0, upscaling_factor=1):
@@ -41,7 +43,7 @@ class SensitivityAnalysis:
         self.parameter = {}
         self.problem = {}
         self.sampling = []
-        self.OBJ = []
+        self.objective_values = []
         self.SA_results = {'num_optimizations': [], 'dict_df_results': [], 'dict_res_ES': []}
         self.sensitivity = []
 
@@ -64,10 +66,9 @@ class SensitivityAnalysis:
 
     def build_SA(self, unit_parameter=['Cost_inv1', 'Cost_inv2'], SA_parameters={}):
         """
-        Description:
-        - Generate the list of parameters for the SA, their values and type of variation range
-        - Generate the problem of the SA, i.e. define the parameters and theirs bounds
-        - Generate the sampling scheme of the SA
+        - Generates the list of parameters for the SA, their values and type of variation range
+        - Generates the problem of the SA, i.e. define the parameters and theirs bounds
+        - Generates the sampling scheme of the SA
 
         Parameters
         ----------
@@ -151,7 +152,7 @@ class SensitivityAnalysis:
         ---------
         SA_results : dict
             Contains the number of the optimization and a dictionary regrouping all main results of the optimizations
-        OBJ : list
+        objective_values : list
             Values of the objective function for each optimization
         """
 
@@ -228,9 +229,9 @@ class SensitivityAnalysis:
         Computes the sensitivity indices with the objective values and the problem.
         """
         if self.SA_type == "Sobol":
-            sensitivity = sobol_analyze.analyze(self.problem, np.array(self.OBJ), print_to_console=True, calc_second_order=False)
+            sensitivity = sobol_analyze.analyze(self.problem, np.array(self.objective_values), print_to_console=True, calc_second_order=False)
         if self.SA_type == "Morris":
-            sensitivity = morris_analyze.analyze(self.problem, self.sampling, np.array(self.OBJ), print_to_console=True)
+            sensitivity = morris_analyze.analyze(self.problem, self.sampling, np.array(self.objective_values), print_to_console=True)
         self.sensitivity = sensitivity
 
     def plot_Morris(self, save=False):
@@ -269,9 +270,7 @@ class SensitivityAnalysis:
 
         self.SA_results['num_optimizations'].append(j)
         self.SA_results['dict_df_results'].append(dict_res)
-        self.OBJ.append(reho.results[self.SA_type][0].df_Performance['Costs_inv']['Network']
-                        + reho.results[self.SA_type][0].df_Performance['Costs_op']['Network']
-                        + reho.results[self.SA_type][0].df_Performance['Costs_rep']['Network'])
+        self.objective_values.append(reho.results[self.SA_type][0].df_Performance['Costs_inv']['Network'] + reho.results[self.SA_type][0].df_Performance['Costs_op']['Network'] + reho.results[self.SA_type][0].df_Performance['Costs_rep']['Network'])
 
         df_Grid_t = reho.results[self.SA_type][0].df_Grid_t[['Grid_demand', 'Grid_supply']].groupby(['Layer', 'Hub', 'Period']).sum()
         df_Annuals = reho.results[self.SA_type][0].df_Annuals

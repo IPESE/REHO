@@ -7,16 +7,15 @@ import itertools as it
 import matplotlib.pyplot as plt
 
 __doc__ = """
-Used for PV orientation.
+Generates a skydome decomposition into patches for PV orientation.
 """
 
 
 def convert_results_txt_to_csv(load_timesteps):
-    """ load one txt file for each hour/timestep in "load_timesteps".
-    txt file contains oriented irradiation of each 145 skypatches. Combines all hours to one df
-
-    :param load_timesteps:
-    :return: df:
+    """
+    Loads one txt file for each hour/timestep in "load_timesteps".
+    txt file contains oriented irradiation of each 145 skypatches.
+    Combines all hours to one df.
     """
 
     df = pd.DataFrame()

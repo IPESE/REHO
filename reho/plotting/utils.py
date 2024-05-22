@@ -5,7 +5,6 @@ import pandas as pd
 
 from reho.paths import *
 
-
 __doc__ = """
 Utilities for plotting functions.
 """

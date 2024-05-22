@@ -27,6 +27,8 @@ setup(
                       'scikit-learn>=1.2.2,<2.0.0',
                       'scikit-learn-extra>=0.3.0',
                       'sqlalchemy>=1.4.42,<2.0.0',
+                      'psycopg2>=2.9.4,<3.0.0 ; platform_system != "Windows"',
+                      'psycopg2-binary>=2.9.9,<3.0.0 ; platform_system == "Windows"'
                       'geopandas>=0.12.2,<1.0.0',
                       'matplotlib>=3.6.1,<4.0.0',
                       'plotly>=5.10,<6.0.0',

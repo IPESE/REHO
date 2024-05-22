@@ -128,15 +128,17 @@ Please include a ``venv`` at the project root folder and install dependencies wi
    pip install -r requirements.txt
 
 .. warning::
-    The ``psycopg2`` dependency is known to cause some issues, as some prerequisites are fequently missing (i.e. the PostgreSQL library and Python development tools). For Windows users, there are binary wheels for Windows in PyPI so this should no longer be an issue. But for Linux and Mac users, 2 options are suggested:
+    The ``psycopg2`` dependency is known to cause some issues, as some prerequisites are frequently missing (i.e. the PostgreSQL library and Python development tools). For Windows users, the binary wheel ``psycopg2-binary`` is already specified in REHO's requirements so this should no longer be an issue.
 
-    1. Install the psycopg2-binary PyPI package instead, as it has Python wheels for Linux and Mac OS.
+    For Linux and Mac users, 2 options are suggested:
+
+    1. Try to install the ``psycopg2-binary`` instead:
 
     .. code-block:: bash
 
         pip install psycopg2-binary
 
-    2. Install the prerequisites for building the ``psycopg2`` package from source:
+    2. Install the prerequisites for building ``psycopg2`` from source:
 
     .. grid:: 1 2 2 2
         :gutter: 4

@@ -63,6 +63,10 @@ def read_sia_2024_profiles(status, df):
 
 
 def daily_profiles_with_monthly_deviation(status, rooms, date, df):
+    """
+    Returns daily profiles for electricity demand, DHW demand, occupancy, electricity heat gains, and heat gains from people.
+    The profiles are based on the SIA norms and vary according to the building specifications (rooms, renovation status) and the date (weekday, month).
+    """
     # get monthly deviation
     df_months = df['profiles'].iloc[:, 49:61]
 

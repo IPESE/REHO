@@ -4,18 +4,21 @@ import scipy.spatial
 from sklearn_extra.cluster import KMedoids
 from sklearn.metrics import pairwise_distances
 
+__doc__ = """
+Clustering algorithm for input data reduction.
+"""
 
-class ClusterClass:
+
+class Clustering:
     """
-    This class executes the data reduction for meteorological data.
-    It will execute a clustering for each number of clusters desired among an interval (nb_clusters), and select the optimal one according to the MAPE criterion (Maximum Average Pairwise Euclidean distance).
+    Executes a clustering for each number of clusters among a specified interval (nb_clusters), and selects the optimal one according to the MAPE criterion (Maximum Average Pairwise Euclidean distance).
 
     Parameters
     ----------
     data : pd.DataFrame
         Annual weather data
     nb_clusters : list
-        Interval for the number of clusters tested.
+        Interval for the number of clusters possible.
 
     """
 

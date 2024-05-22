@@ -5,10 +5,9 @@ import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
 from reho.paths import *
-from reho.model.preprocessing.clustering import ClusterClass
+from reho.model.preprocessing.clustering import Clustering
 import pvlib
 from pyproj import Transformer
-
 
 __doc__ = """
 Generates the meteorological data (temperature and solar irradiance).
@@ -27,12 +26,12 @@ def get_cluster_file_ID(cluster):
     Parameters
     ----------
     cluster : dict
-        Dictionary that contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)),
-        a number of periods 'Periods' (int) and a 'PeriodDuration' (int)
+        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
 
     Returns
     -------
-    A string that is the file ID.
+    str
+        A literal representation to identify the location and clustering attritutes.
     """
     if 'T' in cluster['Attributes']:
         T = '_T'
@@ -59,7 +58,7 @@ def get_cluster_file_ID(cluster):
 def generate_weather_data(cluster, qbuildings_data):
     """
     This function is called if the clustered weather data specified by File_ID do not exist yet.
-    Runs the ClusterClass and create the required files.
+    Runs the clustering through the Clustering class and creates the required files.
     """
 
     if 'custom_weather' in cluster.keys():
@@ -78,7 +77,7 @@ def generate_weather_data(cluster, qbuildings_data):
         attributes.append('Emissions')
 
     df = df[attributes]
-    cl = ClusterClass(data=df, nb_clusters=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
+    cl = Clustering(data=df, nb_clusters=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
     cl.run_clustering()
 
     generate_output_data(cl, attributes, cluster['Location'])
@@ -110,7 +109,7 @@ def get_weather_data(qbuildings_data):
 def read_custom_weather(path_to_weather_file):
     """
     From the current directory, looks for a custom weather file.
-    This file should be a *.csv* with the same structure as the template provided in reho/scripts/template/data/profiles/.
+    This file should be a .csv with the same structure as the template provided in ``reho/scripts/template/data/profiles/``.
     """
 
     df = file_reader(path_handler(path_to_weather_file))
@@ -124,14 +123,14 @@ def read_custom_weather(path_to_weather_file):
 
 def generate_output_data(cl, attributes, location):
     """
-    Generates the data for the cluster timesteps obtained from the ClusterClass.
+    Generates the data for the cluster timesteps obtained from the ``Clustering``.
 
-    Calls for *write_dat_files* to generate the saves.
+    Calls for ``write_dat_files`` to generate the saves.
 
     Parameters
     ----------
-    cl : ClusterClass
-        A ClusterClass object where the run_clustering method has already been executed.
+    cl : Clustering
+        A Clustering object where the run_clustering method has already been executed.
     attributes : list
         Contains string among 'Irr', 'Text', 'Weekday'.
     location : str
@@ -145,7 +144,7 @@ def generate_output_data(cl, attributes, location):
 
     See also
     --------
-    reho.model.preprocessing.clustering.ClusterClass.run_clustering
+    reho.model.preprocessing.clustering.Clustering.run_clustering
     write_dat_files
     """
 
@@ -212,26 +211,25 @@ def generate_output_data(cl, attributes, location):
 
 def write_dat_files(attributes, location, values_cluster, index_inter):
     """
-    Writes the clustering results computed from `generate_output_data` as .dat file
+    Writes the clustering results computed from ``generate_output_data`` as .dat files.
 
     Parameters
     ----------
     attributes : list
-        List that contains string among 'Irr', 'Text', 'Weekday'.
-        If 'Irr' is in the list, writes a file named 'Irr' + '_File_ID.dat'
-        If 'Text' is in the list, writes a file named 'T' + '_File_ID.dat'
+        List that contains the clustering attributes, among 'Text', Irr', 'Weekday', and 'Emissions'.
     location : str
         Location of the corresponding weather data.
     values_cluster : pd.DataFrame
-        Produced by the *generate_output_data* function.
+        Produced by ``generate_output_data``.
     index_inter : pd.DataFrame
-        Produced by the *generate_output_data* function.
+        Produced by ``generate_output_data``.
 
     Notes
     -----
-    - Not depending on the attributes, time dependent files are generated, namely 'frequency' + '_File_ID.dat',
-      'index' + '_File_ID.dat' and 'timestamp' + '_File_ID.dat'.
-
+    - Independently from the clustering attributes, time dependent files are generated:
+        - 'frequency_File_ID.dat'
+        - 'index_File_ID.dat'
+        - 'timestamp_File_ID.dat'
     """
 
     df_dd = values_cluster['time.dd'].unique()  # id of typical period
@@ -545,7 +543,7 @@ if __name__ == '__main__':
     df_annual = read_custom_weather(weather_file)
     df_annual = df_annual[Attributes]
 
-    cl = ClusterClass(data=df_annual, nb_clusters=nb_clusters, option={"year-to-day": True, "extreme": []}, pd=24)
+    cl = Clustering(data=df_annual, nb_clusters=nb_clusters, option={"year-to-day": True, "extreme": []}, pd=24)
     cl.run_clustering()
 
     plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)

@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 __doc__ = """
-Generates electric vehicle (EV) demand profiles.
+Generates electric vehicles (EVs) demand profiles.
 """
 
 

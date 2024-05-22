@@ -17,7 +17,8 @@ For more information about the model foundations and features, please refer to t
 REHO is developed by EPFL (Switzerland), within the Industrial Process and Energy Systems Engineering (IPESE) group.
 
 Dorsan Lepour <dorsan.lepour@epfl.ch>  
-Cédric Terrier <cedric.terrier@epfl.ch>
+Cédric Terrier <cedric.terrier@epfl.ch>  
+Joseph Loustau
 
 ## Licence
 Copyright (C) <2021-2024> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>

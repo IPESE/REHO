@@ -47,7 +47,6 @@ Directory for data-related files.
 - ``skydome/``
 - ``weather/``
 
-
 **model/**
 ==================
 
@@ -111,7 +110,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.model.preprocessing.clustering
     :members:
-
 
 `electricity_prices.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,21 +177,16 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.infrastructure
     :members:
 
-
 *reho.py*
 ------------------------------
 
 .. automodule:: reho.model.reho
    :members:
 
-
 **plotting/**
 ==================
 
 .. automodule:: reho.plotting
-
-- ``layout.csv``: the plotting relies on this file to get the *color* and the *labels* that characterize the units and the layers.
-- ``sia380_1.csv``: contains the translation of building's affectation in roman numbering to labels in the SIA 380/1 norm.
 
 *plotting.py*
 ---------------
@@ -211,9 +204,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.plotting.sankey
 
-
 *paths.py*
 ==================
 
 .. automodule:: reho.paths
-

@@ -554,6 +554,7 @@ class district_decomposition:
                 if u in i:
                     ampl_MP.getVariable('Units_Use').get(str(i)).fix(1)
 
+        MP_parameters["Daily_Profile"] = MP_parameters["Daily_Profile"].drop(["Bike2_district"])
         for i in MP_parameters:
 
             if isinstance(MP_parameters[i], np.ndarray):

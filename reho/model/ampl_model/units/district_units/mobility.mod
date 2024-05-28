@@ -40,7 +40,7 @@ sum {t in Time[p]}(travel_time[p,t]) <= max_travel_time * Population;
 # contraindre Network_supply avec un profil de capacité horaire
 #-PARAMETERS
 param transport_public_capacity{p in Period, t in Time[p]} default 150; # pkm : availability of public transport each hour in pkm
-param max_share_PT default 0.0; # [1] G 3.3.1.6 : share of trains amounts to ~ 20%
+param max_share_PT default 0.5; # [1] G 3.3.1.6 : share of trains amounts to ~ 20%
 #-VARIABLES
 
 #-CONSTRAINTS
@@ -50,3 +50,10 @@ param max_share_PT default 0.0; # [1] G 3.3.1.6 : share of trains amounts to ~ 2
 
 subject to TP_maxshare{p in Period}:
 sum {t in Time[p]}(Network_supply["Mobility",p,t])/dp[p] <= max_share_PT * Population * DailyDist; 
+
+
+
+
+
+
+

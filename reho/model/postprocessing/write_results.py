@@ -183,7 +183,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df_Grid_t = pd.concat([df1, df2, df_cs, df_cd, df_em_tot, df_electricity], axis=1)
 
-        if not method["district-scale"] or not method["district-scale"]:
+        if not method["district-scale"] and not method["actors_problem"]:
             df3 = get_ampl_data(ampl, 'Network_demand', multi_index=True)
             df3.columns = ['Grid_demand']
             df4 = get_ampl_data(ampl, 'Network_supply', multi_index=True)

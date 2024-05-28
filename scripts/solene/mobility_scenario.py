@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # Set method options
     method = {'building-scale': True}
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
-                method=method, parameters=parameters, solver="baron")
+                method=method, parameters=parameters, solver="gurobiasl")
 
     # Set specific parameters
     # reho.parameters['TransformerCapacity'] = np.array([1e6, 1e6, 0, 1e6])  # TODO : robustesse of mobility Network

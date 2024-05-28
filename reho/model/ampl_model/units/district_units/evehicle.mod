@@ -18,8 +18,10 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 
 # Usage
-param n_EVperhab default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
-param n_EV_max := n_EVperhab * Population; 
+param n_EVperhab{u in UnitsOfType['EV']} default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
+param n_EVtotperhab default 3; #1.5; # 1.1;
+param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population; 
+param n_EVtot_max := n_EVtotperhab * Population; 
 param ff_EV{u in UnitsOfType['EV']} default 1.56;
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
 param EV_plugging_in{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
@@ -156,7 +158,10 @@ ExternalEV_Costs_op[p,t] = sum{d in Districts}( outside_charging_price[d,p,t] *s
 
 #--Stock constraints
 subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
-n_vehicles[u] <= n_EV_max;
+n_vehicles[u] <= n_EV_max[u];
+
+subject to EV_stock_upperbound2:
+sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
 
 #--SoC constraints

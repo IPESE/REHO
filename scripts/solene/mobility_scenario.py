@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=10) #3112
+    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=5) #3112
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -28,7 +28,7 @@ if __name__ == '__main__':
                                              })
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    parameters = {'Population': 20}
+    parameters = {'Population': 10}
 
     # Set method options
     method = {'building-scale': True}

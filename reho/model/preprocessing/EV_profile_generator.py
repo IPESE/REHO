@@ -93,16 +93,20 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     """
     Based on EV_profile_generator_structure
 
-    This reads the Input data on the (normalized?) dailyprofiles.csv.
+    This reads the input data on the file dailyprofiles.csv and initializes (almost) all the necessary parameters to run the mobility sector in REHO.
 
     Parameters:
     ----------
-    cluster : to get periods characterisations (p,t) => usually the value self.cluster_compact or 
-
-    mode_speed_custom : optionnal dictionnay given by the user in the scenario initialisation
-    dailydist : duplicata of the ampl param Dailydist, declared later in the program (TODO : Could be coded better)
-    population : the input reho.parameters['Population'] in the initialisation of the scenario
-    transportunits : a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network supply['Mobility']
+    cluster : 
+        to get periods characterisations (p,t) => usually the value self.cluster_compact or 
+    mode_speed_custom : None or a dictionnay
+        either None or a dictionnay given by the user in the scenario initialisation
+    dailydist : float
+        duplicata of the ampl param Dailydist, declared later in the program (TODO : Could be coded better bc the duplicatas are not linked)
+    population : float
+        the input reho.parameters['Population'] in the initialisation of the scenario. 
+    transportunits : list
+        a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network supply['Mobility']
 
     Returns:
     -------
@@ -207,13 +211,15 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     daily_profile.set_index(['u', 'p', 't'], inplace=True)
     param_output['Daily_Profile'] = daily_profile
 
-    # IN/OUT and activity profiles (ex : EV) ===========================================================================
+    # IN/OUT and activity profiles (ex : EV and Electric Bikes) ========================================================
     # the default profiles are taken from EV_xxx
     EV_plugged_out = pd.DataFrame(columns=['u', 'p', 't', 'EV_plugged_out'])
     EV_plugging_in = pd.DataFrame(columns=['u', 'p', 't', 'EV_plugging_in'])
     activity_profile = pd.DataFrame(columns=['a', 'u', 'p', 't', 'EV_activity'])
+    Bikes_plugging_in = pd.DataFrame(columns=['u', 'p', 't', 'Bikes_plugging_in'])
 
     EV_units = list(units[units.UnitOfType == "EV"][['Unit','UnitOfType']].Unit)
+    EBike_units = list(units[units.UnitOfType == "EBike"][['Unit','UnitOfType']].Unit)
 
     # iter over the typical periods 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
@@ -275,6 +281,28 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
 
         activity_profile = pd.concat([activity_profile, act])
 
+        # Bike plugging in
+        try:
+            EBike_profiles = profiles_input.loc[:,profiles_input.columns.str.startswith("EBike_") &
+                                    profiles_input.columns.str.contains(days_mapping[day])].copy()
+        except:
+            raise ("day type not possible")
+
+        pli = EBike_profiles.loc[:, EBike_profiles.columns.str.contains("pli")].copy()
+        pli['default'] = pli['EBike_pli' + days_mapping[day]]
+        missing_units = set(EBike_units) - set(pli.columns)
+        for unit in missing_units:
+            pli[unit] = pli['default']
+        pli = pli[EBike_units]
+
+        pli.index.name = 't'
+        pli.columns.name = 'u'
+        pli = pli.stack().to_frame(name="Bikes_plugging_in")
+        pli.reset_index(inplace=True)
+        pli['p'] = j + 1
+
+        Bikes_plugging_in = pd.concat([Bikes_plugging_in, pli])
+
 
     # extreme hours
     aaa = pd.DataFrame({"u": EV_plugging_in.u.unique(),"p": 11, "t": 1, "EV_plugging_in": 0},index=[f"{x}1" for x in EV_plugging_in.u.unique()])
@@ -293,10 +321,12 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     activity_profile.set_index(['a','u', 'p', 't'], inplace=True)
     param_output['EV_activity'] = activity_profile
 
+    Bikes_plugging_in.set_index(['u', 'p', 't'], inplace=True)
+    param_output['Bikes_plugging_in'] = Bikes_plugging_in
 
     # Mode_Speed =======================================================================================================
-    default_speed = pd.DataFrame({ "UnitOfType" : ['Bike','EV','ICE','Public_transport'],
-                                   "Mode_Speed" : [13.3,37,37,18]})
+    default_speed = pd.DataFrame({ "UnitOfType" : ['Bike','EV','ICE','Public_transport',"EBike"],
+                                   "Mode_Speed" : [13.3,37,37,18,17]})
 
     mode_speed = units[['Unit','UnitOfType']].copy()
     mode_speed = mode_speed.merge(default_speed, how = 'outer')

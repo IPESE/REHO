@@ -12,9 +12,10 @@ if __name__ == '__main__':
     # Results files 
     # run_label = "10buil_14_1640"
     # districts = [277,3658,3112]
-    run_label = "1district"
+    run_label = "EBIKE"
+    run_label = "EVactivity"
     districts = ["noconstraints","maxshare","maxshare10km","relaxed"]
-    districts = ['28_1106']
+    districts = ["calibrage","calibrated"]
     pickle_files = [f'results/{run_label}_{d}.pickle' for d in districts] # filename format example : results/10buil_14_1640_277.pickle
     
     # Specifications for the graphs

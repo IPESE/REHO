@@ -19,7 +19,7 @@
 
 # Usage
 param n_EVperhab{u in UnitsOfType['EV']} default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
-param n_EVtotperhab default 3; #1.5; # 1.1;
+param n_EVtotperhab default 1.5; #1.5; # 1.1;
 param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population; 
 param n_EVtot_max := n_EVtotperhab * Population; 
 param ff_EV{u in UnitsOfType['EV']} default 1.56;
@@ -133,7 +133,7 @@ EV_V2V[u,p,t] = 0;
 
 # mobility and outside-the-district charging
 subject to EV_EB_mobility1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-Units_supply['Mobility',u,p,t] <= n_vehicles[u] * EV_activity['travel',u,p,t] * Mode_Speed[u];
+Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u]; 
 
 subject to EV_EB_mobility2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
 EV_E_mob[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]/ ff_EV[u] / EV_mobeff  - sum{d in Districts}(sum{a in Activities}(EV_E_charged_outside[a,d,u,p,i])) ) * EV_plugging_in[u,p,t]; # pkm * car/pers * kWh/km * share of EV coming back

@@ -368,6 +368,8 @@ class district_decomposition:
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
+            if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('electricbike.mod')
             if "ICE_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('icevehicle.mod')
             if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
@@ -449,11 +451,14 @@ class district_decomposition:
                     # MP_parameters["bike_dailyprofile"] = EV_gen.bike_temp(self.cluster)
                     d = None
                     m = None
+                    pop = None #TODO : here do ERA/ the surface per person ? 
                     if 'DailyDist' in self.parameters:
                         d = self.parameters['DailyDist']
                     if "Mode_Speed" in self.parameters:
                         m = self.parameters['Mode_Speed']
-                    p = EV_gen.generate_mobility_parameters(self.cluster, self.parameters['Population'], d, m,
+                    if "Population" in self.parameters:
+                        pop = self.parameters['Population']
+                    p = EV_gen.generate_mobility_parameters(self.cluster,pop, d, m,
                                                             np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
                     MP_parameters.update(p)
 
@@ -554,7 +559,7 @@ class district_decomposition:
                 if u in i:
                     ampl_MP.getVariable('Units_Use').get(str(i)).fix(1)
 
-        MP_parameters["Daily_Profile"] = MP_parameters["Daily_Profile"].drop(["Bike2_district"])
+
         for i in MP_parameters:
 
             if isinstance(MP_parameters[i], np.ndarray):

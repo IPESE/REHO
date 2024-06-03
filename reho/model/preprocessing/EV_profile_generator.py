@@ -427,16 +427,25 @@ def scenario_profiles_temp(cluster):
 
 
 
-def rho_param(ext_districts,S,activities = ["work","leisure","travel"]):
+def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     """
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
-    This function is used to calculate the parameter rho from the share of activities S(a) in each districts.
-    To be updated when I have the values S.
+    
+    This function is used to calculate the parameter S from the share of activities S(a) in each districts.
+    For each activity, if a distribution is provided by the parameter rho, then S = rho_d / sum over ext_d(rho)
+    Otherwise, we assume equal distribution over the districts and S = 1/len(nb_ext_d)
+
+    Returns
+    -------
+    share : dataframe
+        dataframe with index (activity, district) containing the distribution accross all district for each activity. 
     """
-    rho = pd.DataFrame(index=ext_districts,columns=activities).fillna(1/len(ext_districts))
-    rho = rho.stack().to_frame(name= "share_district_activity").reorder_levels([1,0])
-    rho.loc['travel'] = 0 # additionnal precaution
-    return rho
+    share = pd.DataFrame(index=ext_districts,columns=activities).fillna(1/len(ext_districts))
+    for act in rho.columns:
+        share[act] = rho[act] / rho[act][rho.index.isin(ext_districts)].sum()
+    share = share.stack().to_frame(name= "share_district_activity").reorder_levels([1,0])
+    share.loc['travel'] = 0 # additionnal precaution
+    return share
 
 
 def compute_iterative_parameters(variables,parameters,only_pi = False):

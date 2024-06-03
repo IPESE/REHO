@@ -6,10 +6,31 @@ import datetime
 
 
 if __name__ == '__main__':
+    date = datetime.datetime.now().strftime("%d_%H%M")
 
-    districts = [3658,3112,277]
+    # Parameters ==================================================================================================================
+    districts = [ 7724,8538,13569,13219,13228]
+    district_parameters = {
+        7724  : {"PopHouse" : 4.52, "rho" : pd.Series([95,3,2],index=['household','industry','service']) } ,
+        8538  : {"PopHouse" : 10.5, "rho" : pd.Series([89,2,6],index=['household','industry','service']) } ,
+        13569 : {"PopHouse" : 7.71, "rho" : pd.Series([96,2,1],index=['household','industry','service']) },
+        13219 : {"PopHouse" : 9.59, "rho" : pd.Series([61,17,17],index=['household','industry','service']) },
+        13228 : {"PopHouse" : 11.29, "rho" : pd.Series([52,21,5],index=['household','industry','service']) }
 
-    # Initialization of scenarios - Generic parameters
+    }
+    
+    # to change easily the size of population depending of the nb of buildings
+    n_buildings = 2
+    for k in district_parameters.keys():
+        district_parameters[k]['Population'] = n_buildings * district_parameters[k]['PopHouse'] 
+
+    # if you want to add non-zero params  ["outside_charging_price","charging_externalload"] for the init scenario
+    PARAM_INIT = False
+    with open('data/mobility/parameters_iteration.pickle', 'rb') as handle:
+        parameters_init = pickle.load(handle)
+
+
+    # Initialization of scenarios - Generic parameters ==========================================================================================
     ## Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
@@ -40,24 +61,25 @@ if __name__ == '__main__':
     # Initialization of scenarios - District parameters
     for transformer in districts:
         ## Set building parameters
-        qbuildings_data = reader.read_db(transformer=transformer, nb_buildings=2)
+        qbuildings_data = reader.read_db(transformer=transformer, nb_buildings=n_buildings)
         
         ## District parameters
         ext_districts = [d for d in districts if d != transformer]
-        parameters = {'Population': 9,
-                      "Districts" : ext_districts,
-                      "share_district_activity": rho_param(ext_districts,1) } # other districts 
+        df_rho = pd.DataFrame()
+        for k in district_parameters.keys():
+            df_rho[k] = district_parameters[k]['rho']
+        df_rho = df_rho.T.rename(columns = {'industry' : 'work', 'service': 'leisure'})
+        parameters = {'Population': district_parameters[transformer]['Population'],
+                      "Districts" : ext_districts}
+                    #   "share_district_activity": rho_param(ext_districts,df_rho) } # other districts 
 
         vars()['reho_' + str(transformer)] = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
                     method=method, parameters=parameters, solver="gurobiasl")
 
-    # if you want to add non-zero params  ["outside_charging_price","charging_externalload"] for the init scenario
-    PARAM_INIT = False
-    with open('data/mobility/parameters_iteration.pickle', 'rb') as handle:
-        parameters_init = pickle.load(handle)
+    
 
 
-    # Run optimization
+    # Run optimization =====================================================================================================================
     df_pi = pd.DataFrame()
     df_externalcharging = pd.DataFrame()
     variables = dict()
@@ -65,8 +87,49 @@ if __name__ == '__main__':
     deltas = list()
     df_delta = pd.DataFrame()
 
+    # Standalone initializing run
+    # iteration 0 is the init standalone run : each district runs alone and has no knowledge of the other districts. 
+    i = 0
+    for transformer in districts:
+        print(f"iteration {i} : district {transformer}")
+        
+        # Some customed parameters (if I want to start with another type of INIT RUN)
+        if PARAM_INIT:
+            # ext_districts = [d for d in districts if d != transformer]
+            # vars()['reho_' + str(transformer)].parameters["Districts"] = ext_districts
+            # vars()['reho_' + str(transformer)].parameters["share_district_activity"] = rho_param(ext_districts,1)
+            for param in parameters_init[transformer].keys():
+                vars()['reho_' + str(transformer)].parameters[param] = parameters_init[transformer][param]
+        
+
+        # Run
+        vars()['reho_' + str(transformer)].single_optimization(Pareto_ID = i)
+
+        # Price parameter
+        pi = vars()['reho_' + str(transformer)].results_MP["totex"][i][0]["df_Dual_t"]["pi"].xs("Electricity")
+        variables[transformer] = {  "pi": pi
+                                    }
+        
+        # results formatting
+        pi = pd.DataFrame(pi).rename(columns = {"pi" : f"{i}_{transformer}"})
+        df_pi = pd.concat([df_pi,pi],axis = 1)
+
+    # Init parameters for iterations : EV_charging_outside are enabled by setting share_district_activity != 0. 
+    compute_iterative_parameters(variables,parameters,only_pi=True)
+    for transformer in districts:
+        ext_districts = [d for d in districts if d != transformer]
+        df_rho = pd.DataFrame()
+        for k in district_parameters.keys():
+            df_rho[k] = district_parameters[k]['rho']
+        df_rho = df_rho.T.rename(columns={'industry': 'work', 'service': 'leisure'})
+        vars()['reho_' + str(transformer)].parameters['share_district_activity'] = rho_param(ext_districts,df_rho)
+
+    # save data just in case of bug
+    for tr in districts:
+        vars()['reho_' + str(tr)].save_results(format=[ 'pickle',"save_all"], filename=f'lucernestandalone_{date}_{tr}')
+
     # Iterations
-    for i in range(10):
+    for i in range(1,10):
         for transformer in districts:
             print(f"iteration {i} : district {transformer}")
             # Add iterative parameters (only after init run i=0)
@@ -112,6 +175,10 @@ if __name__ == '__main__':
         
         # Computing parameters for next iteration 
         compute_iterative_parameters(variables,parameters)
+
+         # save data just in case of bug
+        for tr in districts:
+            vars()['reho_' + str(tr)].save_results(format=[ 'pickle',"save_all"], filename=f'lucerne_{date}_{tr}')
 
         df_delta,c = check_convergence(deltas,df_delta,variables,i)
         if c:

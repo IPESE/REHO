@@ -23,7 +23,8 @@ if __name__ == '__main__':
     n_buildings = 2
     for k in district_parameters.keys():
         district_parameters[k]['Population'] = n_buildings * district_parameters[k]['PopHouse'] 
-        
+        district_parameters[k]['Population'] = 0
+
 
     # if you want to add non-zero params  ["outside_charging_price","charging_externalload"] for the init scenario
     PARAM_INIT = False

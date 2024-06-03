@@ -150,8 +150,8 @@ EV_E_charged_outside["travel",d,u,p,t] <=0; # During the travel activity, EV can
 
 
 subject to outside_charging_costs{ p in PeriodStandard, t in Time[p]}:
-ExternalEV_Costs_op[p,t] = sum{d in Districts}( outside_charging_price[d,p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_E_charged_outside[a,d,u,p,t])))
-							- externalload_sellingprice[p,t] *sum {a in Activities}(charging_externalload[a,p,t] ) ;
+ExternalEV_Costs_op[p,t] = sum{d in Districts}( outside_charging_price[d,p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_E_charged_outside[a,d,u,p,t]))) ; # 
+							# - externalload_sellingprice[p,t] *sum {a in Activities}(charging_externalload[a,p,t] ) ;
 
 
 

@@ -23,11 +23,43 @@ if __name__ == '__main__':
     n_buildings = 2
     for k in district_parameters.keys():
         district_parameters[k]['Population'] = n_buildings * district_parameters[k]['PopHouse'] 
+        
 
     # if you want to add non-zero params  ["outside_charging_price","charging_externalload"] for the init scenario
     PARAM_INIT = False
-    with open('data/mobility/parameters_iteration.pickle', 'rb') as handle:
-        parameters_init = pickle.load(handle)
+    if PARAM_INIT: # TODO :corriger le bug des rho à 0 si on relance un itération en cours de route (faire un autre script?)
+        i = 1
+        variables_init = dict()
+        parameters = dict()
+        for transformer in districts:
+            with open(f'results/lucerne_31_1600_{transformer}.pickle', 'rb') as handle:
+                vars()['rehoparam_' + str(transformer)] = pickle.load(handle)
+            
+            # copied from end of loop 
+            pi = vars()['rehoparam_' + str(transformer)].results_MP["totex"][i][0]["df_Dual_t"]["pi"].xs("Electricity")
+            df_Unit_t = vars()['rehoparam_' + str(transformer)].results['totex'][i]['df_Unit_t']
+            df_Grid_t = vars()['rehoparam_' + str(transformer)].results['totex'][i]['df_Grid_t']
+
+            EV_E_charged_outside = df_Unit_t.loc[:,df_Unit_t.columns.str.startswith("EV_E_charged_outside")][df_Unit_t.index.get_level_values('Layer') == 'Electricity']
+            externaldemand = EV_E_charged_outside.reset_index().groupby(['Period','Time']).agg('sum',numeric_only = True)
+            externaldemand.columns = [x.split('[')[1].split(']')[0] for x in externaldemand.columns]
+            externaldemand.columns = pd.MultiIndex.from_tuples([(x.split(',')[0],x.split(',')[1]) for x in externaldemand.columns])
+            externaldemand.columns.names = ('activity','district')
+            externaldemand = externaldemand.stack(level=1).reorder_levels([2,0,1])
+
+            externalload = df_Grid_t.loc[:,df_Grid_t.columns.str.startswith("charging_externalload")][(df_Grid_t.index.get_level_values('Layer') == 'Electricity') & (df_Grid_t.index.get_level_values('Hub') == 'Network')]
+            externalload = externalload.droplevel(['Layer','Hub'])
+            externalload.columns = [x.split('[')[1].split(']')[0] for x in externalload.columns]
+
+            print(pi, EV_E_charged_outside)
+            variables_init[transformer] = {  "pi": pi,
+                                        "EV_E_charged_outside" : EV_E_charged_outside,
+                                        "externaldemand" : externaldemand,
+                                        "externalload" : externalload
+                                        }
+        compute_iterative_parameters(variables_init,parameters)
+        parameters_init = parameters
+            # end of copied
 
 
     # Initialization of scenarios - Generic parameters ==========================================================================================
@@ -76,7 +108,7 @@ if __name__ == '__main__':
         vars()['reho_' + str(transformer)] = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
                     method=method, parameters=parameters, solver="gurobiasl")
 
-    
+        
 
 
     # Run optimization =====================================================================================================================
@@ -121,7 +153,9 @@ if __name__ == '__main__':
         df_rho = pd.DataFrame()
         for k in district_parameters.keys():
             df_rho[k] = district_parameters[k]['rho']
+            df_rho[k] *= vars()['reho_' + str(k)].ERA
         df_rho = df_rho.T.rename(columns={'industry': 'work', 'service': 'leisure'})
+
         vars()['reho_' + str(transformer)].parameters['share_district_activity'] = rho_param(ext_districts,df_rho)
 
     # save data just in case of bug

@@ -434,11 +434,16 @@ def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     This function is used to calculate the parameter S from the share of activities S(a) in each districts.
     For each activity, if a distribution is provided by the parameter rho, then S = rho_d / sum over ext_d(rho)
     Otherwise, we assume equal distribution over the districts and S = 1/len(nb_ext_d)
+    Parameters
+    ----------
+    ext_districts : 
 
     Returns
     -------
     share : dataframe
         dataframe with index (activity, district) containing the distribution accross all district for each activity. 
+    
+
     """
     share = pd.DataFrame(index=ext_districts,columns=activities).fillna(1/len(ext_districts))
     for act in rho.columns:

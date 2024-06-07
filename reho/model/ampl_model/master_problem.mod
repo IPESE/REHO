@@ -170,7 +170,7 @@ param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} defau
 #-VARIABLES
 var Costs_op;
 var Costs_House_op{h in House};
-var ExternalEV_Costs_op{p in Period,t in Time[p]} >= 0; 
+var ExternalEV_Costs_op{p in Period,t in Time[p]};  # TODO : to be put >= 0  if no mobility ? 
 
 subject to Costs_opex_house{h in House}:
 Costs_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in PeriodStandard, t in Time[p]} lambda[f,h]*(Cost_supply_network[l,p,t]*Grid_supply[l,f,h,p,t] - Cost_demand_network[l,p,t]*Grid_demand[l,f,h,p,t])* dp[p] * dt[p]; 

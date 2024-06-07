@@ -1565,6 +1565,8 @@ def plot_pkm(results,run_label = ""):
 def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
     """"
     This function can accomodate reho object in the reho_dict or reho.results directly
+    reho_dict : dict
+        dictionnary of either reho objects or reho.results. The keys must be the names of the districts (transformer number)
     """
     try: # if reho
         Pareto_ID_number = len(rehos_dict[list(rehos_dict.keys())[0]].results[scenario].keys())

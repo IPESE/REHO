@@ -146,7 +146,7 @@ def remove_building_from_index(df):
 
 
 def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False, additional_costs={}, additional_gwp={}, scc=0.177,
-                     filename=None, export_format='html', scaling_factor=1, return_df=False):
+                     filename=None, export_format='html', scaling_factor=1, return_df=False, unit_costs=' CHF'):
     """
     Plot performance based on REHO results.
 
@@ -183,6 +183,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         Scales linearly the REHO results for the plot.
     return_df: bool
         A dataframe can be returned for further post-processing or reporting purposes.
+    unit_costs: string
+        To specify the cost unit (' CHF', ' kCHF', ' MCHF', ' GCHF')
 
     Returns
     ----------
@@ -198,12 +200,14 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
 
     change_data = pd.DataFrame()
     change_data.index = ['x_axis_1', 'x_axis_2', 'y_axis', 'keyword', 'total', 'unites', 'scc_legend']
-    decimal = 0
+    decimal = 1
     lang = re.split('_', label)[0]
+    unit_prefix = {' CHF': 1, ' kCHF': 1e3, ' MCHF': 1e6, ' GCHF': 1e9}
+    prefix = unit_prefix[unit_costs]
 
     if plot == 'costs':
-        change_data['FR'] = ['CAPEX', 'OPEX', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', ' CHF', '']
-        change_data['EN'] = ['CAPEX', 'OPEX', 'Costs [CHF/y]', 'Costs', 'TOTEX', ' CHF', '']
+        change_data['FR'] = ['CAPEX', 'OPEX', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', unit_costs, '']
+        change_data['EN'] = ['CAPEX', 'OPEX', 'Costs [CHF/y]', 'Costs', 'TOTEX', unit_costs, '']
         df_costs = df_Economics.xs('costs', level='Perf_type')
         if per_m2:
             df_costs = df_costs / era.sum()
@@ -280,9 +284,9 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     xtick = [x + 1 / 6 for x in x1]
 
     text_capacities = ["<b>" + change_data.loc['x_axis_1', lang] + "</b><br>" + str(custom_round(cp, decimal))
-                   for cp in combined_capacities]
+                   for cp in combined_capacities / prefix]
     text_resources = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(custom_round(op, decimal))
-               for op in combined_resources]
+               for op in combined_resources / prefix]
     pos_resources = data_resources[indexes][data_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True) + \
                data_scc_resources[indexes][data_scc_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True)
 
@@ -305,7 +309,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                                )
             fig.add_annotation(x=xtick[i], y=max(combined_capacities[i], pos_resources[i],
                                                  combined_capacities[i] + combined_resources[i]) + text_placeholder,
-                               text="<b>Total</b><br>" + str(custom_round(combined_capacities[i] + combined_resources[i], decimal)) + change_data.loc['unites', lang],
+                               text="<b>Total</b><br>" + str(custom_round((combined_capacities[i] + combined_resources[i])/prefix, decimal)) + change_data.loc['unites', lang],
                                font=dict(size=10, color=cm['darkblue']),
                                textangle=0, align='center', valign='top',
                                showarrow=False
@@ -1169,22 +1173,25 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
             units_demand.append(unit)
 
     # Grids
-    import_elec = df['df_Grid_t'].xs(('Electricity', 'Network'), level=('Layer', 'Hub')).Grid_supply[:-2]
-    export_elec = df['df_Grid_t'].xs(('Electricity', 'Network'), level=('Layer', 'Hub')).Grid_demand[:-2]
-    ng = df['df_Grid_t'].xs(('NaturalGas', 'Network'), level=('Layer', 'Hub')).Grid_supply[:-2]
+    imports = {}
+    exports = {}
+    layers =  df['df_Grid_t'].index.get_level_values("Layer").unique()
+    for layer in layers:
+        imports[layer] = df['df_Grid_t'].xs((layer, 'Network'), level=('Layer', 'Hub')).Grid_supply[:-2]
+        exports[layer] = df['df_Grid_t'].xs((layer, 'Network'), level=('Layer', 'Hub')).Grid_demand[:-2]
 
-    import_profile = np.array([])
-    export_profile = np.array([])
-    ng_profile = np.array([])
-    for i in range(1, 366):
-        id = df['df_Index'].PeriodOfYear[i * 24]
-        import_profile = np.concatenate((import_profile, import_elec.xs(id)))
-        export_profile = np.concatenate((export_profile, export_elec.xs(id)))
-        ng_profile = np.concatenate((ng_profile, ng.xs(id)))
+    import_profile = {}
+    export_profile = {}
+    for layer in layers:
+        import_profile[layer] = np.array([])
+        export_profile[layer] = np.array([])
+        for i in range(1, 366):
+            id = df['df_Index'].PeriodOfYear[i * 24]
+            import_profile[layer] = np.concatenate((import_profile[layer], imports[layer].xs(id)))
+            export_profile[layer] = np.concatenate((export_profile[layer], exports[layer].xs(id)))
 
-    import_profile = moving_average(import_profile, items_average)
-    export_profile = moving_average(export_profile, items_average)
-    ng_profile = moving_average(ng_profile, items_average)
+        import_profile[layer] = moving_average(import_profile[layer], items_average)
+        export_profile[layer] = moving_average(export_profile[layer], items_average)
 
     # Units
     demands = dict()
@@ -1218,7 +1225,7 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
     if plot_curtailment:
         curtailments['PV'] = moving_average(curtailments['PV'], items_average)
 
-    idx = list(range(1, len(import_profile) + 1))
+    idx = list(range(1, len(import_profile["Electricity"]) + 1))
 
     title = 'Energy profiles with a ' + resolution + ' moving average'
     obj_x = 'Time [hours]'
@@ -1226,12 +1233,12 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
 
     if style == 'matplotlib':
         fig, ax = plt.subplots()
-        ax.plot(idx, import_profile, color=layout.loc['Electrical_grid', color],
+        ax.plot(idx, import_profile["Electricity"], color=layout.loc['Electrical_grid', color],
                 label=layout.loc['Electrical_grid', label])
-        ax.plot(idx, -export_profile, color=layout.loc['Electrical_grid_feed_in', color],
+        ax.plot(idx, -export_profile["Electricity"], color=layout.loc['Electrical_grid_feed_in', color],
                 label=layout.loc['Electrical_grid_feed_in', label])
-        ax.plot(idx, ng_profile, color=layout.loc['NaturalGas', color], label=layout.loc['NaturalGas', label],
-                alpha=0.5)
+        for layer in list(layers)[1:]:
+            ax.plot(idx, import_profile[layer], color=layout.loc[layer, color], label=layout.loc[layer, label], alpha=0.5)
         for unit in units_demand:
             ax.plot(idx, demands[unit], linestyle='--', label=layout.loc[unit, label], color=layout.loc[unit, color])
         for unit in units_supply:
@@ -1256,29 +1263,29 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
 
         fig.add_trace(go.Scatter(
             x=idx,
-            y=import_profile,
+            y=import_profile["Electricity"],
             mode="lines",
             name=layout.loc['Electrical_grid', label],
             line=dict(color=layout.loc['Electrical_grid', color])
         ))
 
-        if export_profile.any() > 0:
+        if export_profile["Electricity"].any() > 0:
             fig.add_trace(go.Scatter(
                 x=idx,
-                y=-export_profile,
+                y=-export_profile["Electricity"],
                 mode="lines",
                 name=layout.loc['Electrical_grid_feed_in', label],
                 line=dict(color=layout.loc['Electrical_grid_feed_in', color], dash='dash')
             ))
-
-        if ng_profile.any() > 0:
-            fig.add_trace(go.Scatter(
-                x=idx,
-                y=ng_profile,
-                mode="lines",
-                name=layout.loc['NaturalGas', label],
-                line=dict(color=layout.loc['NaturalGas', color])
-            ))
+        for layer in list(layers)[1:]:
+            if import_profile[layer].any() > 0:
+                fig.add_trace(go.Scatter(
+                    x=idx,
+                    y=import_profile[layer],
+                    mode="lines",
+                    name=layout.loc[layer, label],
+                    line=dict(color=layout.loc[layer, color])
+                ))
 
         for unit in units_demand:
             if demands[unit].any() > 0:
@@ -1797,7 +1804,7 @@ def monthly_average_balance(results, to_plot):
     pos_columns_bui = ['House_Q_heating', 'House_Q_cooling', 'House_Q_convection', 'HeatGains', 'SolarGains']
 
     # Df of time period
-    df_period_time = df_Unit_t_t.index.to_frame()[['Period', 'Time']].reset_index(drop=True)
+    df_period_time = df_Unit_t.index.to_frame()[['Period', 'Time']].reset_index(drop=True)
 
     df_type = ''
     if to_plot in pos_units:
@@ -1811,7 +1818,7 @@ def monthly_average_balance(results, to_plot):
             column_to_plot = 'Units_supply'
         else:
             column_to_plot = 'Units_demand'
-        df_to_extract = df_Unit_t_t.xs(to_plot, level='Unit').droplevel('Layer')[column_to_plot][:-2]
+        df_to_extract = df_Unit_t.xs(to_plot, level='Unit').droplevel('Layer')[column_to_plot][:-2]
 
     elif df_type == 'building':
         # Extract the data

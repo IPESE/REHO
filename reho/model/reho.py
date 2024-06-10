@@ -703,18 +703,15 @@ class reho(district_decomposition):
         df_network = last_results["df_District_t"].copy()
         df_network[["Network_supply", "Network_demand"]] = df_network[["Network_supply", "Network_demand"]].divide(h_op, axis=0, level='Period')
 
-        if self.method["save_timeseries"]:
-            df_network["Uncontrollable_load"] = df.groupby(["Layer", "Period", "Time"]).sum()["Uncontrollable_load"]
+        df_network["Uncontrollable_load"] = df.groupby(["Layer", "Period", "Time"]).sum()["Uncontrollable_load"]
 
         df_network = pd.concat([df_network], keys=['Network'], names=['Hub']).reorder_levels(['Layer', 'Hub', 'Period', 'Time'])
         df_network = df_network.rename(columns={"Cost_demand_network": "Cost_demand",
                                                 "Cost_supply_network": "Cost_supply",
                                                 "Network_demand": "Grid_demand",
                                                 "Network_supply": "Grid_supply"})
-        columns = ["Cost_demand", "Cost_supply"]
-        if self.method["save_timeseries"]:
-            columns = columns + ["GWP_demand", "GWP_supply"]
 
+        columns = ["Cost_demand", "Cost_supply", "GWP_demand", "GWP_supply"]
         for h in self.buildings_data.keys():
             for column in columns:
                 df.loc[pd.IndexSlice[:, h, :, :], column] = df_network[column].values
@@ -792,20 +789,18 @@ class reho(district_decomposition):
             df_Index = self.results_SP[ids["Scn_ID"]][ids["Pareto_ID"]][ids["Iter"]][ids["FeasibleSolution"]][ids["House"]]["df_Index"]
             df_Results["df_Index"] = df_Index
 
-        if self.method["save_timeseries"]:
+        # df_Buildings_t
+        df_Buildings_t = self.get_final_SPs_results(MP_selection, 'df_Buildings_t')
+        df_Buildings_t = df_Buildings_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+        df_Buildings_t.sort_index(level='Hub')
+        df_Results["df_Buildings_t"] = df_Buildings_t
 
-            # df_Buildings_t
-            df_Buildings_t = self.get_final_SPs_results(MP_selection, 'df_Buildings_t')
-            df_Buildings_t = df_Buildings_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-            df_Buildings_t.sort_index(level='Hub')
-            df_Results["df_Buildings_t"] = df_Buildings_t
-
-            # df_Unit_t
-            df_Unit_t = self.get_final_SPs_results(MP_selection, 'df_Unit_t')
-            df_Unit_t = df_Unit_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-            df_district_units = last_results["df_Unit_t"]
-            df_Unit_t = pd.concat([df_Unit_t, df_district_units])
-            df_Results["df_Unit_t"] = df_Unit_t
+        # df_Unit_t
+        df_Unit_t = self.get_final_SPs_results(MP_selection, 'df_Unit_t')
+        df_Unit_t = df_Unit_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+        df_district_units = last_results["df_Unit_t"]
+        df_Unit_t = pd.concat([df_Unit_t, df_district_units])
+        df_Results["df_Unit_t"] = df_Unit_t
 
         if self.method["save_streams"]:
 
@@ -833,12 +828,11 @@ class reho(district_decomposition):
         return df
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
-        if self.method["save_timeseries"]:
-            df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
-            self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
-            self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_Economics
-            if self.method['building-scale']:
-                self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
+        df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
+        self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
+        self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_Economics
+        if self.method['building-scale']:
+            self.results[Scn_ID][Pareto_ID] = correct_network_values(self, Scn_ID, Pareto_ID)
 
     def save_results(self, format=('pickle'), filename='results', erase_file=True, filter=True):
         """

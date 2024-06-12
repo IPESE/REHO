@@ -979,7 +979,7 @@ class district_decomposition:
     def remove_emoo_constraints(self, scenario):
         # remove emoo constraints
         EMOOs = list(scenario['EMOO'].keys())
-        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', 'EMOO_lca']
+        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', 'EMOO_lca', "EMOO_elec_export", "EMOO_EV"]
         if 'EMOO' in scenario:
             for key in list(set(EMOOs).intersection(keys_to_remove)):
                 scenario['EMOO'].pop(key, None)

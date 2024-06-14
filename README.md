@@ -18,12 +18,12 @@ REHO is developed by EPFL (Switzerland), within the Industrial Process and Energ
 
 Dorsan Lepour <dorsan.lepour@epfl.ch>  
 Cédric Terrier <cedric.terrier@epfl.ch>  
-Joseph Loustau <joseph.loustau@epfl.ch>
+Joseph Loustau
 
 ## Licence
 Copyright (C) <2021-2024> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
 
-Licensed under the Apache License, Version0 (the "License");
+Licensed under the Apache License, (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
@@ -36,12 +36,18 @@ limitations under the License.
 Description and complete License: see LICENSE file.
 
 ## Installation
-1. Clone repository available at https://github.com/IPESE/REHO
-2. Create `venv` in the repository and install required libraries with
+
+REHO is available as a [PyPI package](https://pypi.org/project/REHO/) and can be installed via pip with:
 ```
-pip install -r requirements.txt
+pip install --extra-index-url https://pypi.ampl.com REHO
 ```
-3. Please refer to "User guide" section of the documentation for step-by-step guidelines.
+
+Full code can be accessed from the [REHO GitHub repository](https://github.com/IPESE/REHO) and cloned with:
+```
+git clone https://github.com/IPESE/REHO.git
+```
+
+Please refer to "[Getting started](https://reho.readthedocs.io/en/main/sections/5_Getting_started.html)" section of the documentation  for step-by-step guidelines.
 
 ## Suggestions and contributions
 All suggestions or implementation must be tracked with dedicated issues and reported in the project repository.

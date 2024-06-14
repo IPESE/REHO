@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 import calendar
 import datetime as dt
 from reho.paths import *
-from reho.model.preprocessing.clustering import ClusterClass
+from reho.model.preprocessing.clustering import Clustering
 import pvlib
-import geopandas as gpd
 from pyproj import Transformer
 
 __doc__ = """
@@ -27,12 +26,12 @@ def get_cluster_file_ID(cluster):
     Parameters
     ----------
     cluster : dict
-        Dictionary that contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)),
-        a number of periods 'Periods' (int) and a 'PeriodDuration' (int)
+        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
 
     Returns
     -------
-    A string that is the file ID.
+    str
+        A literal representation to identify the location and clustering attritutes.
     """
     if 'T' in cluster['Attributes']:
         T = '_T'
@@ -51,8 +50,7 @@ def get_cluster_file_ID(cluster):
     else:
         E = ''
 
-    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + \
-              T + I + W + E
+    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + T + I + W + E
 
     return File_ID
 
@@ -60,7 +58,7 @@ def get_cluster_file_ID(cluster):
 def generate_weather_data(cluster, qbuildings_data):
     """
     This function is called if the clustered weather data specified by File_ID do not exist yet.
-    Run the ClusterClass and create the required files.
+    Runs the clustering through the Clustering class and creates the required files.
     """
 
     if 'custom_weather' in cluster.keys():
@@ -79,7 +77,7 @@ def generate_weather_data(cluster, qbuildings_data):
         attributes.append('Emissions')
 
     df = df[attributes]
-    cl = ClusterClass(data=df, nb_clusters=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
+    cl = Clustering(data=df, nb_clusters=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
     cl.run_clustering()
 
     generate_output_data(cl, attributes, cluster['Location'])
@@ -87,7 +85,7 @@ def generate_weather_data(cluster, qbuildings_data):
 
 def get_weather_data(qbuildings_data):
     """
-    Using the pvlib library, connect to the PVGIS dabatase to extract the weather data based on the building's coordinates.
+    Using the pvlib library, connects to the PVGIS dabatase to extract the weather data based on the building's coordinates.
     """
     lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'],
                                                                          qbuildings_data['buildings_data']['Building1']['y'])
@@ -99,7 +97,7 @@ def get_weather_data(qbuildings_data):
     weather_data['Month'] = weather_data.index.month
     weather_data['Day'] = weather_data.index.day
     weather_data['Hour'] = weather_data.index.hour + 1
-    weather_data['id'] = (weather_data.reset_index().index+1).to_list()
+    weather_data['id'] = (weather_data.reset_index().index + 1).to_list()
     weekday = pd.read_csv(os.path.join(path_to_weather, 'weekday.txt'), index_col=[0], header=None)
     weather_data['Weekday'] = weekday[1].tolist()
 
@@ -111,7 +109,7 @@ def get_weather_data(qbuildings_data):
 def read_custom_weather(path_to_weather_file):
     """
     From the current directory, looks for a custom weather file.
-    This file should be a *.csv* with the same structure as the template provided in reho/scripts/template/data/profiles/.
+    This file should be a .csv with the same structure as the template provided in ``reho/scripts/template/data/profiles/``.
     """
 
     df = file_reader(path_handler(path_to_weather_file))
@@ -125,14 +123,14 @@ def read_custom_weather(path_to_weather_file):
 
 def generate_output_data(cl, attributes, location):
     """
-    Generates the data for the cluster timesteps obtained from the ClusterClass.
+    Generates the data for the cluster timesteps obtained from the ``Clustering``.
 
-    Calls for *write_dat_files* to generate the saves.
+    Calls for ``write_dat_files`` to generate the saves.
 
     Parameters
     ----------
-    cl : ClusterClass
-        A ClusterClass object where the run_clustering method has already been executed.
+    cl : Clustering
+        A Clustering object where the run_clustering method has already been executed.
     attributes : list
         Contains string among 'Irr', 'Text', 'Weekday'.
     location : str
@@ -146,10 +144,10 @@ def generate_output_data(cl, attributes, location):
 
     See also
     --------
-    reho.model.preprocessing.clustering.ClusterClass.run_clustering
+    reho.model.preprocessing.clustering.Clustering.run_clustering
     write_dat_files
     """
-    
+
     data_idx = cl.results["idx"]
     # - construct : cluster data
     frame = []
@@ -188,7 +186,7 @@ def generate_output_data(cl, attributes, location):
     data_cls = pd.concat([data_cls, T_min.rename({T_idx[0]: 240}), T_max.rename({T_idx[1]: 241})])
     # Add a 10% margin for the extreme over 20 years
     data_cls.loc[[240, 241], ['Text', 'Irr']] = data_cls.loc[[240, 241], ['Text', 'Irr']] * 1.1
-   
+
     # - construct : model data
     # - ** inter-period
     data_idy = pd.DataFrame(
@@ -204,35 +202,34 @@ def generate_output_data(cl, attributes, location):
         np.stack((np.arange(1, data_cls.shape[0] + 1, 1), np.arange(1, data_cls.shape[0] + 1, 1)), axis=1),
         columns=["IndexDy", "intra_t"])
     data_idp["intra_end"] = [id + cl.pd if (id % cl.pd) == 0 else 0 for id in data_idp.index]
-    
+
     # Call for the write_dat_files function
     write_dat_files(attributes, location, data_cls, data_idy)
-    
+
     return print(f'The data have been computed and saved in {path_to_clustering}.')
 
 
 def write_dat_files(attributes, location, values_cluster, index_inter):
     """
-    Writes the clustering results computed from `generate_output_data` as .dat file
+    Writes the clustering results computed from ``generate_output_data`` as .dat files.
 
     Parameters
     ----------
     attributes : list
-        List that contains string among 'Irr', 'Text', 'Weekday'.
-        If 'Irr' is in the list, writes a file named 'Irr' + '_File_ID.dat'
-        If 'Text' is in the list, writes a file named 'T' + '_File_ID.dat'
+        List that contains the clustering attributes, among 'Text', Irr', 'Weekday', and 'Emissions'.
     location : str
         Location of the corresponding weather data.
     values_cluster : pd.DataFrame
-        Produced by the *generate_output_data* function.
+        Produced by ``generate_output_data``.
     index_inter : pd.DataFrame
-        Produced by the *generate_output_data* function.
+        Produced by ``generate_output_data``.
 
     Notes
     -----
-    - Not depending on the attributes, time dependent files are generated, namely 'frequency' + '_File_ID.dat',
-      'index' + '_File_ID.dat' and 'timestamp' + '_File_ID.dat'.
-
+    - Independently from the clustering attributes, time dependent files are generated:
+        - 'frequency_File_ID.dat'
+        - 'index_File_ID.dat'
+        - 'timestamp_File_ID.dat'
     """
 
     df_dd = values_cluster['time.dd'].unique()  # id of typical period
@@ -327,7 +324,8 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     df_time['frequency'] = dp
     df_time['timesteps'] = pt
     dict_index = {}
-    for i, dd in enumerate(df_dd): dict_index[dd] = i + 1
+    for i, dd in enumerate(df_dd):
+        dict_index[dd] = i + 1
     index_inter['index_r'] = index_inter.inter_t.map(dict_index)
     df_time.index = df_time.index + 1
 
@@ -439,19 +437,19 @@ def plot_LDC(cl, save_fig):
     # get original, not clustered data
     T_org = cl.data_org['Text']
     IRR_org = cl.data_org['Irr']
-   # E_org= cl.data_org['Emissions']
+    # E_org= cl.data_org['Emissions']
 
     # get clustered data and undo normalization
     df_clu = cl.attr_clu.xs(str(nbr_plot), axis=1)
     T_clu = df_clu['Text'] * (T_org.max() - T_org.min()) + T_org.min()
     IRR_clu = df_clu['Irr'] * (IRR_org.max() - IRR_org.min()) + IRR_org.min()
-  #  E_clu= df_clu['Emissions']* (E_org.max() - E_org.min()) + E_org.min()
-
+    #  E_clu= df_clu['Emissions']* (E_org.max() - E_org.min()) + E_org.min()
 
     # get assigned typical period
     res = cl.results['idx'][str(nbr_plot)]
     # instead of typical period (f.e. day 340) get index (1)
-    for i, d in enumerate(res.unique()): res = np.where(res == d, i + 1, res)
+    for i, d in enumerate(res.unique()):
+        res = np.where(res == d, i + 1, res)
     # get array of 8760 -modulo timesteps
     res = np.repeat(res, cl.pd)
 
@@ -465,21 +463,19 @@ def plot_LDC(cl, save_fig):
 
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
 
-
     ax[0].plot(T_org, color='grey', alpha=0.5)
     sc = ax[0].scatter(T_clu.index, T_clu.values, s=10, c=res, cmap=cm)
     ax[1].plot(IRR_org, color='grey', alpha=0.5)
     ax[1].scatter(IRR_clu.index, IRR_clu.values, s=10, c=res, cmap=cm)
-    #ax[2].plot(E_org, color='grey', alpha=0.5)
-    #ax[2].scatter(E_clu.index, E_clu.values, s=10, c=res, cmap=cm)
-
+    # ax[2].plot(E_org, color='grey', alpha=0.5)
+    # ax[2].scatter(E_clu.index, E_clu.values, s=10, c=res, cmap=cm)
 
     # set months instead of timestep as xticks
     plt.xticks(np.arange(8760, step=730), calendar.month_name[1:13], rotation=30, fontsize=16)
 
     ax[0].set_ylabel('temperature [C]')
     ax[1].set_ylabel('global irradiation [W/m$^2$]')
-  #  ax[2].set_ylabel('global warming potential [gCO2/kWh]')
+    # ax[2].set_ylabel('global warming potential [gCO2/kWh]')
     # plt.subplots_adjust(bottom=0.1, right=0.8, top=0.9)
 
     legend1 = ax[0].legend(*sc.legend_elements(),
@@ -501,14 +497,13 @@ def plot_LDC(cl, save_fig):
     df_Irr['Period'] = res
     df_Irr = df_Irr.sort_values(by=['Irr'], ignore_index=True, ascending=False)
 
-   # df_E = pd.DataFrame(E_clu)
-   # df_E['Period'] = res
-   # df_E = df_E.sort_values(by=['Emissions'], ignore_index=True, ascending=False)
+    # df_E = pd.DataFrame(E_clu)
+    # df_E['Period'] = res
+    # df_E = df_E.sort_values(by=['Emissions'], ignore_index=True, ascending=False)
 
     T_sort = T_org.sort_values(ascending=False, ignore_index=True)
     IRR_sort = IRR_org.sort_values(ascending=False, ignore_index=True)
-  #  E_sort =  E_org.sort_values(ascending=False, ignore_index=True)
-
+    # E_sort =  E_org.sort_values(ascending=False, ignore_index=True)
 
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
     ax[0].scatter(T_sort.index, T_sort.values, color='grey', alpha=0.5)
@@ -517,12 +512,12 @@ def plot_LDC(cl, save_fig):
     ax[1].scatter(IRR_sort.index, IRR_sort.values, color='grey', alpha=0.5)
     ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap=cm, s=20)
 
-  #  ax[2].scatter(E_sort.index, E_sort.values, color='grey', alpha=0.5)
-   # ax[2].scatter(df_E.index, df_E['Emissions'], c=df_Irr['Period'], cmap=cm, s=20)
+    #  ax[2].scatter(E_sort.index, E_sort.values, color='grey', alpha=0.5)
+    # ax[2].scatter(df_E.index, df_E['Emissions'], c=df_Irr['Period'], cmap=cm, s=20)
 
     ax[0].set_ylabel('temperature [C]')
     ax[1].set_ylabel('global irradiation [W/m$^2$]')
-   # ax[2].set_ylabel('global warming potential [gCO2/kWh]')
+    # ax[2].set_ylabel('global warming potential [gCO2/kWh]')
 
     plt.xlabel('Hours [h]')
 
@@ -548,7 +543,7 @@ if __name__ == '__main__':
     df_annual = read_custom_weather(weather_file)
     df_annual = df_annual[Attributes]
 
-    cl = ClusterClass(data=df_annual, nb_clusters=nb_clusters, option={"year-to-day": True, "extreme": []}, pd=24)
+    cl = Clustering(data=df_annual, nb_clusters=nb_clusters, option={"year-to-day": True, "extreme": []}, pd=24)
     cl.run_clustering()
 
     plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)

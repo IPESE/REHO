@@ -45,7 +45,7 @@ Optimizing a district-level energy system is a complex and computationally inten
 
 In the field of district energy systems design, diverse open-source decision support tools exist, but only partially meet the challenges that studying energy communities represent:
 
-- `EnergyPlus` [@nrelEnergyPlus2017], as well as extensions such as `CESAR-P` [@orehounigCESARPDynamicUrban2022], are simulation models, lacking an optimization feature.
+- `EnergyPlus` [@crawleyEnergyPlusCreatingNewgeneration2001], and its extensions such as `CESAR-P` [@orehounigCESARPDynamicUrban2022], are simulation models, lacking an optimization feature.
 - `Calliope` [@pfenningerCalliopeMultiscaleEnergy2018] and `ModelicaBuildings` [@wetterModelicaBuildingsLibrary2014] do not support multi-objective optimization.
 - Some tools focus on a specific energy carrier; we can mention here `Clover` [@sandwellCLOVERModellingFramework2023] for electricity, `PyHeatDemand` [@justelPyHeatDemandProcessingTool2024] for heating,  or `RHEIA` [@coppittersRHEIARobustDesign2022] for hydrogen. While they are certainly relevant to specific areas of study, they do not adequately grasp the holistic nature of optimizing a multi-carriers energy system.
 - `OSeMOSYS` [@howellsOSeMOSYSOpenSource2011], `EnergyPLAN` [@lundEnergyPLANAdvancedAnalysis2021] or `EnergyScope` [@limpensEnergyScopeTDNovel2019] focus on national energy systems and do not model buildings and their interactions with sufficient granularity (e.g., no heat cascade and distinction of temperature sets).
@@ -114,7 +114,7 @@ As the electrification of diverse sectors gains momentum, the demands placed on 
 REHO enables the deployment of district heating and cooling networks, with consideration of several heat transfer fluids and distribution temperatures. Infrastructure costs are also incorporated, based on the topology of the considered neighborhood.
 
 #### Interoperability
-The interoperability of REHO boasts its capability to interface and exchange information with other tools, enables extensive studies. By providing the relevant input data regarding energy needs and endogenous resources, investigations on energy communities can be carried out in a wide range of territories. As a demonstration, it was combined with the QBuildings GIS database [@loustauQBuildingsComprehensiveGuide2023], allowing for the optimization of Switzerland’s entire building stock comprising 2.6 million entities spread over 17'844 districts.
+The interoperability of REHO boasts its capability to interface and exchange information with other tools, enables extensive studies. By providing the relevant input data regarding energy needs and endogenous resources, investigations on energy communities can be carried out in a wide range of territories. _Relases_ section of REHO documentation keeps track of academic publications, conference proceedings, research projects, and other works using REHO.
 
 # Acknowledgements
 

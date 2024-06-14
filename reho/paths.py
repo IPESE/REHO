@@ -1,4 +1,4 @@
-import os, re
+import os
 from csv import Sniffer
 from pathlib import Path
 from pandas import read_csv, read_table, read_excel
@@ -56,8 +56,7 @@ path_to_weather = os.path.join(path_to_data, 'weather')
 
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
-path_to_configurations = os.path.join(os.getcwd(), 'configurations')
-
+path_to_configurations = os.path.join(os.getcwd(), 'results', 'configurations')
 
 
 def path_handler(path_given):

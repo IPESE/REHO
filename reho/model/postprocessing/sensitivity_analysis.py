@@ -1,50 +1,51 @@
-from reho.model.reho import *
-from SALib.sample import sobol as sobol_sample
+import matplotlib.pyplot as plt
+from SALib.analyze import morris as morris_analyze
 from SALib.analyze import sobol as sobol_analyze
 from SALib.sample import morris as morris_sample
-from SALib.analyze import morris as morris_analyze
-import pandas as pd
-import pickle
-import matplotlib.pyplot as plt
+from SALib.sample import sobol as sobol_sample
 from qmcpy import Sobol
 
+from reho.model.reho import *
 
-class sensitivity_analysis():
+__doc__ = """
+Performs a sensitivity analysis on the optimization.
+"""
+
+
+class SensitivityAnalysis:
     """
-    Perform a sensitivity analysis (SA): sampling, problem, store all optimizations results and the
-    sensitivity of each tested parameters.
+    Performs a sensitivity analysis (SA): sampling, solving, storing all optimizations results and the sensitivity of each tested parameter.
 
     Parameters
     ----------
-    reho_model : model of the district, obtain via the reho() function
-    SA_type : type of SA (Morris or Sobol)
-    sampling_parameters : number of trajectory for the sampling of the solution space
-    list_parameter_unit : List of the unit parameter, by default all parameters are added to the problem, to remove
-        all units parameters set to "None"
-    list_parameter_global : List of the global parameter (energy tariffs, etc.), by default all parameters are added to the problem, to remove
-        all global parameters set to "None"
+    reho : reho object
+        Model of the district, obtained via the REHO class.
+    SA_type : str
+        Type of SA, choose between 'Morris', 'Sobol', and 'Monte_Carlo'.
+    sampling_parameters : int
+        Number of trajectories for the sampling of the solution space.
+    upscaling_factor : int
+        To represent the effective ERA of the typical districts.
 
     Notes
     -------
-    The framework is designed to be performed using TOTEX minimization but can easily be modified,
-    just change the objective function of the reho_model and the KPI saved into OBJ in the function run_SA()
+    The framework is designed to be performed using TOTEX minimization but can easily be modified: simply change the objective function in the REHO object initialization, and adapt the calculation for ``objective_values`` in ``extract_results()``.
     """
 
-    def __init__(self, reho_model, SA_type, sampling_parameters=0, upscaling_factor=1):
+    def __init__(self, reho, SA_type, sampling_parameters=0, upscaling_factor=1):
 
-        self.district_name = reho_model.scenario["name"]
-        self.reho_model = reho_model
-        self.SA_type = SA_type  # Type of SA, Morris or Sobol
-        self.upscaling_factor = upscaling_factor    # to represent the effective ERA of the typical district (if typical district )
+        self.district_name = reho.scenario["name"]
+        self.reho = reho
+        self.SA_type = SA_type
+        self.upscaling_factor = upscaling_factor
         self.sampling_parameters = sampling_parameters
         self.ID = str(self.district_name) + "_" + str(self.SA_type) + time.strftime("_%d%m%Y@%Hh%M")
         self.parameter = {}
         self.problem = {}
         self.sampling = []
-        self.OBJ = []
+        self.objective_values = []
         self.SA_results = {'num_optimizations': [], 'dict_df_results': [], 'dict_res_ES': []}
         self.sensitivity = []
-
 
     def save(self):
         path_to_SA_results = 'results/'
@@ -54,25 +55,25 @@ class sensitivity_analysis():
         f.close()
 
     def get_lists(self):
-        unit_list = self.reho_model.infrastructure.UnitTypes.tolist()
+        unit_list = self.reho.infrastructure.UnitTypes.tolist()
         try:
-            for excluded_unit in self.reho_model.scenario['exclude_units']: unit_list.remove(excluded_unit)
+            for excluded_unit in self.reho.scenario['exclude_units']:
+                unit_list.remove(excluded_unit)
         except ValueError:
             pass
         KPI_list = ['OPEX', 'CAPEX', 'TOTEX', 'GWP']
         return unit_list, KPI_list
 
-    def build_SA(self, unit_parameter=['Cost_inv1', 'Cost_inv2'], SA_parameter={}):
+    def build_SA(self, unit_parameter=['Cost_inv1', 'Cost_inv2'], SA_parameters={}):
         """
-        Description:
-        - Generate the list of parameters for the SA, their values and type of variation range
-        - Generate the problem of the SA, ie. define the parameters and theirs bounds
-        - Generate the sampling scheme of the SA
+        - Generates the list of parameters for the SA, their values and type of variation range
+        - Generates the problem of the SA, i.e. define the parameters and theirs bounds
+        - Generates the sampling scheme of the SA
 
         Parameters
         ----------
         unit_parameter [list]: Units parameters wanted in the SA, by default all parameters are included
-        SA_parameter [dict]: Parameters with their bounds set by the script
+        SA_parameters [dict]: Parameters with their bounds set by the script
 
         Returns
         ---------
@@ -86,40 +87,40 @@ class sensitivity_analysis():
 
         # 1) Generate the list of parameters
 
-        default_units_values = self.reho_model.infrastructure.Units_Parameters  # Extract default unit values of the district
-        units = np.unique([unit.split('_Building')[0] for unit in self.reho_model.infrastructure.Units_Parameters.index.to_list()]).tolist()
+        default_units_values = self.reho.infrastructure.Units_Parameters  # Extract default unit values of the district
+        units = np.unique([unit.split('_Building')[0] for unit in self.reho.infrastructure.Units_Parameters.index.to_list()]).tolist()
         if "EV_district" in units:
             units.remove("EV_district")
 
-        for item in self.reho_model.scenario['exclude_units']:  # Removing excluded units
+        for item in self.reho.scenario['exclude_units']:  # Removing excluded units
             try:
                 units.remove(item)
             except ValueError:
                 pass
 
-        if unit_parameter!=[]:  # Add units parameters
+        if unit_parameter != []:  # Add units parameters
             for unit in units:
                 for parameter in unit_parameter:
                     value = default_units_values[default_units_values.index.str.contains(unit)][parameter].iloc[0]
                     name = str(unit) + "___" + str(parameter)
-                    SA_parameter[name] = np.array([0.5, 2]) * value
+                    SA_parameters[name] = np.array([0.5, 2]) * value
 
-        self.parameter = SA_parameter
+        self.parameter = SA_parameters
         # 2) Generate a dictionary with all parameters and their bounds for the sampling
 
         problem = {
-            'names': list(SA_parameter.keys()),
-            'num_vars': len(SA_parameter.keys()),
-            'bounds': list(SA_parameter.values())
+            'names': list(SA_parameters.keys()),
+            'num_vars': len(SA_parameters.keys()),
+            'bounds': list(SA_parameters.values())
         }
         self.problem = problem
 
         # 3) Description: Generate the sampling of the solution space
 
         if self.SA_type == "Sobol":
-            sampling = sobol_sample.sample(self.problem, self.sampling_parameters, calc_second_order=False)  # between 500 and 1000, ideally a power of 2
+            sampling = sobol_sample.sample(self.problem, self.sampling_parameters, calc_second_order=False)  # Between 500 and 1000, ideally a power of 2
         elif self.SA_type == "Morris":
-            sampling = morris_sample.sample(self.problem, self.sampling_parameters)  # Sampling of the space, recommended p = 4 (level) r = 10 (trajectories), (Campolongo and Saltelli, 1997; Campolongo et al., 1999b; Saltelli et al., 2000)
+            sampling = morris_sample.sample(self.problem, self.sampling_parameters)  # Sampling of the space, recommended p = 4 (level) r = 10 (trajectories)
         elif self.SA_type == "Monte_Carlo":
             dimension = len(self.problem["bounds"])
             sampler = Sobol(dimension)
@@ -133,7 +134,7 @@ class sensitivity_analysis():
 
     def run_SA(self, save_inter=True, save_inter_nb_iter=50, save_time_opt=True, intermediate_start=0):
         """
-        Launch all optimizations of the SA and store their results
+        Launches all optimizations of the SA and store their results.
 
         Parameters
         -----------
@@ -151,7 +152,7 @@ class sensitivity_analysis():
         ---------
         SA_results : dict
             Contains the number of the optimization and a dictionary regrouping all main results of the optimizations
-        OBJ : list
+        objective_values : list
             Values of the objective function for each optimization
         """
 
@@ -162,16 +163,16 @@ class sensitivity_analysis():
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-        # Extract all attributs of the reho model
-        grids = self.reho_model.infrastructure.grids
-        scenario = self.reho_model.scenario
-        district_units = len(self.reho_model.infrastructure.UnitsOfDistrict) != 0 # True or False
+        # Extract all attributes of the reho model
+        grids = self.reho.infrastructure.grids
+        scenario = self.reho.scenario
+        district_units = len(self.reho.infrastructure.UnitsOfDistrict) != 0  # True or False
         units = infrastructure.initialize_units(scenario, grids, district_data=district_units)
-        n_houses = len(self.reho_model.buildings_data)
+        n_houses = len(self.reho.buildings_data)
 
-        # Modify the attributs of the model and run SA
+        # Modify the attributes of the model and run SA
         for j in range(intermediate_start, len(self.sampling)):
-            print("Optimizations number", str(j + 1) + "/" + str(len(self.sampling)))
+            print("Optimization number", str(j + 1) + "/" + str(len(self.sampling)))
 
             sample = self.sampling[j]
             for s, value in enumerate(sample):
@@ -193,21 +194,21 @@ class sensitivity_analysis():
                         if units['building_units'][unit_id]['name'] == parameter.split("___")[0]:
                             units['building_units'][unit_id][parameter.split("___")[1]] = value
                 else:
-                    if parameter in self.reho_model.lists_MP["list_parameters_MP"]:
-                        self.reho_model.parameters[parameter] = np.array([value])
+                    if parameter in self.reho.lists_MP["list_parameters_MP"]:
+                        self.reho.parameters[parameter] = np.array([value])
                     else:
-                        self.reho_model.parameters[parameter] = np.array([value] * n_houses)
+                        self.reho.parameters[parameter] = np.array([value] * n_houses)
 
-            qbuilding = {'buildings_data': self.reho_model.buildings_data}
-            self.reho_model.infrastructure = infrastructure.infrastructure(qbuilding, units, grids)
+            qbuildings_data = {'buildings_data': self.reho.buildings_data}
+            self.reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
 
             try:
                 tic = time.perf_counter()
-                self.reho_model.single_optimization(Pareto_ID=j)  # Optimize the modified model
+                self.reho.single_optimization(Pareto_ID=j)  # Optimize the modified model
                 toc = time.perf_counter()
                 time_spent = toc - tic
 
-                self.reho_model.initialize_optimization_tracking_attributes()
+                self.reho.initialize_optimization_tracking_attributes()
 
                 if save_time_opt:
                     file_name = os.path.join(folder, str(self.SA_type) + '_time.txt')
@@ -222,17 +223,15 @@ class sensitivity_analysis():
 
             except KeyboardInterrupt:
                 return
-            except:
-                print("============================ CRASH ============================")
 
     def calculate_SA(self):
         """
-        Description: Compute the sensitivity indices with the objective values and the problem
+        Computes the sensitivity indices with the objective values and the problem.
         """
         if self.SA_type == "Sobol":
-            sensitivity = sobol_analyze.analyze(self.problem, np.array(self.OBJ), print_to_console=True, calc_second_order=False)
+            sensitivity = sobol_analyze.analyze(self.problem, np.array(self.objective_values), print_to_console=True, calc_second_order=False)
         if self.SA_type == "Morris":
-            sensitivity = morris_analyze.analyze(self.problem, self.sampling, np.array(self.OBJ), print_to_console=True)
+            sensitivity = morris_analyze.analyze(self.problem, self.sampling, np.array(self.objective_values), print_to_console=True)
         self.sensitivity = sensitivity
 
     def plot_Morris(self, save=False):
@@ -257,38 +256,33 @@ class sensitivity_analysis():
             plt.savefig(path_to_SA_results + 'Morris_' + self.district_name + '.png', format='png', dpi=300)
         plt.show()
 
-    def extract_results(self,reho_model,j):
+    def extract_results(self, reho, j):
         unit_list, KPI_list = self.get_lists()
 
-        dict_res = {}
-        dict_res['Annual_Network_Exchange'] = reho_model.results[self.SA_type][0].df_Annuals.xs("Network", level=1).loc[["Electricity", "NaturalGas"]][['Demand_MWh', 'Supply_MWh']]  # Total annual exchange of Elec and NG
-        dict_res['Elec_Network_t'] = reho_model.results[self.SA_type][0].df_Grid_t.xs("Network", level="Hub").xs("Electricity")[['Grid_demand', 'Grid_supply']]  # Elec Network exchange
-        dict_res['NG_Network_t'] = reho_model.results[self.SA_type][0].df_Grid_t.xs("Network", level="Hub").xs("NaturalGas")[['Grid_demand', 'Grid_supply']]  # NG Network exchange
-        dict_res['df_Unit'] = reho_model.results[self.SA_type][0].df_Unit['Units_Mult']  # units installed size
-        dict_res['Performance_Network'] = reho_model.results[self.SA_type][0].df_Performance.xs("Network")  # Performance of Network
+        dict_res = {
+            'Annual_Network_Exchange': reho.results[self.SA_type][0].df_Annuals.xs("Network", level=1).loc[["Electricity", "NaturalGas"]][
+                ['Demand_MWh', 'Supply_MWh']],
+            'Elec_Network_t': reho.results[self.SA_type][0].df_Grid_t.xs("Network", level="Hub").xs("Electricity")[['Grid_demand', 'Grid_supply']],
+            'NG_Network_t': reho.results[self.SA_type][0].df_Grid_t.xs("Network", level="Hub").xs("NaturalGas")[['Grid_demand', 'Grid_supply']],
+            'df_Unit': reho.results[self.SA_type][0].df_Unit['Units_Mult'],
+            'Performance_Network': reho.results[self.SA_type][0].df_Performance.xs("Network")
+        }
 
         self.SA_results['num_optimizations'].append(j)
         self.SA_results['dict_df_results'].append(dict_res)
-        self.OBJ.append(reho_model.results[self.SA_type][0].df_Performance['Costs_inv']['Network'] \
-                        + reho_model.results[self.SA_type][0].df_Performance['Costs_op']['Network'] \
-                        + reho_model.results[self.SA_type][0].df_Performance['Costs_rep']['Network'])
+        self.objective_values.append(reho.results[self.SA_type][0].df_Performance['Costs_inv']['Network'] + reho.results[self.SA_type][0].df_Performance['Costs_op']['Network'] + reho.results[self.SA_type][0].df_Performance['Costs_rep']['Network'])
 
-        dict_res_ES = {}
-        dict_res_ES['df_Grid_t'] = reho_model.results[self.SA_type][0].df_Grid_t[['Grid_demand', 'Grid_supply']].groupby(['Layer', 'Hub', 'Period']).sum()
-        dict_res_ES['df_Annuals'] = reho_model.results[self.SA_type][0].df_Annuals
-        dict_res_ES['df_Performance'] = reho_model.results[self.SA_type][0].df_Performance
-        dict_res_ES['df_Unit_t'] = reho_model.results[self.SA_type][0].df_Unit_t.groupby(['Layer', 'Unit', 'Period']).sum()
-        dict_res_ES['E_sector'] = dict_res_ES['df_Annuals'].groupby(['Layer']).sum()  # Not the info required
-        dict_res_ES['InAndOutDistrict'] = dict_res_ES['df_Grid_t'].xs("Network", level="Hub")
-        dict_res_ES['E_unit'] = {}
+        df_Grid_t = reho.results[self.SA_type][0].df_Grid_t[['Grid_demand', 'Grid_supply']].groupby(['Layer', 'Hub', 'Period']).sum()
+        df_Annuals = reho.results[self.SA_type][0].df_Annuals
+        df_Unit_t = reho.results[self.SA_type][0].df_Unit_t.groupby(['Layer', 'Unit', 'Period']).sum()
+
+        dict_res_ES = {'E_sector': df_Annuals.groupby(['Layer']).sum(),
+                       'InAndOutDistrict': df_Grid_t.xs("Network", level="Hub"),
+                       'E_unit': {},
+                       'E_resource': df_Unit_t[['Units_demand', 'Units_supply']].groupby(['Layer', 'Period']).sum(),
+                       'E_unit_PV': df_Unit_t.xs("Electricity", level="Layer").query('Unit.str.startswith("PV")').groupby(['Period']).sum()['Units_supply']}
+
         for unit in unit_list:
-            dict_res_ES['E_unit'][unit] = dict_res_ES['df_Annuals'].query('Hub.str.startswith("' + str(unit) + '")')['Supply_MWh'].values.sum()
-        dict_res_ES['E_resource'] = dict_res_ES['df_Unit_t'][['Units_demand', 'Units_supply']].groupby(['Layer', 'Period']).sum()
-        dict_res_ES['E_unit_PV'] = dict_res_ES['df_Unit_t'].xs("Electricity", level="Layer").query('Unit.str.startswith("PV")').groupby(['Period']).sum()['Units_supply']
-
-        dict_res_ES.pop('df_Grid_t')
-        dict_res_ES.pop('df_Annuals')
-        dict_res_ES.pop('df_Unit_t')
+            dict_res_ES['E_unit'][unit] = df_Annuals.query('Hub.str.startswith("' + str(unit) + '")')['Supply_MWh'].values.sum()
 
         self.SA_results['dict_res_ES'].append(dict_res_ES)
-

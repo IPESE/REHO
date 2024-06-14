@@ -1,20 +1,26 @@
 import configparser
+import csv
+import math
 import os.path
+import re
+
+import geopandas as gpd
+import numpy as np
+import pandas as pd
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
-import geopandas as gpd
-import re
-import csv
+
+import reho.model.preprocessing.skydome as skydome
 from reho.paths import *
-import reho.model.preprocessing.skydome as SKD
-import pandas as pd
-import numpy as np
-import math
+
+__doc__ = """
+Handles data for buildings characterization.
+"""
 
 
 class QBuildingsReader:
     """
-    This class is used to handle and prepare the data related to buildings.
+    Handles and prepares the data related to buildings.
 
     There usually come from `GBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database. However,
     one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in
@@ -27,6 +33,7 @@ class QBuildingsReader:
     load_roofs : bool
         Whether the roofs data should be added.
     """
+
     def __init__(self, load_facades=False, load_roofs=False):
 
         self.db = None
@@ -91,10 +98,9 @@ class QBuildingsReader:
 
         return
 
-    def read_csv(self, buildings_filename='buildings.csv', nb_buildings=None,
-                 roofs_filename='roofs.csv', facades_filename='facades.csv', district=None):
+    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
         """
-        Read buildings-related data from CSV files and prepare it for the REHO model.
+        Reads buildings-related data from CSV files and prepare it for the REHO model.
 
         If not all the buildings from the file should be extracted, one can give a number of buildings.
         The fields from the files are translated to the corresponding ones used in REHO.
@@ -118,13 +124,8 @@ class QBuildingsReader:
 
         Notes
         -----
-        - If `nb_buildings` is not provided, all buildings in the 'buildings' data are considered.
+        - If ``nb_buildings`` is not provided, all buildings in the 'buildings' data are considered.
         - If ``load_roofs = True``, `roofs_filename` must be provided, else it is not useful. Same goes for the facades.
-        - This function can be used with default files in case one does not want to connect to the database and does
-          not need a particular building.
-          In that case, do not fill any filename. `buildings.csv`, `roofs.csv` and `facades.csv`
-          will be used by default.
-          It should be noted that those names are therefore reserved for the default and cannot be used for your own files.
 
         Example
         -------
@@ -141,10 +142,6 @@ class QBuildingsReader:
         self.data['buildings'] = file_reader(buildings_filename)
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
         # self.data['buildings'] = add_geometry(self.data['buildings'])
-
-        if district is not None:
-            # Filter the buildings based on the specified district
-            self.data['buildings'] = self.data['buildings'][self.data['buildings']['NOMSECTEUR'] == district]
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
@@ -361,7 +358,7 @@ def translate_buildings_to_REHO(df_buildings):
         'status': 'status',
         'period': 'period',
         'capita_cap': 'n_p',
-        #'NOMSECTEUR': 'NOMSECTEUR',
+        # 'NOMSECTEUR': 'NOMSECTEUR',
 
         # Area
         'area_era_m2': 'ERA',
@@ -396,7 +393,6 @@ def translate_buildings_to_REHO(df_buildings):
         'geometry': 'geometry',
         'transformer': 'transformer',
 
-
         # Annual energy
         'energy_heating_signature_kWh_y': 'energy_heating_signature_kWh_y',
         'energy_cooling_signature_kWh_y': 'energy_cooling_signature_kWh_y',
@@ -409,29 +405,29 @@ def translate_buildings_to_REHO(df_buildings):
     }
 
     # TODO: correct heat source dictionary
-    dict_translate_heat_source = {
-        'Gas': 'gas',
-        'Oil': 'oil',
-        'Wood (beech)': 'wood',
-        'Electricity': 'electricity',
-        'Heat pump': 'Heat pump',
-        'District heat': 'District heat',
-        'Other': 'gas',
-        'Other/Oil': 'oil',
-        'Electricity/Other': 'electricity',
-        'Oil/Gas': 'oil',
-        'Oil/Other': 'oil',
-        'Electricity/Oil': 'electricity',
-        'Heat pump/Electricity': 'Heat pump',
-        'Solar collector': 'solar',
-        'Solar (thermal)': 'solar',
-        'No energy source/Oil': 'oil',
-        'No energy source': 'gas',
-        'Electricity/No energy source': 'electricity',
-        'Oil/No energy source': 'oil',
-        'Gas/Solar collector': 'gas',
-        'Not determined': 'unknown'
-    }
+    # dict_translate_heat_source = {
+    #     'Gas': 'gas',
+    #     'Oil': 'oil',
+    #     'Wood (beech)': 'wood',
+    #     'Electricity': 'electricity',
+    #     'Heat pump': 'Heat pump',
+    #     'District heat': 'District heat',
+    #     'Other': 'gas',
+    #     'Other/Oil': 'oil',
+    #     'Electricity/Other': 'electricity',
+    #     'Oil/Gas': 'oil',
+    #     'Oil/Other': 'oil',
+    #     'Electricity/Oil': 'electricity',
+    #     'Heat pump/Electricity': 'Heat pump',
+    #     'Solar collector': 'solar',
+    #     'Solar (thermal)': 'solar',
+    #     'No energy source/Oil': 'oil',
+    #     'No energy source': 'gas',
+    #     'Electricity/No energy source': 'electricity',
+    #     'Oil/No energy source': 'oil',
+    #     'Gas/Solar collector': 'gas',
+    #     'Not determined': 'unknown'
+    # }
 
     for key in dict_QBuildings_REHO.keys():
         REHO_index = dict_QBuildings_REHO[key]
@@ -439,8 +435,6 @@ def translate_buildings_to_REHO(df_buildings):
             new_buildings_data[REHO_index] = df_buildings[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
-        except:
-            print('Missing key in loaded data %s' % key)
 
     # for i, building in new_buildings_data.iterrows():
     #     try:
@@ -497,8 +491,7 @@ def translate_facades_to_REHO(df_facades, df_buildings):
             new_facades_data[REHO_index] = df_facades[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
-        except:
-            print('Missing key in loaded data %s' % key)
+            
     df_facades = new_facades_data
     df_facades['CX'] = df_facades['geometry'].centroid.x
     df_facades['CY'] = df_facades['geometry'].centroid.y
@@ -528,8 +521,7 @@ def translate_roofs_to_REHO(df_roofs):
             new_roofs_data[REHO_index] = df_roofs[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
-        except:
-            print('Missing key in loaded data %s' % key)
+        
     df_roofs = new_roofs_data
 
     return df_roofs
@@ -560,13 +552,13 @@ def calculate_id_building_shadows(df_angles, id_building, local_data):
     df_angles = df_angles.set_index('to_id_building')
     df_angles = df_angles.xs(id_building)
 
-    df_dome = SKD.skydome_to_df(local_data)
+    df_dome = skydome.skydome_to_df(local_data)
 
     df_shadow = pd.DataFrame()
 
     for az in df_dome.azimuth.unique():
-        df_angles.loc[:, 'cosa2'] = df_angles.apply(lambda x: SKD.f_cos([x['azimuth'], az]), axis=1)
-        # df_cosa2 = df_id_building.apply(lambda x: SKD.f_cos([x['azimuth'], az]), axis=1)
+        df_angles.loc[:, 'cosa2'] = df_angles.apply(lambda x: skydome.f_cos([x['azimuth'], az]), axis=1)
+        # df_cosa2 = df_id_building.apply(lambda x: skydome.f_cos([x['azimuth'], az]), axis=1)
         df = df_angles.loc[(df_angles['cosa2'] > 0)].copy()
         # filter buildings which are more than 180 degree apart from patch with az
         df.loc[:, 'tanba'] = df.tanb * df.cosa2
@@ -613,8 +605,8 @@ def neighbourhood_angles(buildings, facades):
             # facades.loc[f]['HEIGHT_Z'] + facades.loc[f]['HEIGHT'] #take foot of facades/ HEIGHT_Z is upperbound
             df_c['tanb'] = df_c.dz / df_c.dxy
             df_c['cosa'] = df_c.dy / df_c.dxy
-            df_c['azimuth'] = df_c[['dx', 'dy']].apply(SKD.f_atan, axis=1)
-            df_c['beta'] = df_c[['dz', 'dxy']].apply(SKD.f_atan, axis=1)
+            df_c['azimuth'] = df_c[['dx', 'dy']].apply(skydome.f_atan, axis=1)
+            df_c['beta'] = df_c[['dz', 'dxy']].apply(skydome.f_atan, axis=1)
             df_c = pd.concat([df_c], keys=[f], names=['UID'])
             df_BUI = pd.concat((df_BUI, df_c))
 
@@ -663,7 +655,7 @@ def return_shadows_id_building(id_building, df_district, local_data):
     else:
         df = df_district
     df = df.xs(id_building)
-    df_dome = SKD.skydome_to_df(local_data)
+    df_dome = skydome.skydome_to_df(local_data)
 
     df_beta_dome = pd.DataFrame()
     for az in df_dome.azimuth:
@@ -675,7 +667,6 @@ def return_shadows_id_building(id_building, df_district, local_data):
 
 
 def add_geometry(df):
-
     # Avoid issues with geometry when reading data from a csv
     try:
         geom = gpd.GeoSeries.from_wkb(df['geometry'])
@@ -686,8 +677,7 @@ def add_geometry(df):
         try:
             geom = gpd.GeoSeries.from_wkt(df['geometry'])
         except TypeError:
-            print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings\n"
-                  "I wonder what you are trying to do here...")
+            print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings")
             return df
 
     return gpd.GeoDataFrame(df, geometry=geom)

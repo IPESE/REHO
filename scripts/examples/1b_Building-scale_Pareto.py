@@ -6,10 +6,10 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(3658, nb_buildings=1)
+    reader.establish_connection('Geneva')
+    qbuildings_data = reader.read_db(transformer=234, nb_buildings=1)
 
-    # Select weather data
+    # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
@@ -28,11 +28,14 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.generate_pareto_curve()  # multi-objective optimization
 
     # Save results
-    reho.save_results(format=['pickle'], filename='1b')
+    reho.save_results(format=['xlsx', 'pickle'], filename='1b')
+
+    # Pareto plot
+    plotting.plot_pareto(reho.results, label='EN_long', color='ColorPastel').show()
 
     # Performance plot : costs and gwp
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long').show()

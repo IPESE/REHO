@@ -6,8 +6,8 @@ __doc__ = """
 Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
 """
 
-def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
+def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     def set_df_performance(ampl, scenario):
         df1 = get_ampl_data(ampl, 'Costs_House_op')  # without the comfort penalty costs
         df1 = df1.rename(columns={'Costs_House_op': 'Costs_op'})
@@ -18,7 +18,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df2['Costs_inv'] = df2['Costs_inv'] * tau[0]
         df2['ANN_factor'] = tau[0]
 
-        df2['Costs_grid_connection'] = get_ampl_data(ampl, 'Costs_grid_connection_House', multi_index=True).groupby(level=1).sum()  # yearly cost for grid connection
+        df2['Costs_grid_connection'] = get_ampl_data(ampl, 'Costs_grid_connection_House', multi_index=True).groupby(
+            level=1).sum()  # yearly cost for grid connection
 
         df3 = get_ampl_data(ampl, 'Costs_House_rep')
         df3['Costs_House_rep'] = df3['Costs_House_rep'] * tau[0]
@@ -43,7 +44,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_N2 = get_ampl_data(ampl, 'Costs_inv')
         df_N2['Costs_inv'] = df_N2['Costs_inv'] * tau[0]
         df_N2['ANN_factor'] = tau[0]
-        df_N2['Costs_grid_connection'] = get_ampl_data(ampl, 'Costs_grid_connection').sum().values/2  # TODO enhance
+        df_N2['Costs_grid_connection'] = get_ampl_data(ampl, 'Costs_grid_connection').sum().values / 2  # TODO enhance
         df_N3 = get_ampl_data(ampl, 'Costs_rep')
         df_N3['Costs_rep'] = df_N3['Costs_rep'] * tau[0]
         df_N4 = pd.DataFrame({'Costs_ft': [df4.sum()['Costs_ft']]})
@@ -57,7 +58,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Performance = pd.concat([df_PerformanceBuilding, df_PerformanceNetwork], axis=0)
 
         df_Epsilon = pd.concat([df71, df72, df73, df75, df76], axis=1)
-        df_Epsilon['Objective'] = get_ampl_data(ampl, scenario["Objective"]).values[0][0]- df_N4.values[0][0]
+        df_Epsilon['Objective'] = get_ampl_data(ampl, scenario["Objective"]).values[0][0] - df_N4.values[0][0]
         df_Epsilon = df_Epsilon.rename(index={0: 'Network'})
 
         df_Performance = pd.concat([df_Performance, df_Epsilon], axis=1)
@@ -80,7 +81,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df12 = pd.concat([df1, df2], axis=1, sort=False)
 
         df3 = get_ampl_data(ampl, 'AnnualDomestic_electricity')
-        df3 = df3.set_index([pd.Index(["Electricity"]*df3.index.size), df3.index])
+        df3 = df3.set_index([pd.Index(["Electricity"] * df3.index.size), df3.index])
         df3.columns = ['Demand_MWh']
         df4 = get_ampl_data(ampl, 'AnnualHouse_Q')
         df4.columns = ['Demand_MWh']
@@ -167,7 +168,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df_electricity = get_ampl_data(ampl, 'Domestic_electricity', multi_index=True)
         df_electricity.columns = ['Uncontrollable_load']
-        df_electricity = df_electricity.set_index([pd.Index(["Electricity"]*df_electricity.index.size), df_electricity.index])
+        df_electricity = df_electricity.set_index([pd.Index(["Electricity"] * df_electricity.index.size), df_electricity.index])
 
         df_es = get_ampl_data(ampl, 'GWP_supply', multi_index=True)
         df_ed = get_ampl_data(ampl, 'GWP_demand', multi_index=True)
@@ -182,7 +183,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df_Grid_t = pd.concat([df1, df2, df_cs, df_cd, df_em_tot, df_electricity], axis=1)
 
-        if not method["district-scale"] or not method["district-scale"]:
+        if not method["district-scale"] and not method["actors_problem"]:
             df3 = get_ampl_data(ampl, 'Network_demand', multi_index=True)
             df3.columns = ['Grid_demand']
             df4 = get_ampl_data(ampl, 'Network_supply', multi_index=True)
@@ -207,8 +208,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df1 = get_ampl_data(ampl, 'Domestic_electricity', multi_index=True)
 
         m_DWH = get_ampl_data(ampl, 'DHW_flowrate', multi_index=True)
-        delta_T = get_ampl_data(ampl, 'DHW_dT').iloc[0,0]
-        df2 = 4.18*m_DWH*delta_T/3600
+        delta_T = get_ampl_data(ampl, 'DHW_dT').iloc[0, 0]
+        df2 = 4.18 * m_DWH * delta_T / 3600
         df2 = df2.rename(columns={'DHW_flowrate': 'House_Q_DHW'})
 
         df31 = get_ampl_data(ampl, 'T_in', multi_index=True)
@@ -298,15 +299,14 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_PVA_module_nbr = get_ampl_data(ampl, 'PVA_module_nbr', multi_index=True)
         df_PVA_module_nbr = df_PVA_module_nbr.droplevel(4)
         df_PVA_module_nbr.index.names = ['Hub', 'Surface', 'Azimuth', 'Tilt']
-        #int_index = df_PVA_module_nbr.index.get_level_values('Surface').astype(int)
-        #df_PVA_module_nbr.index.set_levels(int_index, level="Surface", inplace=True)
+        # int_index = df_PVA_module_nbr.index.get_level_values('Surface').astype(int)
+        # df_PVA_module_nbr.index.set_levels(int_index, level="Surface", inplace=True)
 
         df_PVA_module_coverage = get_ampl_data(ampl, "PVA_module_coverage", multi_index=True)
         df_PVA_module_coverage = df_PVA_module_coverage.droplevel(1)
         df_PVA_module_coverage.index.names = ['Hub', 'Surface', 'Azimuth', 'Tilt']
 
         pd.concat([df_PVA_module_coverage, df_PVA_module_nbr], axis=1)
-
 
         df_unshaded_share = get_ampl_data(ampl, 'unshaded_share', multi_index=True)
         df_unshaded_share = df_unshaded_share.groupby(level=[0, 1, 2, 3]).sum()
@@ -336,27 +336,27 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         # External
         df1 = get_ampl_data(ampl, 'T_ext', multi_index=True)
         df2 = get_ampl_data(ampl, 'I_global', multi_index=True)
-        df_External = pd.concat([df1, df2], axis=1)
-        df_External.index.names = ['Period', 'Time']
-        df_External = df_External.sort_index()
+        df_Weather = pd.concat([df1, df2], axis=1)
+        df_Weather.index.names = ['Period', 'Time']
+        df_Weather = df_Weather.sort_index()
 
         # Index
         df_Index = get_ampl_data(ampl, 'PeriodOfYear')
         df_Index.index.names = ['HourOfYear']
         df_Index = df_Index.sort_index()
 
-        return df_Time, df_External, df_Index
+        return df_Time, df_Weather, df_Index
 
     df_Results = dict()
     df_Results["df_Performance"] = set_df_performance(ampl, scenario)
     df_Results["df_Annuals"] = set_df_annuals(ampl)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
     df_Results["df_Grid_t"] = set_df_grid(ampl, method)
-    df_Results["df_Time"], df_External, df_Index = set_dfs_other(ampl)
+    df_Results["df_Time"], df_Weather, df_Index = set_dfs_other(ampl)
 
     if method['save_data_input']:
         df_Results["df_Buildings"] = set_df_buildings(buildings_data)
-        df_Results["df_External"] = df_External
+        df_Results["df_Weather"] = df_Weather
         df_Results["df_Index"] = df_Index
 
     if method["save_timeseries"]:
@@ -392,7 +392,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
 
 def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}):
-
     df_Results = dict()
 
     # Dantzig Wolfe algorithm
@@ -439,7 +438,6 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df9 = get_ampl_data(ampl, 'flowrate_max')
         df_House = pd.concat([df_House, df7, df8, df9], axis=1)
 
-
     df1 = get_ampl_data(ampl, 'Costs_op')
     df2 = get_ampl_data(ampl, 'Costs_inv')  # with comfort costs
     df3 = get_ampl_data(ampl, 'Costs_cft')  # with comfort costs
@@ -448,7 +446,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df6 = get_ampl_data(ampl, 'GWP_constr')
     df_District = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
     if read_DHN:
-        df7 = np.sqrt(np.sum(df_House[["diameter_max"]]**2)).to_frame().transpose()
+        df7 = np.sqrt(np.sum(df_House[["diameter_max"]] ** 2)).to_frame().transpose()
         df8 = get_ampl_data(ampl, 'DHN_inv')
         df_District = pd.concat([df_District, df7, df8], axis=1)
     df_District = df_District.set_index(pd.Index(["Network"]))
@@ -547,8 +545,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
     units_districts = district.UnitsOfDistrict
     district_l_u = []
-    for l, units in district.UnitsOfLayer.items():
-        [district_l_u.append((l, unit)) for unit in units if unit in units_districts]
+    for layer, units in district.UnitsOfLayer.items():
+        [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]
     df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
     df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
 
@@ -570,9 +568,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
         df_Results["df_lca_operation"] = LCA_op
 
-    if method["actors_cost"]:
-        df1 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True).groupby(level=(0,2)).sum()
-        df2 = get_ampl_data(ampl, 'Cost_supply_district', multi_index=True).groupby(level=(0,2)).sum()
+    if method["actors_problem"]:
+        df1 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True).groupby(level=(0, 2)).sum()
+        df2 = get_ampl_data(ampl, 'Cost_supply_district', multi_index=True).groupby(level=(0, 2)).sum()
         df3 = get_ampl_data(ampl, 'Cost_self_consumption', multi_index=True).groupby(level=1).sum()
         df3 = pd.concat({'Electricity': df3})
         df_Results["df_Actors_tariff"] = pd.concat([df1, df2, df3], axis=1)
@@ -592,6 +590,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
 
     return df_Results
+
 
 def get_ampl_data(ampl, ampl_name, multi_index=False):
     # AMPl data in AMPLPY Dataframe

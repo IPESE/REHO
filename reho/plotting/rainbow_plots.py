@@ -9,35 +9,36 @@ __doc__ = """
 Reconstructs data from a Pareto optimization to produce a rainbow plot.
 """
 
-def linerize_equal_steps (x, y):
+
+def linerize_equal_steps(x, y):
     x.name = 'x'
     y.name = 'y'
     step = (x.max() - x.min()) / len(x)
-    df = pd.concat([x, y], names =['x','y'], axis=1)
+    df = pd.concat([x, y], names=['x', 'y'], axis=1)
 
     df_new = pd.DataFrame(columns=['y'])
-    for s in  np.arange(1,  len(x)+1 ):
-        x_new = s*step
+    for s in np.arange(1, len(x) + 1):
+        x_new = s * step
         ub = df[df.x >= x_new].x.min()
         lb = df[df.x < x_new].x.max()
-        if math.isnan(ub) == True: # happens in case x_new == to last x in array
-            y_new = df[df.x == lb].iloc[0].y # just return last point
+        if math.isnan(ub):  # happens in case x_new == to last x in array
+            y_new = df[df.x == lb].iloc[0].y  # just return last point
         else:
             upper_bound = df[df.x == ub].iloc[0]
             lower_bound = df[df.x == lb].iloc[0]
 
             m = ((upper_bound.y - lower_bound.y) / (upper_bound.x - lower_bound.x))
-            b = lower_bound.y- m * lower_bound.x
+            b = lower_bound.y - m * lower_bound.x
 
-            y_new = m*x_new + b
+            y_new = m * x_new + b
         df_new.at[x_new, 'y'] = y_new
     return df_new
 
-def split_orientation(az):
 
-    if (az < 45) or  (az > 315):
+def split_orientation(az):
+    if (az < 45) or (az > 315):
         orientation = 'North'
-    elif  (az >= 45) and (az < 135):
+    elif (az >= 45) and (az < 135):
         orientation = 'East'
     elif (az >= 135) and (az < 225):
         orientation = 'South'
@@ -48,16 +49,16 @@ def split_orientation(az):
 
     return orientation
 
-def get_roof_max(df_nbr, hs_A):
 
+def get_roof_max(df_nbr, hs_A):
     df_n = df_nbr.groupby(['Pareto_ID', 'Surface', 'Azimuth', 'Tilt']).sum()
     roofs = df_n[df_n.index.get_level_values(level='Tilt') != 90]
 
-    #get total m2 PV
+    # get total m2 PV
     total_roofs = roofs.groupby('Pareto_ID').sum()
-    total_roofs['PV_m2'] = total_roofs.PVA_module_nbr*1.6
+    total_roofs['PV_m2'] = total_roofs.PVA_module_nbr * 1.6
     # get occupation based on azimuth orientation
-    roofs = roofs.reset_index(level = ['Azimuth'])
+    roofs = roofs.reset_index(level=['Azimuth'])
     roofs['Orientation'] = roofs.apply(lambda x: split_orientation(x['Azimuth']), axis=1)
     roofs = roofs.set_index('Orientation', append='True')
     roofs = roofs.groupby(['Pareto_ID', 'Orientation']).sum()
@@ -65,13 +66,13 @@ def get_roof_max(df_nbr, hs_A):
     roofs['occupancy'] = roofs.PVA_module_nbr / max
 
     roofs_max = total_roofs.PV_m2.max()
-    roofs_max_m2 = roofs_max /hs_A
+    roofs_max_m2 = roofs_max / hs_A
 
     facades = df_n[df_n.index.get_level_values(level='Tilt') == 90]
     if not facades.empty:
         # get total m2 facades
         total_facades = facades.groupby('Pareto').sum()
-        total_facades['PV_m2'] = total_facades.PVA_module_nbr*1.6
+        total_facades['PV_m2'] = total_facades.PVA_module_nbr * 1.6
         # get occupation based on azimuth orientation
         facades = facades.reset_index(level=['Azimuth'])
         facades['Orientation'] = facades.apply(lambda x: split_orientation(x['Azimuth']), axis=1)
@@ -82,13 +83,12 @@ def get_roof_max(df_nbr, hs_A):
         total_surface = total_facades['PV_m2'] + total_roofs['PV_m2']
     else:
         total_surface = total_roofs['PV_m2']
-    total_surface_m2 = total_surface/hs_A
+    total_surface_m2 = total_surface / hs_A
 
     return total_surface_m2, roofs_max_m2
 
 
 def plot_economical_feedin_price(bounds, resolution, Pareto):
-
     df_unit = return_district_result_object_dataframe(Pareto, 'df_Unit')
     df_KPIs = return_district_result_object_dataframe(Pareto, 'df_KPIs')
     hs_A = return_district_result_object_dataframe(Pareto, 'df_Buildings')["ERA"].xs(1, level=1).sum()
@@ -109,7 +109,7 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
 
     df_K = df_KPIs.xs((0, 'Network'), level=('Scn_ID', 'Hub'))
     SC = df_K.SC
-    MWh_PV.index=SC.index
+    MWh_PV.index = SC.index
 
     MWh_SC = MWh_PV.mul(SC)
     MWh_SC = MWh_SC.fillna(0)
@@ -190,13 +190,15 @@ def plot_economical_feedin_price(bounds, resolution, Pareto):
         df_plot_inv_induced[d] = y_inv_induced
         df_plot_first[d] = y_first
 
-    df_plot_first = df_plot_first.set_index(feed_in_prices)
+    # df_plot_first = df_plot_first.set_index(feed_in_prices)
     df_plot_last = df_plot_last.set_index(feed_in_prices)
     df_plot_inv_induced = df_plot_inv_induced.set_index(feed_in_prices)
+
     return df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced
 
+
 def plot_rainbow(df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced, bounds, save_fig, plot_type):
-    # plotting
+
     fig, ax = plt.subplots()
     for demand_price in df_plot_last.columns:
         if plot_type == "demand_feed_in_E_gen_pv":
@@ -204,11 +206,14 @@ def plot_rainbow(df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced, 
                 c_list = ["white"] * No_feed_in
             else:
                 c_list = df_plot_last[demand_price].values
-            cs = ax.scatter(feed_in_prices, np.repeat(demand_price, No_feed_in), c=c_list, s=5, cmap=cm, vmin = df_plot_last.min().min(), vmax = df_plot_last.max().max() )
+            cs = ax.scatter(feed_in_prices, np.repeat(demand_price, No_feed_in), c=c_list, s=5, cmap=cm, vmin=df_plot_last.min().min(),
+                            vmax=df_plot_last.max().max())
         elif plot_type == "E_gen_pv_demand_feed_in":
-            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_last[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin=bounds["feed_in"][0], vmax=bounds["feed_in"][1])
+            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_last[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin=bounds["feed_in"][0],
+                            vmax=bounds["feed_in"][1])
         elif plot_type == "invest_demand_feed_in":
-            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_inv_induced[demand_price].values, c=feed_in_prices, s=5, cmap=cm, vmin=bounds["feed_in"][0], vmax=bounds["feed_in"][1])
+            cs = ax.scatter(np.repeat(demand_price, No_feed_in), df_plot_inv_induced[demand_price].values, c=feed_in_prices, s=5, cmap=cm,
+                            vmin=bounds["feed_in"][0], vmax=bounds["feed_in"][1])
 
     ax.annotate(' all PV investments \n economic feasible', (0.08, 0.22), zorder=10)
     cbar = fig.colorbar(cs)
@@ -229,20 +234,19 @@ def plot_rainbow(df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced, 
 
     elif plot_type == "invest_demand_feed_in":
         ax.set_xlim(bounds["retail"][0], bounds["retail"][1])
-        ax.set_ylim(df_plot_inv_induced.min().min(),  df_plot_inv_induced.max().max())
+        ax.set_ylim(df_plot_inv_induced.min().min(), df_plot_inv_induced.max().max())
         ax.set_xlabel('retail tariff [CHF/kWh]')
         ax.set_ylabel('investment [CHF/yr]')
         cbar.ax.set_ylabel('feed-in tariff  [CHF/kWh]')
 
-    #ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, ncol=2)
+    # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), frameon=False, ncol=2)
 
-    if save_fig == True:
+    if save_fig:
         plt.tight_layout()
         format = 'png'
         plt.savefig(('PV_rainbow_CH' + '.' + format), format=format, dpi=300)
     plt.show()
     return
-
 
 
 def return_district_result_object_dataframe(dict_results, result_dataframe):
@@ -251,8 +255,8 @@ def return_district_result_object_dataframe(dict_results, result_dataframe):
 
     if result_dataframe in dir(dict_results[scn][par]):
         t = {(j, k): getattr(dict_results[j][k], result_dataframe)
-                for j in dict_results.keys()
-                for k in dict_results[j].keys()}
+             for j in dict_results.keys()
+             for k in dict_results[j].keys()}
     else:
         t = {(j, k): dict_results[j][k][result_dataframe]
              for j in dict_results.keys()
@@ -263,8 +267,9 @@ def return_district_result_object_dataframe(dict_results, result_dataframe):
 
     return df_district_results
 
-def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None, bounds=None, resolution=100, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv", filter=0):
 
+def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None, bounds=None, resolution=100, std_filter=1.5,
+                    plot_type="demand_feed_in_E_gen_pv", filter=0):
     if bounds is None:
         bounds = {"feed_in": [0.0, 0.15], "retail": [0.0, 0.30]}
 
@@ -273,7 +278,7 @@ def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None
 
     # get data
     for n, tr_id in enumerate(Pareto_list):
-        pareto = Pareto_list[tr_id]
+
         print("district:", n, " processed")
         df_plot_last[n], feed_in_prices, No_feed_in, df_plot_inv_induced[n] = plot_economical_feedin_price(bounds, resolution, Pareto_list)
 
@@ -292,7 +297,6 @@ def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None
         last_id = pd.DataFrame(last_id)
         last_id[0] = last_id[0].interpolate()
 
-
         for idx, col in enumerate(df_plot_last[n]):
             df_plot_last[n][col] = df_plot_last[n][col].replace(np.nan, 0)
             index_max_PV = df_plot_last[n][col].loc[last_id.loc[idx][0]:].index[1:]
@@ -301,7 +305,7 @@ def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None
     # aggregate data and extrapolate to CH
     df_plot_last_CH = df_plot_last[0] * 0
     for n, tr_id in enumerate(Pareto_list):
-        if CH_roof_area != None:
+        if CH_roof_area is not None:
             ratio = list(surface_CH.values()) / np.sum(list(surface_CH.values()))
             df_plot_last_CH = df_plot_last_CH + df_plot_last[n] / surface_district[tr_id] * ratio[n] * CH_roof_area
         else:
@@ -326,9 +330,7 @@ def plot_rainbow_CH(Pareto_list, surface_district, surface_CH, CH_roof_area=None
     plot_rainbow(df_plot_last_CH, feed_in_prices, No_feed_in, df_plot_inv_induced, bounds, save_fig=True, plot_type=plot_type)
 
 
-
 if __name__ == '__main__':
-
     plt.rcParams.update({'font.size': 14})
     cm = plt.cm.get_cmap('Spectral')
 
@@ -340,4 +342,3 @@ if __name__ == '__main__':
 
     plot_rainbow_CH(data, surface_district=surfaces_districts, surface_CH=surfaces_country,
                     resolution=140, std_filter=1.5, plot_type="demand_feed_in_E_gen_pv", filter=6)
-

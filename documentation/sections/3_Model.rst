@@ -792,6 +792,6 @@ Key performance indicators
 ----------------------------------
 
 The KPIs are divided in four subgroups: Environmental, economical, technical and security indicators.
-For more information on how to calculate the KPIs presented below, please refer Middelhauve - Section 1.2.5.
+For more information on how to calculate the KPIs presented below, please refer to :cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.5 Key performance indicators*.
 
 

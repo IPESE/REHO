@@ -7,6 +7,11 @@ import requests as rq
 from shapely import wkt
 import json
 
+__doc__ = """
+Queries the electricity retail and injection prices, from the `ELCOM <https://www.prix-electricite.elcom.admin.ch/>`_ database and `pvtarif.ch <https://www.vese.ch/fr/pvtarif/>`_ database respectively.
+"""
+
+
 FIND_PATTERN = "PREFIX\\s*(.*?)\n"
 SPLIT_PATTERN = ":\\s*"
 
@@ -19,8 +24,8 @@ DATA_TYPES_TO_PYTHON_CLS = {
     "http://www.w3.org/2001/XMLSchema#dateTime": (
         lambda x: datetime.strptime(x.rstrip("Z"), "%Y-%m-%dT%H:%M:%S")
     ),
-    "http://www.opengis.net/ont/geosparql#wktLiteral": wkt.loads,
-    "http://www.openlinksw.com/schemas/virtrdf#Geometry": wkt.loads,
+    "https://www.opengis.net/ont/geosparql#wktLiteral": wkt.loads,
+    "https://www.openlinksw.com/schemas/virtrdf#Geometry": wkt.loads,
     "https://www.w3.org/2001/XMLSchema#integer": int,
     "https://www.w3.org/2001/XMLSchema#float": float,
     "https://www.w3.org/2001/XMLSchema#double": float,
@@ -29,18 +34,10 @@ DATA_TYPES_TO_PYTHON_CLS = {
     "https://www.w3.org/2001/XMLSchema#dateTime": (
         lambda x: datetime.strptime(x.rstrip("Z"), "%Y-%m-%dT%H:%M:%S")
     ),
-    "https://www.opengis.net/ont/geosparql#wktLiteral": wkt.loads,
-    "https://www.openlinksw.com/schemas/virtrdf#Geometry": wkt.loads,
 }
 
-GEODATA_TYPES = set(
-    [
-        "http://www.opengis.net/ont/geosparql#wktLiteral",
-        "http://www.openlinksw.com/schemas/virtrdf#Geometry",
-        "https://www.opengis.net/ont/geosparql#wktLiteral",
-        "https://www.openlinksw.com/schemas/virtrdf#Geometry",
-    ]
-)
+GEODATA_TYPES = {"https://www.opengis.net/ont/geosparql#wktLiteral", "https://www.openlinksw.com/schemas/virtrdf#Geometry",
+                 "https://www.opengis.net/ont/geosparql#wktLiteral", "https://www.openlinksw.com/schemas/virtrdf#Geometry"}
 
 
 def requests_retry_session(
@@ -55,7 +52,7 @@ def requests_retry_session(
         status_forcelist=status_forcelist,
     )
     adapter = rq.adapters.HTTPAdapter(max_retries=retry)
-    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     session.mount("https://", adapter)
 
     return session
@@ -103,7 +100,7 @@ class SparqlClient:
     def add_prefixes(self, prefixes: Dict) -> None:
         """Define prefixes to be added to every query
         Args:
-            prefixes: 		prefixes to be added to every query
+            prefixes: prefixes to be added to every query
 
         Returns
             None
@@ -114,7 +111,7 @@ class SparqlClient:
     def remove_prefixes(self, prefixes: Dict) -> None:
         """Remove prefixes from the prefixes are added to every query
         Args:
-            prefixes: 		prefixes to be removed from self.prefixes
+            prefixes: prefixes to be removed from self.prefixes
 
         Returns
             None
@@ -127,10 +124,10 @@ class SparqlClient:
         """Format SPARQL query to include in-memory prefixes.
         Prefixes already defined in the query have precedence, and are not overwritten.
             Args:
-                query: 				user-defined SPARQL query
+                query: user-defined SPARQL query
 
             Returns
-                str:	            SPARQL query with predefined prefixes
+                str: SPARQL query with predefined prefixes
         """
 
         prefixes_in_query = dict(
@@ -202,7 +199,7 @@ class SparqlClient:
             response: 			raw response from SPARQL endpoint
 
         Returns
-            pd.DataFrame	    response from SPARQL endpoint in a tabular form, with python data types
+            pd.DataFrame: response from SPARQL endpoint in a tabular form, with python data types
         """
 
         cols = response["head"]["vars"]
@@ -268,17 +265,17 @@ sparql = SparqlClient("https://lindas.admin.ch/query")
 geosparql = SparqlClient("https://ld.geo.admin.ch/query")
 
 sparql.add_prefixes({
-    "schema": "<http://schema.org/>",
+    "schema": "<https://schema.org/>",
     "cube": "<https://cube.link/>",
     "elcom": "<https://energy.ld.admin.ch/elcom/electricityprice/dimension/>",
     "admin": "<https://schema.ld.admin.ch/>",
 })
 
 geosparql.add_prefixes({
-    "dct": "<http://purl.org/dc/terms/>",
-    "geonames": "<http://www.geonames.org/ontology#>",
-    "schema": "<http://schema.org/>",
-    "geosparql": "<http://www.opengis.net/ont/geosparql#>",
+    "dct": "<https://purl.org/dc/terms/>",
+    "geonames": "<https://www.geonames.org/ontology#>",
+    "schema": "<https://schema.org/>",
+    "geosparql": "<https://www.opengis.net/ont/geosparql#>",
 })
 
 
@@ -299,7 +296,9 @@ def get_providers_by_municipality_id(city=None, from_csv=False):
 
     Returns
     -------
-    pd.DataFrame which columns are ['id_city', 'commune', 'id_operator', 'operator'] for the given city.
+    pd.DataFrame
+        Columns are ['id_city', 'commune', 'id_operator', 'operator'] for the given city.
+
     Notes
     -----
     - The correspondance table is dated from 01.02.2024
@@ -339,31 +338,31 @@ def get_providers_by_municipality_id(city=None, from_csv=False):
             ?source0 <https://energy.ld.admin.ch/elcom/electricityprice/dimension/operator> ?id_operator .
             
             OPTIONAL {
-                city_to_replace <http://schema.org/name> ?commune_0 .
+                city_to_replace <https://schema.org/name> ?commune_0 .
                 FILTER (
                   LANGMATCHES(LANG(?commune_0), "fr")
                 )
               }
               OPTIONAL {
-                city_to_replace <http://schema.org/name> ?commune_1 .
+                city_to_replace <https://schema.org/name> ?commune_1 .
                 FILTER (
                   LANGMATCHES(LANG(?commune_1), "de")
                 )
               }
               OPTIONAL {
-                city_to_replace <http://schema.org/name> ?commune_2 .
+                city_to_replace <https://schema.org/name> ?commune_2 .
                 FILTER (
                   LANGMATCHES(LANG(?commune_2), "it")
                 )
               }
               OPTIONAL {
-                city_to_replace <http://schema.org/name> ?commune_3 .
+                city_to_replace <https://schema.org/name> ?commune_3 .
                 FILTER (
                   LANGMATCHES(LANG(?commune_3), "en")
                 )
               }
               OPTIONAL {
-                city_to_replace <http://schema.org/name> ?commune_4 .
+                city_to_replace <https://schema.org/name> ?commune_4 .
                 FILTER (
                   (LANG(?commune_4) = "")
                 )
@@ -371,31 +370,31 @@ def get_providers_by_municipality_id(city=None, from_csv=False):
             BIND(COALESCE(?commune_0, ?commune_1, ?commune_2, ?commune_3, ?commune_4) AS ?commune)    
             
             OPTIONAL {
-                ?id_operator <http://schema.org/name> ?operator_0 .
+                ?id_operator <https://schema.org/name> ?operator_0 .
                 FILTER (
                   LANGMATCHES(LANG(?operator_0), "fr")
                 )
               }
               OPTIONAL {
-                ?id_operator <http://schema.org/name> ?operator_1 .
+                ?id_operator <https://schema.org/name> ?operator_1 .
                 FILTER (
                   LANGMATCHES(LANG(?operator_1), "de")
                 )
               }
               OPTIONAL {
-                ?id_operator <http://schema.org/name> ?operator_2 .
+                ?id_operator <https://schema.org/name> ?operator_2 .
                 FILTER (
                   LANGMATCHES(LANG(?operator_2), "it")
                 )
               }
               OPTIONAL {
-                ?id_operator <http://schema.org/name> ?operator_3 .
+                ?id_operator <https://schema.org/name> ?operator_3 .
                 FILTER (
                   LANGMATCHES(LANG(?operator_3), "en")
                 )
               }
               OPTIONAL {
-                ?id_operator <http://schema.org/name> ?operator_4 .
+                ?id_operator <https://schema.org/name> ?operator_4 .
                 FILTER (
                   (LANG(?operator_4) = "")
                 )
@@ -435,7 +434,8 @@ def get_prices_from_elcom_by_canton(year=2024, canton=None, category=None, tva=N
 
     Returns
     -------
-    pd.DataFrame with the electricity price and its components.
+    pd.DataFrame
+        Electricity price and its components.
 
     See also
     --------
@@ -568,7 +568,8 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
 
     Returns
     -------
-    pd.DataFrame with the electricity price and its components.
+    pd.DataFrame
+        Electricity price and its components.
 
     See also
     --------
@@ -594,11 +595,13 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
     cat_link = 'https://energy.ld.admin.ch/elcom/electricityprice/category/'
 
     if isinstance(city, QBuildingsReader):
-        city = city.data['transformers']['id_city'][0]
+        try:
+            city = city.data['transformers']['id_city'][0]
+        except KeyError:
+            city = 6621  # if id_city is missing from database, set Geneva by default
         city_query = '<' + city_link + str(city) + '>'
     elif isinstance(city, str):
-        cities = pd.read_csv(os.path.join(path_to_elcom, 'correspondance_table_municipality_operator.csv'),
-                             index_col=0)
+        cities = pd.read_csv(os.path.join(path_to_elcom, 'correspondance_table_municipality_operator.csv'), index_col=0)
         mask = (cities['id_city'] == city) + (cities['commune'] == city)
         cities = cities[mask]
         if cities.empty:
@@ -638,31 +641,31 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
           elcom:aidfee ?aidfee.
           
       OPTIONAL {
-        city_to_replace <http://schema.org/name> ?commune_0 .
+        city_to_replace <https://schema.org/name> ?commune_0 .
         FILTER (
           LANGMATCHES(LANG(?commune_0), "fr")
         )
       }
       OPTIONAL {
-        city_to_replace <http://schema.org/name> ?commune_1 .
+        city_to_replace <https://schema.org/name> ?commune_1 .
         FILTER (
           LANGMATCHES(LANG(?commune_1), "de")
         )
       }
       OPTIONAL {
-        city_to_replace <http://schema.org/name> ?commune_2 .
+        city_to_replace <https://schema.org/name> ?commune_2 .
         FILTER (
           LANGMATCHES(LANG(?commune_2), "it")
         )
       }
       OPTIONAL {
-        city_to_replace <http://schema.org/name> ?commune_3 .
+        city_to_replace <https://schema.org/name> ?commune_3 .
         FILTER (
           LANGMATCHES(LANG(?commune_3), "en")
         )
       }
       OPTIONAL {
-        city_to_replace <http://schema.org/name> ?commune_4 .
+        city_to_replace <https://schema.org/name> ?commune_4 .
         FILTER (
           (LANG(?commune_4) = "")
         )
@@ -670,31 +673,31 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
     BIND(COALESCE(?commune_0, ?commune_1, ?commune_2, ?commune_3, ?commune_4) AS ?City)
           
       OPTIONAL {
-        ?operator <http://schema.org/name> ?operator_0 .
+        ?operator <https://schema.org/name> ?operator_0 .
         FILTER (
           LANGMATCHES(LANG(?operator_0), "fr")
         )
       }
       OPTIONAL {
-        ?operator <http://schema.org/name> ?operator_1 .
+        ?operator <https://schema.org/name> ?operator_1 .
         FILTER (
           LANGMATCHES(LANG(?operator_1), "de")
         )
       }
       OPTIONAL {
-        ?operator <http://schema.org/name> ?operator_2 .
+        ?operator <https://schema.org/name> ?operator_2 .
         FILTER (
           LANGMATCHES(LANG(?operator_2), "it")
         )
       }
       OPTIONAL {
-        ?operator <http://schema.org/name> ?operator_3 .
+        ?operator <https://schema.org/name> ?operator_3 .
         FILTER (
           LANGMATCHES(LANG(?operator_3), "en")
         )
       }
       OPTIONAL {
-        ?operator <http://schema.org/name> ?operator_4 .
+        ?operator <https://schema.org/name> ?operator_4 .
         FILTER (
           (LANG(?operator_4) = "")
         )
@@ -738,6 +741,7 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
 
     return prices
 
+
 def get_vese_key():
     try:
         response = rq.get("https://ipese-lectures.epfl.ch/static/reho.json", timeout=1)
@@ -749,10 +753,11 @@ def get_vese_key():
             return f"Error: {response.status_code}"
     except Exception:
         return False
-    
+
+
 def get_injection_prices(city=None, year=2024, category=None, tva=None):
     """
-    Retrieve injection prices from the `pvtarif.ch <https://www.vese.ch/fr/pvtarif/>`_  API.
+    Retrieves injection prices from the `pvtarif.ch <https://www.vese.ch/fr/pvtarif/>`_  API.
 
     The year, municipality and consumer category can be given to query at a more precise level.
     TVA is applied by default or can be adapted as a scaling factor.
@@ -771,7 +776,7 @@ def get_injection_prices(city=None, year=2024, category=None, tva=None):
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing injection prices information for each city.
+        Contains injection prices information for each city.
 
     Raises
     ------
@@ -804,7 +809,7 @@ def get_injection_prices(city=None, year=2024, category=None, tva=None):
     # Retrieve license key
     load_dotenv()
     if 'API_VESE_KEY' not in os.environ:
-        license_key=get_vese_key()
+        license_key = get_vese_key()
         if not license_key:
             raise UserWarning("You need a key from VESE to access the injection prices")
     else:
@@ -829,7 +834,7 @@ def get_injection_prices(city=None, year=2024, category=None, tva=None):
             raise ExecutionError(f"{response.status_code}")
 
         try:
-        # TODO: add a code to adapt the prices to the category given, as a function of what is defined
+            # TODO: add a code to adapt the prices to the category given, as a function of what is defined
             commune_price = {'id_city': commune.id_city, 'municipality': commune.commune,
                              'id_operator': int(json_data['nrElcom']), 'operator': json_data['nomEw'],
                              'federal_tariff': float(json_data['energy1']), 'origin_bonus': float(json_data['eco1']),
@@ -870,7 +875,8 @@ def get_electricity_prices(city, year=2024, category=None, tva=None):
 
     Returns
     -------
-    pd.DataFrame with prices for the given parameters which columns are ['Year', 'City', 'Provider', 'Category', 'Elec_demand_cts_kWh', 'Elec_supply_cts_kWh'].
+    pd.DataFrame
+        Prices for the given parameters which columns are ['Year', 'City', 'Provider', 'Category', 'Elec_demand_cts_kWh', 'Elec_supply_cts_kWh'].
 
     See also
     --------

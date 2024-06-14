@@ -7,16 +7,15 @@ import itertools as it
 import matplotlib.pyplot as plt
 
 __doc__ = """
-Used for PV orientation.
+Generates a skydome decomposition into patches for PV orientation.
 """
 
 
 def convert_results_txt_to_csv(load_timesteps):
-    """ load one txt file for each hour/timestep in "load_timesteps".
-    txt file contains oriented irradiation of each 145 skypatches. Combines all hours to one df
-
-    :param load_timesteps:
-    :return: df:
+    """
+    Loads one txt file for each hour/timestep in "load_timesteps".
+    txt file contains oriented irradiation of each 145 skypatches.
+    Combines all hours to one df.
     """
 
     df = pd.DataFrame()
@@ -255,8 +254,8 @@ def calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data, typic
 
 
 def calc_orientated_surface(azimuth, tilt, design_lim_angle, local_data, irradiation_file, typical_frequency):
-    df_irradiation_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data,
-                                                                   irradiation_file, typical_frequency)
+
+    df_irradiation_panel_t, df_typical = calc_orientation_profiles(azimuth, tilt, design_lim_angle, local_data, irradiation_file, typical_frequency)
 
     # construct annual sum
     df_period = pd.DataFrame()

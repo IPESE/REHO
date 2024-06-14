@@ -4,6 +4,7 @@ from SALib.analyze import sobol as sobol_analyze
 from SALib.sample import morris as morris_sample
 from SALib.sample import sobol as sobol_sample
 from qmcpy import Sobol
+from scipy.stats import qmc
 
 from reho.model.reho import *
 

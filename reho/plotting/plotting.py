@@ -787,7 +787,7 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
             line=dict(color=layout.loc['Electrical_grid', color])
         ))
 
-        if export_profile.any() > 0:
+        if export_profile["Electricity"].any() > 0:
             fig.add_trace(go.Scatter(
                 x=idx,
                 y=-export_profile["Electricity"],

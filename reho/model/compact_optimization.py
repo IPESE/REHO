@@ -454,6 +454,7 @@ class compact_optimization:
         Configs_flat_roof[1::2] = All_tilt
         Configs_flat_roof.append(180)
         Configs_flat_roof.append(0)
+        Configs_flat_roof = np.reshape(Configs_flat_roof, (len(All_azimuth) + 1, 2))
 
         np_surface = np.array([])
         np_flat_roof = np.array([])

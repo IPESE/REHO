@@ -246,7 +246,10 @@ def plot_rainbow(df_plot_last, feed_in_prices, No_feed_in, df_plot_inv_induced, 
 
 
 def return_district_result_object_dataframe(dict_results, result_dataframe):
-    if result_dataframe in dir(dict_results[0][1]):
+    scn = list(dict_results.keys())[0]
+    par = list(dict_results[scn].keys())[0]
+
+    if result_dataframe in dir(dict_results[scn][par]):
         t = {(j, k): getattr(dict_results[j][k], result_dataframe)
                 for j in dict_results.keys()
                 for k in dict_results[j].keys()}

@@ -16,6 +16,12 @@ param T_source{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]};
 
 #-T_HOT
 #---------------------------------------------------------------------#
+#'''
+#From what I understand so far, HP_Tsupply is defined in subproblem.mod as a set with {35,45,55} temperature values. 
+#param HP_Tsink_high is trying to supply the closest available (that is equal to if not higher supply temperature from the HP). But since HP_Tsupply os same as HP_Tsink, 
+#the greater tha condition is never evaluated.
+#ß'''
+
 set HP_Tsink default {35,45,55};																	#deg C
 param HP_Tsink_high{h in House,p in Period,t in Time[p],T in HP_Tsupply} :=  						#deg C
 	if max{Th in HP_Tsink} Th <= T then

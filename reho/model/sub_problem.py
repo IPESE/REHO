@@ -304,6 +304,7 @@ class SubProblem:
                     self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(
                         self.cluster_sp, self.local_data["df_Timestamp"])
 
+
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
         # T = 7.5C for Lake, T = 12C for underground, T = 16C for CO2

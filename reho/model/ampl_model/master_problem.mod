@@ -227,7 +227,7 @@ Costs_tot = Costs_op + Costs_inv;
 #-PARAMETERS
 param GWP_unit1{u in Units} default 0;
 param GWP_unit2{u in Units} default 0;
-param GWP_supply_cst{l in ResourceBalances} default 0.17;
+param GWP_supply_cst{l in ResourceBalances} default 0.17;   #why is this line repeated in both mod files?
 param GWP_demand_cst{l in ResourceBalances} default 0.0;                   #-
 param GWP_supply{l in ResourceBalances, p in Period,t in Time[p]} default GWP_supply_cst[l];
 param GWP_demand{l in ResourceBalances, p in Period,t in Time[p]} default GWP_demand_cst[l];  

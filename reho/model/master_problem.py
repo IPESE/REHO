@@ -69,6 +69,7 @@ class MasterProblem:
         self.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
         self.infrastructure_SP = dict()
         self.build_infrastructure_SP()
+        self.parameters_to_ampl_MP = dict() #creating it similar to sub_problem.py
 
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -117,6 +118,21 @@ class MasterProblem:
 
         self.df_fix_Units = pd.DataFrame()
         self.fix_units_list = []
+    def build_model_without_solving(self):
+        File_ID = weather.get_cluster_file_ID(self.cluster_sp)
+        ampl = self.init_ampl_model()
+        ampl = self.set_weather_data(ampl)
+        ampl = self.set_ampl_sets(ampl)
+        self.set_emissions_profiles(File_ID)
+        self.set_temperature_and_EVs_profiles()
+        self.set_HP_parameters(ampl)
+        self.set_streams_temperature(ampl)
+        if self.method_sp['use_pv_orientation']:
+            self.set_PV_models(ampl)
+        ampl = self.send_parameters_and_sets_to_ampl(ampl)
+        ampl = self.set_scenario(ampl)
+
+        return ampl
 
     def initialize_optimization_tracking_attributes(self):
         # internal IT parameter
@@ -397,6 +413,12 @@ class MasterProblem:
                 ampl_MP.read('heatpump_district.mod')
             if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
+            #if "DataCentre_EPFL_district" in self.infrastructure.UnitsOfDistrict:
+                #ampl_MP.read('data_district.mod')
+            if "ORC_EPFL_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ORC_EPFL_district.mod')
+            #if "PV_district" in self.infrastructure.UnitsOfDistrict:
+                #ampl_MP.read('PV_district.mod')
 
         ampl_MP.cd(path_to_units_storage)
         ampl_MP.read('battery.mod')
@@ -1178,9 +1200,15 @@ class MasterProblem:
                     if len(self.infrastructure.houses) < self.DW_params['timesteps']:
                         nb_buildings = round(self.parameters[key].shape[0] / self.DW_params['timesteps'])
                         profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
-                        parameters_SP[key] = profile_building_x[ID]
+                        try:
+                            parameters_SP[key] = profile_building_x[ID]
+                        except:
+                            print(key)
                 else:
-                    parameters_SP[key] = self.parameters[key][ID]
+                    try:
+                        parameters_SP[key] = self.parameters[key][ID]
+                    except:
+                        print(key)
         return buildings_data_SP, parameters_SP
 
     def build_infrastructure_SP(self):

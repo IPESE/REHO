@@ -12,7 +12,7 @@ if __name__ == '__main__':
     # Select clustering options for weather data
     #  - I refers to Irradiance, T to Temperature, and W to Weekday
     #  - specify the desired number of typical days
-    cluster = {'Location': "Sion", 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': "Sion", 'Attributes': ['T', 'I', 'W','E'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     scenario['specific'] = []  # remain empty for now
     scenario['name'] = 'totex'  # any name is possible here
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']  # specify some units to be excluded
-    scenario['enforce_units'] = []  # specify some units to be enforced
+    scenario['enforce_units'] = ['HeatPump_Air']  # specify some units to be enforced
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/grids.csv

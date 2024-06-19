@@ -2,7 +2,10 @@ from reho.plotting import plotting
 import pandas as pd
 
 
-results = pd.read_pickle('results/my_case_study.pickle')
+#plotting.yearly_demand_plot("results/epfl_campus_totex.xlsx")
+
+
+results = pd.read_pickle('/Users/ravi/Desktop/PhD/My_Reho_Qgis_files/Reho_Sai_Fork/scripts/template/results/epfl_campus.pickle')
 
 # Performance plot : Costs and Global Warming Potential
 plotting.plot_performance(results, plot='costs', indexed_on='Scn_ID', filename="figures/performance_costs").show()
@@ -11,4 +14,3 @@ plotting.plot_performance(results, plot='combined', indexed_on='Scn_ID', filenam
 
 # Sankey diagram
 plotting.plot_sankey(results['totex'][0], label='EN_long', color='ColorPastel').show()
-# donkey diagram

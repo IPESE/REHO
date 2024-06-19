@@ -2,7 +2,7 @@ set Actors default {"Owners", "Renters", "Utility"};
 set ActorObjective;
 
 # energy tariffs
-var Cost_supply_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
+var Cosft_supply_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
 var Cost_demand_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
 var Cost_self_consumption{f in FeasibleSolutions, h in House};
 

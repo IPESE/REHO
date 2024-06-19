@@ -312,10 +312,13 @@ param ts := 3600;				#s
 param dt{Period} default 1;		#h
 param dp{Period} default 1;		#days
 param lifetime{u in Units} default 20;	
-param GWP_supply_cst{l in ResourceBalances} default 0.100;
+
+
+
+param GWP_supply_cst{l in ResourceBalances} default 0.100;   #why is the value from the grids.csv not used as the default?
 param GWP_demand_cst{l in ResourceBalances} default 0.0; 						#-
 param GWP_supply{l in ResourceBalances,p in Period,t in Time[p]} default GWP_supply_cst[l];
-param GWP_demand{l in ResourceBalances,p in Period,t in Time[p]} default GWP_demand_cst[l];											# kgCO2/unit
+param GWP_demand{l in ResourceBalances,p in Period,t in Time[p]} default GWP_demand_cst[l];											# kgCO2/unit - unit is usually kWh
 param GWP_unit1{u in Units} default 0;
 param GWP_unit2{u in Units} default 0;
 var GWP_house_op{h in House};

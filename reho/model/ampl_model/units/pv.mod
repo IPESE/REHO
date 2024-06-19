@@ -44,5 +44,5 @@ subject to limits_maximal_PV_to_roof{h in House}:
 sum{ui in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h]}(Units_Mult[ui]) + sum{uj in UnitsOfType['PV'] inter UnitsOfHouse[h]} (Units_Mult[uj]/PVA_efficiency_ref[uj]) <= SolarRoofArea[h];
 
 subject to enforce_PV_max{h in House, u in UnitsOfType['PV']}:
-sum{ui in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h]}(Units_Mult[ui]) + sum{uj in UnitsOfType['PV'] inter UnitsOfHouse[h]}(Units_Mult[uj]/PVA_efficiency_ref[uj]) = ((SolarRoofArea[h]) div PVA_module_size[u])*PVA_module_size[u];
+sum{ui in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h]}(Units_Mult[ui]) + sum{uj in UnitsOfType['PV'] inter UnitsOfHouse[h]}(Units_Mult[uj]/PVA_efficiency_ref[uj]) = 0.008*((SolarRoofArea[h]) div PVA_module_size[u])*PVA_module_size[u];
 #-----------------------------------------------------------------------------------------------------------------------

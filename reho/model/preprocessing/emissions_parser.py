@@ -67,8 +67,23 @@ def return_typical_emission_profiles(cluster, File_ID, metric, timestamp_file, e
     country = 'CH'
     emission_file = os.path.join(path_to_clustering, metric + '_' + File_ID + '.dat')
 
-    if os.path.exists(emission_file):
-        df_E = pd.read_csv(emission_file, index_col=[0, 1, 2])
+    if os.path.exists(emission_file) and '_E' in File_ID:
+        df_E = pd.read_csv(emission_file)
+        #, index_col=[0, 1, 2]
+        #df_B = pd.DataFrame()#.set_index(drop = True)
+        #df_E = df_E.reset_index(drop=True, inplace =True)
+        #print(df_B)
+
+        df_E = df_E.set_index(["ResourceBalances","Period","Time"], append=True)
+        #df_E = df_E.set_index("Period", append=True)
+        #df_E = df_E.set_index("Time", append=True)
+        df_E.index = df_E.index.droplevel(0)
+        #df_E.index.names = ["ResourceBalances","Period","Time"]
+        #df_index = df_E.index.astype(str)
+        #new_index = df_index.index.str.split('/', n=1).str[1]
+        #df_E.index= new_index
+        #df_E.index = df_E.index.map(lambda x: x[1:])
+
     else:
         df_E = annual_to_typical_emissions(cluster, country, metric, timestamp_file, emissions_matrix)
         df_E.to_csv(emission_file)

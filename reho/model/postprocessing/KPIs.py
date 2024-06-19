@@ -307,8 +307,9 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
     df_el_net = df_profiles_net.xs('Electricity', level=0)
 
     File_ID = weather.get_cluster_file_ID(cluster)
-    res_profile = emissions.return_typical_emission_profiles(df_Time, File_ID, 'method 1', timestamp_file, emissions_matrix)
-    res_av = emissions.find_average_value('CH', 'method 1', emissions_matrix)
+    metric = weather.get_metric(cluster)
+    res_profile = emissions.return_typical_emission_profiles(df_Time, File_ID, metric, timestamp_file, emissions_matrix)
+    res_av = emissions.find_average_value('CH', metric, emissions_matrix)
     s_RES_dy = pd.Series(dtype='float')
     s_RES_av = pd.Series(dtype='float')
 

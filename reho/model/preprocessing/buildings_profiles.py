@@ -13,14 +13,15 @@ def reference_temperature_profile(parameters_to_ampl, cluster):
     """
     # TODO: time dependent indoor temperature f.e. lower at night
 
-    total_timesteps = cluster['Periods'] * cluster['PeriodDuration'] + 2
-    T_comfort_min_0 = parameters_to_ampl['T_comfort_min_0']
+    total_timesteps = cluster['Periods'] * cluster['PeriodDuration'] + 2  #cluster is a dictionary that I defined in the frontend file.
+    T_comfort_min_0 = parameters_to_ampl['T_comfort_min_0']   #parameters_to_ampl is in
 
     np_temperature = np.array([])
     for key in parameters_to_ampl['T_comfort_min_0']:
         np_temperature = np.append(np_temperature, np.tile(T_comfort_min_0[key], total_timesteps))
 
     return np_temperature
+
 
 
 def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp, include_stochasticity=False, sd_stochasticity=None, use_custom_profiles=False):

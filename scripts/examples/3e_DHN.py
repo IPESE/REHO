@@ -30,7 +30,7 @@ if __name__ == '__main__':
     method = {'building-scale': True, 'DHN_CO2': True}
 
     # Set specific parameters
-    # specify the temperature of the DHN
+    # Specify the temperature of the DHN
     parameters = {'T_DHN_supply_cst': np.repeat(20.0, 4), "T_DHN_return_cst": np.repeat(15.0, 4)}
 
     # Run optimization
@@ -40,3 +40,7 @@ if __name__ == '__main__':
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='3e')
+
+    # Plot results
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long').show()
+    plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel').show()

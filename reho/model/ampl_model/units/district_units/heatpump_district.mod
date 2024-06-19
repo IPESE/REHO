@@ -110,7 +110,7 @@ var HP_E_heating{u in UnitsOfType['HeatPump'],p in Period,t in Time[p],T in HP_T
 
 #-Heating
 subject to HP_energy_balance{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
-Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply}(HP_COP[u,p,t,T]*HP_E_heating[u,p,t,T]);
+Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply} HP_COP[u,p,t,T]*HP_E_heating[u,p,t,T];
 
 #subject to HP_EB_c2{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 #sum{st in StreamsOfUnit[u]: Streams_Tin[st,p,t] < 55} Streams_Q['DHW',st,p,t] = 0;
@@ -118,22 +118,14 @@ Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply}(HP_COP[u,p,t,T]*HP_E_heating[u
 #--Totals
 #-Attention! This is an averaged power consumption value over the whole operation set
 subject to HP_c1{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
-Units_demand['Electricity',u,p,t] = sum{T in HP_Tsupply}(HP_E_heating[u,p,t,T]);
+Units_demand['Electricity',u,p,t] = sum{T in HP_Tsupply} HP_E_heating[u,p,t,T];
 
 #--Sizing 
 subject to HP_c2{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
 sum{T in HP_Tsupply} (HP_E_heating[u,p,t,T]/HP_Pmax[u,p,t,T]) <= Units_Mult[u]*HP_partload_max[u];
 
-#-Need of technical buffer tank (defrost & hydraulic decoupling) if no floor heating & cycle inversion
-#subject to HP_c4{h in House,ui in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],uj in UnitsOfType['WaterTankSH'] inter UnitsOfHouse[h]}:
-#Units_Mult[uj] >= if Th_supply_0[h] > 50 then 0.015*Units_Mult[ui]*HP_Eta_nominal[ui,35,20]*(35+273.15)/(35 - (20)) else 0;			#m3
-
 #subject to DHN_heat{h in House, u in {'HeatPump_DHN_'&h}, p in Period, t in Time[p]}:
 #Units_demand['Heat',u,p,t] = sum{st in StreamsOfUnit[u], se in ServicesOfStream[st]} Streams_Q[se,st,p,t] - sum{st in StreamsOfUnit[u], T in HP_Tsupply: T = Streams_Tin[st,p,t]} HP_E_heating[h,u,p,t,T];
-
-#--Only one type of heat pump per house
-#subject to max_one_HeatPump_per_house{h in House}:
-#sum{u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[u] <= 1;
 
 # ----------------------------------------- HEX Direct Cooling ---------------------------------------
 

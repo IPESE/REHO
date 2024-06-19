@@ -34,7 +34,7 @@ class Infrastructure:
         else:
             self.district_units = []
 
-        # Sets -------------------------------------------------------------------------------------------------------
+        # Sets -------------------------------------------
         self.House = np.array(list(self.houses.keys()))
         self.Units = np.array([])
         self.UnitTypes = np.unique(np.array([self.houses[h]['units'][u]['UnitOfType'] for h in self.houses for u in range(len(self.houses[h]['units']))]))
@@ -76,7 +76,7 @@ class Infrastructure:
         self.lca_kpis = []
         self.Set = {}
 
-        # Parameter --------------------------------------------------------------------------------------------
+        # Parameter --------------------------------
         self.Units_flowrate = pd.DataFrame()
         self.Grids_flowrate = pd.DataFrame()
         self.Grids_Parameters = pd.DataFrame()
@@ -96,7 +96,7 @@ class Infrastructure:
         # h_ht: hotstream_hightemperature. h_mt: hotstream_mediumtemperature. h_lt: hotstream_lowtemperature. c_ht: coldstream_hightemperature
 
         for h in self.House:
-            # Units------------------------------------------------------------
+            # Units
             for u in self.houses[h]['units']:
                 complete_name = u['name'] + '_' + h
 
@@ -108,7 +108,7 @@ class Infrastructure:
                 for s in u['UnitOfService']:
                     self.UnitsOfService[s] = np.append(self.UnitsOfService[s], [complete_name])
 
-                # Streams---------------------------------------------------------
+                # Streams
                 self.StreamsOfBuilding[h] = np.array(
                     [h + '_c_lt', h + '_c_mt', h + '_h_lt'])  # c_mt  c_lt - space heat demand discretized in 2 streams, _- h_lt for cooling
                 self.StreamsOfUnit[complete_name] = np.array([])
@@ -116,10 +116,11 @@ class Infrastructure:
                     stream = u['name'] + '_' + h + '_' + s
                     self.StreamsOfUnit[complete_name] = np.append(self.StreamsOfUnit[complete_name], stream)
 
-            # Layers------------------------------------------------------------
+            # Layers
             for l in self.houses[h]['layers']:
                 self.HousesOfLayer[l] = np.append(self.HousesOfLayer[l], [h])
-        # Districtunits------------------------------------------------------------
+                
+        # District units
         for u in self.district_units:
             name = u['name']
             self.Units = np.append(self.Units, [name])
@@ -162,7 +163,7 @@ class Infrastructure:
         self.Set['Lca_kpi'] = self.lca_kpis
 
     def generate_parameter(self):
-        # Units Flows -----------------------------------------------------------
+        # Units Flows --
         for h in self.House:
 
             for u in self.houses[h]['units']:
@@ -196,7 +197,7 @@ class Infrastructure:
             df = pd.concat([df_o, df_i], axis=1)
             self.Units_flowrate = pd.concat([self.Units_flowrate, df])
 
-        # Units Costs -----------------------------------------------------------
+        # Units Costs --
         for h in self.House:
             for u in self.houses[h]['units']:
                 self.add_unit_parameters(u['name'] + '_' + h, u)
@@ -205,7 +206,7 @@ class Infrastructure:
             self.add_unit_parameters(u['name'], u)
         self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
-        # Grids------------------------------------------------------------
+        # Grids
         keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection']
         lca_impact_demand = [key + "_demand_cst" for key in self.lca_kpis]
         lca_impact_supply = [key + "_supply_cst" for key in self.lca_kpis]
@@ -228,7 +229,7 @@ class Infrastructure:
             self.Grids_Parameters_lca = pd.concat([self.Grids_Parameters_lca, df_lca])
         self.Grids_Parameters_lca.columns = ["lca_kpi_demand_cst", "lca_kpi_supply_cst"]
 
-        # HP and AC temperatures------------------------------------------------------------
+        # HP and AC temperatures
         for h in self.House:
 
             for u in self.houses[h]['units']:
@@ -260,7 +261,7 @@ class Infrastructure:
         # self.Set['AC_Tsupply'] = np.array(self.units[2]['stream_Tin'])
         # self.Set['HP_Tsupply'] = np.array(self.units[0]['stream_Tin'])
 
-        # Streams------------------------------------------------------------
+        # Streams
 
         Hin = {}
         Hout = {}
@@ -409,7 +410,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         Path to the CSV file containing building unit data. Default is 'building_units.csv'.
     district_data : str or bool or None, optional
         Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
-        If None, district units won't be considered. Default is None.
+        If None, district units will not be considered. Default is None.
     storage_data :  str or bool or None, optional
         Path to the CSV file containing storage unit data. If True, storage units are initialized with 'storage_units.csv'.
         If None, storage units won't be considered. Default is None.

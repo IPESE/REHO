@@ -13,7 +13,7 @@ set House ordered;		# Set of houses (clusters)
 set Services;			# Set of services (2nd clusters)
 set Period;				# Set of periods (days)
 set PeriodStandard;		# Set of standard periods (not extreme) 
-set PeriodExtrem := {Period diff PeriodStandard};
+set PeriodExtreme := {Period diff PeriodStandard};
 set Lca_kpi;
 set HP_Tsupply default {35,45,55};																	#-
 
@@ -297,9 +297,9 @@ param Costs_House_limit{h in House} default 0;						# CHF/yr
 param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
 
-param n_years default 25;											# yr
-param i_rate default 0.02;											# -
-param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);	# -
+param n_years default 25;
+param i_rate default 0.02;
+param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
 
 var Costs_Unit_inv{u in Units} >= 0;
 var Costs_House_inv{h in House} >= Costs_House_limit[h];

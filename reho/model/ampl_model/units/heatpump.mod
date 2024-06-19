@@ -123,7 +123,7 @@ sum{st in StreamsOfUnit[u]: Streams_Tin[st,p,t] < 55} Streams_Q['DHW',st,p,t] = 
 #--Totals
 #-Attention! This is an averaged power consumption value over the whole operation set
 subject to HP_c1{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
-Units_demand['Electricity',u,p,t] = sum{T in HP_Tsupply}(HP_E_heating[h,u,p,t,T]);
+Units_demand['Electricity',u,p,t] = sum{T in HP_Tsupply} HP_E_heating[h,u,p,t,T];
 
 #--Sizing 
 subject to HP_c2{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:

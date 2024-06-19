@@ -17,7 +17,6 @@ param T_m_in{h in House}  :=  (T_DHN_supply_cst + T_DHN_return_cst)/2 - (Th_supp
 
 param U_hex default 1; # kW / m2K
 
-
 # direct heating
 subject to HEX_heating1{h in House,u in {'DHN_hex_in_'&h},p in Period,t in Time[p]}:
 	Units_demand['Heat',u,p,t]/(U_hex * T_m_in[h])  <= Units_Mult[u];	
@@ -26,8 +25,7 @@ subject to HEX_heating2{h in House,u in {'DHN_hex_in_'&h},p in Period,t in Time[
 	Units_demand['Heat',u,p,t] * DHN_efficiency_in[u] = sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t];
 
 subject to HEX_heating3{h in House, u in {'DHN_hex_in_'&h}, p in Period,t in Time[p]}:
-	Units_demand['Heat',u,p,t] <= 1e4 *  DHN_efficiency_in[u];	
-
+	Units_demand['Heat',u,p,t] <= 1e4 *  DHN_efficiency_in[u];
 
 # direct cooling
 subject to HEX_cooling1{h in House, u in {'DHN_hex_out_'&h}, p in Period,t in Time[p]}:

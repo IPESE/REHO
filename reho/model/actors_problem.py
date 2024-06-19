@@ -35,8 +35,8 @@ class ActorsProblem(REHO):
         if bounds is not None:
             sampler = qmc.LatinHypercube(d=2)
             sample = sampler.random(n=n_sample)
-            l_bound = [bounds[key][0] for key in bounds]
-            u_bound = [bounds[key][1] for key in bounds]
+            l_bound = [bounds[key][0] for key in ["Utility", "Owners"]]
+            u_bound = [bounds[key][1] for key in ["Utility", "Owners"]]
             samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio'])
             self.samples = samples.round(4)
         else:
@@ -45,14 +45,14 @@ class ActorsProblem(REHO):
         Scn_ID = self.scenario['name']
         self.pool = mp.Pool(mp.cpu_count())
         results = {ids: self.pool.apply_async(self.run_actors_optimization, args=(self.samples, ids)) for ids in self.samples.index}
-        while len(results[list(self.samples.index)[-1]].get()) != 2:
+        while len(results[list(self.samples.index)[-1]].get()) != 3:
             time.sleep(1)
         for ids in self.samples.index:
-            df_Results, df_Results_MP = results[ids].get()
-            self.add_df_Results(None, Scn_ID, ids, self.scenario)
+            df_Results, df_Results_MP, solver_attributes = results[ids].get()
+            self.add_df_Results_MP(Scn_ID, ids, self.iter, df_Results_MP, solver_attributes)    # store results MP (pool.apply_async don't store it)
+            self.add_df_Results(None, Scn_ID, ids, self.scenario)   # process results based on results MP
             self.get_KPIs(Scn_ID, ids)
-            self.results_MP[Scn_ID][ids] = df_Results_MP
-    
+
         self.samples["objective"] = None
         for i in self.results_MP[self.scenario["name"]]:
             if self.results_MP[self.scenario["name"]][i] is not None:
@@ -71,7 +71,7 @@ class ActorsProblem(REHO):
             scn = self.scenario["name"]
             self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=0)
             self.add_df_Results(None, scn, 0, self.scenario)
-            return self.results[scn][0], self.results_MP[scn][0]
+            return self.results[scn][0], self.results_MP[scn][0][self.iter], self.solver_attributes_MP
         except:
             return None, None
     

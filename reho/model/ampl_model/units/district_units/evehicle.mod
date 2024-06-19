@@ -23,8 +23,8 @@ param EV_eff_di default 0.9;				#-	[1]
 param EV_limit_ch default 0.8;				#-	[2]
 param EV_limit_di default 0.2;				#-	[1]
 param EV_efficiency default 0.99992;		#-	[1]
-param EV_charger_Power default 7;			#kW	 	[5] and [7]
-param EV_capacity default 70;		 	[5] and [6]
+param EV_charger_Power default 7;			# kW [5] and [7]
+param EV_capacity default 70;		 		# kWh [5] and [6]
 param EV_plugged_out{p in Period, t in Time[p]} default 0.15;	# -
 param EV_plugging_in{p in Period, t in Time[p]} default 0.15;	# -
 param normalization_factor :=  max{p in PeriodStandard} ( sum{t in Time[p]}EV_plugging_in[p,t]);

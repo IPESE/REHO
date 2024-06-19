@@ -5,37 +5,37 @@
 ######################################################################################################################
 
 # Sets
-set Layers;          # Set of layers
-set LayerTypes;      # Type of layer (HeatCascade, MassBalance, ...)
+set Layers;
+set LayerTypes;
 set LayersOfType{LayerTypes} within Layers;
 set ResourceBalances := if (exists{t in LayerTypes} t = 'ResourceBalance') then ({l in LayersOfType["ResourceBalance"]}) else ({});
 
-set UnitTypes default {'Battery', 'EV'};
-set Units default {'Battery_district', 'EV_district'};              # Set of units
-set UnitsOfType{UnitTypes} within Units default {'Battery_district', 'EV_district'};
+set UnitTypes default {};
+set Units default {};
+set UnitsOfType{UnitTypes} within Units default {};
 set UnitsOfLayer{Layers} within Units;
 
 set House;
 set HousesOfLayer{Layers} within House;
 set FeasibleSolutions ordered;
 
-set Period;				# Set of periods (days)
-set PeriodStandard; # TODO set time as function of period as in sub_problem.mod
-set PeriodExtrem := {Period diff PeriodStandard};
+set Period;
+set PeriodStandard;
+set PeriodExtreme := {Period diff PeriodStandard};
 
 param TimeStart default 1;
 param TimeEnd{p in Period};
 set Time{p in Period} := {TimeStart .. TimeEnd[p]} ordered;
 
-param dt{p in Period} default 1;		#h
-param dp{p in Period}default 1;			#days
+param dt{p in Period} default 1;       # h
+param dp{p in Period} default 1;			# days
 
 param Area_tot default 100;
 param ERA{h in House} default 100;
 
-param n_years default 20;                                           #yr
-param i_rate default 0.02;                                          #-
-param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);    #-
+param n_years default 25;
+param i_rate default 0.02;
+param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -143,8 +143,8 @@ param GWP_house_constr_SPs{f in FeasibleSolutions, h in House} >= 0;
 #--------------------------------------------------------------------------------------------------------------------#
 #-OPERATIONAL EXPENSES
 #--------------------------------------------------------------------------------------------------------------------#
-param Cost_supply_cst{l in ResourceBalances};   # CHF/kWh
-param Cost_demand_cst{l in ResourceBalances};   # CHF/kWh
+param Cost_supply_cst{l in ResourceBalances} default 0;   # CHF/kWh
+param Cost_demand_cst{l in ResourceBalances} default 0;   # CHF/kWh
 param Cost_supply_network{l in ResourceBalances, p in Period,t in Time[p]} default Cost_supply_cst[l];
 param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} default Cost_demand_cst[l];
 
@@ -160,9 +160,9 @@ Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_su
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES
 #--------------------------------------------------------------------------------------------------------------------#
-param Cost_inv1{u in Units};    # CHF
-param Cost_inv2{u in Units};    # CHF/...
-param lifetime {u in Units};    # years
+param Cost_inv1{u in Units} default 0;    # CHF
+param Cost_inv2{u in Units} default 0;    # CHF/...
+param lifetime {u in Units} default 0;    # years
 
 var Costs_Unit_inv{u in Units} >= -1e-4;
 var Costs_inv >= -1e-4;
@@ -200,10 +200,10 @@ Costs_tot = Costs_op + Costs_inv;
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-param GWP_unit1{u in Units};
-param GWP_unit2{u in Units};
-param GWP_supply_cst{l in ResourceBalances};
-param GWP_demand_cst{l in ResourceBalances};                   #-
+param GWP_unit1{u in Units} default 0;
+param GWP_unit2{u in Units} default 0;
+param GWP_supply_cst{l in ResourceBalances} default 0;
+param GWP_demand_cst{l in ResourceBalances} default 0;
 param GWP_supply{l in ResourceBalances, p in Period,t in Time[p]} default GWP_supply_cst[l];
 param GWP_demand{l in ResourceBalances, p in Period,t in Time[p]} default GWP_demand_cst[l];  
 
@@ -373,7 +373,7 @@ var penalties default 0;
 
 subject to penalties_contraints:
 penalties = penalty_ratio * (Costs_inv + Costs_op + sum{k in Lca_kpi} lca_tot[k] +
-            sum{l in ResourceBalances,p in PeriodExtrem,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t])) + Costs_cft;
+            sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t])) + Costs_cft;
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Objective functions

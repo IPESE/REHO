@@ -105,28 +105,43 @@ def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, ch
 
 
 def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, units='MWh', display_label_value=True, scaling_factor=1):
-    # Hypotheses :
-    # 1. DHW demand taken as the supply of the watertank DHW
-    # 2. no flow: electrical storage system to grid feed in, all to 'feed in electrical grid ' is from PV
-    # 3. Small losses of NG, heat, wood,... between network and devices not accounted
-    # 4. Electricity for 'Data heat' fully accounted as electricity consumption (Layer Data: not in sankey)
-    # 5. Electricity produced by technologies can be stored (e.g. NG_cogen elec -> battery)
+    """
 
-    # Multi building :
-    # supported
+    :param df_results:
+    :param label:
+    :param color:
+    :param precision:
+    :param units:
+    :param display_label_value:
+    :param scaling_factor:
+    :return:
 
-    # !! MAKE SURE : all the possible technologies/sources/demands are in the list below (if not, risk that sth will be
-    # not displayed, there is no check provided by this function for that)
-    # List of supported technologies/sources/demands
+    Hypotheses
+    1. DHW demand taken as the supply of the watertank DHW
+    2. no flow: electrical storage system to grid feed in, all to 'feed in electrical grid ' is from PV
+    3. Small losses of NG, heat, wood,... between network and devices not accounted
+    4. Electricity for 'Data heat' fully accounted as electricity consumption (Layer Data: not in sankey)
+    5. Electricity produced by technologies can be stored (e.g. NG_cogen elec -> battery)
+
+    ! Make sure that all the possible technologies/sources/demands are in the list below.
+    If not, risk that something will be not displayed, there is no check provided by this function for that.
+    """
+
     # Electrical storage device
     elec_storage_list = ['Battery', 'EV_district']
+
     # Manual handled devices (list below not used, just here for the information)
     # manual_device = ['PV', 'WaterTankSH']
+
     # Semi automatic handled devices
-    semi_auto_device = ['HeatPump_Air', 'HeatPump_DHN', 'NG_Boiler', 'ThermalSolar', 'OIL_Boiler',
-                        'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'NG_Cogeneration',
-                        'HeatPump_Lake', 'WOOD_Stove', 'HeatPump_Geothermal', 'Air_Conditioner',
-                        'DataHeat_DHW']  # name must be the same as used by REHO
+    semi_auto_device = [
+        'NG_Boiler', 'NG_Cogeneration', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
+        'ElectricalHeater_DHW', 'ElectricalHeater_SH',
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'Air_Conditioner',
+        'DHN_hex_in', 'DHN_hex_out'
+        'DataHeat_DHW', 'DataHeat_SH',
+    ]
+
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 
     # Select only not null lines in df_annuals

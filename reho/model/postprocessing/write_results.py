@@ -183,7 +183,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df_Grid_t = pd.concat([df1, df2, df_cs, df_cd, df_em_tot, df_electricity], axis=1)
 
-        if not method["district-scale"] or not method["district-scale"]:
+        if not method["district-scale"] and not method["actors_problem"]:
             df3 = get_ampl_data(ampl, 'Network_demand', multi_index=True)
             df3.columns = ['Grid_demand']
             df4 = get_ampl_data(ampl, 'Network_supply', multi_index=True)
@@ -363,8 +363,10 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Results["df_Buildings_t"] = set_df_buildings_t(ampl)
         df_Results["df_Unit_t"] = df_Unit_t
     else:
-        for i in ['Cost_demand', 'Cost_supply', 'GWP_demand', 'GWP_supply', "Uncontrollable_load"]:
-            del df_Results["df_Grid_t"][i]
+        df_Results["df_Buildings_t"] = set_df_buildings_t(ampl)[["House_Q_heating", "T_in", "House_Q_DHW"]]
+        bat = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("Battery")][['Units_demand', 'Units_supply']]
+        pv = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("PV")][['Units_supply', 'Units_curtailment']]
+        df_Results["df_Unit_t"] = pd.concat([pv, bat])
 
     if method["save_streams"]:
         df_Results["df_Streams_t"] = set_df_streams_t(ampl)
@@ -524,13 +526,16 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_Results["df_Unit"] = df_Unit.sort_index()
 
     # Unit_t
-    df1 = get_ampl_data(ampl, 'Units_demand', multi_index=True)
-    df2 = get_ampl_data(ampl, 'Units_supply', multi_index=True)
-    df3 = get_ampl_data(ampl, 'BAT_E_stored', multi_index=True)
-    df3 = pd.concat([df3], keys=['Electricity'], names=['Layer'])
-    df_Unit_t = pd.concat([df1, df2, df3], axis=1)
-
     if len(district.UnitsOfDistrict) > 0:
+        df1 = get_ampl_data(ampl, 'Units_demand', multi_index=True)
+        df2 = get_ampl_data(ampl, 'Units_supply', multi_index=True)
+        df_Unit_t = pd.concat([df1, df2], axis=1)
+
+        if "Battery_district" in district.UnitsOfDistrict:
+            df3 = get_ampl_data(ampl, 'BAT_E_stored', multi_index=True)
+            df3 = pd.concat([df3], keys=['Electricity'], names=['Layer'])
+            df_Unit_t = pd.concat([df_Unit_t, df3], axis=1)
+
         if "EV_district" in district.UnitsOfDistrict:
             df4 = get_ampl_data(ampl, 'EV_E_stored', multi_index=True)
             df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
@@ -539,16 +544,19 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             df6 = get_ampl_data(ampl, 'EV_V2V', multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6], axis=1)
-    df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-    units_districts = district.UnitsOfDistrict
-    district_l_u = []
-    for layer, units in district.UnitsOfLayer.items():
-        [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]
-    df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
-    df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
+        df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-    # df_lca
+        units_districts = district.UnitsOfDistrict
+        district_l_u = []
+        for layer, units in district.UnitsOfLayer.items():
+            [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]
+        df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
+        df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
+    else:
+        df_Results["df_Unit_t"] = pd.DataFrame()
+
+    # LCA
     if method["save_lca"]:
         LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)
         LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)

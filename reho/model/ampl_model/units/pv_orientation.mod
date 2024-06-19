@@ -1,6 +1,6 @@
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---IRRADIATION MODEL - SKYDOME, ORIENTATION PV PANEL
+# PV panel considering skydome and orientation
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
@@ -32,14 +32,14 @@ param pi := 4*atan(1);
 param deg_rad := 2*pi / 360; 
 param Elevation_angle{pt in Patches}= acos(Cos_e[pt])/deg_rad;
 #--------------------------------------------------------------------------------------------------------------------#
-#---Orientate surface in skydome
+# Orientate surface in skydome
 #--------------------------------------------------------------------------------------------------------------------#
 #rotation of the PV panel, negative values for patches which cannot be "seen" from the panel
 param Rotation{s in Surface, (az,ti) in ConfigOfSurface[s],pt in Patches} :=
 	max(sin(deg_rad*az)*sin(deg_rad*ti)*Sin_a[pt]*Cos_e[pt] + cos(deg_rad*az)*sin(deg_rad*ti)*Cos_a[pt]*Cos_e[pt]+cos(deg_rad*ti)*Sin_e[pt],0); 
 
 #--------------------------------------------------------------------------------------------------------------------#
-#---Panel Arrangement and Mutual Shading
+# Panel Arrangement and Mutual Shading
 #--------------------------------------------------------------------------------------------------------------------#
 # To minimize inter modular shadowing, PV modules have to leave some space between rows.
 # How much space one panel occupies is indicated by the PVA_module_coverage value.
@@ -53,7 +53,7 @@ param PVA_module_coverage{h in House, u in UnitsOfType['PV'] inter UnitsOfHouse[
 		else PVA_module_height[u]*PVA_module_width[u]);
 
 #--------------------------------------------------------------------------------------------------------------------#
-#--- Mutual Shading and linerization evaluation skydpme 
+#  Mutual Shading and linerization evaluation skydpme
 #--------------------------------------------------------------------------------------------------------------------#
 
 param Limiting_angle_shadow {h in  House, pt in Patches} default 0;
@@ -68,13 +68,13 @@ param unshaded_share{h in  House, s in SurfaceOfHouse[h], (az,ti) in ConfigOfSur
  if s in (SurfaceOfType['Flat_roof'] union SurfaceOfType['Facades']) then (if Elevation_angle[pt]<= (Limiting_angle[h,s,az,ti,pt]-6)  then 0 else ( if  Elevation_angle[pt]>= (Limiting_angle[h,s,az,ti,pt]+6) then 1 else (Elevation_angle[pt]-Limiting_angle[h,s,az,ti,pt]+6)/12)) 
  else 1;
 #--------------------------------------------------------------------------------------------------------------------#
-#--- Irradiation density on oriented panel W/m2
+#  Irradiation density on oriented panel W/m2
 #--------------------------------------------------------------------------------------------------------------------#
 param Irr_pv {h in House, s in SurfaceOfHouse[h], (az,ti)in ConfigOfSurface[s], p in Period, t in Time[p] } :=   sum{pt in Patches}unshaded_share[h,s,az,ti,pt] *Rotation[s,az,ti,pt]*Irr[pt,p,t] ; 
 param Irr_pv_without_loss {h in House, s in SurfaceOfHouse[h], (az,ti)in ConfigOfSurface[s], p in Period, t in Time[p] } :=   sum{pt in Patches}Rotation[s,az,ti,pt]*Irr[pt,p,t] ;
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---PV PANEL MODEL
+# PV PANEL MODEL
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 #-Static photovoltaic array model including:
@@ -82,8 +82,7 @@ param Irr_pv_without_loss {h in House, s in SurfaceOfHouse[h], (az,ti)in ConfigO
 # 	2. curtailment capabilities
 #-References : 
 # [1]	A. Ashouri et al., 2014
-# ----------------------------------------- PARAMETERS ---------------------------------------
-	
+
 param PVA_inverter_eff{u in UnitsOfType['PV']} default 0.97;		#- 		estimation
 param PVA_U_h{u in UnitsOfType['PV']} default 29.1;				#? 		[1]
 param PVA_F{u in UnitsOfType['PV']} default 0.9;					#- 		[1]
@@ -150,4 +149,3 @@ HouseSurfaceArea[h,s] = ( sum{ (az,ti) in ConfigOfSurface[s]}  PVA_module_covera
 
 subject to enforce_PV_max_fac{h in House, s in SurfaceOfHouse[h] inter SurfaceOfType['Facades'] ,u in UnitsOfType['PV'] inter UnitsOfHouse[h]}:
 HouseSurfaceArea[h,s] = ( sum{ (az,ti) in ConfigOfSurface[s]}  PVA_module_coverage[h,u,s,az,ti]*PVA_module_nbr[h,s, az,ti,u]);
-#-----------------------------------------------------------------------------------------------------------------------

@@ -124,7 +124,7 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     # manual_device = ['PV', 'WaterTankSH']
     # Semi automatic handled devices
     semi_auto_device = ['HeatPump_Air', 'HeatPump_DHN', 'NG_Boiler', 'ThermalSolar', 'OIL_Boiler',
-                        'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'NG_Cogeneration', 'DHN_in',
+                        'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'NG_Cogeneration',
                         'HeatPump_Lake', 'WOOD_Stove', 'HeatPump_Geothermal', 'Air_Conditioner',
                         'DataHeat_DHW']  # name must be the same as used by REHO
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically

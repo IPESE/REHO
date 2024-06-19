@@ -1,7 +1,7 @@
 set Actors default {"Owners", "Renters", "Utility"};
 set ActorObjective;
 
-# energy tariffs
+# Energy tariffs
 var Cost_supply_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
 var Cost_demand_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
 var Cost_self_consumption{f in FeasibleSolutions, h in House};
@@ -24,16 +24,14 @@ subject to size_cstr5{l in ResourceBalances, f in FeasibleSolutions, h in House:
 subject to size_cstr6{l in ResourceBalances, f in FeasibleSolutions, h in House: l="Electricity"}:           
    Cost_self_consumption[f,h] <= Cost_supply_cst[l] *lambda[f,h];
 
-
-# self-consumption
+# Self-consumption
 param PV_prod{f in FeasibleSolutions, h in House, p in Period, t in Time[p]};
 param PV_self_consummed{f in FeasibleSolutions, h in House, p in Period, t in Time[p]} :=  PV_prod[f,h,p,t] - Grid_demand["Electricity",f,h,p,t];
 var objective_functions{a in Actors};
 
-
-/*---------------------------------------------------------------------------------------------------------------------------------------
-Renters constraints
----------------------------------------------------------------------------------------------------------------------------------------*/
+#--------------------------------------------------------------------------------------------------------------------#
+# Renters constraints
+#--------------------------------------------------------------------------------------------------------------------#
 var C_op_renters_to_utility{h in House};
 var C_op_renters_to_owners{h in House};
 
@@ -46,10 +44,9 @@ C_op_renters_to_owners[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p
 subject to obj_fct1:
 objective_functions["Renters"] = sum {h in House} (C_op_renters_to_utility[h] + C_op_renters_to_owners[h]);
 
-
-/*---------------------------------------------------------------------------------------------------------------------------------------
-Utility constraints
----------------------------------------------------------------------------------------------------------------------------------------*/
+#--------------------------------------------------------------------------------------------------------------------#
+# Utility constraints
+#--------------------------------------------------------------------------------------------------------------------#
 param utility_portfolio_min default -1e6;
 var utility_portfolio;
 var C_op_utility_to_owners{h in House};
@@ -66,10 +63,9 @@ utility_portfolio >= utility_portfolio_min;
 subject to obj_fct2:
 objective_functions["Utility"] = - utility_portfolio;
 
-
-/*---------------------------------------------------------------------------------------------------------------------------------------
-Owners constraints
----------------------------------------------------------------------------------------------------------------------------------------*/
+#--------------------------------------------------------------------------------------------------------------------#
+# Owners constraints
+#--------------------------------------------------------------------------------------------------------------------#
 param owner_portfolio_min default -1e6;
 var owner_portfolio{h in House};
 
@@ -83,9 +79,8 @@ subject to obj_fct3:
 objective_functions["Owners"] = - sum{h in House} owner_portfolio[h];
 
 
-/*---------------------------------------------------------------------------------------------------------------------------------------
-Objectives
----------------------------------------------------------------------------------------------------------------------------------------*/
-
+#--------------------------------------------------------------------------------------------------------------------#
+# Objectives
+#--------------------------------------------------------------------------------------------------------------------#
 minimize TOTEX_bui:
 sum {a in ActorObjective} objective_functions[a];

@@ -165,7 +165,7 @@ class SubProblem:
         if 'NG_Cogeneration' in self.infrastructure_sp.UnitTypes:
             ampl.read('ng_cogeneration.mod')
         if 'DHN_hex' in self.infrastructure_sp.UnitTypes:
-            ampl.read('DHN_HEX.mod')
+            ampl.read('DHN_hex.mod')
             ampl.read('DHN_pipes.mod')
         if 'PV' in self.infrastructure_sp.UnitTypes:
             if self.method_sp['use_pv_orientation']:
@@ -207,8 +207,7 @@ class SubProblem:
             ampl.read('heatstorage_interperiod.mod')
             ampl.read('LHS_storage.mod')
             ampl.read('battery_interperiod.mod')
-            # ampl.read('PTES_aggregated.mod')
-            ampl.read('PTES_split.mod')
+            ampl.read('PTES.mod')
             ampl.read('CH4_tank.mod')
 
             # H2 Units
@@ -246,9 +245,6 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
         # Design Structure: Building Cluster, Units and Layers
         # -----------------------------------------------------------------------------------------------------#
-
-        if self.method_sp['use_discrete_units']:
-            self.infrastructure_sp.set_discretize_unit_size()
 
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
         self.parameters_to_ampl['Grids_flowrate'] = self.infrastructure_sp.Grids_flowrate
@@ -698,8 +694,6 @@ def initialize_default_methods(method):
     if 'switch_off_second_objective' not in method:
         method['switch_off_second_objective'] = False
 
-    if 'use_discrete_units' not in method:
-        method['use_discrete_units'] = False
     if 'fix_units' not in method:
         method['fix_units'] = False
 

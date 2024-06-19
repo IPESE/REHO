@@ -40,4 +40,3 @@ if __name__ == '__main__':
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='3e')
-

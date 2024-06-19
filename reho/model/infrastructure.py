@@ -64,7 +64,6 @@ class Infrastructure:
         for s in self.Services:
             self.UnitsOfService[s] = np.array([])
 
-        self.UnitSizes = {}
         self.UnitsOfDistrict = np.array([])
 
         self.HousesOfLayer = {}
@@ -300,27 +299,6 @@ class Infrastructure:
         df_lca["Units"] = complete_name
         df_lca = df_lca.set_index("Units", append=True)
         self.Units_Parameters_lca = pd.concat([self.Units_Parameters_lca, df_lca])
-
-    def set_discretize_unit_size(self):
-
-        sizes = {'Air_Conditioner': [0],
-                 'HeatPump': [0, 2.7, 3.4, 5.5],
-                 'WaterTankDHW': [0, 0.07, 0.125, 0.20, 0.8],
-                 'WaterTankSH': [0, 0.20, 0.40, 0.60, 0.75],
-                 'ElectricalHeater': [0, 3.0, 6.0, 9.0, 12.0, 15, 20, 22],
-                 'NG_Boiler': [0, 11.8],
-                 'Battery': [0, 2.5, 5, 10],
-                 'NG_Cogeneration': [0, 0.7],
-                 'EV': [],
-                 'PV': [],
-                 'ThermalSolar': []}
-
-        for h in self.House:
-            for u in self.houses[h]['units']:
-                complete_name = u['name'] + '_' + h
-                self.UnitSizes[complete_name] = np.array(sizes[u['UnitOfType']])
-
-        self.Set['UnitSizes'] = self.UnitSizes  # add to all sets
 
 
 def prepare_units_array(file, exclude_units=[], grids=None):

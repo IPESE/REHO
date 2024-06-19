@@ -1,6 +1,6 @@
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---OBJECTIVE FUNCTIONS
+# OBJECTIVE FUNCTIONS
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
@@ -37,7 +37,7 @@ minimize Human_toxicity:
 lca_tot["Human_toxicity"] + penalties;
 
 #--------------------------------------------------------------------------------------------------------------------#
-#---Decomposition
+# Decomposition
 #--------------------------------------------------------------------------------------------------------------------#
 
 set Obj_fct := Lca_kpi union {'TOTEX', 'OPEX', 'CAPEX', 'GWP'};
@@ -47,10 +47,9 @@ minimize SP_obj_fct:
 beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau*(Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
 sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties;
 
-
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---EPSILON CONSTRAINTS
+# EPSILON CONSTRAINTS
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
@@ -70,7 +69,6 @@ var EMOO_slack_capex 						>= 0, <= abs(EMOO_CAPEX)*(sum{h in House} ERA[h]);
 var EMOO_slack_opex							>= 0, <= abs(EMOO_OPEX)*(sum{h in House} ERA[h]);
 var EMOO_slack_totex						>= 0, <= abs(EMOO_TOTEX)*(sum{h in House} ERA[h]);
 var EMOO_slack_gwp							>= 0, <= abs(EMOO_GWP)*(sum{h in House} ERA[h]);
-
 
 subject to EMOO_CAPEX_constraint:
 tau*(Costs_inv +Costs_rep )+ EMOO_slack_capex = EMOO_CAPEX*(sum{h in House} ERA[h]);
@@ -103,7 +101,7 @@ Network_supply[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_supply );
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---PROFILES
+# PROFILES
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
@@ -114,7 +112,7 @@ subject to network_total_demand{l in ResourceBalances,p in Period,t in Time[p]}:
 Network_demand[l,p,t] <= sum{h in House}(Grid_demand[l,h,p,t]);
 
 #--------------------------------------------------------------------------------------------------------------------#
-#---Annual profiles
+# Annual profiles
 #--------------------------------------------------------------------------------------------------------------------#
 var AnnualUnit_Q{s in Services,u in UnitsOfService[s]}          >= 0;   #MWh
 var AnnualUnit_in{l in ResourceBalances,u in UnitsOfLayer[l]}   >= 0;   #MWh
@@ -156,5 +154,3 @@ AnnualHeatGainHouse[h] = sum{p in PeriodStandard,t in Time[p]}(HeatGains[h,p,t]*
 
 subject to total_solar_gains{h in House}:
 AnnualSolarGainHouse[h] = sum{p in PeriodStandard,t in Time[p]}(SolarGains[h,p,t]*dp[p]*dt[p]/1000);
-
-

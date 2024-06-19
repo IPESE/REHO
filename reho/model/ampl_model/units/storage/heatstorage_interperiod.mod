@@ -1,12 +1,9 @@
-
-
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---BUFFER TANK MODEL
+# Heat storage tank, with interperiod storage conversion
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
-# Model of heat storage tank used again. Only interperiod storage conversion.
-# -------------------------------------------- SETS ------------------------------------------
+
 param TES_IP_T_min{h in House,p in Period} default 20;																											#deg C															
 param TES_IP_T_max{h in House,p in Period} := min{Thp in HP_Tsupply: Thp >= min( max{t in Time[p]} Th_supply[h,p,t], max{i in HP_Tsupply} i)} Thp;	#deg C
 param TES_IP_T_ret{h in House,p in Period} := (T_comfort_min_0[h] + TES_IP_T_max[h,p]*(alpha_h[h]*Mcp_0h[h]))/(1+alpha_h[h]*Mcp_0h[h]);									#deg C
@@ -16,17 +13,14 @@ set TESindex_IP{h in House,p in Period} ordered by Reals := {TES_IP_T_max[h,p],T
 
 param TES_IP_dT{h in House,p in Period,T in TESindex_IP[h,p] diff {first(TESindex_IP[h,p])} } := T - prev(T,TESindex_IP[h,p]);											#deg C
 
-# ----------------------------------------- PARAMETERS ---------------------------------------
 param TES_IP_diameter{UnitsOfType['WaterTankSH_interperiod']} default 0.98;		#m			Viessmann (mean from Vitocell E)
 param TES_IP_U_h{UnitsOfType['WaterTankSH_interperiod']} 	default 0.0013;		#kW/m2 K	[1]
-param TES_IP_eff_ch{UnitsOfType['WaterTankSH_interperiod']} 	default 0.99;		#-			estimated
-param TES_IP_eff_di{UnitsOfType['WaterTankSH_interperiod']} 	default 0.99;		#-			estimated
+param TES_IP_eff_ch{UnitsOfType['WaterTankSH_interperiod']} 	default 0.99;		#-
+param TES_IP_eff_di{UnitsOfType['WaterTankSH_interperiod']} 	default 0.99;		#-
 param TES_IP_Tamb{UnitsOfType['WaterTankSH_interperiod']} 	default 20;			#degC		estimated
 param TES_IP_efficiency{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h],p in Period,T in TESindex_IP[h,p] diff {first(TESindex_IP[h,p])} }:=
 	4*TES_IP_U_h[u]*(T-TES_IP_Tamb[u])*3600/(cp_water_kj*TES_IP_diameter[u]*rho_water*TES_IP_dT[h,p,T]);						#-
-
 	
-# ----------------------------------------- VARIABLES ---------------------------------------
 # overall energy capacity
 var TES_IP_Mass{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h], hy in Year,TESindex_IP[h,PeriodOfYear[hy]]}>= 0,<= 1e4*sum{i in House}(ERA[i]);	#kg
 # Flow entering (positive energy) a layer									>= 0,<= 1e4*sum{i in House}(ERA[i]);	#kg
@@ -34,15 +28,12 @@ var TES_IP_mf_cold{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter 
 # Flow leaving a layer
 var TES_IP_mf_hot{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h],p in Period,t in Time[p],T in TESindex_IP[h,p] diff {first(TESindex_IP[h,p])}} 	>= 0,<= 1e4*sum{i in House}(ERA[i]);	#kg/h
 
-
-# ---------------------------------------- CONSTRAINTS --------------------------------------
 #-SOC
 subject to TES_IP_c1{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h], hy in Year}:
 sum{T in TESindex_IP[h,PeriodOfYear[hy]]} TES_IP_Mass[h,u,hy,T] = rho_water*Units_Mult[u];														#kg
 
 subject to TES_IP_c2{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h], hy in Year}:
 sum{T in TESindex_IP[h,PeriodOfYear[hy]]}(T*TES_IP_Mass[h,u,hy,T]) >= if (T_ext[PeriodOfYear[hy],TimeOfYear[hy]] <= -70) then rho_water*Units_Mult[u]*Th_return[h,PeriodOfYear[hy],TimeOfYear[hy]] else rho_water*Units_Mult[u]*first(TESindex_IP[h,PeriodOfYear[hy]]);
-
 
 #-CHARGING/DISCHARGING
 subject to TES_IP_c3{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h], hy in Year,T in TESindex_IP[h,PeriodOfYear[hy]] diff {first(TESindex_IP[h,PeriodOfYear[hy]])} }:
@@ -53,7 +44,7 @@ TES_IP_mf_hot[h,u,PeriodOfYear[hy],TimeOfYear[hy],T]*dt[PeriodOfYear[hy]] <= TES
 
 #-STREAMS
 #-cold stream from T-1 to T -> heat (mass) incoming to the slice T, here from point of view of T
-subject to TES_IP_EB_c1{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p],T in TESindex_IP[h,p] diff {first(TESindex_IP[h,p])}: Streams_Tout[st,p,t] = T and Streams_Hout[st] = 1}:
+subject to TES_IP_energy_balance{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p],T in TESindex_IP[h,p] diff {first(TESindex_IP[h,p])}: Streams_Tout[st,p,t] = T and Streams_Hout[st] = 1}:
 TES_IP_mf_cold[h,u,p,t,T] = (TES_IP_eff_ch[u])*(sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t])*dt[p]*3600/( cp_water_kj*TES_IP_dT[h,p,T] );		#kg
 
 #-hot stream from T to T-1 -> heat (mass) leaving to the slice T, here from point of view of T
@@ -80,8 +71,3 @@ subject to TES_IP_MB_c3{h in House,u in (UnitsOfType['WaterTankSH_interperiod'] 
 (TES_IP_Mass[h,u,next(hy,Year),last(TESindex_IP[h,PeriodOfYear[next(hy,Year)]])] - TES_IP_Mass[h,u,hy,last(TESindex_IP[h,PeriodOfYear[hy]])]) = 
 + (TES_IP_mf_cold[h,u,PeriodOfYear[hy],TimeOfYear[hy],last(TESindex_IP[h,PeriodOfYear[hy]])])*dt[PeriodOfYear[hy]] 
 - (TES_IP_efficiency[h,u,PeriodOfYear[hy],last(TESindex_IP[h,PeriodOfYear[hy]])]*TES_IP_Mass[h,u,hy,last(TESindex_IP[h,PeriodOfYear[hy]])] + TES_IP_mf_hot[h,u,PeriodOfYear[hy],TimeOfYear[hy],last(TESindex_IP[h,PeriodOfYear[hy]])])*dt[PeriodOfYear[hy]]; 				#kg
-
-#-CYCLIC CONDITIONS
-#Ensured by circular set
-
-#----------------------------------------------------------------------------------------------------------------------

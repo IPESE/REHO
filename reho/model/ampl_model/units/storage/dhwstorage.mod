@@ -1,8 +1,9 @@
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---DHW TANK MODEL
+# DHW tank
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
+
 #-First-order buffer tank model including:
 #	1. dis-/charging efficiencies 
 #	2. self-discharging efficiency 
@@ -12,28 +13,25 @@
 #	2. cold stream from T-1 to T -> heat (mass) incoming to the slice T, here from point of view of T
 #-References : 
 # [1]	J. Rager, PhD Thesis, 2015.
-# -------------------------------------------- SETS ------------------------------------------
+
 param DHW_T_min := 10;																	#deg C
 param DHW_T_max := 60;																	#deg C
 param DHW_dT 	:= 50;																	#deg C
 
 set DHWindex ordered by Reals 	  := {DHW_T_min .. DHW_T_max by DHW_dT};				#deg C
 
-# ----------------------------------------- PARAMETERS ---------------------------------------
 param DHW_flowrate{h in House, p in Period, t in Time[p]} >= 0 default 0;				#L/h		input data
-param DHW_diameter{UnitsOfType['WaterTankDHW']}>=0 default 0.7;							#m			estimated														
+param DHW_diameter{UnitsOfType['WaterTankDHW']}>=0 default 0.7;							#m
 param DHW_U_h{UnitsOfType['WaterTankDHW']}>=0 default 0.0013;							#kW/m2 K	[1]
-param DHW_eff_ch{UnitsOfType['WaterTankDHW']}>=0 default 0.95;							#-			estimated
+param DHW_eff_ch{UnitsOfType['WaterTankDHW']}>=0 default 0.95;							#-
 param DHW_efficiency{u in UnitsOfType['WaterTankDHW'],T in DHWindex diff {first(DHWindex)}} := 
 	4*DHW_U_h[u]*(T-DHW_T_min)*3600/(cp_water_kj*DHW_diameter[u]*rho_water*DHW_dT);	#-
 
-# ----------------------------------------- VARIABLES ---------------------------------------
 var DHW_Mass{u in UnitsOfType['WaterTankDHW'],T in DHWindex,p in Period,t in Time[p]} 								>= 0,<= 1e2*sum{h in House}(ERA[h]);	#kg
 var DHW_mf_cold{u in UnitsOfType['WaterTankDHW'],T in DHWindex diff {first(DHWindex)},p in Period,t in Time[p]} 	>= 0,<= sum{h in House}(ERA[h]);		#kg/h
 
-# ---------------------------------------- CONSTRAINTS ---------------------------------------
 #-STREAMS
-subject to DHW_EB_c1{h in House,u in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse[h],T in DHWindex diff {first(DHWindex)},st in StreamsOfUnit[u],p in Period,t in Time[p]: T = Streams_Tout[st,p,t] and Streams_Hin[st] = 0}:
+subject to DHW_energy_balance{h in House,u in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse[h],T in DHWindex diff {first(DHWindex)},st in StreamsOfUnit[u],p in Period,t in Time[p]: T = Streams_Tout[st,p,t] and Streams_Hin[st] = 0}:
 DHW_mf_cold[u,T,p,t] = (DHW_eff_ch[u])*(sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t])*dt[p]*3600/(cp_water_kj*DHW_dT);	#kg
 
 #-ENERGY BALANCES
@@ -66,7 +64,7 @@ subject to DHW_c3{h in House,u in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse
 Units_Mult[u] <= max{p in PeriodStandard} (sum{t in Time[p]} DHW_flowrate[h,p,t]/rho_water);									#m3
 
 #subject to DHW_c4{h in House,u in (UnitsOfType['ElectricalHeater'] inter UnitsOfService['DHW']) inter UnitsOfHouse[h]}:	# enforces minimum ElectricalHeater size for dhw tank
-#Units_Mult[u] >= (cp_water_kj/3600)*(max{p in Period,t in Time[p]} DHW_flowrate[h,p,t])*(DHW_T_max-DHW_T_min);					#kW
+#Units_Mult[u] >= (cp_water_kj/3600)*(max{p in Period,t in Time[p]} DHW_flowrate[h,p,t])*(DHW_T_max-DHW_T_min);
 
 subject to DHW_c5{h in House,u in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 DHW_Mass[u,last(DHWindex),p,t] >= max{ip in Period,it in Time[ip]} (DHW_flowrate[h,ip,it]);										#kg
@@ -89,7 +87,3 @@ subject to DHW_MB_cyclic3{h in House,u in (UnitsOfType['WaterTankDHW'] inter Uni
 (DHW_Mass[u,last(DHWindex),p,first(Time[p])] - DHW_Mass[u,last(DHWindex),p,t]) = 
 + (DHW_mf_cold[u,last(DHWindex),p,t])*dt[p]
 - (DHW_flowrate[h,p,t] + DHW_efficiency[u,last(DHWindex)]*DHW_Mass[u,last(DHWindex),p,t])*dt[p]; 								#kg
-								
-#-----------------------------------------------------------------------------------------------------------------------	
-
-

@@ -1,6 +1,6 @@
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---# General Sets & Parameters
+# General sets & parameters
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
@@ -37,20 +37,14 @@ param n_years default 20;                                           #yr
 param i_rate default 0.02;                                          #-
 param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);    #-
 
-
-
-
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---# convexity constraints
+# Convexity constraints
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-
-# variables
 var lambda{f in FeasibleSolutions, h in House} >= 0;
 var lambda_binary{f in FeasibleSolutions, h in House} binary;
-
 
 subject to convexity_1{h in House}: #mu
 sum{f in FeasibleSolutions}(lambda[f,h]) = 1;
@@ -61,17 +55,15 @@ lambda[f,h] <=1;
 subject to convexity_binary{f in FeasibleSolutions, h in House}:
 lambda[f,h] = lambda_binary[f,h];
 
-
-
-
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---Network BALANCES
+# Network balances
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
+
 param Grid_supply{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in Time[p]};
 param Grid_demand{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in  Time[p]};
-param TransformerCapacity{l in ResourceBalances} default 1e8;         #kW
+param TransformerCapacity{l in ResourceBalances} default 1e8;
 param Grids_flowrate{l in ResourceBalances, h in House} default 1e9;
 param Grid_usage_max_demand default 0;
 param Grid_usage_max_supply default 0;
@@ -87,11 +79,11 @@ var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0 , <=1e
 var Network_supply_GWP {l in ResourceBalances, p in Period, t in Time[p]} >= 0;
 var Network_demand_GWP{l in ResourceBalances, p in Period, t in Time[p]} >= 0;
 
-var Profile_grid{l in ResourceBalances, p in Period,t in Time[p]}  >= -1e2*Area_tot,<= 1e2*Area_tot;   #kW
-var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >= -1e2*ERA[h],<= 1e2*ERA[h];                                                            #kW
+var Profile_grid{l in ResourceBalances, p in Period,t in Time[p]}  >= -1e2*Area_tot,<= 1e2*Area_tot;
+var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >= -1e2*ERA[h],<= 1e2*ERA[h];
 
 
-# model constraints
+# Constraints
 subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #pi_c
    Network_supply[l,p,t] - Network_demand[l,p,t]   =  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
@@ -122,49 +114,40 @@ subject to TOTAL_line_c6{l in ResourceBalances, p in Period,t in Time[p]}:
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---UNITS
+# Units
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-
-#-PARAMETERS
 param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
 
-#-VARIABLES
-var Units_Mult{u in Units} <= Units_Fmax[u];                            #var
-var Units_Use{u in Units} binary >= 0, default 0;                                       #-
+var Units_Mult{u in Units} <= Units_Fmax[u];
+var Units_Use{u in Units} binary >= 0, default 0;
 
-
-#-CONSTRAINTS
 subject to Unit_sizing_c1{u in Units}:
 Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
 
 subject to Unit_sizing_c2{u in Units}:
 Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
 
+######################################################################################################################
+#--------------------------------------------------------------------------------------------------------------------#
+# Costs
+#--------------------------------------------------------------------------------------------------------------------#
+######################################################################################################################
 
-######################################################################################################################
-#--------------------------------------------------------------------------------------------------------------------#
-#---COSTS + Emissions
-#--------------------------------------------------------------------------------------------------------------------#
-######################################################################################################################
-# parameters
 param Costs_inv_rep_SPs{f in FeasibleSolutions, h in House} >= 0;
 param Costs_ft_SPs{f in FeasibleSolutions, h in House} >= 0;
 param GWP_house_constr_SPs{f in FeasibleSolutions, h in House} >= 0;
 
-
 #--------------------------------------------------------------------------------------------------------------------#
 #-OPERATIONAL EXPENSES
 #--------------------------------------------------------------------------------------------------------------------#
-#-PARAMETERS
-param Cost_supply_cst{l in ResourceBalances} default 0.20;                                # CHF/kWh e.g.
-param Cost_demand_cst{l in ResourceBalances} default 0;                                # CHF/kWh e.g.
-param Cost_supply_network{l in ResourceBalances, p in Period,t in Time[p]} default Cost_supply_cst[l];  # retail tariff
-param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} default Cost_demand_cst[l];  # feed in tariff
+param Cost_supply_cst{l in ResourceBalances};   # CHF/kWh
+param Cost_demand_cst{l in ResourceBalances};   # CHF/kWh
+param Cost_supply_network{l in ResourceBalances, p in Period,t in Time[p]} default Cost_supply_cst[l];
+param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} default Cost_demand_cst[l];
 
-#-VARIABLES
 var Costs_op;
 var Costs_House_op{h in House};
 
@@ -174,17 +157,13 @@ Costs_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in Peri
 subject to Costs_opex:
 Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]); 
 
-
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES
 #--------------------------------------------------------------------------------------------------------------------#
-#-PARAMETERS
-param Cost_inv1{u in Units} default 20;                              #CHF
-param Cost_inv2{u in Units} default 70;                    #CHF/kWh average from https://www.nrel.gov/docs/fy19osti/73222.pdf
-param lifetime {u in Units} default 20;
+param Cost_inv1{u in Units};    # CHF
+param Cost_inv2{u in Units};    # CHF/...
+param lifetime {u in Units};    # years
 
-
-#-VARIABLES
 var Costs_Unit_inv{u in Units} >= -1e-4;
 var Costs_inv >= -1e-4;
 var Costs_rep >= -1e-4;
@@ -194,21 +173,17 @@ var Costs_House_cft{h in House} >= -1e-4;
 var Costs_tot;
 var DHN_inv_house{h in House} >= 0;
 
-#-CONSTRAINTS
 subject to Costs_Unit_capex{u in Units} :
  Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
 
 subject to Costs_Unit_replacement:
 Costs_rep= tau* sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
-
 subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] =sum{f in FeasibleSolutions} lambda[f,h] * Costs_inv_rep_SPs[f,h] + DHN_inv_house[h];
 
-
 subject to Costs_capex:
 Costs_inv = tau* sum{u in Units} Costs_Unit_inv[u] + Costs_rep + sum{h in House} Costs_House_inv[h];
-
 
 subject to cft_costs_house{h in House}: 
 Costs_House_cft[h] = sum{f in FeasibleSolutions} (lambda[f,h] * Costs_ft_SPs[f,h]);
@@ -219,20 +194,19 @@ Costs_cft = sum{h in House} Costs_House_cft[h];
 subject to total_costs: 
 Costs_tot = Costs_op + Costs_inv;
 
-
+######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#---Emission
+# Emissions
 #--------------------------------------------------------------------------------------------------------------------#
+######################################################################################################################
 
-#-PARAMETERS
-param GWP_unit1{u in Units} default 0;
-param GWP_unit2{u in Units} default 0;
-param GWP_supply_cst{l in ResourceBalances} default 0.17;
-param GWP_demand_cst{l in ResourceBalances} default 0.0;                   #-
+param GWP_unit1{u in Units};
+param GWP_unit2{u in Units};
+param GWP_supply_cst{l in ResourceBalances};
+param GWP_demand_cst{l in ResourceBalances};                   #-
 param GWP_supply{l in ResourceBalances, p in Period,t in Time[p]} default GWP_supply_cst[l];
 param GWP_demand{l in ResourceBalances, p in Period,t in Time[p]} default GWP_demand_cst[l];  
 
-#-VARIABLES
 var GWP_constr>=0;
 var GWP_Unit_constr{u in Units} >= 0;
 var GWP_op;
@@ -258,6 +232,11 @@ GWP_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in Period
 subject to total_GWP: 
 GWP_tot = GWP_constr + GWP_op;
 
+######################################################################################################################
+#--------------------------------------------------------------------------------------------------------------------#
+# Life cycle analysis
+#--------------------------------------------------------------------------------------------------------------------#
+######################################################################################################################
 
 set Lca_kpi default {'land_use'};
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
@@ -278,7 +257,6 @@ var lca_inv{k in Lca_kpi} default 0;
 
 var lca_tot{k in Lca_kpi} default 0;
 var lca_tot_house{k in Lca_kpi, h in House} default 0;
-
 
 subject to LU_inv_cst{k in Lca_kpi, u in Units}:
 lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
@@ -301,15 +279,12 @@ lca_tot[k] = lca_inv[k] + sum{l in ResourceBalances} lca_op[k, l];
 subject to LU_tot_house_cst{k in Lca_kpi, h in House}:
 lca_tot_house[k, h] = lca_house_units[k, h] + sum{f in FeasibleSolutions,l in ResourceBalances,p in PeriodStandard,t in Time[p]} (lca_kpi_supply[k,l,p,t]*Grid_supply[l,f,h,p,t]-lca_kpi_demand[k,l,p,t]*Grid_demand[l,f,h,p,t])*lambda[f,h]*dp[p]*dt[p];
 
-
-
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
-#--objectives
+# Objectives
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-# parameters and variables for epsilon constraints
 param EMOO_CAPEX default 1000;
 param EMOO_OPEX default 1000;
 param EMOO_GWP default 1000;
@@ -322,9 +297,8 @@ var EMOO_slack_opex           >= 0, <= abs(EMOO_OPEX)*Area_tot;
 var EMOO_slack_gwp            >= 0, <= abs(EMOO_GWP)*Area_tot;
 var EMOO_slack_totex          >= 0, <= abs(EMOO_TOTEX)*Area_tot;
 
-
 #--------------------------------------------------------------------------------------------------------------------#
-#---Grid connection costs
+# Grid connection costs
 #--------------------------------------------------------------------------------------------------------------------#
 param Cost_connection{l in ResourceBalances} default 0; # CHF/kW/month
 
@@ -342,9 +316,9 @@ subject to grid_connection_total:
 Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];
 
 #--------------------------------------------------------------------------------------------------------------------#
-#---Grid capacity constraints
+# Grid capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;  #kW
+param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;
 
 subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
 Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
@@ -353,9 +327,8 @@ subject to LineCapacity_demand{l in ResourceBalances, f in FeasibleSolutions,h i
 Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
 
 #--------------------------------------------------------------------------------------------------------------------#
-#---Transformer capacity constraints
+# Transformer capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-
 subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
 Network_supply[l,p,t] <= TransformerCapacity[l] * dp[p] * dt[p];
 
@@ -377,9 +350,9 @@ sum{f in FeasibleSolutions, h in House} (Grid_demand[l,f,h,p,t] * lambda[f,h]*dp
 #subject to EMOO_c3 {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
 #Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{tau in Time[p]}(Network_demand[l,p,tau]*dt[p]/card(Time[p])) else 1e9;
 
-
-
+#--------------------------------------------------------------------------------------------------------------------#
 # Multi objective optimization
+#--------------------------------------------------------------------------------------------------------------------#
 subject to EMOO_CAPEX_constraint: # beta_cap
 Costs_inv + EMOO_slack = EMOO_CAPEX * Area_tot;
 
@@ -395,7 +368,6 @@ Costs_tot + EMOO_slack_totex = EMOO_TOTEX * Area_tot;
 subject to EMOO_lca_constraint{k in Lca_kpi} :
 lca_tot[k] <= EMOO_lca[k] * Area_tot;
 
-
 param penalty_ratio default 1e-6;
 var penalties default 0;
 
@@ -403,15 +375,16 @@ subject to penalties_contraints:
 penalties = penalty_ratio * (Costs_inv + Costs_op + sum{k in Lca_kpi} lca_tot[k] +
             sum{l in ResourceBalances,p in PeriodExtrem,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t])) + Costs_cft;
 
-
-# objective functions
+#--------------------------------------------------------------------------------------------------------------------#
+# Objective functions
+#--------------------------------------------------------------------------------------------------------------------#
 minimize TOTEX:
 Costs_tot + Costs_grid_connection + penalties;
 
 minimize OPEX:
 Costs_op + Costs_grid_connection + penalties;
 
-minimize CAPEX: # the second term is added to correspond to objective set in design_cst
+minimize CAPEX:
 Costs_inv + penalties;
 
 minimize GWP:

@@ -99,13 +99,16 @@ if __name__ == '__main__':
     # districts = ["noconstraints","maxshare","maxshare10km","relaxed"]
     # districts = ["calibrage","calibrated"]
 
-    run_label = "lucerne_03_0857"
-    districts = [ 7724,8538,13569,13219,13228]
+    run_label = "lucerne_11_1000"
+    districts = [ 7724,8538,13569 ,13219,13228]
+    districts = [ 8538,13569 ,13219,13228]
 
-    pickle_files = [f'results/{run_label}_{d}.pickle' for d in districts] # filename format example : results/10buil_14_1640_277.pickle
-    
+    # pickle_files = [f'results/{run_label}_{d}.pickle' for d in districts] # filename format example : results/10buil_14_1640_277.pickle
+    # from Cedric's folder :     
+    pickle_files = [rf"Z:\data\Swice\Mobility\results\{run_label}_{d}.pickle" for d in districts]
+
     # Specifications for the graphs
-    Pareto_IDs = [0,2,5] # which iteration(s) to generate for graphs that only plot 1 iter (especially for the pkm graphs)
+    Pareto_IDs = [0,2] # which iteration(s) to generate for graphs that only plot 1 iter (especially for the pkm graphs)
 
     # PLOTTING =====================================================================================================
     for file,label in zip(pickle_files,districts):
@@ -129,7 +132,7 @@ if __name__ == '__main__':
     for label in districts:
         for p in Pareto_IDs:
             df_pkm, fig = plot_pkm(vars()[f"results{label}"].results['totex'][p],run_label=f"{run_label} - district {label} - iter {p}")
-            fig.write_html(f'plots\pkm{label}{p}.html')
+            fig.write_html(f'plots\pkm_{run_label[-7:]}_{label}_i{p}.html')
             fig.show()
 
             df_share = pd.DataFrame()

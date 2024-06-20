@@ -9,18 +9,19 @@ if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
     # Parameters ==================================================================================================================
-    districts = [ 7724,8538,13569,13219,13228]
+    districts = [ 7724,8538 ,13569,13219,13228]
     district_parameters = {
-        7724  : {"PopHouse" : 4.52, "rho" : pd.Series([95,3,2],index=['household','industry','service']) } ,
-        8538  : {"PopHouse" : 10.5, "rho" : pd.Series([89,2,6],index=['household','industry','service']) } ,
-        13569 : {"PopHouse" : 7.71, "rho" : pd.Series([96,2,1],index=['household','industry','service']) },
-        13219 : {"PopHouse" : 9.59, "rho" : pd.Series([61,17,17],index=['household','industry','service']) },
-        13228 : {"PopHouse" : 11.29, "rho" : pd.Series([52,21,5],index=['household','industry','service']) }
+        7724  : {"PopHouse" : 4.52, "rho" : pd.Series([95,3,2],index=['household','industry','service']), "f" : 3.23 , "Scluster" : 12156} ,
+        8538  : {"PopHouse" : 10.5, "rho" : pd.Series([89,2,6],index=['household','industry','service']), "f" : 44.3 , "Scluster" : 4890383} ,
+        13569 : {"PopHouse" : 7.71, "rho" : pd.Series([96,2,1],index=['household','industry','service']), "f" : 243.98 , "Scluster" : 3552764}  ,
+        13219 : {"PopHouse" : 9.59, "rho" : pd.Series([61,17,17],index=['household','industry','service']), "f" : 31.84 , "Scluster" : 3003409},
+        13228 : {"PopHouse" : 11.29, "rho" : pd.Series([52,21,5],index=['household','industry','service']), "f" : 58.39 , "Scluster" : 3301366}
 
     }
-    
+
+
     # to change easily the size of population depending of the nb of buildings
-    n_buildings = 2
+    n_buildings = 5
     for k in district_parameters.keys():
         district_parameters[k]['Population'] = n_buildings * district_parameters[k]['PopHouse'] 
 
@@ -29,36 +30,37 @@ if __name__ == '__main__':
     PARAM_INIT = False
     if PARAM_INIT: # TODO :corriger le bug des rho à 0 si on relance un itération en cours de route (faire un autre script?)
         i = 1
-        variables_init = dict()
-        parameters = dict()
-        for transformer in districts:
-            with open(f'results/lucerne_31_1600_{transformer}.pickle', 'rb') as handle:
-                vars()['rehoparam_' + str(transformer)] = pickle.load(handle)
+        # A MODIFIER 
+        # variables_init = dict()
+        # parameters = dict()
+        # for transformer in districts:
+        #     with open(f'results/lucerne_31_1600_{transformer}.pickle', 'rb') as handle:
+        #         vars()['rehoparam_' + str(transformer)] = pickle.load(handle)
             
-            # copied from end of loop 
-            pi = vars()['rehoparam_' + str(transformer)].results_MP["totex"][i][0]["df_Dual_t"]["pi"].xs("Electricity")
-            df_Unit_t = vars()['rehoparam_' + str(transformer)].results['totex'][i]['df_Unit_t']
-            df_Grid_t = vars()['rehoparam_' + str(transformer)].results['totex'][i]['df_Grid_t']
+        #     # copied from end of loop 
+        #     pi = vars()['rehoparam_' + str(transformer)].results_MP["totex"][i][0]["df_Dual_t"]["pi"].xs("Electricity")
+        #     df_Unit_t = vars()['rehoparam_' + str(transformer)].results['totex'][i]['df_Unit_t']
+        #     df_Grid_t = vars()['rehoparam_' + str(transformer)].results['totex'][i]['df_Grid_t']
 
-            EV_E_charged_outside = df_Unit_t.loc[:,df_Unit_t.columns.str.startswith("EV_E_charged_outside")][df_Unit_t.index.get_level_values('Layer') == 'Electricity']
-            externaldemand = EV_E_charged_outside.reset_index().groupby(['Period','Time']).agg('sum',numeric_only = True)
-            externaldemand.columns = [x.split('[')[1].split(']')[0] for x in externaldemand.columns]
-            externaldemand.columns = pd.MultiIndex.from_tuples([(x.split(',')[0],x.split(',')[1]) for x in externaldemand.columns])
-            externaldemand.columns.names = ('activity','district')
-            externaldemand = externaldemand.stack(level=1).reorder_levels([2,0,1])
+        #     EV_E_charged_outside = df_Unit_t.loc[:,df_Unit_t.columns.str.startswith("EV_E_charged_outside")][df_Unit_t.index.get_level_values('Layer') == 'Electricity']
+        #     externaldemand = EV_E_charged_outside.reset_index().groupby(['Period','Time']).agg('sum',numeric_only = True)
+        #     externaldemand.columns = [x.split('[')[1].split(']')[0] for x in externaldemand.columns]
+        #     externaldemand.columns = pd.MultiIndex.from_tuples([(x.split(',')[0],x.split(',')[1]) for x in externaldemand.columns])
+        #     externaldemand.columns.names = ('activity','district')
+        #     externaldemand = externaldemand.stack(level=1).reorder_levels([2,0,1])
 
-            externalload = df_Grid_t.loc[:,df_Grid_t.columns.str.startswith("charging_externalload")][(df_Grid_t.index.get_level_values('Layer') == 'Electricity') & (df_Grid_t.index.get_level_values('Hub') == 'Network')]
-            externalload = externalload.droplevel(['Layer','Hub'])
-            externalload.columns = [x.split('[')[1].split(']')[0] for x in externalload.columns]
+        #     externalload = df_Grid_t.loc[:,df_Grid_t.columns.str.startswith("charging_externalload")][(df_Grid_t.index.get_level_values('Layer') == 'Electricity') & (df_Grid_t.index.get_level_values('Hub') == 'Network')]
+        #     externalload = externalload.droplevel(['Layer','Hub'])
+        #     externalload.columns = [x.split('[')[1].split(']')[0] for x in externalload.columns]
 
-            print(pi, EV_E_charged_outside)
-            variables_init[transformer] = {  "pi": pi,
-                                        "EV_E_charged_outside" : EV_E_charged_outside,
-                                        "externaldemand" : externaldemand,
-                                        "externalload" : externalload
-                                        }
-        compute_iterative_parameters(variables_init,parameters)
-        parameters_init = parameters
+        #     print(pi, EV_E_charged_outside)
+        #     variables_init[transformer] = {  "pi": pi,
+        #                                 "EV_E_charged_outside" : EV_E_charged_outside,
+        #                                 "externaldemand" : externaldemand,
+        #                                 "externalload" : externalload
+        #                                 }
+        # compute_iterative_parameters(variables_init,parameters,district_parameters)
+        # parameters_init = parameters
             # end of copied
 
 
@@ -147,13 +149,13 @@ if __name__ == '__main__':
         df_pi = pd.concat([df_pi,pi],axis = 1)
 
     # Init parameters for iterations : EV_charging_outside are enabled by setting share_district_activity != 0. 
-    compute_iterative_parameters(variables,parameters,only_pi=True)
+    compute_iterative_parameters(variables,parameters,district_parameters,only_pi=True)
     for transformer in districts:
         ext_districts = [d for d in districts if d != transformer]
         df_rho = pd.DataFrame()
         for k in district_parameters.keys():
             df_rho[k] = district_parameters[k]['rho']
-            df_rho[k] *= vars()['reho_' + str(k)].ERA
+            df_rho[k] *= district_parameters[k]['Scluster']
         df_rho = df_rho.T.rename(columns={'industry': 'work', 'service': 'leisure'})
 
         vars()['reho_' + str(transformer)].parameters['share_district_activity'] = rho_param(ext_districts,df_rho)
@@ -208,23 +210,18 @@ if __name__ == '__main__':
             df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
         
         # Computing parameters for next iteration 
-        compute_iterative_parameters(variables,parameters)
+        compute_iterative_parameters(variables,parameters,district_parameters)
 
          # save data just in case of bug
         for tr in districts:
             vars()['reho_' + str(tr)].save_results(format=[ 'pickle',"save_all"], filename=f'lucerne_{date}_{tr}')
 
-        df_delta,c = check_convergence(deltas,df_delta,variables,i)
+        df_delta,c = check_convergence(deltas,df_delta,variables,district_parameters,i)
+
         if c:
             print("Convergence criteria is reached")
-            break
 
-    date = datetime.datetime.now().strftime("%d_%H%M")
-    for transformer in districts:
-        vars()['reho_' + str(transformer)].save_results(format=['xlsx', 'pickle'], filename='Iterative')
-        vars()['reho_' + str(transformer)].save_mobility_results(filename=f"iter_{date}")
-    print(df_pi)
-    print(df_externalcharging)
+
 
     with open('data/mobility/parameters_iteration.pickle', 'wb') as handle:
         pickle.dump(parameters, handle, protocol=pickle.HIGHEST_PROTOCOL)

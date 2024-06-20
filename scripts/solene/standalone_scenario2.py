@@ -89,7 +89,7 @@ if __name__ == '__main__':
         df_pi = pd.concat([df_pi,pi],axis = 1)
 
     # Init parameters for iterations : EV_charging_outside are enabled by setting share_district_activity != 0. 
-    compute_iterative_parameters(variables,parameters,only_pi=True)
+    compute_iterative_parameters(variables,parameters,district_parameters,only_pi=True)
     for transformer in districts:
         ext_districts = [d for d in districts if d != transformer]
         vars()['reho_' + str(transformer)].parameters['share_district_activity'] = rho_param(ext_districts,1) 
@@ -135,7 +135,7 @@ if __name__ == '__main__':
             df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
         
         # Computing parameters for next iteration 
-        compute_iterative_parameters(variables,parameters)
+        compute_iterative_parameters(variables,parameters,district_parameters)
 
         df_delta,c = check_convergence(deltas,df_delta,variables,i)
         if c:

@@ -958,6 +958,7 @@ def plot_unit_size(results, units_to_plot):
 
 def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='ColorPastel', resolution='weekly',
                   save_fig=False, name='plot_profiles', format='png', plot_curtailment=False, return_df=False):
+    print('test')
     if resolution == 'monthly':
         items_average = 730
     elif resolution == 'weekly':
@@ -972,11 +973,12 @@ def plot_profiles(df, units_to_plot, style='plotly', label='EN_long', color='Col
     for unit in units_to_plot:
         if unit == "PV":
             units_supply.append(unit)
-        elif unit in ["Battery", "EV_district"]:
+        elif unit in ["Battery", "EV"]:
             units_demand.append(unit)
             units_supply.append(unit)
         else:
             units_demand.append(unit)
+            units_supply.append(unit)
 
     # Grids
     import_elec = df['df_Grid_t'].xs(('Electricity', 'Network'), level=('Layer', 'Hub')).Grid_supply[:-2]
@@ -1591,7 +1593,7 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
         r = Pareto_ID + 1
         if REHO:
             for name, reho in rehos_dict.items():
-                df_pi = reho.results_MP["totex"][Pareto_ID][0]["df_Dual_t"]["pi"].xs("Electricity")
+                df_pi = reho.results_MP[scenario][Pareto_ID][0]["df_Dual_t"]["pi"].xs("Electricity")
                 df_pi.index = [f"{x}_{y}" for x,y in df_pi.index ]
                 fig.add_trace(go.Scatter(x=df_pi.index, y=df_pi.values, mode='lines', name=name,marker=dict(color=colors[name])),row=r, col=1)
 
@@ -1601,15 +1603,16 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
         df_loads = pd.DataFrame()
         for name, reho in rehos_dict.items():
             if REHO:
-                df = reho.results["totex"][Pareto_ID]["df_Unit_t"].copy()
+                df = reho.results[scenario][Pareto_ID]["df_Unit_t"].copy()
             else:
-                df = reho["totex"][Pareto_ID]["df_Unit_t"].copy()
+                df = reho[scenario][Pareto_ID]["df_Unit_t"].copy()
             df = df.loc[:,df.columns.str.contains('EV_E_charged_outside')].xs('Electricity').dropna()
             df['demand'] = name
             df.set_index("demand",append=True,inplace=True)
             new_columns = [x.split('[')[1].split(']')[0].split(',') for x in df.columns ]
             df.columns = pd.MultiIndex.from_tuples(new_columns,names=('activity','load'))
             df = df.stack(['load']).unstack(level = ['demand','Unit'])
+            df.index = df.index.to_frame().astype(float).astype(int).set_index(keys=df.index.names).index
 
             df_loads = pd.concat([df_loads,df])
 
@@ -1617,7 +1620,7 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
         for name, reho in rehos_dict.items():
             col+=1
             try:
-                df_plot = df_loads.xs(str(name),level = 'load').loc[:,df_loads.columns.get_level_values('demand') != name]
+                df_plot = df_loads.xs(name,level = 'load').loc[:,df_loads.columns.get_level_values('demand') != name]
             except:
                 print(f"Iter {Pareto_ID}: No load for {name}")
                 continue
@@ -1628,9 +1631,9 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
             
             # external load (i.e the total)
             if REHO:
-                df_extload = reho.results["totex"][Pareto_ID]["df_Grid_t"].copy()
+                df_extload = reho.results[scenario][Pareto_ID]["df_Grid_t"].copy()
             else:
-                df_extload = reho["totex"][Pareto_ID]["df_Grid_t"].copy()
+                df_extload = reho[scenario][Pareto_ID]["df_Grid_t"].copy()
             df_extload = df_extload.loc[:,df_extload.columns.str.startswith('charging_externalload')].xs(('Electricity','Network')).agg('sum',axis = 1)
             df_extload.index = [f"{int(x)}_{int(y)}" for x,y in df_extload.index ]
             fig.add_trace(go.Scatter(x=df_extload.index, y=df_extload.values, mode='lines', name='total load',marker=dict(color=colors[name])),row=r, col=col)

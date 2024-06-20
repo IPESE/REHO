@@ -111,7 +111,7 @@ if __name__ == '__main__':
             df_externalcharging = pd.concat([df_externalcharging,EV_E_charged_outside],axis = 1)
         
         # Computing parameters for next iteration 
-        compute_iterative_parameters(variables,parameters)
+        compute_iterative_parameters(variables,parameters,district_parameters)
 
         df_delta,c = check_convergence(deltas,df_delta,variables,i)
         if c:

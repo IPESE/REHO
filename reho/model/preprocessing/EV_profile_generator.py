@@ -453,9 +453,11 @@ def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     return share
 
 
-def compute_iterative_parameters(variables,parameters,only_pi = False):
+def compute_iterative_parameters(variables,parameters,district_parameters,only_pi = False):
     """"
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
+    The load is expressed using the corrective parameter f. 
+
     """
     if only_pi:
         df_prices = pd.DataFrame()
@@ -474,7 +476,8 @@ def compute_iterative_parameters(variables,parameters,only_pi = False):
         df_load = pd.DataFrame()
         df_prices = pd.DataFrame()
         for d in variables.keys():
-            df_load = pd.concat([df_load,variables[d]['externaldemand']])
+            df = variables[d]['externaldemand'] * district_parameters[d]['f']
+            df_load = pd.concat([df_load,df])
             price = variables[d]['pi'].to_frame().copy()
             price['district'] = d
             price = price.set_index('district',append = True).reorder_levels([2,0,1])
@@ -482,15 +485,16 @@ def compute_iterative_parameters(variables,parameters,only_pi = False):
 
         df_load = df_load.groupby(["district" ,"Period", "Time"]).agg('sum').stack()
         df_load = df_load.unstack(level='district').reorder_levels([2,0,1])
+        df_load.columns = df_load.columns.astype(int)
         
         for d in variables.keys():
-                parameters[d] = {   "charging_externalload"     : df_load[[str(d)]].rename(columns={str(d) :"charging_externalload"}),
+                parameters[d] = {   "charging_externalload"     : df_load[[d]].rename(columns={d :"charging_externalload"}) / district_parameters[d]['f'], 
                                     "outside_charging_price"    : df_prices[df_prices.index.get_level_values(level="district") != d].rename(columns = {'pi' : 'outside_charging_price'}),
                                     "externalload_sellingprice" : variables[d]['pi'].to_frame(name = "externalload_sellingprice")}
 
 
 
-def check_convergence(deltas,df_delta,variables,iteration,criteria = ('total')):
+def check_convergence(deltas,df_delta,variables, district_parameters,iteration,criteria = ('total')):
     """"
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
     Parameters
@@ -498,6 +502,12 @@ def check_convergence(deltas,df_delta,variables,iteration,criteria = ('total')):
     criteria : tuple, optional
         Choose on which indexes to match the load and demand. Default is time matching (p,t). Write 'by_activity' for activity matching (a,p,t)
 
+    Returns
+    --------
+    df_delta : dataframe
+        for each iteration and for each p,t the difference in kWh between the total demand in the city with the total load in the city (city : all the clusters considered)
+    deltas : list of float
+        one number per iteration expressing the percentage of unbalanced energy (demand - load) compared to the total demand for outer district electric charging over the city. 
     """
     termination_threshold = 0.1 # 10% TODO : mettre ces tuning parametres somewhere else
     termination_iter = 3
@@ -512,6 +522,7 @@ def check_convergence(deltas,df_delta,variables,iteration,criteria = ('total')):
             df_demand[k] = df.stack()
         else:
             df_demand[k] = df.agg('sum',axis = 1)
+            df_demand[k] *= district_parameters[k]['f']
 
         
         df = variables[k]['externalload']
@@ -520,12 +531,13 @@ def check_convergence(deltas,df_delta,variables,iteration,criteria = ('total')):
             df_load[k] = df.stack()
         else:
             df_load[k] = df.agg('sum',axis = 1)
+            df_load[k] *= district_parameters[k]['f']
 
     df_delta[f"demand{iteration}"] = df_demand.sum(axis=1)
     df_delta[f"load{iteration}"] = df_load.sum(axis=1)
 
     df_delta[f"delta{iteration}"] = df_delta[f"demand{iteration}"] - df_delta[f"load{iteration}"]
-    delta = df_delta[f"delta{iteration}"].apply(lambda x : x*x).sum()
+    delta = df_delta[f"delta{iteration}"].apply(lambda x : np.sqrt(x*x)).sum() / df_delta[f"demand{iteration}"].sum()
     deltas.append(delta)
 
     # Check no_improvement criteria

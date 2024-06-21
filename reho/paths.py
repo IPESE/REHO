@@ -4,6 +4,7 @@ from pathlib import Path
 from pandas import read_csv, read_table, read_excel
 import sys
 from dotenv import load_dotenv
+import geopandas as gpd
 
 __doc__ = """
 File for managing file paths and configurations.
@@ -84,6 +85,8 @@ def file_reader(file, index_col=None):
                 line = next(f).strip()
                 delim = sniffer.sniff(line)
             return read_csv(file, sep=delim.delimiter, index_col=index_col)
+        elif file.suffix == '.gpkg':
+            return gpd.read_file(file)
         elif file.suffix == '.xlsx':
             return read_excel(file)
         else:

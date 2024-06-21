@@ -366,7 +366,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Results["df_Buildings_t"] = set_df_buildings_t(ampl)[["House_Q_heating", "T_in", "House_Q_DHW"]]
         bat = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("Battery")][['Units_demand', 'Units_supply']]
         pv = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("PV")][['Units_supply', 'Units_curtailment']]
-        df_Results["df_Unit_t"] = pd.concat([pv, bat])
+        cogen = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("Cogeneration")][['Units_supply', 'Units_curtailment']]
+        df_Results["df_Unit_t"] = pd.concat([pv, bat, cogen])
 
     if method["save_streams"]:
         df_Results["df_Streams_t"] = set_df_streams_t(ampl)

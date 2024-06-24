@@ -87,7 +87,7 @@ if __name__ == '__main__':
     reader.establish_connection('Suisse')
 
     ## Select weather data
-    cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Lucern', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     ## Set scenario
     scenario = dict()

@@ -26,11 +26,14 @@ param ff_EV{u in UnitsOfType['EV']} default 1.56;
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
 param EV_plugging_in{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
 param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]};
+param min_share_EV default 0.05;
+param max_share_EV default 0.70; # [4] G 3.3.1.6 : share of cars is 66 %
+param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # usually a car spends 1h per day on the move - source : Timo
 
 # computed parameters to calculate the variation between EV_E_stored (plug_in and plug_out) depending on EV_plugged_out
 param storedOut2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 0 then
-		1
+		1 
 	else
 		min(1,EV_plugged_out[u,p,t]/EV_plugged_out[u,p,prev(t,Time[p])]);
 param storedIn2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
@@ -163,6 +166,15 @@ n_vehicles[u] <= n_EV_max[u];
 subject to EV_stock_upperbound2:
 sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
+#--Max share and time of travel
+subject to EV_maxshare{p in PeriodStandard}:
+sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_EV * Population * DailyDist; 
+
+subject to EV_minshare{p in PeriodStandard}:
+sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) >= min_share_EV * Population * DailyDist; 
+
+subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
+sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 
 
 #--SoC constraints
 subject to EV_c5a{u in UnitsOfType['EV'],p in Period,t in Time[p]}:

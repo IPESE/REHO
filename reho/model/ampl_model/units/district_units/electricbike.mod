@@ -13,9 +13,9 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 # param max_speed default 13.3; # pkm per hour [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
 param max_EBikedistperday default 17; # pkm moyenne mobilité douce : 2.8km per day [1] T 3.3.1.1
-param n_EBikesperhab default 0.09;
+param n_EBikesperhab default 1;
 param max_n_EBikes := n_EBikesperhab * Population;
-param max_share_EBikes default 0.09; # [1] G 3.3.1.6 : share of bikes and walking amounts to ~ 8%
+param max_share_EBikes default 1; # [1] G 3.3.1.6 : share of bikes and walking amounts to ~ 8%
 
 # param max_modal_share default 1; # 8 % de mobilité douce - [1] Fig G 3.3.1.1 : Choix du moyen de transport, en 2015
 param tau_relaxation_Ebike default 0.03; # relaxation of the daily profile constraint by 3%. 
@@ -52,7 +52,7 @@ Units_supply['Mobility',u,p,t] <= share_EBike[u,p] * Daily_Profile[u,p,t] * (1+ 
 subject to ElectricBikes_profile2{u in UnitsOfType['EBike'],p in Period, t in Time[p]}:
 Units_supply['Mobility',u,p,t] >= share_EBike[u,p] * Daily_Profile[u,p,t] * (1 - tau_relaxation_Ebike);
 
-subject to ElectricBikes_maxshare{p in Period}:
+subject to ElectricBikes_maxshare{p in PeriodStandard}:
 sum {u in UnitsOfType['EBike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_EBikes * Population * DailyDist;
 
 

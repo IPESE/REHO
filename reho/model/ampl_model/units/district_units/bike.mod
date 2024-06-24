@@ -11,9 +11,10 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 # param max_speed default 13.3; # pkm per hour [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
 param max_distperday default 10; # pkm moyenne mobilité douce : 2.8km per day [1] T 3.3.1.1
-param n_bikesperhab default 0.9;
+param n_bikesperhab default 1;
 param max_n_bikes := n_bikesperhab * Population;
 param max_share_bikes default 0.09; # [1] G 3.3.1.6 : share of bikes and walking amounts to ~ 8%
+param min_share_bikes default 0;
 
 # param max_modal_share default 1; # 8 % de mobilité douce - [1] Fig G 3.3.1.1 : Choix du moyen de transport, en 2015
 param tau_relaxation default 0.03; # relaxation of the daily profile constraint by 3%. 
@@ -41,5 +42,8 @@ Units_supply['Mobility',u,p,t] <= share_bike[u,p] * Daily_Profile[u,p,t] * (1+ t
 subject to Bikes_profile2{u in UnitsOfType['Bike'],p in Period, t in Time[p]}:
 Units_supply['Mobility',u,p,t] >= share_bike[u,p] * Daily_Profile[u,p,t] * (1 - tau_relaxation);
 
-subject to Bikes_maxshare{p in Period}:
+subject to Bikes_maxshare{p in PeriodStandard}:
 sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_bikes * Population * DailyDist;
+
+subject to Bikes_minshare{p in PeriodStandard}:
+sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_bikes * Population * DailyDist;

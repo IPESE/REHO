@@ -325,8 +325,8 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     param_output['Bikes_plugging_in'] = Bikes_plugging_in
 
     # Mode_Speed =======================================================================================================
-    default_speed = pd.DataFrame({ "UnitOfType" : ['Bike','EV','ICE','Public_transport',"EBike"],
-                                   "Mode_Speed" : [13.3,37,37,18,17]})
+    default_speed = pd.DataFrame({ "UnitOfType" : ['Bike','EV','ICE','PT_train','PT_bus',"EBike"],
+                                   "Mode_Speed" : [13.3,37,37,60,18,17]})
 
     mode_speed = units[['Unit','UnitOfType']].copy()
     mode_speed = mode_speed.merge(default_speed, how = 'outer')

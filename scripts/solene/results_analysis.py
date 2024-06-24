@@ -99,13 +99,15 @@ if __name__ == '__main__':
     # districts = ["noconstraints","maxshare","maxshare10km","relaxed"]
     # districts = ["calibrage","calibrated"]
 
-    run_label = "lucerne_11_1000"
+    run_label = "lucerne_baseline40_2build_22_1038"
+    run_label = "mob1district_20_2123"
     districts = [ 7724,8538,13569 ,13219,13228]
-    districts = [ 8538,13569 ,13219,13228]
+    # districts = [ 8538,13569 ,13219,13228]
+    districts = [13219]
 
-    # pickle_files = [f'results/{run_label}_{d}.pickle' for d in districts] # filename format example : results/10buil_14_1640_277.pickle
+    pickle_files = [f'results/{run_label}_{d}.pickle' for d in districts] # filename format example : results/10buil_14_1640_277.pickle
     # from Cedric's folder :     
-    pickle_files = [rf"Z:\data\Swice\Mobility\results\{run_label}_{d}.pickle" for d in districts]
+    # pickle_files = [rf"Z:\data\Swice\Mobility\results\{run_label}_{d}.pickle" for d in districts]
 
     # Specifications for the graphs
     Pareto_IDs = [0,2] # which iteration(s) to generate for graphs that only plot 1 iter (especially for the pkm graphs)
@@ -138,6 +140,8 @@ if __name__ == '__main__':
             df_share = pd.DataFrame()
             df_share['PT']= df_pkm.loc[:,df_pkm.columns.get_level_values(level=0).str.startswith('PT')].sum(axis=1)
             df_share['Bike']= df_pkm.loc[:,df_pkm.columns.get_level_values(level=1).str.startswith('Bike')].sum(axis=1)
+            df_share['ICE'] = df_pkm.loc[:,df_pkm.columns.get_level_values(level=1).str.startswith('ICE')].sum(axis=1)
+            df_share['EV']= df_pkm.loc[:,df_pkm.columns.get_level_values(level=1).str.contains('EV_')].sum(axis=1)
             df_share['Total'] = df_pkm.loc[:,df_pkm.columns.get_level_values(level=0) == "Domestic_energy"]
 
             df_share = df_share.groupby(['Layer',"Period"]).agg('sum')
@@ -185,7 +189,7 @@ if __name__ == '__main__':
             total = 0
             for tr in districts:
                 total += vars()['results' + str(tr)].results['totex'][i]["df_Performance"][variables[var]].xs(
-                    "Network").sum()
+                    "Network").sum() * district_parameters[tr]['f']
             var_list.append(total)
         print(var_list)
         axe.plot(var_list)

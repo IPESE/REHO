@@ -7,8 +7,26 @@ import datetime
 
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
+    run_label = 'lucerne_baseline40_2build'
+
+    
 
     # Parameters ==================================================================================================================
+    ## PARAMETERS : MODAL SHARES 
+    scenario = "baseline_ev40"
+    df_modalshares = pd.read_csv('data/mobility/scenarios_lucerne.csv', index_col=0)[scenario]
+    # share_car = 0.66
+    # share_PT  = 0.24
+    # share_MD = 0.1 # mobilité douce : "soft mobility" ? (from FSO : include biking, walking, electric biking)
+    
+    # share_ICE = 0.4
+    # share_EV = 0.26
+    # share_train = 0.2
+    # share_Ebike = 0.02 # only max
+
+    perc_point_window = 0.03 # the range between the max and the min constraint
+    
+    ## PARAMETERS : DISTRICT    
     districts = [ 7724,8538 ,13569,13219,13228]
     district_parameters = {
         7724  : {"PopHouse" : 4.52, "rho" : pd.Series([95,3,2],index=['household','industry','service']), "f" : 3.23 , "Scluster" : 12156} ,
@@ -19,9 +37,8 @@ if __name__ == '__main__':
 
     }
 
-
     # to change easily the size of population depending of the nb of buildings
-    n_buildings = 5
+    n_buildings = 2
     for k in district_parameters.keys():
         district_parameters[k]['Population'] = n_buildings * district_parameters[k]['PopHouse'] 
 
@@ -104,12 +121,30 @@ if __name__ == '__main__':
             df_rho[k] = district_parameters[k]['rho']
         df_rho = df_rho.T.rename(columns = {'industry' : 'work', 'service': 'leisure'})
         parameters = {'Population': district_parameters[transformer]['Population'],
-                      "Districts" : ext_districts}
+                      "Districts" : ext_districts,
+        # All the modal share and techno share parameters           
+                      "max_share_cars" : df_modalshares.xs('cars') + perc_point_window/2,
+                      "min_share_cars" : df_modalshares.xs('cars') - perc_point_window/2,
+                      "max_share_PT" : df_modalshares.xs('PT') + perc_point_window/2,
+                      "min_share_PT" : df_modalshares.xs('PT') - perc_point_window/2,
+                      "max_share_MD" : df_modalshares.xs('MD') + perc_point_window/2,
+                      "min_share_MD" : df_modalshares.xs('MD') - perc_point_window/2,
+                      "max_share_ICE" : df_modalshares.xs('ICE') + perc_point_window/2,
+                      "min_share_ICE" : df_modalshares.xs('ICE') - perc_point_window/2,
+                      "max_share_EV" : df_modalshares.xs('EV') + perc_point_window/2,
+                      "min_share_EV" : df_modalshares.xs('EV') - perc_point_window/2,
+                      "max_share_PT_train" : df_modalshares.xs('train') + perc_point_window/2,
+                      "min_share_PT_train" : df_modalshares.xs('train') - perc_point_window/2,
+                      "max_share_EBikes" : df_modalshares.xs('Ebike'),
+                      }
                     #   "share_district_activity": rho_param(ext_districts,df_rho) } # other districts 
 
         vars()['reho_' + str(transformer)] = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
                     method=method, parameters=parameters, solver="gurobiasl")
 
+
+        # recompute the f parameter
+        district_parameters[transformer]['f'] = district_parameters[transformer]['Scluster'] / vars()['reho_' + str(transformer)].ERA
         
 
 
@@ -162,7 +197,7 @@ if __name__ == '__main__':
 
     # save data just in case of bug
     for tr in districts:
-        vars()['reho_' + str(tr)].save_results(format=[ 'pickle',"save_all"], filename=f'lucernestandalone_{date}_{tr}')
+        vars()['reho_' + str(tr)].save_results(format=[ 'pickle',"save_all"], filename=f'{run_label}standalone_{date}_{tr}')
 
     # Iterations
     for i in range(1,10):
@@ -214,14 +249,12 @@ if __name__ == '__main__':
 
          # save data just in case of bug
         for tr in districts:
-            vars()['reho_' + str(tr)].save_results(format=[ 'pickle',"save_all"], filename=f'lucerne_{date}_{tr}')
+            vars()['reho_' + str(tr)].save_results(format=[ 'pickle',"save_all"], filename=f'{run_label}_{date}_{tr}')
 
         df_delta,c = check_convergence(deltas,df_delta,variables,district_parameters,i)
 
         if c:
             print("Convergence criteria is reached")
 
-
-
-    with open('data/mobility/parameters_iteration.pickle', 'wb') as handle:
-        pickle.dump(parameters, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    with open(f'results/{run_label}_{date}_districtparameters.pickle', 'wb') as handle:
+        pickle.dump(district_parameters, handle, protocol=pickle.HIGHEST_PROTOCOL)

@@ -92,6 +92,7 @@ var EV_E_mob{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
 # charging stations
 var n_chargingpoints{uc in UnitsOfType['EVcharging']} integer >= 0;
 var EV_E_charging{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
+var scaling_profile{p in Period} >= 0;
 var EV_E_supply{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
 var C2V{uc in UnitsOfType['EVcharging'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ;
 var V2C{uc in UnitsOfType['EVcharging'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ;
@@ -128,6 +129,11 @@ EV_E_stored_plug_in[u,p,t] <= EV_capacity * n_vehicles[u];
 # subject to EV_V2V_1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 # EV_V2V[u,p,t] >= EV_E_mob[u,p,t] - EV_E_charging[u,p,t]; #question : pq ici il y avait pas le d[t] dans EV_displacement[] * Unit_use * dt ?
 
+subject to EV_chargingconstraint{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
+sum {uc in UnitsOfType['EVcharging']}(C2V[uc,u,p,t]/EV_charger_Power[uc]) <= n_vehicles[u] * (1 - EV_plugged_out[u,p,t]);
+
+
+
 subject to unidirectional_service{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_supply[u,p,t] = 0;
 
@@ -139,7 +145,9 @@ subject to EV_EB_mobility1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[
 Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u]; 
 
 subject to EV_EB_mobility2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-EV_E_mob[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]/ ff_EV[u] / EV_mobeff  - sum{d in Districts}(sum{a in Activities}(EV_E_charged_outside[a,d,u,p,i])) ) * EV_plugging_in[u,p,t]; # pkm * car/pers * kWh/km * share of EV coming back
+EV_E_mob[u,p,t] = Units_supply['Mobility',u,p,t]/ ff_EV[u] / EV_mobeff  - sum{d in Districts}(sum{a in Activities}(EV_E_charged_outside[a,d,u,p,t]));
+
+# EV_E_mob[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]/ ff_EV[u] / EV_mobeff  - sum{d in Districts}(sum{a in Activities}(EV_E_charged_outside[a,d,u,p,i])) ) * EV_plugging_in[u,p,t]; # pkm * car/pers * kWh/km * share of EV coming back
 
 
 subject to outside_charging_c1{a in Activities,d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
@@ -207,9 +215,6 @@ Units_Mult[u] = EV_capacity*n_vehicles[u];  #kWh
 #--Charging_stations
 subject to chargingstation_c1{uc in UnitsOfType['EVcharging'],p in Period,t in Time[p]}:
 Units_demand['Electricity',uc,p,t] + Units_supply['Electricity',uc,p,t] <= EV_charger_Power[uc] * n_chargingpoints[uc];								#kW
-
-# subject to chargingstation_c2{uc in UnitsOfType['EVcharging'],p in Period,t in Time[p]}:
-# Units_supply['Electricity',uc,p,t] <= EV_charger_Power[uc] * n_chargingpoints[uc];								#kW
 
 subject to chargingstation_c2{uc in UnitsOfType['EVcharging'],p in Period,t in Time[p]}:
 Units_demand['Electricity',uc,p,t] * EV_eff_ch  = sum {u in UnitsOfType['EV']}(C2V[uc,u,p,t])+ sum{a in Activities} (C2A[uc,a,p,t] );

@@ -3,20 +3,20 @@ import datetime
 
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
-    run_label = '1district'
+    run_label = 'noEVplugginIN'
 
     # Parameters ==================================================================================================================
     ## PARAMETERS : MODAL SHARES 
-    share_car = 0.66
-    share_PT  = 0.24
-    share_MD = 0.1 # mobilité douce : "soft mobility" ? (from FSO : include biking, walking, electric biking)
+    # share_car = 0.66
+    # share_PT  = 0.24
+    # share_MD = 0.1 # mobilité douce : "soft mobility" ? (from FSO : include biking, walking, electric biking)
     
-    share_ICE = 0.4
-    share_EV = 0.26
-    share_train = 0.2
-    share_Ebike = 0.02 # only max
+    # share_ICE = 0.4
+    # share_EV = 0.40
+    # share_train = 0.2
+    # share_Ebike = 0.02 # only max
 
-    perc_point_window = 0.03 # the range between the max and the min constraint (in percentage points)
+    perc_point_window = 0.1 # the range between the max and the min constraint (in percentage points)
     
     ## PARAMETERS : DISTRICT    
 
@@ -29,8 +29,8 @@ if __name__ == '__main__':
 
     }
 
-    district = 7724
-    n_buildings = 2
+    district = 13219
+    n_buildings = 5
 
 
     # Set building parameters
@@ -60,19 +60,19 @@ if __name__ == '__main__':
 
     parameters = {'Population': n_buildings * district_parameters[district]['PopHouse'] ,
             # All the modal share and techno share parameters           
-                "max_share_cars" : share_car + perc_point_window/2,
-                "min_share_cars" : share_car - perc_point_window/2,
-                "max_share_PT" : share_PT + perc_point_window/2,
-                "min_share_PT" : share_PT - perc_point_window/2,
-                "max_share_MD" : share_MD + perc_point_window/2,
-                "min_share_MD" : share_MD - perc_point_window/2,
-                "max_share_ICE" : share_ICE + perc_point_window/2,
-                "min_share_ICE" : share_ICE - perc_point_window/2,
-                "max_share_EV" : share_EV + perc_point_window/2,
-                "min_share_EV" : share_EV - perc_point_window/2,
-                "max_share_PT_train" : share_train + perc_point_window/2,
-                "min_share_PT_train" : share_train - perc_point_window/2,
-                "max_share_EBikes" : share_Ebike,
+                # "max_share_cars" : share_car + perc_point_window/2,
+                # "min_share_cars" : share_car - perc_point_window/2,
+                # "max_share_PT" : share_PT + perc_point_window/2,
+                # "min_share_PT" : share_PT - perc_point_window/2,
+                # "max_share_MD" : share_MD + perc_point_window/2,
+                # "min_share_MD" : share_MD - perc_point_window/2,
+                # "max_share_ICE" : share_ICE + perc_point_window/2,
+                # "min_share_ICE" : share_ICE - perc_point_window/2,
+                # "max_share_EV" : share_EV + perc_point_window/2,
+                # "min_share_EV" : share_EV - perc_point_window/2,
+                # "max_share_PT_train" : share_train + perc_point_window/2,
+                # "min_share_PT_train" : share_train - perc_point_window/2,
+                # "max_share_EBikes" : share_Ebike,
                 }
 
     # Set method options

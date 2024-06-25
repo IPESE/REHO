@@ -100,10 +100,10 @@ if __name__ == '__main__':
     # districts = ["calibrage","calibrated"]
 
     run_label = "lucerne_baseline40_2build_22_1038"
-    run_label = "mob1district_20_2123"
+    run_label = "mob1district"
     districts = [ 7724,8538,13569 ,13219,13228]
     # districts = [ 8538,13569 ,13219,13228]
-    districts = [13219]
+    districts = ["20_2123_13219","24_1621_13219","25_0747_13219"]
 
     pickle_files = [f'results/{run_label}_{d}.pickle' for d in districts] # filename format example : results/10buil_14_1640_277.pickle
     # from Cedric's folder :     

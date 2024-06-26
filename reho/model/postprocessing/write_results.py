@@ -458,15 +458,18 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df5 = get_variable_in_pandas(df, 'Network_supply')
     df6 = get_variable_in_pandas(df, 'Network_demand')
     df7 = get_parameter_in_pandas(ampl,"Domestic_energy",multi_index = True)
-    df8 = get_parameter_in_pandas(ampl,"charging_externalload",multi_index = True)
-    df8 = df8[['charging_externalload']].unstack(level = 0)
-    df8.columns = [f'{i}[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
-    df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
-
     if binary:
-        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6,df7,df8], axis=1).sort_index()
+        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6,df7], axis=1).sort_index()
     else:
         df_District_t = pd.concat([df5, df6], axis=1)
+    if "EV_district" in district.UnitsOfDistrict:
+        df8 = get_parameter_in_pandas(ampl,"charging_externalload",multi_index = True)
+        df8 = df8[['charging_externalload']].unstack(level = 0)
+        df8.columns = [f'{i}[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
+        df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
+        if binary:
+            df_District_t = pd.concat([df_District_t,df8], axis=1).sort_index()
+
     df_District_t.index.names = ['Layer', 'Period', 'Time']
     df_Results["df_District_t"] = df_District_t.sort_index()
 

@@ -91,7 +91,7 @@ class district_decomposition:
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
                                                 "DailyDist","Mode_Speed","outside_charging_price","charging_externalload","Districts","share_district_activity","externalload_sellingprice",
                                                 "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" ], # attention District is a SET
+                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" , "n_ICEperhab"], # attention District is a SET
                          "list_constraints_MP": []
                          }
 

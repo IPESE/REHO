@@ -26,8 +26,8 @@ param ff_EV{u in UnitsOfType['EV']} default 1.56;
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
 param EV_plugging_in{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
 param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]};
-param min_share_EV default 0.05;
-param max_share_EV default 0.70; # [4] G 3.3.1.6 : share of cars is 66 %
+param min_share_EV default 0;
+param max_share_EV default 1; # [4] G 3.3.1.6 : share of cars is 66 %
 param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # usually a car spends 1h per day on the move - source : Timo
 
 # computed parameters to calculate the variation between EV_E_stored (plug_in and plug_out) depending on EV_plugged_out

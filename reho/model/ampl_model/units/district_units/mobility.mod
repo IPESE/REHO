@@ -20,7 +20,7 @@ set Districts default {};
 param Mode_Speed{u in transport_Units} default 37.1; # [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
 param Daily_Profile{u in transport_Units,p in Period,t in Time[p]} default 1; # initialized through the function generate_mobility_parameters
 
-param max_share_cars default 0.7;
+param max_share_cars default 1;
 param min_share_cars default 0;
 
 param max_share_MD default 1;

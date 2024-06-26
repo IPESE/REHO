@@ -13,7 +13,7 @@
 param max_distperday default 10; # pkm moyenne mobilité douce : 2.8km per day [1] T 3.3.1.1
 param n_bikesperhab default 1;
 param max_n_bikes := n_bikesperhab * Population;
-param max_share_bikes default 0.09; # [1] G 3.3.1.6 : share of bikes and walking amounts to ~ 8%
+param max_share_bikes default 1; # [1] G 3.3.1.6 : share of bikes and walking amounts to ~ 8%
 param min_share_bikes default 0;
 
 # param max_modal_share default 1; # 8 % de mobilité douce - [1] Fig G 3.3.1.1 : Choix du moyen de transport, en 2015

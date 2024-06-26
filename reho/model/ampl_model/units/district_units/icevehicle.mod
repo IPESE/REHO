@@ -15,7 +15,7 @@
 param n_ICEperhab default 1; # [1] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling )
 param max_n_ICE := n_ICEperhab * Population;
 param ff_ICE default 1.56; # [1]
-param max_share_ICE default 0.70; # [4] G 3.3.1.6 : share of cars is 66 %
+param max_share_ICE default 1; # [4] G 3.3.1.6 : share of cars is 66 %
 param min_share_ICE default 0.0; 
 param max_daily_time_spend_travellingICE{u in UnitsOfType['ICE']} default 0.9;
 

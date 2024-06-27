@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # WITH MOBILITY ====================================================================================================
 
     # SCENARIO 3 Full ICE
-    scenario['name'] = 'ICE'
+    scenario['name'] = 'M1_ICE'
     scenario['specific'] = []
     scenario['exclude_units'] = ['NG_Cogeneration']
     scenario['enforce_units'] = ['EV_district']
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # SCENARIO 4 OFS SHARES
-    scenario['name'] = 'OFS_modalshares'
+    scenario['name'] = 'M2_OFS'
 
     shares = {  "share_cars" : 0.66,
                 "share_PT"  : 0.24,
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # SCENARIO 5
-    scenario['name'] = 'Modalshares_EV10'
+    scenario['name'] = 'M3_EV10'
     reho.parameters[f"max_share_EV"] = 0.12 * 0.66 + perc_point_window/2
     reho.parameters[f"min_share_EV"] = 0.12 * 0.66 - perc_point_window/2
     reho.parameters[f"max_share_ICE"] = 0.66

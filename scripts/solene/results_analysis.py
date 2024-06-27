@@ -147,7 +147,7 @@ if __name__ == '__main__':
             df_share = df_share.groupby(['Layer',"Period"]).agg('sum')
             df_share = df_share.div(df_share['Total'],axis = 0)
 
-            if "T" and "I" and "W" in vars()[f"results{label}"].cluster['Attributes']:
+            if "T" and "I" and "W" in vars()[f"results{label}"].cluster['Attributes']: # TODO : refaire en utilisant directement le dataframe dans reho.results => df_Time
                 attributes = "T_I_W"
                 File_ID = "timestamp_{location}_{periods}_{periodduration}_{attributes}".format(
                     location = vars()[f"results{label}"].cluster['Location'],

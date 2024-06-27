@@ -102,14 +102,16 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     # not displayed, there is no check provided by this function for that)
     # List of supported technologies/sources/demands
     # Electrical storage device
-    elec_storage_list = ['Battery', 'EV_district']
+    elec_storage_list = ['Battery']
+    # EV and their charging station are handled together
+    EV_device = ['EV_district', "EVshared_district", "EVcharging_district"]
     # Manual handled devices (list below not used, just here for the information)
     manual_device     = ['PV', 'WaterTankSH']
     # Semi automatic handled devices
     semi_auto_device  = ['HeatPump_Air', 'HeatPump_DHN', 'NG_Boiler', 'ThermalSolar', 'OIL_Boiler',
                          'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'NG_Cogeneration', 'DHN_in',
                          'HeatPump_Lake', 'WOOD_Stove', 'HeatPump_Geothermal', 'Air_Conditioner',
-                         'DataHeat_DHW'] # name must be the same as used by REHO
+                         'DataHeat_DHW','ICE_district','Bike_district'] # name must be the same as used by REHO
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 
 
@@ -198,6 +200,26 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
                                                                          df_label.loc['Electrical_consumption', 'pos'],
                                                                          float(Ec_after_bp-elec_storage_energy_in)]
 
+    # 11 EV and charging station infrastructure
+    # check if EV device
+    EV_device_use = False
+    for device in EV_device:
+        if len(df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] == device)]) != 0:
+            EV_device_use = True
+
+    if EV_device_use:
+        for device in EV_device:
+            # 1 Ele Cons to Device (for charging stations)
+            df_label, df_stv, _ = add_flow('Electrical_consumption', "Total_EV_fleet", 'Electricity', device, 'Demand_MWh',
+                                        df_annuals, df_label, df_stv)   
+            # 2 Device to Ele Cons
+            df_label, df_stv, _ = add_flow('Total_EV_fleet', "Electrical_consumption", 'Electricity', device, 'Supply_MWh',
+                                        df_annuals, df_label, df_stv)     
+            # 3 Device to Mobility
+            df_label, df_stv, _ = add_flow("Total_EV_fleet", 'Mobility (0.1 kWh/pkm)', 'Mobility', device, 'Supply_MWh',
+                                       df_annuals, df_label, df_stv,fact=1/9.37)              
+
+    
     # Semi-Auto for the followings devices
     for device in semi_auto_device:
         abr_hp = device
@@ -220,6 +242,10 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
         # 4 Oil to Device
         df_label, df_stv, _ = add_flow('Oil', device, 'Oil', device, 'Demand_MWh',
                                        df_annuals, df_label, df_stv)
+        
+        # 4.1 FossilFuel to Device
+        df_label, df_stv, _ = add_flow('FossilFuel', device, 'FossilFuel', device, 'Demand_MWh',
+                                       df_annuals, df_label, df_stv)        
 
         # 5 Device to DHW
         df_label, df_stv, _ = add_flow(device, 'DHW', 'DHW', device, 'Supply_MWh',
@@ -236,6 +262,10 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
         # 8 Device to Cooling
         df_label, df_stv, _ = add_flow(device, 'Cooling', 'Cooling', device, 'Supply_MWh',
                                        df_annuals, df_label, df_stv)
+        
+        # 9 Device to Mobility 
+        df_label, df_stv, _ = add_flow(device, 'Mobility (0.1 kWh/pkm)', 'Mobility', device, 'Supply_MWh',
+                                       df_annuals, df_label, df_stv,fact=1/9.37)        
 
     # df_label : add the label to display, the color and the label (node) values if selected
     df_label['label'] = layout[label]

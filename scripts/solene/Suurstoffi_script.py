@@ -3,6 +3,9 @@ from reho.plotting.plotting import *
 
 
 if __name__ == '__main__':
+    date = datetime.datetime.now().strftime("%d_%H%M")
+    run_label = 'Suurstoffi'
+
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='data/clustering/buildings_suurstoffi.csv', nb_buildings=100)
 
@@ -18,7 +21,7 @@ if __name__ == '__main__':
     # NO MOBILITY ======================================================================================================
 
     # SCENARIO 1 Gas boiler
-    scenario['name'] = 'Gas'
+    scenario['name'] = 'B1_Gas'
     scenario['exclude_units'] = ['HeatPump', 'PV', "Battery_district", 'EVcharging_district' , 'NG_Cogeneration']
     scenario['enforce_units'] = ['NG_Boiler']
 
@@ -33,7 +36,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # SCENARIO 2 HP + PV
-    scenario['name'] = 'HP'
+    scenario['name'] = 'B2_HP'
     scenario['exclude_units'] = ['Battery_district', 'EVcharging_district', 'NG_Cogeneration']
     scenario['enforce_units'] = []
     scenario['specific'] = ["enforce_PV_max"]
@@ -54,7 +57,7 @@ if __name__ == '__main__':
                                              })
 
     # SCENARIO 3 Full ICE
-    scenario['name'] = 'ICE'
+    scenario['name'] = 'M1_ICE'
     scenario['specific'] = []
     scenario['exclude_units'] = ['NG_Cogeneration']
     scenario['enforce_units'] = ['EV_district']
@@ -71,7 +74,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # SCENARIO 4 OFS SHARES
-    scenario['name'] = 'OFS_modalshares'
+    scenario['name'] = 'M2_OFS'
 
     shares = {  "share_cars" : 0.66,
                 "share_PT"  : 0.24,
@@ -90,10 +93,19 @@ if __name__ == '__main__':
     reho.scenario = scenario
     reho.single_optimization()
 
+
     # SCENARIO 5
+    scenario['name'] = 'M3_EV10'
+    reho.parameters[f"max_share_EV"] = 0.12 * 0.66 + perc_point_window/2
+    reho.parameters[f"min_share_EV"] = 0.12 * 0.66 - perc_point_window/2
+    reho.parameters[f"max_share_ICE"] = 0.66
+    reho.parameters[f"min_share_ICE"] = 0
+
     # reho.infrastructure.Units_Parameters.loc["EV_district", "Cost_inv1"] = 0 # to change the cost of EVs [CHF]
     # reho.infrastructure.Units_Parameters.loc["EV_district", "Cost_inv2"] = 750 # to change the cost of EVs [CHF/kWh]
 
+    reho.scenario = scenario
+    reho.single_optimization()
 
     # PLot and save results ============================================================================================
     additional_costs = {"mobility": [1e5, 1e5, 0]}     # cost of gasoline for each scenario (line 103 of plotting.py)
@@ -107,4 +119,4 @@ if __name__ == '__main__':
     fig3.write_html("Figures/Profile_suurstoffi.html")
 
 
-    reho.save_results(format=['pickle'], filename='Suurstoffi')
+    reho.save_results(format=['pickle','save_all'], filename='Suurstoffi')

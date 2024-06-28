@@ -1,6 +1,6 @@
 from reho.model.reho import *
 from reho.plotting.plotting import *
-
+import datetime
 
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")

@@ -4,7 +4,7 @@ import datetime
 
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
-    run_label = 'Suurstoffi'
+    run_label = 'Suurstoffi_chargingprofile'
 
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='data/clustering/buildings_suurstoffi.csv', nb_buildings=100)
@@ -106,6 +106,56 @@ if __name__ == '__main__':
 
     reho.scenario = scenario
     reho.single_optimization()
+
+    
+    # SCENARIO 6
+    scenario['name'] = 'M4_SUU'
+    shares = {  "share_cars" : 0.77,
+                "share_PT"  : 0.21,
+                "share_MD" : 0.02, # mobilité douce : "soft mobility" ? (from FSO : include biking, walking, electric biking)
+                "share_EV" : 0.08,
+            }
+    perc_point_window = 0.03 # the range between the max and the min constraint (in percentage points)
+    
+    for key in shares.keys():
+        reho.parameters[f"max_{key}"] = shares[key] + perc_point_window/2
+        reho.parameters[f"min_{key}"] = shares[key] - perc_point_window/2
+
+    reho.parameters['max_share_EBikes'] = 0.02 # only max, perc_point_window relaxation. 
+    reho.parameters[f"max_share_ICE"] = 0.77
+    reho.parameters[f"min_share_ICE"] = 0
+    reho.parameters[f"max_share_PT_train"] = 1
+    reho.parameters[f"min_share_PT_train"] = 0
+
+    reho.scenario = scenario
+    reho.single_optimization()
+
+    # SCENARIO 7
+    scenario['name'] = 'M5_SEV'
+    reho.parameters[f"max_share_EV"] = 0.77 + perc_point_window/2
+    reho.parameters[f"min_share_EV"] = 0.77 - perc_point_window/2
+
+    reho.scenario = scenario
+    reho.single_optimization()
+
+    # SCENARIO 8
+    scenario['name'] = 'O1'
+    shares = {  "share_cars" : 0.5,
+                "share_PT"  : 0.5,
+                "share_MD" : 0.5, # mobilité douce : "soft mobility" ? (from FSO : include biking, walking, electric biking)
+                "share_EV" : 0.5,
+                "share_ICE" : 0.5,
+        }
+    perc_point_window = 1
+    for key in shares.keys():
+        reho.parameters[f"max_{key}"] = shares[key] + perc_point_window/2
+        reho.parameters[f"min_{key}"] = shares[key] - perc_point_window/2
+    
+    reho.parameters['max_share_EBikes'] = 1 
+
+    reho.scenario = scenario
+    reho.single_optimization()
+
 
     # PLot and save results ============================================================================================
     additional_costs = {"mobility": [1e5, 1e5, 0]}     # cost of gasoline for each scenario (line 103 of plotting.py)

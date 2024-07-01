@@ -7,7 +7,7 @@ if __name__ == '__main__':
 
     run_label = "Suurstoffi_baseline"
     files = ['results/Suurstoffi_26_0752.pickle', 'results/Suurstoffi_26_0826.pickle']
-    files = ['results/Suurstoffi_baseline_26_1450.pickle' ]
+    files = ['results/Suurstoffi_chargingprofiletest.pickle' ]
     results = dict()
 
     for file in files:
@@ -21,10 +21,15 @@ if __name__ == '__main__':
     # additional_costs = {"mobility": [1e5, 1e5, 0]}     # cost of gasoline for each scenario (line 103 of plotting.py)
     report_folder = "C:/masterthesis/images/"
 
+    # TOTEX
     fig = plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long' ) # , additional_costs=additional_costs)
     fig.write_html(f"{report_folder}C1_performance_{run_label}.html")
     fig.write_html(f"plots/C1_performance_{run_label}.html")
     fig.write_image(f"{report_folder}C1_performance_{run_label}.png")
+
+    # GWP
+    fig = plot_performance(results, plot='gwp', indexed_on='Scn_ID', label='EN_long' )
+    fig.write_html(f"plots/C1_GWPperformance_{run_label}.html")
 
     for scn_ID in results.keys():
         fig2, df2 = plot_sankey(results[scn_ID][0], return_df=True)

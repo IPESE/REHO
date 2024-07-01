@@ -36,9 +36,6 @@ Units_demand['FossilFuel',u,p,t ]= Units_supply['Mobility',u,p,t] /  ICE_eff[u]/
 subject to ICE_EB_c2{u in UnitsOfType['ICE'],p in Period, t in Time[p]}:
 Units_supply['Mobility',u,p,t] = share_ICE[u,p] * Daily_Profile[u,p,t];
 
-subject to ICE_c1{u in UnitsOfType['ICE'],p in PeriodStandard,t in Time[p]}:
-Units_supply['Mobility',u,p,t] <= Mode_Speed[u] * n_ICE[u] * EV_activity['travel',"EV_district",p,t]; # TODO : code an ICE activity profile, and/or rename the variable CAR_activity 
-
 subject to ICE_c2{u in UnitsOfType["ICE"]}:
 n_ICE[u] = Units_Mult[u];
 

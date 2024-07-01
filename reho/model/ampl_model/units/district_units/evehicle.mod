@@ -25,6 +25,7 @@ param n_EVtot_max := n_EVtotperhab * Population;
 param ff_EV{u in UnitsOfType['EV']} default 1.56;
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
 param EV_plugging_in{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
+param tau_relaxation_charging_profile default 0.03;
 param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]};
 param min_share_EV default 0;
 param max_share_EV default 1; # [4] G 3.3.1.6 : share of cars is 66 %
@@ -92,7 +93,7 @@ var EV_E_mob{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
 # charging stations
 var n_chargingpoints{uc in UnitsOfType['EVcharging']} integer >= 0;
 var EV_E_charging{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
-var scaling_profile{p in Period} >= 0;
+var coeff_supply{u in UnitsOfType['EV'],p in Period} >= 0;
 var EV_E_supply{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
 var C2V{uc in UnitsOfType['EVcharging'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ;
 var V2C{uc in UnitsOfType['EVcharging'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ;
@@ -149,6 +150,11 @@ EV_E_mob[u,p,t] = Units_supply['Mobility',u,p,t]/ ff_EV[u] / EV_mobeff  - sum{d 
 
 # EV_E_mob[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i]/ ff_EV[u] / EV_mobeff  - sum{d in Districts}(sum{a in Activities}(EV_E_charged_outside[a,d,u,p,i])) ) * EV_plugging_in[u,p,t]; # pkm * car/pers * kWh/km * share of EV coming back
 
+subject to EV_supplyprofile1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
+EV_E_charging[u,p,t] <= coeff_supply[u,p] * EV_plugging_in[u,p,t] * (1 + tau_relaxation_charging_profile); 
+
+subject to EV_supplyprofile2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
+EV_E_charging[u,p,t] >= coeff_supply[u,p] * EV_plugging_in[u,p,t] * (1 - tau_relaxation_charging_profile); 
 
 subject to outside_charging_c1{a in Activities,d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
 EV_E_charged_outside[a,d,u,p,t] <= EV_activity[a,u,p,t]* share_district_activity[a,d] * frequency_outcharging[a] * n_vehicles[u] * Out_charger_Power[d];

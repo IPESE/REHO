@@ -4,7 +4,7 @@ import datetime
 
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
-    run_label = 'Suurstoffi_chargingprofile'
+    run_label = 'Suurstoffi_CP_EVpenetration_lowprice'
 
     reader = QBuildingsReader()
     qbuildings_data = reader.read_csv(buildings_filename='data/clustering/buildings_suurstoffi.csv', nb_buildings=100)
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     reho.scenario = scenario
     reho.units = units
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
-    reho.single_optimization()
+    # reho.single_optimization()
 
     # WITH MOBILITY ====================================================================================================
     reho.parameters['Population'] = 1500
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     reho.units = units
     reho.grids = grids
     reho.infrastructure = infrastructure.infrastructure(qbuildings_data, units, grids)
-    reho.single_optimization()
+    # reho.single_optimization()
 
     # SCENARIO 4 OFS SHARES
     scenario['name'] = 'M2_OFS'
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     reho.parameters['max_share_EBikes'] = 0.02 # only max, perc_point_window relaxation. 
 
     reho.scenario = scenario
-    reho.single_optimization()
+    # reho.single_optimization()
 
 
     # SCENARIO 5
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     # reho.infrastructure.Units_Parameters.loc["EV_district", "Cost_inv2"] = 750 # to change the cost of EVs [CHF/kWh]
 
     reho.scenario = scenario
-    reho.single_optimization()
+    # reho.single_optimization()
 
     
     # SCENARIO 6
@@ -130,32 +130,41 @@ if __name__ == '__main__':
     reho.scenario = scenario
     reho.single_optimization()
 
-    # SCENARIO 7
-    scenario['name'] = 'M5_SEV'
-    reho.parameters[f"max_share_EV"] = 0.77 + perc_point_window/2
-    reho.parameters[f"min_share_EV"] = 0.77 - perc_point_window/2
+    # # SCENARIO 7
+    # scenario['name'] = 'M5_SEV'
+    # reho.parameters[f"max_share_EV"] = 0.77 + perc_point_window/2
+    # reho.parameters[f"min_share_EV"] = 0.77 - perc_point_window/2
 
-    reho.scenario = scenario
-    reho.single_optimization()
+    # reho.scenario = scenario
+    # reho.single_optimization()
 
-    # SCENARIO 8
-    scenario['name'] = 'O1'
-    shares = {  "share_cars" : 0.5,
-                "share_PT"  : 0.5,
-                "share_MD" : 0.5, # mobilité douce : "soft mobility" ? (from FSO : include biking, walking, electric biking)
-                "share_EV" : 0.5,
-                "share_ICE" : 0.5,
-        }
-    perc_point_window = 1
-    for key in shares.keys():
-        reho.parameters[f"max_{key}"] = shares[key] + perc_point_window/2
-        reho.parameters[f"min_{key}"] = shares[key] - perc_point_window/2
+    # # SCENARIO 8
+    # scenario['name'] = 'O1'
+    # shares = {  "share_cars" : 0.5,
+    #             "share_PT"  : 0.5,
+    #             "share_MD" : 0.5, # mobilité douce : "soft mobility" ? (from FSO : include biking, walking, electric biking)
+    #             "share_EV" : 0.5,
+    #             "share_ICE" : 0.5,
+    #     }
+    # perc_point_window = 1
+    # for key in shares.keys():
+    #     reho.parameters[f"max_{key}"] = shares[key] + perc_point_window/2
+    #     reho.parameters[f"min_{key}"] = shares[key] - perc_point_window/2
     
-    reho.parameters['max_share_EBikes'] = 1 
+    # reho.parameters['max_share_EBikes'] = 1 
 
-    reho.scenario = scenario
-    reho.single_optimization()
+    # reho.scenario = scenario
+    # reho.single_optimization()
 
+    # EV penetration line_plot
+    shares = [10,20,30,40,50,60,70,80,90,100]
+    for s in shares:
+        scenario['name'] = f"M_SEV{s}"
+        reho.parameters[f"max_share_EV"] = 0.77*s/100 + perc_point_window/2
+        reho.parameters[f"min_share_EV"] = 0.77*s/100 - perc_point_window/2
+
+        reho.scenario = scenario
+        reho.single_optimization()
 
     # PLot and save results ============================================================================================
     additional_costs = {"mobility": [1e5, 1e5, 0]}     # cost of gasoline for each scenario (line 103 of plotting.py)
@@ -169,4 +178,4 @@ if __name__ == '__main__':
     fig3.write_html("Figures/Profile_suurstoffi.html")
 
 
-    reho.save_results(format=['pickle','save_all'], filename='Suurstoffi')
+    reho.save_results(format=['pickle','save_all'], filename=f"{run_label}_{date}")

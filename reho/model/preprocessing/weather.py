@@ -50,9 +50,13 @@ def get_cluster_file_ID(cluster):
         E = '_E'
     else:
         E = ''
+    if 'D' in cluster['Attributes']:
+        D = '_D'
+    else:
+        D = ''
 
     File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + \
-              T + I + W + E
+              T + I + W + E + D
 
     return File_ID
 
@@ -77,9 +81,17 @@ def generate_weather_data(cluster, qbuildings_data):
         attributes.append('Weekday')
     if 'E' in cluster['Attributes']:
         attributes.append('Emissions')
+    if 'D' in cluster['Attributes']:
+        attributes.append('DataLoad')
+
+
 
     df3 = pd.read_csv(os.path.join(path_to_weather, 'Elec_CO2_2023.txt'), index_col=[0], header=None)
     df['Emissions'] = df3
+
+    df4 = pd.read_csv(os.path.join(path_to_weather, 'yearly_data_centre_profile_repeated.csv'))['Load_Profile']
+    df['DataLoad'] = df4
+
     df = df[attributes]
     cl = Clustering(data=df, nb_clusters=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
     cl.run_clustering()
@@ -271,7 +283,13 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
         E = '_E'
     else:
         E = ''
-    File_ID = location + '_' + str(len(df_dd) - 2) + '_' + str(int(max(pt))) + T + I + W + E
+    if 'DataLoad' in attributes:
+        D = '_D'
+    else:
+        D = ''
+
+
+    File_ID = location + '_' + str(len(df_dd) - 2) + '_' + str(int(max(pt))) + T + I + W + E + D
 
     if not os.path.isdir(path_to_clustering):
         os.makedirs(path_to_clustering)
@@ -283,6 +301,15 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     df_T = values_cluster['Text']
     filename = os.path.join(path_to_clustering, 'T_' + File_ID + '.dat')
     df_T.to_csv(filename, index=False, header=False)
+
+    # -------------------------------------------------------------------------------------
+    # DataLoad
+    # -------------------------------------------------------------------------------------
+
+    df_D = values_cluster['DataLoad']
+    filename = os.path.join(path_to_clustering, 'D_' + File_ID + '.dat')
+    df_D.to_csv(filename, index=False, header=False)
+
 
     # -------------------------------------------------------------------------------------
     # Emissions
@@ -588,7 +615,7 @@ if __name__ == '__main__':
 
     weather_file = '../../../scripts/template/data/profiles/pully.csv'
     Attributes = ['Text', 'Irr']
-    nb_clusters = [2, 4, 6, 8, 10, 12]
+    nb_clusters = [2, 4, 6, 8, 10, 12, 16]
 
     df_annual = read_custom_weather(weather_file)
     df_annual = df_annual[Attributes]

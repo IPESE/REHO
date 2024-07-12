@@ -11,7 +11,7 @@ Clustering algorithm for input data reduction.
 
 class Clustering:
     """
-    Executes a clustering for each number of clusters among a specified interval (nb_clusters), and selects the optimal one according to the MAPE criterion (Maximum Average Pairwise Euclidean distance).
+    Executes a clustering for each number of clusters among a specified interval (nb_clusters), and selects the optimal one according to the MAPE criterion (Mean Average Percentage Error).
 
     Parameters
     ----------
@@ -38,7 +38,6 @@ class Clustering:
         self.attr_org = []  # matrix or attributes, arrays:  len(attr_org) = total number of periods per year, len(attr_org[0])= number of attributes x period duration
         self.attr_nor = []
         self.attr_clu = None
-        self.modula = None
         self.mod_org = []  # modulo data, f.e. last day of year (24hrs) for  pd = 7*24
         self.mod_nor = []
         if option is None:

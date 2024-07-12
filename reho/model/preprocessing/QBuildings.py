@@ -506,7 +506,7 @@ def translate_facades_to_REHO(df_facades, df_buildings):
 
 
 def translate_roofs_to_REHO(df_roofs):
-    # TODO: in Luise fct there is azimuth + 180
+
     new_roofs_data = gpd.GeoDataFrame()
     dict_roofs = {'tilt': 'TILT',
                   'azimuth': 'AZIMUTH',

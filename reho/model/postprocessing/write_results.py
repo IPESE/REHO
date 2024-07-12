@@ -373,8 +373,10 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
     if method['save_lca']:
         df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(ampl)
+
     if method['use_pv_orientation'] or method['use_facades']:
         df_Results["df_PV_Surface"], df_Results["df_PV_orientation"] = set_dfs_pv(ampl)
+
     if method["extract_parameters"]:
         parameters_record = {}
         for p, ampl_obj in ampl.getParameters():

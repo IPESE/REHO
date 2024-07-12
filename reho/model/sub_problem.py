@@ -190,7 +190,7 @@ class SubProblem:
         # Objectives, epsilon constraints and specific constraints
         ampl.read('scenario.mod')
 
-        # TODO: integrate Jules units into district structure (avoid using ampl eval)
+        # TODO: integrate all storage units into district structure (avoid using ampl eval)
         if self.method_sp['use_Storage_Interperiod']:
             ampl.eval(
                 'set UnitsOfStorage := setof{u in UnitsOfType["Battery_interperiod"] union UnitsOfType["PTES_storage"]'

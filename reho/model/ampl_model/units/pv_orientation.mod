@@ -4,6 +4,9 @@
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
+#-References : 
+# [1]	Mitsubishi Electric Module PV-MLU255HC
+
 # Azimuth = 0 means north direction, 90 = East etc
 
 set Patches default {0.. 144}; #Skydome patches
@@ -44,8 +47,8 @@ param Rotation{s in Surface, (az,ti) in ConfigOfSurface[s],pt in Patches} :=
 # To minimize inter modular shadowing, PV modules have to leave some space between rows.
 # How much space one panel occupies is indicated by the PVA_module_coverage value.
 param Design_lim_angle default 20; #[3]: OPTIMIZATION OF ROW-ARRANGEMENT IN PV SYSTEMS, SHADING LOSS EVALUATIONS ACCORDING TO MODULE POSITIONING AND CONNEXIONS
-param PVA_module_height{u in UnitsOfType['PV']} default 1.0; #	[2]:  Mitsubishi Electric Module PV-MLU255HC
-param PVA_module_width{u in UnitsOfType['PV']} default 1.6;# 1.6[2] 
+param PVA_module_height{u in UnitsOfType['PV']} default 1.0;	# [1]
+param PVA_module_width{u in UnitsOfType['PV']} default 1.6;		# [1]
 param PVA_module_distance{u in UnitsOfType['PV'], s in Surface, (az,ti) in ConfigOfSurface[s]}:= if s in SurfaceOfType['Flat_roof']
 	then sin(ti*deg_rad)/tan(Design_lim_angle *deg_rad)*PVA_module_height[u] else 0 ; 
 param PVA_module_coverage{h in House, u in UnitsOfType['PV'] inter UnitsOfHouse[h],s in SurfaceOfHouse[h], (az,ti)in ConfigOfSurface[s]}:= (if s in SurfaceOfType['Flat_roof']

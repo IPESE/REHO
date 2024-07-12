@@ -48,7 +48,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Scenario 3 EV
-    scenario['name'] = '+ EV'
+    scenario['name'] = 'EV'
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat']
     scenario['enforce_units'] = ['EV_district']
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Scenario 4 ICT
-    scenario['name'] = '+ ICT'
+    scenario['name'] = 'ICT'
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_SH']
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 

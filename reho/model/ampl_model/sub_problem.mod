@@ -355,7 +355,7 @@ param HeatCapacity{h in House} default 120;									#Wh/K m2	: Heat capacity
 param U_h{h in House} default 0.002;										#kW/K m2	: Hot total thermal transfer coefficient
 
 param ERA{h in House} default 200;											#m2			: Energy reference area
-param Cooling{h in House} default 0;									    #-			: Binary parameter to enable cooling or not
+param Cooling{h in House} binary, default 0;							    #-			: Binary parameter to enable cooling or not
 param SolarRoofArea{h in House} default ERA[h]/3;							#m2 		: Roof area available for solar
 
 param T_comfort_min_0{h in House} default 20;											#deg C		: Reference lower comfort bound
@@ -374,7 +374,6 @@ var T_inf{h in House,p in PeriodStandard,t in Time[p]} >= 0, <= T_inf_limit[h];	
 var T_sup{h in House,p in PeriodStandard,t in Time[p]} >= 0, <= T_sup_limit[h];			#deg C
 var House_Q_heating{h in House,p in Period,t in Time[p]} >= 0;				        	#kW
 var House_Q_cooling{h in House,p in Period,t in Time[p]} >= 0;				        	#kW
-
 
 subject to House_Penality_inf{h in House,p in PeriodStandard,t in Time[p]}:
 T_inf[h,p,t] >= T_comfort_min[h,p,t] - T_in[h,p,t];
@@ -416,13 +415,10 @@ param Qc{h in House,p in Period,t in Time[p]} 			:= if U_h[h]*ERA[h]*(T_comfort_
 param Tc_return{h in House,p in Period,t in Time[p]} 	:= T_comfort_min_0[h] - Qc[h,p,t]*alpha_c[h];
 param Tc_supply{h in House,p in Period,t in Time[p]} 	:= -Qc[h,p,t]/Mcp_0c[h] + Tc_return[h,p,t];
 
-set Houseindex_heating ordered by Reals	:= {1,2,3,4,5};
-set Houseindex_cooling ordered by Reals	:= {1,2,3,4,5};	
-
 #-Non-standard requirements																					
-param House_Q_heating_max_d{h in House,p in Period,t in Time[p],i in Houseindex_heating} := Qh[h,p,t]+(i-3)*0.25*Qh_0[h]+epsilon;
-param House_Q_cooling_max_d{h in House,p in Period,t in Time[p],i in Houseindex_cooling} := Qc[h,p,t]+(i-3)*0.25*Qc_0[h]+epsilon;
-											
+param House_Q_heating_max_d{h in House,p in Period,t in Time[p]} := Qh[h,p,t]+0.25*Qh_0[h]+epsilon;
+param House_Q_cooling_max_d{h in House,p in Period,t in Time[p]} := Qc[h,p,t]+0.25*Qc_0[h]+epsilon;
+
 #-heating
 subject to House_streams_heating_c1{h in House,p in Period,t in Time[p]}:
 sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='SH' and Streams_Hin[st]=0}(Streams_Mcp[st,p,t]*HC_Streams_Mult[se,st,p,t]) <= Mcp_0h[h];

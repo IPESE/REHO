@@ -406,9 +406,10 @@ class MasterProblem:
                 ampl_MP.cd(path_to_units_storage)
                 ampl_MP.read('battery.mod')
 
-        if read_DHN:
+        if read_DHN:  # TODO: move DHN.mod into ampl_model > units > district_units
             ampl_MP.cd(path_to_units)
-            ampl_MP.read('DHN.mod')
+            ampl_MP.read('DHN.mod')  # TODO: include DHN parameters into district_units.csv instead of hard coding
+            # TODO: include Fmin and Fmax for DHN_hex.mod instead of 1e4
 
         ampl_MP.cd(path_to_clustering)
         ampl_MP.readData('frequency_' + self.local_data['File_ID'] + '.dat')

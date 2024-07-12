@@ -1,8 +1,8 @@
 # Building heat cascade
 let {h in House,st in StreamsOfBuilding[h] inter {h&'_c_lt'},p in Period, t in Time[p]} Streams_Tin[st,p,t] := Th_return[h,p,t];
-let {h in House,st in StreamsOfBuilding[h] inter {h&'_c_mt'},p in Period, t in Time[p]} Streams_Tin[st,p,t] := T_comfort_min_0[h] + House_Q_heating_max_d[h,p,t,4]*alpha_h[h];
+let {h in House,st in StreamsOfBuilding[h] inter {h&'_c_mt'},p in Period, t in Time[p]} Streams_Tin[st,p,t] := T_comfort_min_0[h] + House_Q_heating_max_d[h,p,t]*alpha_h[h];
 let {h in House,st in StreamsOfBuilding[h] inter {h&'_c_lt'},p in Period, t in Time[p]} Streams_Tout[st,p,t] := Th_supply[h,p,t];
-let {h in House,st in StreamsOfBuilding[h] inter {h&'_c_mt'},p in Period, t in Time[p]} Streams_Tout[st,p,t] := House_Q_heating_max_d[h,p,t,4]/Mcp_0h[h] + Streams_Tin[h&'_c_mt',p,t];
+let {h in House,st in StreamsOfBuilding[h] inter {h&'_c_mt'},p in Period, t in Time[p]} Streams_Tout[st,p,t] := House_Q_heating_max_d[h,p,t]/Mcp_0h[h] + Streams_Tin[h&'_c_mt',p,t];
 
 let {h in House,st in StreamsOfBuilding[h] inter {h&'_h_lt'},p in Period, t in Time[p]} Streams_Tin[st,p,t] := Tc_return[h,p,t];
 let {h in House,st in StreamsOfBuilding[h] inter {h&'_h_lt'},p in Period, t in Time[p]} Streams_Tout[st,p,t] := Tc_supply[h,p,t];

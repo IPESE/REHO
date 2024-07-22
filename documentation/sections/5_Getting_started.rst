@@ -86,14 +86,28 @@ Select the project root containing a Python environment and install the latest s
 Checking proper installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Download the ``scripts/template/`` folder from the `repository <https://github.com/IPESE/REHO/tree/main/scripts/template>`__, and include them at the project root.
+Entry points allow to verify the proper intallation of REHO. Select the desired folder and type:
 
-Run the files ``scripts/template/run.py`` and then ``scripts/template/plot.py``
+.. code-block:: bash
+
+    reho-run-test
+
+.. code-block:: bash
+
+    reho-plot-test
+
+.. code-block:: bash
+
+    reho-examples-test
+
+
+These commands will download files from the ``scripts/test/`` and ``scripts/examples/`` folders from the `repository <https://github.com/IPESE/REHO/tree/main/scripts/examples>`__, copy them locally and execute them.
+
 
 If your installation is correct, you should:
 
-- Receive twice the final message *“Process finished with exit code 0”*.
-- See files appear in the newly created subfolders ``scripts/template/data/clustering/``, ``scripts/template/results/`` and ``scripts/template/figures/``.
+- See the results of the optimizations in the terminal.
+- See files appear in the newly created subfolders ``data/clustering/``, ``results/`` and ``figures/``.
 - Have an overview of the results in your web browser (different tabs showing figures such as below).
 
 .. figure:: ../images/sankey.png
@@ -167,22 +181,19 @@ Please include a ``venv`` at the project root folder and install dependencies wi
 Checking proper installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run any of the files in ``scripts/template/`` or in ``scripts/examples/``.
+Run ``scripts/test/run.py``, ``scripts/test/plot.py`` or any of the files in ``scripts/examples/``.
 
 If your installation is correct, each run should end with *“Process finished with exit code 0”*.
 Some files will also render some results in your web browser and open different tabs showing the outcome of your optimization.
 
-The file ``scripts/examples/test_examples.py`` can also be used to run all the examples and check that they are all functional.
-
 .. warning::
-
     In ``scripts/examples/``, the solver is explicitly defined as Gurobi to reduce calculation time. Simply remove the ``REHO(solver="gurobi")`` argument and it will by default substitute the open-source solver HiGHS.
 
 
 Git tracking
 ~~~~~~~~~~~~~
 
-You will also see some files appear in some newly created subfolders such as ``data/clustering/``, ``results/`` and ``figures/``. These are not git-tracked. But all the other Python files in ``scripts/examples/`` and ``scripts/template/`` are git-tracked.
+You will also see some files appear in some newly created subfolders such as ``data/clustering/``, ``results/`` and ``figures/``. These are not git-tracked. But all the other Python files in ``scripts/examples/`` and ``scripts/test/`` are git-tracked.
 
 You should then be careful to not modify the content of these files.
 
@@ -192,12 +203,12 @@ However, for your future work and own case-studies with REHO, you can create any
 Running REHO
 ================
 
-The following paragraphs describe the content of ``scripts/template/run.py`` and ``scripts/template/plot.py``. These latter should allow you to get started with the tool and conduct your first optimizations.
+The following paragraphs describe the content of ``scripts/test/run.py`` and ``scripts/test/plot.py``. These latter should allow you to get started with the tool and conduct your first optimizations.
 
-.. literalinclude:: ../../scripts/template/run.py
+.. literalinclude:: ../../scripts/test/run.py
    :language: python
 
-.. literalinclude:: ../../scripts/template/plot.py
+.. literalinclude:: ../../scripts/test/plot.py
    :language: python
 
 Set building parameters
@@ -220,9 +231,9 @@ REHO can connect to QBuildings and read the data it contains with the following 
 
 .. code-block:: python
 
-    reader = QBuildingsReader()             # load QBuildingsReader class
-    reader.establish_connection('Geneva')   # connect to QBuildings database
-    qbuildings_data = reader.read_db(transformer=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])      # read data
+    reader = QBuildingsReader()                             # load QBuildingsReader class
+    reader.establish_connection('Geneva')                   # connect to QBuildings database
+    qbuildings_data = reader.read_db(71, egid=['1009515'])  # read data
 
 
 See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_db` for further description.
@@ -245,11 +256,10 @@ The buildings information can also be provided through a CSV file, with the call
 See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_csv` for further description.
 
 .. warning::
-
     To work properly, the .csv given should contain the same fields as the ones defined in QBuildings.
 
-    The order does not matter. It can be helpful to explore the files ``scripts/template/data/buildings.csv``,
-    ``scripts/template/data/roofs.csv`` and ``scripts/template/data/facades.csv``.
+    The order does not matter. It can be helpful to explore the files ``scripts/examples/data/buildings.csv``,
+    ``scripts/examples/data/roofs.csv`` and ``scripts/examples/data/facades.csv``.
 
 Buildings input data
 ~~~~~~~~~~~~~~~~~~~~~

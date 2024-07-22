@@ -205,7 +205,6 @@ fabric.properties
 *.dmg
 *.xpi
 *.gem
-*.egg
 *.deb
 *.rpm
 *.msi
@@ -308,10 +307,7 @@ pip-selfcheck.json
 documentation/_build
 documentation/sections/_autosummary
 
-# Data
-
-
 # Scripts
 scripts/*
 !scripts/examples/
-!scripts/template/
+!scripts/test/

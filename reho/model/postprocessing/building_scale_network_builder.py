@@ -100,7 +100,7 @@ def correct_SS_SC(df_grid, df_unit, df_t, nb_periods=10):
     df_el = df_grid.xs(('Electricity', 'Network'), level=('Layer', 'Hub'))
     df_imp, df_exp = return_annual_exports_imports(df_el, df_t)
 
-    df_aim = {'SC': (onsite_elec - df_exp * 1000) / onsite_elec,
+    df_aim = {'SC': np.nan if onsite_elec == 0 else (onsite_elec - df_exp * 1000) / onsite_elec,
               'SS': (onsite_elec - df_exp * 1000) / (onsite_elec - df_exp * 1000 + df_imp * 1000),
               "PVP": df_PV.Units_supply / (df_PV.Units_supply - df_exp * 1000 + df_imp * 1000),
               "MWh_imp_el": df_imp,

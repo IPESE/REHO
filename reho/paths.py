@@ -26,32 +26,25 @@ path_to_district_units = os.path.join(path_to_ampl_model, 'units', 'district_uni
 path_to_units_storage = os.path.join(path_to_ampl_model, 'units', 'storage')
 path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'h2_units')
 
-# data
 
-# elcom
+# data
 path_to_elcom = os.path.join(path_to_data, 'elcom')
 
-# emissions
 path_to_emissions = os.path.join(path_to_data, 'emissions', 'electricity_matrix_2019_reduced.csv')
 
-# infrastructure
 path_to_infrastructure = os.path.join(path_to_data, 'infrastructure')
 
-# QBuildings
 path_to_qbuildings = os.path.join(path_to_data, 'QBuildings')
 
-# SIA
 path_to_sia = os.path.join(path_to_data, 'SIA')
 path_to_sia_equivalence = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
 path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
 
-# skydome
 path_to_skydome = os.path.join(path_to_data, 'skydome')
 path_to_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
 path_to_areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt')  # area of patches
 path_to_cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt')  # location of centre points
 
-# weather
 path_to_weather = os.path.join(path_to_data, 'weather')
 
 # scripts specific paths
@@ -78,7 +71,7 @@ def file_reader(file, index_col=None):
     """To read data files correctly, whether there are csv, txt, dat or excel"""
     file = Path(path_handler(file))
     try:
-        if file.suffix == '.csv' or file.suffix == '.dat' or file.suffix == '.txt':
+        if file.suffix in ['.csv', '.dat', '.txt']:
             sniffer = Sniffer()
             with open(file, 'r') as f:
                 line = next(f).strip()

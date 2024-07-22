@@ -1,3 +1,5 @@
+from . import sensitivity_analysis
+
 __doc__ = """
 Directory where the output of the optimization from the AMPL model is extracted and processed to give a ``reho.results`` dictionary.
 """

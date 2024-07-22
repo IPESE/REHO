@@ -26,7 +26,7 @@ def convert_results_txt_to_csv(load_timesteps):
         gh_result = gh_result.reshape(-1, len(gh_result))  # column to row
 
         df_hour = pd.DataFrame(gh_result, index=[int(ts)])
-        df = df.append(df_hour)
+        df = pd.concat([df, df_hour])
 
     t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
 
@@ -279,7 +279,7 @@ def construct_annual_orientation_df(limiting_angle, local_data):
     for (a, t) in it.product(azimuth, tilt):
         azimuth, tilt, annual_irr = calc_orientated_surface(a, t, limiting_angle, local_data)
         d = {'azimuth': azimuth, 'tilt': tilt, 'irr': annual_irr}
-        df = df.append(d, ignore_index=True)
+        df = pd.concat([df, d], ignore_index=True)
     print(df)
     filename = 'orientated_irr_linearized' + str(limiting_angle) + '.csv'
     df.to_csv(filename)
@@ -299,7 +299,7 @@ def limiting_angle_for_tilt():
         azimuth, tilt, annual_irr = calc_orientated_surface(a, t, l)
 
         d = {'tilt': tilt, 'limit_angle': l, 'irr': annual_irr}
-        df = df.append(d, ignore_index=True)
+        df = pd.concat([df, d], ignore_index=True)
     print(df)
     filename = 'irr_tilt_limiting_angle_azi' + str(a) + '.csv'
     df.to_csv(filename)

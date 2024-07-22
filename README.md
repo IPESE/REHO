@@ -47,7 +47,10 @@ Full code can be accessed from the [REHO GitHub repository](https://github.com/I
 git clone https://github.com/IPESE/REHO.git
 ```
 
-Please refer to "[Getting started](https://reho.readthedocs.io/en/main/sections/5_Getting_started.html)" section of the documentation  for step-by-step guidelines.
+Please refer to "[Getting started](https://reho.readthedocs.io/en/main/sections/5_Getting_started.html)" section of the documentation for step-by-step guidelines.
 
 ## Suggestions and contributions
 All suggestions or implementation must be tracked with dedicated issues and reported in the project repository.
+
+Refer to "[Contribute](https://reho.readthedocs.io/en/main/sections/7_Contribute.html)" section of the documentation for further guidance.
+

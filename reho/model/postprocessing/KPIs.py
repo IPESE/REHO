@@ -709,7 +709,6 @@ def build_df_Economics(df_Results, df_profiles):
 def temperature_profile(df_Results, daily_averaging=False):
     """
     Returns a pd.Series of the indoor temperature profile, one column per building.
-    TODO : check if multi-buildings works fine
 
     Parameters:
         df_Results (df) : pd.DataFrame of a scenario
@@ -718,6 +717,9 @@ def temperature_profile(df_Results, daily_averaging=False):
     Returns:
         df_Tin
     """
+
+    # TODO: check if multi - buildings works fine
+
     # Extract the data
     buildings_list = list(df_Results['df_Buildings'].index)
     df_buildings_t = df_Results['df_Buildings_t']

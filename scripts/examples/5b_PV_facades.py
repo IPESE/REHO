@@ -12,8 +12,11 @@ if __name__ == '__main__':
     # qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
 
     # Alternatively, roof orientations and facades can be loaded from csv files
-    qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2,
-                                      facades_filename='../template/data/facades.csv', roofs_filename='../template/data/roofs.csv')
+    buildings_filename = str(Path(__file__).parent / 'data' / 'buildings.csv')
+    facades_filename = str(Path(__file__).parent / 'data' / 'facades.csv')
+    roofs_filename = str(Path(__file__).parent / 'data' / 'roofs.csv')
+    qbuildings_data = reader.read_csv(buildings_filename=buildings_filename, nb_buildings=2,
+                                      facades_filename=facades_filename, roofs_filename=roofs_filename)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Sion', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}

@@ -242,7 +242,7 @@ class Clustering:
 
         # create df from the modulo data and append to cluster
         df_mod = pd.DataFrame.from_dict(dict(zip(self.data_org.columns, self.mod_nor)))
-        df = df.append(df_mod, ignore_index=True)
+        df = pd.concat([df, df_mod], ignore_index=True)
 
         return attr_clu, df
 

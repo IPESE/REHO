@@ -3,12 +3,15 @@ import csv
 import math
 import os.path
 import re
+import warnings
 
 import geopandas as gpd
 import numpy as np
 import pandas as pd
+from shapely import wkt
 from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.exc import SAWarning
 
 import reho.model.preprocessing.skydome as skydome
 from reho.paths import *
@@ -91,6 +94,7 @@ class QBuildingsReader:
                 project['database']['username']))
 
         # input
+        warnings.filterwarnings('ignore', category=SAWarning)
         metadata = MetaData(bind=self.db_engine)
         metadata.reflect(schema=self.db_schema)
         self.tables = metadata.tables
@@ -342,7 +346,7 @@ class QBuildingsReader:
 
 
 def translate_buildings_to_REHO(df_buildings):
-    new_buildings_data = gpd.GeoDataFrame()
+
     dict_QBuildings_REHO = {
 
         #################################################
@@ -358,13 +362,12 @@ def translate_buildings_to_REHO(df_buildings):
         'status': 'status',
         'period': 'period',
         'capita_cap': 'n_p',
-        # 'NOMSECTEUR': 'NOMSECTEUR',
 
         # Area
         'area_era_m2': 'ERA',
         'area_roof_solar_m2': 'SolarRoofArea',
         'area_facade_m2': 'area_facade_m2',
-        'height_m': 'height_m',  # only for use facades
+        'height_m': 'height_m',  # only for use_facades
         'count_floor': 'count_floor',
 
         # Heating source
@@ -404,79 +407,30 @@ def translate_buildings_to_REHO(df_buildings):
         'facade_annual_irr_kWh_y': 'facade_annual_irr_kWh_y'
     }
 
-    # TODO: correct heat source dictionary
-    # dict_translate_heat_source = {
-    #     'Gas': 'gas',
-    #     'Oil': 'oil',
-    #     'Wood (beech)': 'wood',
-    #     'Electricity': 'electricity',
-    #     'Heat pump': 'Heat pump',
-    #     'District heat': 'District heat',
-    #     'Other': 'gas',
-    #     'Other/Oil': 'oil',
-    #     'Electricity/Other': 'electricity',
-    #     'Oil/Gas': 'oil',
-    #     'Oil/Other': 'oil',
-    #     'Electricity/Oil': 'electricity',
-    #     'Heat pump/Electricity': 'Heat pump',
-    #     'Solar collector': 'solar',
-    #     'Solar (thermal)': 'solar',
-    #     'No energy source/Oil': 'oil',
-    #     'No energy source': 'gas',
-    #     'Electricity/No energy source': 'electricity',
-    #     'Oil/No energy source': 'oil',
-    #     'Gas/Solar collector': 'gas',
-    #     'Not determined': 'unknown'
-    # }
+    try:
+        translated_buildings_data = gpd.GeoDataFrame(geometry=df_buildings['geometry'])
+    except TypeError:
+        # Convert WKT strings to shapely geometries if needed
+        df_buildings['geometry'] = df_buildings['geometry'].apply(lambda x: wkt.loads(x) if isinstance(x, str) else x)
+        # Filter out invalid geometries
+        df_buildings = df_buildings[df_buildings['geometry'].apply(lambda x: x.is_valid if hasattr(x, 'is_valid') else True)]
+        # Create GeoDataFrame
+        translated_buildings_data = gpd.GeoDataFrame(geometry=df_buildings['geometry'])
 
     for key in dict_QBuildings_REHO.keys():
         REHO_index = dict_QBuildings_REHO[key]
         try:
-            new_buildings_data[REHO_index] = df_buildings[key]
+            translated_buildings_data[REHO_index] = df_buildings[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
 
-    # for i, building in new_buildings_data.iterrows():
-    #     try:
-    #         sources_translated = dict_translate_heat_source[building['source_heating']]
-    #         sources_translated_w = dict_translate_heat_source[building['source_hotwater']]
-    #         building['source_heating'] = sources_translated
-    #         building['source_hotwater'] = sources_translated_w
-    #     except:
-    #         sources = building['source_heating'].split('/')
-    #         try:
-    #             sources_translated = dict_translate_heat_source[sources[0]]
-    #         except KeyError:
-    #             print('Source %s not in the dictionary' % sources[0])
-    #             sources_translated = 'not documented'
-    #         for source in sources[1:]:
-    #             try:
-    #                 sources_translated += '/' + dict_translate_heat_source[source]
-    #             except KeyError:
-    #                 print('Source %s not in the dictionary' % source)
-    #                 continue
-    #         building['source_heating'] = sources_translated
-    #         sources_w = building['source_hotwater'].split('/')
-    #         try:
-    #             sources_translated_w = dict_translate_heat_source[sources_w[0]]
-    #         except KeyError:
-    #             print('Source %s not in the dictionary' % sources_w[0])
-    #             sources_translated_w = 'not documented'
-    #         for source_w in sources_w[1:]:
-    #             try:
-    #                 sources_translated_w += '/' + dict_translate_heat_source[source_w]
-    #             except KeyError:
-    #                 print('Source %s not in the dictionary' % source_w)
-    #         building['source_hotwater'] = sources_translated_w
-    #     new_buildings_data.loc[i, :] = building
-
-    df_buildings = new_buildings_data
+    df_buildings = translated_buildings_data
 
     return df_buildings
 
 
 def translate_facades_to_REHO(df_facades, df_buildings):
-    new_facades_data = gpd.GeoDataFrame()
+
     dict_facades = {'azimuth': 'AZIMUTH',
                     'id_facade': 'Facades_ID',
                     'area_facade_solar_m2': 'AREA',
@@ -485,14 +439,24 @@ def translate_facades_to_REHO(df_facades, df_buildings):
                     # 'cy': 'CY',
                     'geometry': 'geometry'}
 
+    try:
+        translated_facades_data = gpd.GeoDataFrame(geometry=df_facades['geometry'])
+    except TypeError:
+        # Convert WKT strings to shapely geometries if needed
+        df_facades['geometry'] = df_facades['geometry'].apply(lambda x: wkt.loads(x) if isinstance(x, str) else x)
+        # Filter out invalid geometries
+        df_facades = df_facades[df_facades['geometry'].apply(lambda x: x.is_valid if hasattr(x, 'is_valid') else True)]
+        # Create GeoDataFrame
+        translated_facades_data = gpd.GeoDataFrame(geometry=df_facades['geometry'])
+
     for key in dict_facades.keys():
         REHO_index = dict_facades[key]
         try:
-            new_facades_data[REHO_index] = df_facades[key]
+            translated_facades_data[REHO_index] = df_facades[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
             
-    df_facades = new_facades_data
+    df_facades = translated_facades_data
     df_facades['CX'] = df_facades['geometry'].centroid.x
     df_facades['CY'] = df_facades['geometry'].centroid.y
     df_facades['coord_Z0'] = None
@@ -507,7 +471,6 @@ def translate_facades_to_REHO(df_facades, df_buildings):
 
 def translate_roofs_to_REHO(df_roofs):
 
-    new_roofs_data = gpd.GeoDataFrame()
     dict_roofs = {'tilt': 'TILT',
                   'azimuth': 'AZIMUTH',
                   'id_roof': 'ROOF_ID',
@@ -515,14 +478,24 @@ def translate_roofs_to_REHO(df_roofs):
                   'id_building': 'id_building',
                   'geometry': 'geometry'}
 
+    try:
+        translated_roofs_data = gpd.GeoDataFrame(geometry=df_roofs['geometry'])
+    except TypeError:
+        # Convert WKT strings to shapely geometries if needed
+        df_roofs['geometry'] = df_roofs['geometry'].apply(lambda x: wkt.loads(x) if isinstance(x, str) else x)
+        # Filter out invalid geometries
+        df_roofs = df_roofs[df_roofs['geometry'].apply(lambda x: x.is_valid if hasattr(x, 'is_valid') else True)]
+        # Create GeoDataFrame
+        translated_roofs_data = gpd.GeoDataFrame(geometry=df_roofs['geometry'])
+
     for key in dict_roofs.keys():
         REHO_index = dict_roofs[key]
         try:
-            new_roofs_data[REHO_index] = df_roofs[key]
+            translated_roofs_data[REHO_index] = df_roofs[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
         
-    df_roofs = new_roofs_data
+    df_roofs = translated_roofs_data
 
     return df_roofs
 

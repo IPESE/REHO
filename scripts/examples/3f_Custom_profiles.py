@@ -24,8 +24,8 @@ if __name__ == '__main__':
 
     # Set method options
     # You can provide here a profile for domestic electricity, domestic hot water, or building occupancy
-    path_to_custom_elec_profile = '../template/data/profiles/electricity.csv'
-    method = {'building-scale': True, 'use_custom_profiles': {'electricity': path_to_custom_elec_profile}}
+    custom_elec_profile = str(Path(__file__).parent / 'data' / 'profiles' / 'electricity.csv')
+    method = {'building-scale': True, 'use_custom_profiles': {'electricity': custom_elec_profile}}
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

@@ -1,3 +1,5 @@
+import platform
+
 import matplotlib.pyplot as plt
 from SALib.analyze import morris as morris_analyze
 from SALib.analyze import sobol as sobol_analyze
@@ -220,7 +222,8 @@ class SensitivityAnalysis:
                 if save_inter:  # Intermediary save
                     if np.mod(j, save_inter_nb_iter) == 0 or j == (len(self.sampling) - 1):
                         self.save()
-                        os.system('cmd /c "ampl_lic restart"')  # restart ampl license to avoid crashes
+                        if platform.system() == 'Windows':
+                            os.system('cmd /c "ampl_lic restart"')  # restart ampl license to avoid crashes (used with parallel computing)
 
             except KeyboardInterrupt:
                 return

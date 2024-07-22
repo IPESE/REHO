@@ -109,7 +109,7 @@ def get_weather_data(qbuildings_data):
 def read_custom_weather(path_to_weather_file):
     """
     From the current directory, looks for a custom weather file.
-    This file should be a .csv with the same structure as the template provided in ``reho/scripts/template/data/profiles/``.
+    This file should be a .csv with the same structure as the examples provided in ``reho/scripts/examples/data/profiles/``.
     """
 
     df = file_reader(path_handler(path_to_weather_file))
@@ -536,7 +536,7 @@ def plot_LDC(cl, save_fig):
 if __name__ == '__main__':
     cm = plt.cm.get_cmap('Spectral_r')
 
-    weather_file = '../../../scripts/template/data/profiles/Sion.csv'
+    weather_file = '../../../scripts/test/data/profiles/Sion.csv'
     Attributes = ['Text', 'Irr']
     nb_clusters = [2, 4, 6, 8, 10, 12]
 

@@ -570,9 +570,6 @@ MOO is implemented using the :math:`\epsilon`-constraint method to generate Pare
 Annual operating expenses
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning::
-    Adapt to all layers L
-
 .. math::
     \boldsymbol{C^{op}_b} =  \sum_{l \in \text{L}} \sum_{p \in \text{P}} \sum_{t \in \text{T}} \left(  c^{l, +}_{p,t} \cdot \boldsymbol{ \dot{E}^{gr,+}_{b,l,p,t} } -  c^{l,-}_{p,t}\cdot \boldsymbol{ \dot{E}^{gr,-}_{b,l,p,t} } \right) \cdot d_t \cdot d_p  \quad \forall b \in  \text{B}
 

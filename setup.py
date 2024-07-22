@@ -15,6 +15,13 @@ setup(
 
     name='REHO',
     version='1.1.0',
+    entry_points={
+        'console_scripts': [
+            'reho-run-test = reho.test_scripts:run',
+            'reho-plot-test = reho.test_scripts:plot',
+            'reho-examples-test = reho.test_scripts:test_examples',
+        ],
+    },
     packages=find_packages(),
     include_package_data=True,
     install_requires=['amplpy>=0.12.0,<0.13.0',
@@ -28,7 +35,7 @@ setup(
                       'scikit-learn-extra>=0.3.0',
                       'sqlalchemy>=1.4.42,<2.0.0',
                       'psycopg2>=2.9.4,<3.0.0 ; platform_system != "Windows"',
-                      'psycopg2-binary>=2.9.9,<3.0.0 ; platform_system == "Windows"'
+                      'psycopg2-binary>=2.9.9,<3.0.0 ; platform_system == "Windows"',
                       'geopandas>=0.12.2,<1.0.0',
                       'matplotlib>=3.6.1,<4.0.0',
                       'plotly>=5.10,<6.0.0',

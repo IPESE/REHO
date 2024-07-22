@@ -3,10 +3,12 @@ from reho.model.reho import *
 
 if __name__ == '__main__':
 
+    buildings_filename = str(Path(__file__).parent / 'data' / 'buildings.csv')
+
     # Set building parameters
     # Load your buildings from a csv file instead of reading the database
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='../template/data/buildings.csv', nb_buildings=2)
+    qbuildings_data = reader.read_csv(buildings_filename=buildings_filename, nb_buildings=2)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Sion', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}

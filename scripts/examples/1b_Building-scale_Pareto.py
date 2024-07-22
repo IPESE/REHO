@@ -34,9 +34,6 @@ if __name__ == '__main__':
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='1b')
 
-    # Pareto plot
-    plotting.plot_pareto(reho.results, label='EN_long', color='ColorPastel').show()
-
     # Performance plot : costs and gwp
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long').show()
     plotting.plot_performance(reho.results, plot='gwp', indexed_on='Pareto_ID', label='EN_long').show()

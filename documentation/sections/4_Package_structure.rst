@@ -194,15 +194,11 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.plotting.plotting
    :members:
 
-*rainbow_plots.py*
-------------------
-
-.. automodule:: reho.plotting.rainbow_plots
-
 `sankey.py`
 -----------
 
 .. automodule:: reho.plotting.sankey
+   :members:
 
 *paths.py*
 ==================

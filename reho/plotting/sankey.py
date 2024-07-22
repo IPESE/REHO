@@ -4,7 +4,7 @@ import numpy as np
 from reho.paths import *
 
 __doc__ = """
-Builds the dataframe for the visualization of annual flows from REHO results in the form of a Sankey diagram.
+Builds a dataframe for the visualization of annual flows from REHO results in the form of a Sankey diagram.
 """
 
 # Colors and labels for units and layers
@@ -17,13 +17,17 @@ def update_label(source_name, target_name, df_label):
 
     Parameters
     ----------
-    source_name (string) : first name to update
-    target_name (string) : second name to update
-    df_label (df) : pd.DataFrame with labels
+    source_name: str
+        Source to update
+    target_name: str
+        Target to update
+    df_label: pd.DataFrame
+        Labels
 
     Returns
     -------
-    df_label (df) updated
+    pd.DataFrame
+        df_label updated with the source and target values
     """
     if not (source_name in df_label.index):  # create label 'source' if not existing yet
         df_label.loc[source_name, 'pos'] = len(df_label)
@@ -39,14 +43,19 @@ def add_label_value(df_label, df_stv, precision, units):
 
     Parameters
     __________
-    df_label (df) : pd.DataFrame of labels
-    df_stv (df) : pd.DataFrame of source, target and value
-    precision (int): precision of the displayed numbers (default = 2)
-    units (string): unit of the values (default MWh)
+    df_label: pd.DataFrame
+        Labels
+    df_stv: pd.DataFrame
+        Source, target and value
+    precision: int
+        Precision of the displayed numbers (default = 2)
+    units: str
+        Unit of the values (default MWh)
 
     Returns
     _______
-    df label updated with the label values
+    pd.DataFrame
+        df_label pdated with the label values
     """
     df_source_value = pd.DataFrame()
     df_source_value.index = df_label.pos
@@ -64,23 +73,35 @@ def add_label_value(df_label, df_stv, precision, units):
 
 def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, check_dest_2=False, dest_2=None, adjustment=0, fact=1):
     """
-    Adds an energy flow for the sankey diagramm for 'sankey_plot' according (a) cell(s) of df_annuals if cell not null
+    Adds an energy flow for the sankey diagram according cell(s) of df_annuals if cell not null
 
     Parameters
     ----------
 
-    source (string) : name of the source
-    dest (string) : name of the destination
-    layer (string) : name of the layer of the considered cell(s)
-    hub (string) : name of the hub of the considered cell(s)
-    dem_sup (string) : 'Supply_MWh' or 'Demand_MWh', column to take (! no control)
-    df_annuals (df) : df_annuals dataframe
-    df_label (df) : df_label dataframe of labels
-    df_stv (df) : df_stv dataframe of source,target,value
-    check_dest_2 (bool) : if True dest_2 substitute dest (default false)
-    dest_2 (string) : second possible destination (default none)
-    adjustment (float) : offset added to the cell value (default 0)
-    fact (float) : factor multiplied to the cell value (default 1)
+    source: str
+        name of the source
+    dest: str
+        name of the destination
+    layer: str
+        name of the layer of the considered cell(s)
+    hub: str
+        name of the hub of the considered cell(s)
+    dem_sup: str
+        'Supply_MWh' or 'Demand_MWh', column to take (! no control)
+    df_annuals: pd.DataFrame
+
+    df_label: pd.DataFrame
+
+    df_stv: pd.DataFrame
+
+    check_dest_2: bool
+        if True dest_2 substitute dest (default False)
+    dest_2: str
+        second possible destination (default None)
+    adjustment: float
+        offset added to the cell value (default 0)
+    fact: float
+        factor multiplied to the cell value (default 1)
 
     Returns
     -------
@@ -104,28 +125,42 @@ def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, ch
     return df_label, df_stv, fact * source_to_dest + adjustment
 
 
-def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, units='MWh', display_label_value=True, scaling_factor=1):
+def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, units='MWh', display_label_value=True, scaling_factor=1):
+    """
+    Builds the Sankey dataframe.
+
+    Parameters
+    ----------
+    df_Results: pd.DataFrame
+        DataFrame coming from REHO results (already extracted from the desired *Scn_ID* and *Pareto_ID*).
+    label: str
+        Indicate the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+    color: str
+        Indicate the color set to use for the plot. Choose among 'ColorPastel', 'ColorFlash'.
+    precision: int
+        Precision of the displayed numbers (default = 2).
+    units: str
+        Unit of the values (default MWh).
+    display_label_value: bool
+        Numerical values are printed.
+    scaling_factor: int/float
+        Scales linearly the REHO results for the plot.
+
+    Returns
+    ----------
+    pd.DataFrame
+        Sankey dataframe.
+
     """
 
-    :param df_results:
-    :param label:
-    :param color:
-    :param precision:
-    :param units:
-    :param display_label_value:
-    :param scaling_factor:
-    :return:
-
-    Hypotheses
-    1. DHW demand taken as the supply of the watertank DHW
-    2. no flow: electrical storage system to grid feed in, all to 'feed in electrical grid ' is from PV
-    3. Small losses of NG, heat, wood,... between network and devices not accounted
-    4. Electricity for 'Data heat' fully accounted as electricity consumption (Layer Data: not in sankey)
-    5. Electricity produced by technologies can be stored (e.g. NG_cogen elec -> battery)
-
-    ! Make sure that all the possible technologies/sources/demands are in the list below.
-    If not, risk that something will be not displayed, there is no check provided by this function for that.
-    """
+    # Hypotheses :
+    #   1. DHW demand is taken as the supply of the watertank DHW
+    #   2. no flow: electrical storage system to grid feed in, all to 'feed in electrical grid ' is from PV
+    #   3. Small losses of NG, heat, wood,... between network and devices not accounted
+    #   4. Electricity for 'Data heat' fully accounted as electricity consumption (Layer Data: not in sankey)
+    #   5. Electricity produced by technologies can be stored (e.g. NG_cogen elec -> battery)
+    # ! Make sure that all the possible technologies/sources/demands are in the list below.
+    # If not, risk that something will be not displayed, there is no check provided by this function for that.
 
     # Electrical storage device
     elec_storage_list = ['Battery', 'EV_district']
@@ -145,7 +180,7 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 
     # Select only not null lines in df_annuals
-    df_annuals = scaling_factor * df_results['df_Annuals']
+    df_annuals = scaling_factor * df_Results['df_Annuals']
     df_annuals = df_annuals.replace(0, np.nan)
     df_annuals = df_annuals.loc[df_annuals['Demand_MWh'].notnull() | df_annuals['Supply_MWh'].notnull()]
     df_annuals = df_annuals.replace(np.nan, 0).reset_index()

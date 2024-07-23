@@ -17,9 +17,9 @@ setup(
     version='1.1.0',
     entry_points={
         'console_scripts': [
-            'reho-run-test = reho.test_scripts:run',
-            'reho-plot-test = reho.test_scripts:plot',
-            'reho-examples-test = reho.test_scripts:test_examples',
+            'reho-run-test = reho.tests.test_scripts:test_run',
+            'reho-plot-test = reho.tests.test_scripts:test_plot',
+            'reho-examples-test = reho.tests.test_scripts:test_examples',
         ],
     },
     packages=find_packages(),
@@ -45,7 +45,8 @@ setup(
                       'coloredlogs>=15.0.1',
                       'SALib>=1.4.8',
                       'qmcpy>=1.4.5',
-                      'pvlib==0.10.*'
+                      'pvlib==0.10.*',
+                      'pytest>=8.3.0',
                       ],
     package_data={
           '': ['*.csv', '*.xlsx', '*.dat', '*.txt' '*.mod', '*.ini'],

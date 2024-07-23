@@ -2,7 +2,7 @@ import os
 import requests
 
 
-def run():
+def test_run():
     url = "https://raw.githubusercontent.com/IPESE/REHO/main/scripts/test/run.py"
     local_filename = "run.py"
 
@@ -13,7 +13,7 @@ def run():
     os.system(f"python {local_filename}")
 
 
-def plot():
+def test_plot():
     url = "https://raw.githubusercontent.com/IPESE/REHO/main/scripts/test/plot.py"
     local_filename = "plot.py"
 
@@ -74,6 +74,6 @@ def test_examples():
 
 
 if __name__ == "__main__":
-    run()
-    plot()
+    test_run()
+    test_plot()
     test_examples()

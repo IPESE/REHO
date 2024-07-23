@@ -86,7 +86,8 @@ autodoc_mock_imports = ['amplpy',
                         'qmcpy',
                         'pvlib',
                         'pyproj',
-                        'shapely']
+                        'shapely',
+                        'pytest']
 sys.modules['scikit-learn'] = MagicMock()
 sys.modules['sklearn'] = MagicMock()
 sys.modules['sklearn.metrics'] = MagicMock()

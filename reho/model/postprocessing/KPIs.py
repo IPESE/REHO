@@ -571,9 +571,9 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestam
     # ------------------------------------------------------------------------------------------------------
     # Technical KPIs
     # ------------------------------------------------------------------------------------------------------
-    df_eta = postcompute_efficiency(df_Results["df_Unit"], buildings_data, df_annual, df_annual_network, df_profiles,
-                                    df_Results["df_Weather"], df_Time)
-    df_KPI = pd.concat([df_KPI, df_eta], axis=1)  # eta_I    eta_II   eta_Ipv  eta_IIpv
+    #df_eta = postcompute_efficiency(df_Results["df_Unit"], buildings_data, df_annual, df_annual_network, df_profiles,
+    #                                df_Results["df_Weather"], df_Time)
+    #df_KPI = pd.concat([df_KPI, df_eta], axis=1)  # eta_I    eta_II   eta_Ipv  eta_IIpv
 
     if 'HeatPump' in infrastructure.UnitsOfType:  # Check if HP DHN is used
         df_COP = postcompute_annual_COP(df_Results["df_Annuals"], infrastructure)

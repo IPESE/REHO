@@ -1,5 +1,6 @@
 from reho.model.preprocessing.QBuildings import *
 import reho.model.preprocessing.weather as weather
+from reho.model.preprocessing.emissions_parser import annual_to_typical_emissions
 
 __doc__ = """
 Handles data specific to the location.
@@ -58,5 +59,6 @@ def return_local_data(cluster, qbuildings_data):
 
     # Carbon emissions
     local_data["df_Emissions"] = file_reader(path_to_emissions, index_col=[0, 1, 2])
+    local_data["df_Emissions_GWP100a"] = annual_to_typical_emissions(cluster, 'CH', "GWP100a", local_data["df_Timestamp"], local_data["df_Emissions"])
 
     return local_data

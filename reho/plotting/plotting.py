@@ -587,6 +587,15 @@ def plot_sankey(df_Results, label='EN_long', color='ColorPastel', filename=None,
     source, target, value, label_, color_ = sankey.df_sankey(df_Results, label=label, color=color, precision=2,
                                                              units='MWh', display_label_value=True,
                                                              scaling_factor=scaling_factor)
+    # Number of labels
+    num_labels = len(label_)
+
+    # Generate colors using a colormap
+    colormap = plt.cm.get_cmap('tab10', num_labels)  # You can choose different colormaps
+    colors = [colormap(i) for i in range(num_labels)]
+
+    # Convert colors to hex format
+    color_list = ['#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255)) for r, g, b, _ in colors]
 
     fig = go.Figure(data=[go.Sankey(
         orientation="h",
@@ -597,7 +606,7 @@ def plot_sankey(df_Results, label='EN_long', color='ColorPastel', filename=None,
             thickness=20,
             line=dict(color="black", width=0.5),
             label=label_,
-            color=color_,
+            color=color_list,
         ),
         link=dict(
             source=source,

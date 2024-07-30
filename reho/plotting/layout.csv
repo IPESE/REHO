@@ -1,9 +1,9 @@
 Name,EN_long,EN_short,FR_long,ColorPastel,NamePastel,ColorFlash,NameFlash
 ,,,,,,,
-CAPEX,Capital expenses,CAPEX,Coûts d'investissement,#007480,canard,,
-OPEX,Operational expenses,OPEX,Coûts opérationnels,#FEA993,salmon,,
-TOTEX,Total expenses,TOTEX,Coûts totaux,#007480,canard,,
-GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark,,
+CAPEX,Capital expenses,CAPEX,Coûts d'investissement,#007480,canard,#413D3A,ardoise
+OPEX,Operational expenses,OPEX,Coûts opérationnels,#FEA993,salmon,#413D3A,ardoise
+TOTEX,Total expenses,TOTEX,Coûts totaux,#007480,canard,#413D3A,ardoise
+GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark,#413D3A,ardoise
 ,,,,,,,
 Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark,#8B4513,brown
 NaturalGas,Natural gas,NG,Gaz naturel,#413D3A,ardoise,#413D3A,ardoise
@@ -34,11 +34,16 @@ HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon,#CD1076,pink
 HeatPump_Air,Heat pump air,HP air,"Pompe à chaleur, air",#FEA993,salmon,#CD1076,pink
 HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, DHN",#FEA993,salmon,#CD1076,pink
 HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",#FEA993,salmon,#CD1076,pink
-HeatPump_Geothermal_district,HP geothermal (district),District HP geo,"PAC géothermie (district)",#FEA993,salmon,#CD1076,pink
+HeatPump_Geothermal_district,Heat pump geothermal (district),District HP geo,PAC géothermie (district),#FEA993,salmon,#CD1076,pink
 HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1076,pink
 ,,,,,,,
+Thermal_grid,Heat from Data centre,Data Centre Heat,Heat de Centre de data lol,#FF8C00,orange,#FF3030,red
 Heat,Heat from DHN,Heat DHN,Chaleur (CAD),#FF8C00,orange,#FF3030,red
+ORC_EPFL_district,Electricity generated (ORC),ORC electricty,ORC,#FEA993,salmon,#CD1076,pink
+DHN_in,District heating network,DHN,Réseau de chaleur,#FF8C00,orange,#EEE685,yellowgrey
+DHN_out_district,District heating network,DHN,Réseau de chaleur,#FF8C00,orange,#EEE685,yellowgrey
 DHN_pipes,DHN connection,DHN,Connexion CAD,#FF8C00,orange,#EEE685,yellowgrey
+DHN_hex,Heat exchanger (in),HEX in,Échangeur de chaleur,#FF8C00,orange,#EEE685,yellowgrey
 DHN_hex_in,Heat exchanger (in),HEX in,Échangeur de chaleur (entrée),#FF8C00,orange,#EEE685,yellowgrey
 DHN_hex_out,Heat exchanger (out),HEX out,Échangeur de chaleur (sortie),#FF8C00,orange,#EEE685,yellowgrey
 Heat_losses,Heat losses,SH leak,Pertes chaleur,#FF8C00,orange,#CDC8B1,grey

@@ -317,7 +317,7 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     if 'Emissions' in attributes:
 
         df_Emission = values_cluster['Emissions']
-        df_E = df_Emission.to_frame()
+        df_E = df_Emission.to_frame().div(1000)
     #df_E.columns = ['GWP_supply' if col == 'Emissions' else col for col in df_E.columns]
         df_E.rename(columns={'Emissions': 'GWP_supply'}, inplace=True)
         df_E.insert(0, '',  ['Electricity' for _ in range(242)], True)

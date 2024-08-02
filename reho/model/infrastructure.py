@@ -163,24 +163,22 @@ class Infrastructure:
         self.Set['Lca_kpi'] = self.lca_kpis
 
     def generate_parameter(self):
-        # Units Flows --
+        # Units Flows -----------------------------------------------------------
+
+        df_out = {unit["name"]: unit["Units_flowrate_out"] for unit in self.houses[self.House[0]]['units']}
+        df_out = pd.DataFrame.from_dict(df_out).stack()
+        df_in = {unit["name"]: unit["Units_flowrate_in"] for unit in self.houses[self.House[0]]['units']}
+        df_in = pd.DataFrame.from_dict(df_in).stack()
+        Units_flowrate = pd.concat([df_out, df_in], axis=1)
+        Units_flowrate.columns = ['Units_flowrate_out', 'Units_flowrate_in']
+        Units_flowrate.index = Units_flowrate.index.remove_unused_levels()
+
         for h in self.House:
+            Units_flowrate_h = Units_flowrate.copy()
+            Units_flowrate_h.index = Units_flowrate_h.index.set_levels(Units_flowrate.index.get_level_values(1).unique() + "_" + h, level=1)
+            self.Units_flowrate = pd.concat([self.Units_flowrate, Units_flowrate_h])
+        self.Units_flowrate.index.names = ['Layer', 'Unit']
 
-            for u in self.houses[h]['units']:
-                df_i = pd.DataFrame()
-                df_o = pd.DataFrame()
-                complete_name = u['name'] + '_' + h
-                for i in u['Units_flowrate_in']:
-                    idx = pd.MultiIndex.from_tuples([(i, complete_name)], names=['Layer', 'Unit'])
-                    df = pd.DataFrame(u['Units_flowrate_in'][i], index=idx, columns=['Units_flowrate_in'])
-                    df_i = pd.concat([df_i, df])
-                for o in u['Units_flowrate_out']:
-                    idx = pd.MultiIndex.from_tuples([(o, complete_name)], names=['Layer', 'Unit'])
-                    df = pd.DataFrame(u['Units_flowrate_out'][o], index=idx, columns=['Units_flowrate_out'])
-                    df_o = pd.concat([df_o, df])
-
-                df = pd.concat([df_o, df_i], axis=1)
-                self.Units_flowrate = pd.concat([self.Units_flowrate, df])
         for u in self.district_units:
             df_i = pd.DataFrame()
             df_o = pd.DataFrame()
@@ -197,10 +195,22 @@ class Infrastructure:
             df = pd.concat([df_o, df_i], axis=1)
             self.Units_flowrate = pd.concat([self.Units_flowrate, df])
 
-        # Units Costs --
-        for h in self.House:
-            for u in self.houses[h]['units']:
-                self.add_unit_parameters(u['name'] + '_' + h, u)
+        # Units Costs -----------------------------------------------------------
+        for u in self.houses[self.House[0]]['units']:
+            self.add_unit_parameters(u['name'] + '_' + self.House[0], u)
+
+        Units_Parameters_0 = self.Units_Parameters.copy()
+        Units_Parameters_lca_0 = self.Units_Parameters_lca.copy()
+        for h in self.House[1:]:
+            idx_h = [idx.replace(self.House[0], h) for idx in Units_Parameters_0.index.values]
+            Units_Parameters_h = Units_Parameters_0.copy()
+            Units_Parameters_h.index = idx_h
+            self.Units_Parameters = pd.concat([self.Units_Parameters, Units_Parameters_h])
+
+            Units_Parameters_lca_h = Units_Parameters_lca_0.copy()
+            idx_h_lca = [idx.replace(self.House[0], h) for idx in Units_Parameters_lca_0.index.get_level_values(1).unique()]
+            Units_Parameters_lca_h.index = Units_Parameters_lca_h.index.set_levels(idx_h_lca, level=1)
+            self.Units_Parameters_lca = pd.concat([self.Units_Parameters_lca, Units_Parameters_lca_h])
 
         for u in self.district_units:
             self.add_unit_parameters(u['name'], u)

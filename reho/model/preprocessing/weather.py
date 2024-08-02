@@ -536,7 +536,7 @@ def plot_LDC(cl, save_fig):
 if __name__ == '__main__':
     cm = plt.cm.get_cmap('Spectral_r')
 
-    weather_file = '../../../scripts/test/data/profiles/Sion.csv'
+    weather_file = '../../../scripts/examples/data/profiles/Sion.csv'
     Attributes = ['Text', 'Irr']
     nb_clusters = [2, 4, 6, 8, 10, 12]
 

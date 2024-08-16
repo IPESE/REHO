@@ -39,6 +39,7 @@ HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1
 ,,,,,,,
 Heat,Heat from DHN,Heat DHN,Chaleur (CAD),#FF8C00,orange,#FF3030,red
 DHN_pipes,DHN connection,DHN,Connexion CAD,#FF8C00,orange,#EEE685,yellowgrey
+DHN_hex,DHN Heat exchanger,DHN HEX,Échangeur de chaleur (réseau urbain),#FF8C00,orange,#EEE685,yellowgrey
 DHN_hex_in,Heat exchanger (in),HEX in,Échangeur de chaleur (entrée),#FF8C00,orange,#EEE685,yellowgrey
 DHN_hex_out,Heat exchanger (out),HEX out,Échangeur de chaleur (sortie),#FF8C00,orange,#EEE685,yellowgrey
 Heat_losses,Heat losses,SH leak,Pertes chaleur,#FF8C00,orange,#CDC8B1,grey

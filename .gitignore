@@ -303,6 +303,11 @@ pip-selfcheck.json
 
 ##### Change only the lines below
 
+# Databases
+reho/data/QBuildings/*
+!reho/data/QBuildings/Geneva.ini
+!reho/data/QBuildings/Suisse.ini
+
 # Documentation
 documentation/_build
 documentation/sections/_autosummary

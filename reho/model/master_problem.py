@@ -408,7 +408,7 @@ class MasterProblem:
 
         if read_DHN:
             ampl_MP.cd(path_to_district_units)
-            ampl_MP.read('DHN.mod')  # TODO: include DHN parameters into district_units.csv instead of hard coding
+            ampl_MP.read('DHN.mod')
 
         ampl_MP.cd(path_to_clustering)
         ampl_MP.readData('frequency_' + self.local_data['File_ID'] + '.dat')
@@ -454,10 +454,8 @@ class MasterProblem:
         MP_parameters['Units_Parameters_lca'] = self.infrastructure.Units_Parameters_lca.query('index.get_level_values("Units").str.contains("district")')
 
         if self.method['use_dynamic_emission_profiles']:
-            ids = self.number_SP_solutions.iloc[-1]
-            df = df_Grid_t[['GWP_supply']].xs("Electricity", level="Layer", drop_level=False)
-            MP_parameters['GWP_supply'] = df.xs((ids["FeasibleSolution"], ids["House"]), level=("FeasibleSolution", "house"))
-            MP_parameters['GWP_demand'] = MP_parameters['GWP_supply'].rename(columns={"GWP_supply": "GWP_demand"}) * (1-1e-9)
+            MP_parameters['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
+            MP_parameters['GWP_demand'] = MP_parameters["GWP_supply"] * (1-1e-9)
 
         for key in self.lists_MP['list_parameters_MP']:
             if key in self.parameters.keys():

@@ -10,9 +10,9 @@ if __name__ == '__main__':
     scenario['specific'] = []
 
     # Set building parameters
-    reader = QBuildingsReader(load_roofs=True)
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(10559, nb_buildings=2)
+    reader = QBuildingsReader()
+    reader.establish_connection('Geneva')
+    qbuildings_data = reader.read_db(234, nb_buildings=2)
 
     # Set specific parameters
     parameters = {}
@@ -21,11 +21,11 @@ if __name__ == '__main__':
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Choose energy system structure options
-    scenario['exclude_units'] = ['ThermalSolar']
+    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'use_pv_orientation': True, 'actors_problem': True}
+    method = {'actors_problem': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()

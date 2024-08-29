@@ -61,9 +61,6 @@ class QBuildingsReader:
         db : str
             Name of the database to which we want to connect
 
-        Notes
-        -----
-        - It is highly recommend to pick 'Suisse' as a database as it is the only one maintained at the moment.
         """
         # Database connection
         file_ini = path_to_qbuildings + "/" + db + ".ini"

@@ -20,13 +20,16 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     # You can add more resources layers besides electricity and natural gas, and adapt their prices
-    # or keep the default values from data/infrastructure/grids.csv
+    # - directly within the script
+    # - or through a custom csv file based on the default values from data/infrastructure/grids.csv
     grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              'Wood': {},
                                              'Oil': {},
                                              })
-    path_to_custom_units = '../../reho/data/infrastructure/building_units.csv'
+
+    # Units specifications can also be adapted through a custom csv file based on the default values from data/infrastructure/building_units.csv
+    path_to_custom_units = str(Path(__file__).parent / 'data' / 'building_units.csv')
     units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
 
     # Set method options

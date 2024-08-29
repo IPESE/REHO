@@ -71,13 +71,11 @@ class SubProblem:
         self.parameters_to_ampl = dict()
 
     def build_model_without_solving(self):
-        File_ID = weather.get_cluster_file_ID(self.cluster_sp)
-
         self.initialize_parameters_for_ampl_and_python()
         ampl = self.init_ampl_model()
         ampl = self.set_weather_data(ampl)
         ampl = self.set_ampl_sets(ampl)
-        self.set_emissions_profiles(File_ID)
+        self.set_emissions_profiles()
         self.set_temperature_and_EVs_profiles()
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
@@ -85,7 +83,6 @@ class SubProblem:
             self.set_PV_models(ampl)
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
         ampl = self.set_scenario(ampl)
-
         return ampl
 
     def initialize_parameters_for_ampl_and_python(self):
@@ -190,7 +187,7 @@ class SubProblem:
         # Objectives, epsilon constraints and specific constraints
         ampl.read('scenario.mod')
 
-        # TODO: integrate all storage units into district structure (avoid using ampl eval)
+        # TODO: integrate all storage units into infrastructure (avoid using ampl eval)
         if self.method_sp['use_Storage_Interperiod']:
             ampl.eval(
                 'set UnitsOfStorage := setof{u in UnitsOfType["Battery_interperiod"] union UnitsOfType["PTES_storage"]'
@@ -282,13 +279,11 @@ class SubProblem:
 
         return ampl
 
-    def set_emissions_profiles(self, File_ID):
+    def set_emissions_profiles(self):
 
-        df_em = emissions.return_typical_emission_profiles(self.cluster_sp, File_ID, 'GWP100a', self.local_data["df_Timestamp"],
-                                                           self.local_data["df_Emissions"])
         if self.method_sp['use_dynamic_emission_profiles']:
-            self.parameters_to_ampl['GWP_supply'] = df_em
-            self.parameters_to_ampl['GWP_demand'] = df_em.rename(columns={'GWP_supply': 'GWP_demand'})
+            self.parameters_to_ampl['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
+            self.parameters_to_ampl['GWP_demand'] = self.parameters_to_ampl['GWP_supply']
             self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity').drop(
                 columns=['Cost_demand_cst', 'Cost_supply_cst'])
 
@@ -612,7 +607,7 @@ class SubProblem:
                         epsilon_parameter = ampl.getParameter(epsilon_constraint)
                         epsilon_parameter.setValues([self.scenario_sp['EMOO'][epsilon_constraint]])
                 except:
-                    logging.warning('EMOO constraint ' + str(epsilon_constraint) + ' was not found in ampl model and was thus ignored.')
+                    logging.warning('EMOO constraint ' + str(epsilon_constraint) + ' was not found in ampl subproblem and was thus ignored.')
 
         # Set specific constraints
         ampl.getConstraint('disallow_exchanges_1').drop()
@@ -640,7 +635,7 @@ class SubProblem:
                 try:
                     ampl.getConstraint(specific_constraint).restore()
                 except:
-                    logging.warning('Specific constraint "' + str(specific_constraint) + '" was not found in ampl model and was thus ignored.')
+                    logging.warning('Specific constraint "' + str(specific_constraint) + '" was not found in ampl subproblem and was thus ignored.')
 
         return ampl
 

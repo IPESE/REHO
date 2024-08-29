@@ -173,11 +173,11 @@ var Costs_House_cft{h in House} >= -1e-4;
 var Costs_tot;
 var DHN_inv_house{h in House} >= 0;
 
-subject to Costs_Unit_capex{u in Units} :
+subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}} :
  Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
 
 subject to Costs_Unit_replacement:
-Costs_rep= tau* sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
+Costs_rep= tau* sum{u in Units diff {"DHN_pipes_district"},n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] =sum{f in FeasibleSolutions} lambda[f,h] * Costs_inv_rep_SPs[f,h] + DHN_inv_house[h];

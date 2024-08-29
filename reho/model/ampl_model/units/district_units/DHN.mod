@@ -25,8 +25,6 @@ param diameter_k_in{f in FeasibleSolutions, i in House_ID, p in Period,t in Time
 param diameter_k_out{f in FeasibleSolutions, i in House_ID, p in Period,t in Time[p]} := 
 	( sizing_factor * sum{j in House_ID: j>=i} flowrate_out[f,"Building"&j,p,t])^0.5;
 
-param cinv1_dhn default 5670;	# CHF/m2
-param cinv2_dhn default 613;	# CHF/m
 
 var diameter_max{h in House} >=0;
 var diameter_k{h in House} >=0;
@@ -58,7 +56,7 @@ flowrate_max[h] >= sum{f in FeasibleSolutions} (flowrate_in[f,h,p,t] * lambda[f,
 
 
 subject to DHN_capex{h in House}:
-DHN_inv_house[h] = tau * distance_buildings * (cinv1_dhn * diameter_k[h] + connection_house[h] * cinv2_dhn);
+DHN_inv_house[h] = tau * distance_buildings * (Cost_inv1["DHN_pipes_district"] * diameter_k[h] + Cost_inv2["DHN_pipes_district"] * connection_house[h]);
 
 subject to DHN_capex2:
 DHN_inv = sum{h in House} DHN_inv_house[h];

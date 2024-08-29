@@ -522,9 +522,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df5 = get_ampl_data(ampl, 'lifetime')
     df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
     if read_DHN:
-        df_DHN = pd.DataFrame([[1, 1, get_ampl_data(ampl, 'DHN_inv')["DHN_inv"][0], 0, 0]], index=["DHN"], columns=df_Unit.columns)
-        df_Unit = pd.concat([df_Unit, df_DHN], axis=0)
-    df_Unit.index.names = ['Unit']
+        df_Unit.at["DHN_pipes_district", ("Units_Use", "Units_Mult", "Costs_Unit_inv")] = [1, 1, get_ampl_data(ampl, 'DHN_inv')["DHN_inv"][0]]
     df_Results["df_Unit"] = df_Unit.sort_index()
 
     # Unit_t

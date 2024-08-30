@@ -26,7 +26,8 @@ extensions = ['sphinxcontrib.bibtex',
               'sphinx.ext.napoleon',
               'sphinx.ext.autosummary',
               'sphinx_design',
-              'sphinx_copybutton']
+              'sphinx_copybutton',
+              'nbsphinx']
 exclude_patterns = ['LICENSE']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 

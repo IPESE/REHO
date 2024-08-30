@@ -75,6 +75,7 @@ Contents
    sections/6_Examples
    sections/7_Contribute
    sections/Appendix
+   sections/Notebook
 
 
 .. Indices and tables

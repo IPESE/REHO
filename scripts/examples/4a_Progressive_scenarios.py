@@ -80,5 +80,5 @@ if __name__ == '__main__':
     reho.save_results(format=['xlsx', 'pickle'], filename='4a')
 
     # Plot results
-    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long').show()
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
 

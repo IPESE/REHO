@@ -35,5 +35,5 @@ if __name__ == '__main__':
     SA.run_SA()
 
     # Save results
-    plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long').show()
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long', title="Economical performance").show()
     reho.save_results(format=['xlsx', 'pickle'], filename='4b')

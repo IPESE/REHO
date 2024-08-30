@@ -35,9 +35,9 @@ if __name__ == '__main__':
     reho.save_results(format=['xlsx', 'pickle'], filename='1b')
 
     # Performance plot : costs and gwp
-    plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long').show()
-    plotting.plot_performance(reho.results, plot='gwp', indexed_on='Pareto_ID', label='EN_long').show()
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Pareto_ID', label='EN_long', title="Economical performance").show()
+    plotting.plot_performance(reho.results, plot='gwp', indexed_on='Pareto_ID', label='EN_long', title="Environmental performance").show()
 
     # Sankey diagram
     for key in reho.results['pareto'].keys():
-        plotting.plot_sankey(reho.results['pareto'][key], label='EN_long', color='ColorPastel').show()
+        plotting.plot_sankey(reho.results['pareto'][key], label='EN_long', color='ColorPastel', title="Sankey diagram").show()

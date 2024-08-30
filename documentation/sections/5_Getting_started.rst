@@ -117,6 +117,13 @@ If your installation is correct, you should:
 
    Sankey diagram resulting from a basic REHO single-optimization.
 
+.. figure:: ../images/performance.png
+   :width: 1000
+   :align: center
+   :name: sankey
+
+   Economical performance resulting from a REHO multi-objective optimization (Pareto).
+
 From source
 ------------------
 

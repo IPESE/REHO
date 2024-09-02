@@ -1,33 +1,38 @@
-# PTES
-let {p in Period, t in Time[p],u in UnitsOfType['PTES_conversion'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
-let {p in Period, t in Time[p],u in UnitsOfType['PTES_conversion'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);
 
 # Heat curtailment
 let {h in House,st in StreamsOfHouse[h] inter {'HC_'&h&'_c_lt'},p in Period, t in Time[p]} Streams_Tin[st,p,t] := 20;
 let {h in House,st in StreamsOfHouse[h] inter {'HC_'&h&'_c_lt'},p in Period, t in Time[p]} Streams_Tout[st,p,t] := 50;
 
-# FC
-let {p in Period, t in Time[p],u in UnitsOfType['FuelCell'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
-let {p in Period, t in Time[p],u in UnitsOfType['FuelCell'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);
-
-# ETZ
-let {p in Period, t in Time[p],u in UnitsOfType['Electrolyzer'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
-let {p in Period, t in Time[p],u in UnitsOfType['Electrolyzer'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);
-
-# MTZ
-let {p in Period, t in Time[p],u in UnitsOfType['Methanizer'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 400;
-let {p in Period, t in Time[p],u in UnitsOfType['Methanizer'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 60-(20);
-
-# SOEFC
-let {p in Period, t in Time[p],u in UnitsOfType['SOEFC'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 725;
-let {p in Period, t in Time[p],u in UnitsOfType['SOEFC'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 60-(20);
-
-# H2_storage (compression)
-let {p in Period, t in Time[p],u in UnitsOfType['H2compression'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
-let {p in Period, t in Time[p],u in UnitsOfType['H2compression'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);
+#
 
 # LHS
 let {h in House,st in StreamsOfHouse[h] inter {'LHS_'&h&'_c_lt'},p in Period,t in Time[p]} Streams_Tin[st,p,t] := TES_T_ret[h,p];
 let {h in House,st in StreamsOfHouse[h] inter {'LHS_'&h&'_c_lt'},p in Period,t in Time[p]} Streams_Tout[st,p,t] := LHS_T_Fusion+LHS_dTmin_exchange;
 let {h in House,st in StreamsOfHouse[h] inter {'LHS_'&h&'_h_lt'},p in Period,t in Time[p]} Streams_Tin[st,p,t] := LHS_T_Fusion-LHS_dTmin_exchange;
 let {h in House,st in StreamsOfHouse[h] inter {'LHS_'&h&'_h_lt'},p in Period,t in Time[p]} Streams_Tout[st,p,t] := TES_T_ret[h,p];
+
+
+# PTES
+#let {p in Period, t in Time[p],u in UnitsOfType['PTES_conversion'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
+#let {p in Period, t in Time[p],u in UnitsOfType['PTES_conversion'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);
+
+
+# FC
+#let {p in Period, t in Time[p],u in UnitsOfType['FuelCell'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
+#let {p in Period, t in Time[p],u in UnitsOfType['FuelCell'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);
+
+# ETZ
+#let {p in Period, t in Time[p],u in UnitsOfType['Electrolyzer'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
+#let {p in Period, t in Time[p],u in UnitsOfType['Electrolyzer'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);
+
+# MTZ
+#let {p in Period, t in Time[p],u in UnitsOfType['Methanizer'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 400;
+#let {p in Period, t in Time[p],u in UnitsOfType['Methanizer'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 60-(20);
+
+# SOEFC
+#let {p in Period, t in Time[p],u in UnitsOfType['SOEFC'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 725;
+#let {p in Period, t in Time[p],u in UnitsOfType['SOEFC'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 60-(20);
+
+# H2_storage (compression)
+#let {p in Period, t in Time[p],u in UnitsOfType['H2compression'],s in StreamsOfUnit[u]} Streams_Tin[s,p,t]  := 70;
+#let {p in Period, t in Time[p],u in UnitsOfType['H2compression'],s in StreamsOfUnit[u]} Streams_Tout[s,p,t] := 70-(20);

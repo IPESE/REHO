@@ -402,6 +402,9 @@ class MasterProblem:
                 ampl_MP.read('heatpump_district.mod')
             if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
+            if "ORC_EPFL_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ORC_EPFL_district.mod')
+                ampl_MP.getConstraint('ORC_all_the_time').drop()
             if "Battery_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.cd(path_to_units_storage)
                 ampl_MP.read('battery.mod')
@@ -459,6 +462,9 @@ class MasterProblem:
             df = df_Grid_t[['GWP_supply']].xs("Electricity", level="Layer", drop_level=False)
             MP_parameters['GWP_supply'] = df.xs((ids["FeasibleSolution"], ids["House"]), level=("FeasibleSolution", "house"))
             MP_parameters['GWP_demand'] = MP_parameters['GWP_supply'].rename(columns={"GWP_supply": "GWP_demand"}) * (1-1e-9)
+
+        if self.method['ORC_all_the_time']:
+            ampl_MP.getConstraint('ORC_all_the_time').restore()
 
         for key in self.lists_MP['list_parameters_MP']:
             if key in self.parameters.keys():

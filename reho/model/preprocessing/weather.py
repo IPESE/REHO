@@ -305,17 +305,16 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
     # -------------------------------------------------------------------------------------
     # DataLoad
     # -------------------------------------------------------------------------------------
-
-    df_D = values_cluster['DataLoad']
-    filename = os.path.join(path_to_clustering, 'D_' + File_ID + '.dat')
-    df_D.to_csv(filename, index=False, header=False)
+    if 'DataLoad' in attributes:
+        df_D = values_cluster['DataLoad']
+        filename = os.path.join(path_to_clustering, 'D_' + File_ID + '.dat')
+        df_D.to_csv(filename, index=False, header=False)
 
 
     # -------------------------------------------------------------------------------------
     # Emissions
     # -------------------------------------------------------------------------------------
     if 'Emissions' in attributes:
-
         df_Emission = values_cluster['Emissions']
         df_E = df_Emission.to_frame().div(1000)
     #df_E.columns = ['GWP_supply' if col == 'Emissions' else col for col in df_E.columns]

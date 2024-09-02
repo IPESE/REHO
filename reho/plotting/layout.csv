@@ -34,7 +34,7 @@ HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon,#CD1076,pink
 HeatPump_Air,Heat pump air,HP air,"Pompe à chaleur, air",#FEA993,salmon,#CD1076,pink
 HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, DHN",#FEA993,salmon,#CD1076,pink
 HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",#FEA993,salmon,#CD1076,pink
-HeatPump_Geothermal_district,Heat pump geothermal (district),District HP geo,PAC géothermie (district),#FEA993,salmon,#CD1076,pink
+HeatPump_Geothermal_district,"Heat pump (district, lake source)",District HP geo,PAC géothermie (district),#FEA993,salmon,#CD1076,pink
 HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1076,pink
 ,,,,,,,
 Thermal_grid,Heat from Data centre,Data Centre Heat,Heat de Centre de data lol,#FF8C00,orange,#FF3030,red
@@ -53,6 +53,7 @@ DataHeat_SH,Data centers,ICT,Centre de données,#ffcc99,skin,#EE00EE,magenta
 ThermalSolar,Thermal solar panels,TS,Panneaux solaires thermiques,#FF8C00,orange,#FF8C00,orange
 Tank,Tank,Tank,Réservoir,#FF8C00,orange,#FF7F24,orange
 WaterTankSH,Water Tank SH,WT (SH),Ballon d'eau (chauffage),#FF8C00,orange,#FF7F24,orange
+Battery_district,Battery (60 kWh capacity),BT,Battery,#FF8C01,orange,#FF7F25,orange
 ,,,,,,,
 WaterTankDHW,Water Tank DHW,WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux,#B22222,bordeaux
 DHW,Domestic hot water,DHW,Eau chaude sanitaire,#B22222,bordeaux,#B22222,bordeaux

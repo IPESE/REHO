@@ -11,7 +11,7 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 #-TEMPERATURE DISCRETIZATION
 #-T_INDEX
-param T_source{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]} default 8;
+param T_source{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]} default 20;
 #---------------------------------------------------------------------#
 set HP_Tsupply default {16};																	#-
 

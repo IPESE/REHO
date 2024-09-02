@@ -686,7 +686,7 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
             units_supply.append(unit)
         else:
             units_demand.append(unit)
-
+    '''
     # Grids
     imports = {}
     exports = {}
@@ -707,7 +707,7 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
 
         import_profile[layer] = moving_average(import_profile[layer], items_average)
         export_profile[layer] = moving_average(export_profile[layer], items_average)
-
+'''
     # Units
     demands = dict()
     supplies = dict()

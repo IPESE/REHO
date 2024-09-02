@@ -21,7 +21,6 @@ class Clustering:
         Interval for the number of clusters possible.
 
     """
-
     def __init__(self, data, nb_clusters=None,  option=None, pd=None, outliers=None):
         super().__init__()
         if nb_clusters is None:
@@ -177,8 +176,8 @@ class Clustering:
              outlier_position.append(id - c)
         outlier_position = np.array(outlier_position)
 
-        outliers_before_period = outlier_position[outlier_position<=clusters]
-        outliers_before_index = outlier_position[outlier_position<= index]
+        outliers_before_period = outlier_position[outlier_position <=clusters]
+        outliers_before_index = outlier_position[outlier_position <= index]
 
         if len(outliers_before_period) == 0:
             cluster = clusters

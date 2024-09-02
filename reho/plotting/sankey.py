@@ -126,7 +126,7 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     semi_auto_device = ['HeatPump_Air', 'HeatPump_DHN', 'NG_Boiler', 'ThermalSolar', 'OIL_Boiler',
                         'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'NG_Cogeneration', 'DHN_in',
                         'HeatPump_Lake', 'WOOD_Stove', 'HeatPump_Geothermal', 'Air_Conditioner',
-                        'DataHeat_DHW', 'HeatPump_Geothermal_district', 'DHN_hex_in', 'DHN_hex_out','ORC_EPFL_district']  # name must be the same as used by REHO ,'ORC_EPFL_district'
+                        'DataHeat_DHW', 'HeatPump_Geothermal_district', 'DHN_hex_in', 'DHN_hex_out','ORC_EPFL_district', 'Battery_district']  # name must be the same as used by REHO ,'ORC_EPFL_district'
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 
     # Select only not null lines in df_annuals

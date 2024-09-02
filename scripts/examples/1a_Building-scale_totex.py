@@ -9,7 +9,7 @@ if __name__ == '__main__':
     qbuildings_data = reader.read_db(transformer=234, nb_buildings=1)
 
     # Select clustering options for weather data
-    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 365, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()
@@ -20,10 +20,10 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids, storage_data=True)
 
     # Set method options
-    method = {'building-scale': True}
+    method = {'building-scale': True }
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

@@ -406,7 +406,8 @@ def translate_buildings_to_REHO(df_buildings):
         'roof_annual_irr_kWh_y': 'roof_annual_irr_kWh_y',
         'facade_annual_irr_kWh_y': 'facade_annual_irr_kWh_y'
     }
-
+    translated_buildings_data= gpd.GeoDataFrame()
+    '''
     try:
         translated_buildings_data = gpd.GeoDataFrame(geometry=df_buildings['geometry'])
     except TypeError:
@@ -416,7 +417,7 @@ def translate_buildings_to_REHO(df_buildings):
         df_buildings = df_buildings[df_buildings['geometry'].apply(lambda x: x.is_valid if hasattr(x, 'is_valid') else True)]
         # Create GeoDataFrame
         translated_buildings_data = gpd.GeoDataFrame(geometry=df_buildings['geometry'])
-
+'''
     for key in dict_QBuildings_REHO.keys():
         REHO_index = dict_QBuildings_REHO[key]
         try:

@@ -86,6 +86,8 @@ class district_decomposition:
             self.DW_params = DW_params
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
+
+        # TODO : un jour, peut-être changer la nomenclature de ces parametres pour semi-automatiser la separation entre MP et SP : (ex : tous les param MP finissent pas _MP)
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
@@ -363,11 +365,14 @@ class district_decomposition:
 
         if len(self.infrastructure.UnitsOfDistrict) > 0:
             ampl_MP.cd(path_to_district_units)
-            if "EV_district" in self.infrastructure.UnitsOfDistrict:
+            if "Mobility" in self.infrastructure.UnitsOfLayer:
                 ampl_MP.read('mobility.mod')
+            if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
                 # ampl_MP.read('proxy_mobilitydemand.mod')
-                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
+                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2',"EV_supplyprofile1","EV_supplyprofile2","ExternalEV_Costs_positive"]
+            else:
+                scenario['exclude_units'] = scenario['exclude_units']  + ['EVCharging_district']
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:

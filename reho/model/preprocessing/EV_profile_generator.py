@@ -104,7 +104,7 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     dailydist : float
         duplicata of the ampl param Dailydist, declared later in the program (TODO : Could be coded better bc the duplicatas are not linked)
     population : float
-        the input reho.parameters['Population'] in the initialisation of the scenario. 
+        the input reho.parameters['Population'] in the initialisation of the scenario. duplicata of the ampl param Population, declared later in the program (TODO : Could be coded better bc the duplicatas are not linked)
     transportunits : list
         a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network supply['Mobility']
 
@@ -118,6 +118,8 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
         dailydist = 36.8 # km per day
     if mode_speed_custom is None:
         mode_speed_custom = pd.DataFrame()
+    if population is None:
+        population = 10 # km per day
 
     # Periods
     # TODO IMPLEMENTATION of flexible period duration

@@ -179,7 +179,7 @@ subject to Costs_opex:
 Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]); 
 
 subject to ExternalEV_Costs_positive{p in Period,t in Time[p]}:
-ExternalEV_Costs_op[p,t] >=0 ; #TODO : add the functionnality that this constraint can be disabled if we allow the district to sell more energy that it imports 
+ExternalEV_Costs_op[p,t] >=0 ; # TODO : add the functionnality that this constraint can be disabled if we allow the district to sell more energy than it imports 
 
 
 #--------------------------------------------------------------------------------------------------------------------#

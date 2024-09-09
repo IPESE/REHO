@@ -679,6 +679,8 @@ class compact_optimization:
             ampl.getConstraint('AC_c3').drop()
         if 'EV' in self.infrastructure_compact.UnitTypes:
             ampl.getConstraint('unidirectional_service').drop()
+            ampl.getConstraint('EV_supplyprofile1').drop()
+            ampl.getConstraint('EV_supplyprofile2').drop()
 
         if self.method_compact['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()

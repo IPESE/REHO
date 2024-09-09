@@ -17,7 +17,7 @@ param max_n_ICE := n_ICEperhab * Population;
 param ff_ICE default 1.56; # [1]
 param max_share_ICE default 1; # [4] G 3.3.1.6 : share of cars is 66 %
 param min_share_ICE default 0.0; 
-param max_daily_time_spend_travellingICE{u in UnitsOfType['ICE']} default 1;
+param max_daily_time_spend_travellingICE{u in UnitsOfType['ICE']} default 1; # source : sociological studies (insight from Timo :) )
 
 # Technical characteristics
 param ICE_eff{u in UnitsOfType['ICE']} default 2.12;  # km/kWh [2] : 4.99 L/100 km and 34 MJ/L on average for diesel/gasoline => 2.12 km/kWh

@@ -18,6 +18,8 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = ['EV_district']
 
+    parameters = dict()
+
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
@@ -30,8 +32,6 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Set specific parameters
-    parameters = {'TransformerCapacity': np.array([1e6,1e6 , 0, 1e6]),  # TODO : robustesse of mobility Network
-                  }
 
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,

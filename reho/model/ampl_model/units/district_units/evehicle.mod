@@ -22,11 +22,11 @@ param n_EVperhab{u in UnitsOfType['EV']} default 1; # [4] G 2.1.2.1 on average 0
 param n_EVtotperhab default 1.5; #1.5; # 1.1;
 param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population; 
 param n_EVtot_max := n_EVtotperhab * Population; 
-param ff_EV{u in UnitsOfType['EV']} default 1.56;
-param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
-param EV_plugging_in{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# -
+param ff_EV{u in UnitsOfType['EV']} default 1.56; # [4]
+param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_EV_plugged_out_profiles_district
+param EV_plugging_in{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_EV_plugged_out_profiles_district
 param tau_relaxation_charging_profile default 0.03;
-param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]};
+param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}; # initialized through the function generate_mobility_parameters
 param min_share_EV default 0;
 param max_share_EV default 1; # [4] G 3.3.1.6 : share of cars is 66 %
 param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # usually a car spends 1h per day on the move - source : Timo

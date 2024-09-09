@@ -7,7 +7,7 @@ if __name__ == '__main__':
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
 
-    districts = [ 3658,3112,277, 7724,8538, 13569, 13219,13228]
+    districts = [ 3658]
     for tr in districts:
         qbuildings_data = reader.read_db(transformer=tr, nb_buildings=2)
 

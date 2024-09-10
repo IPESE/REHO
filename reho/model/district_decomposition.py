@@ -94,7 +94,7 @@ class district_decomposition:
                                                 "DailyDist","Mode_Speed","outside_charging_price","charging_externalload","Districts","share_district_activity","externalload_sellingprice",
                                                 "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
                                                  "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" , "n_ICEperhab"], # attention District is a SET
-                         "list_constraints_MP": []
+                         "list_constraints_MP": ["EV_supplyprofile1","EV_supplyprofile2"]
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -369,8 +369,9 @@ class district_decomposition:
                 ampl_MP.read('mobility.mod')
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
-                # ampl_MP.read('proxy_mobilitydemand.mod')
-                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2',"EV_supplyprofile1","EV_supplyprofile2","ExternalEV_Costs_positive"]
+                ampl_MP.getConstraint('EV_supplyprofile1').drop()
+                ampl_MP.getConstraint('EV_supplyprofile2').drop()
+                ampl_MP.getConstraint('ExternalEV_Costs_positive').drop()
             else:
                 scenario['exclude_units'] = scenario['exclude_units']  + ['EVCharging_district']
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:

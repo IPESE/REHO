@@ -2,28 +2,6 @@ import os
 import requests
 
 
-def test_run():
-    url = "https://raw.githubusercontent.com/IPESE/REHO/main/scripts/test/run.py"
-    local_filename = "run.py"
-
-    response = requests.get(url)
-    with open(local_filename, 'wb') as out_file:
-        out_file.write(response.content)
-
-    os.system(f"python {local_filename}")
-
-
-def test_plot():
-    url = "https://raw.githubusercontent.com/IPESE/REHO/main/scripts/test/plot.py"
-    local_filename = "plot.py"
-
-    response = requests.get(url)
-    with open(local_filename, 'wb') as out_file:
-        out_file.write(response.content)
-
-    os.system(f"python {local_filename}")
-
-
 def test_examples():
     def process_directory(api_url, local_dir):
 
@@ -71,9 +49,3 @@ def test_examples():
 
     # Execute all Python scripts
     execute_scripts(examples_dir)
-
-
-if __name__ == "__main__":
-    test_run()
-    test_plot()
-    test_examples()

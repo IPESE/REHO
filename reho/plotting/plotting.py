@@ -858,7 +858,7 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
             return fig
 
 
-def plot_sunburst_eud(results, label='EN_long', title=None, filename=None, export_format='html', scaling_factor=1, return_df=False):
+def plot_eud(results, label='EN_long', title=None, filename=None, export_format='html', scaling_factor=1, return_df=False):
     """
     Plots a Sunburst for End Use Demand (EUD) based on REHO results, grouped by buildings' class.
 

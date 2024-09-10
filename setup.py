@@ -17,9 +17,9 @@ setup(
     version='1.1.1',
     entry_points={
         'console_scripts': [
-            'reho-test-run = reho.tests.test_scripts:test_run',
-            'reho-test-plot = reho.tests.test_scripts:test_plot',
-            'reho-test-examples = reho.tests.test_scripts:test_examples',
+            'reho-test-run = reho.test.test_run:test_run',
+            'reho-test-plot = reho.test.test_plot:test_plot',
+            'reho-test-examples = reho.test.test_examples:test_examples',
         ],
     },
     packages=find_packages(),

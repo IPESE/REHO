@@ -6,6 +6,7 @@ from plotly.subplots import make_subplots
 
 from reho.model.sub_problem import *
 from reho.plotting import sankey
+from reho.plotting import sankey_1
 from reho.plotting.utils import *
 
 __doc__ = """
@@ -555,6 +556,80 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
     else:
         return fig
 
+def plot_sankey_1(df_Results, label='EN_long', color='ColorPastel', filename=None, export_format='html', scaling_factor=1, return_df=False):
+    """
+    Plots a Sankey plot based on the results DataFrame.
+
+    Parameters
+    ----------
+    df_Results: pd.DataFrame
+        DataFrame coming from REHO results (already extracted from the desired *Scn_ID* and *Pareto_ID*).
+    label: str
+        Indicate the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+    color: str
+        Indicate the color set to use for the plot. Choose among 'ColorPastel', 'ColorFlash'.
+    filename: str
+        Name of the file to be saved.
+    export_format: str
+        Can be either 'html', 'png', or 'pdf'.
+    scaling_factor: int/float
+        Scales linearly the REHO results for the plot.
+    return_df: bool
+        A dataframe can be returned for further post-processing or reporting purposes.
+
+    Returns
+    ----------
+    plotly.graph_objs.Figure
+        The generated plotly figure.
+    pd.DataFrame
+        (Optional) A dataframe for further post-processing or reporting purposes.
+    """
+    source, target, value, label_, color_ = sankey_1.df_sankey(df_Results, label=label, color=color, precision=2,
+                                                             units='MWh', display_label_value=True,
+                                                             scaling_factor=scaling_factor)
+    # Number of labels
+    num_labels = len(label_)
+
+    # Generate colors using a colormap
+    colormap = plt.cm.get_cmap('tab10', num_labels)  # You can choose different colormaps
+    colors = [colormap(i) for i in range(num_labels)]
+
+    # Convert colors to hex format
+    color_list = ['#%02x%02x%02x' % (int(r * 255), int(g * 255), int(b * 255)) for r, g, b, _ in colors]
+
+    fig = go.Figure(data=[go.Sankey(
+        orientation="h",
+        valueformat=".2f",
+        valuesuffix=" MWh",
+        node=dict(
+            pad=15,
+            thickness=20,
+            line=dict(color="black", width=0.5),
+            label=label_,
+            color=color_list,
+        ),
+        link=dict(
+            source=source,
+            target=target,
+            value=value
+        ))])
+
+    if filename is not None:
+        if not os.path.isdir(os.path.dirname(filename)):
+            os.makedirs(os.path.dirname(filename))
+        if export_format == 'html':
+            fig.write_html(filename + '.' + export_format)
+        if export_format == 'png' or export_format == 'pdf':
+            fig.write_image(filename + '.' + export_format)
+
+    if return_df:
+        df = pd.DataFrame()
+        df["source"] = [label_[int(s)].split("\n")[0] for s in source]
+        df["target"] = [label_[int(t)].split("\n")[0] for t in target]
+        df["Energy [MWh/yr]"] = value
+        return fig, df
+    else:
+        return fig
 
 def plot_sankey(df_Results, label='EN_long', color='ColorPastel', filename=None, export_format='html', scaling_factor=1, return_df=False):
     """

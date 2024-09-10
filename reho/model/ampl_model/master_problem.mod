@@ -64,6 +64,9 @@ lambda[f,h] = lambda_binary[f,h];
 param Grid_supply{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in Time[p]};
 param Grid_demand{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in  Time[p]};
 param TransformerCapacity{l in ResourceBalances} default 1e8;
+#adding this parameter here so that I can parse a temporal profile for the transformer capacity
+param TransformerCapacity_heat_t{l in ResourceBalances, p in Period, t in Time[p]: l = 'Heat'} default TransformerCapacity[l];
+
 param Grids_flowrate{l in ResourceBalances, h in House} default 1e9;
 param Grid_usage_max_demand default 0;
 param Grid_usage_max_supply default 0;
@@ -73,6 +76,7 @@ param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
+
 
 var Network_supply {l in ResourceBalances, p in Period, t in Time[p]} >= 0 , <=1e9;
 var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0 , <=1e9;
@@ -332,10 +336,13 @@ Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
 subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
 Network_supply[l,p,t] <= TransformerCapacity[l] * dp[p] * dt[p];
 
+subject to TransformerCapacity_supply_t{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Heat'}:
+Network_supply[l,p,t] <= TransformerCapacity_heat_t[l,p,t] * dp[p] * dt[p];
+
 subject to TransformerCapacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
 Network_demand[l,p,t] <= TransformerCapacity[l] * dp[p] * dt[p];
 
-subject to EMOO_grid_constraint {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
+subject to EMOO_grid_constraint {l in ResourceBalances , p in Period, t in Time[p]: l =  'Electricity'}:
 Network_supply[l,p,t]-Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{ts in Time[p]}((Network_supply[l,p,ts]-Network_demand[l,p,ts])*dt[p]/card(Time[p])) else 1e9;
 
 subject to disallow_exchanges_1{l in ResourceBalances, p in PeriodStandard,t in Time[p]: l =  'Electricity'}:

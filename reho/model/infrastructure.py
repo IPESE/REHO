@@ -395,6 +395,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     return units
 
 
+
 def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
                      district_data=None, storage_data=None):
     """

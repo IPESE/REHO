@@ -701,6 +701,9 @@ def initialize_default_methods(method):
 
     if 'use_dynamic_emission_profiles' not in method:
         method['use_dynamic_emission_profiles'] = False
+    if 'ORC_all_the_time' not in method:
+        method['ORC_all_the_time'] = False
+
     if 'use_custom_profiles' not in method:
         method['use_custom_profiles'] = False
 

@@ -115,7 +115,7 @@ class MasterProblem:
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
-                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
+                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "TransformerCapacity_heat_t"],
                          "list_constraints_MP": []
                          }
 

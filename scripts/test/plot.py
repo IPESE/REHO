@@ -2,11 +2,11 @@ from reho.plotting import plotting
 import pandas as pd
 
 
-results = pd.read_pickle('/Users/ravi/Desktop/PhD/My_Reho_Qgis_files/Reho_Sai_Fork/scripts/template/results/epfl_campus.pickle')
+results = pd.read_pickle('/Users/ravi/Desktop/PhD/My_Reho_Qgis_files/Reho_Sai_Fork/scripts/template/results/ALL_EPFL_BAU.pickle')
 
 #plotting.plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long').show()
 #plotting.plot_performance(results, plot='gwp', indexed_on='Scn_ID', label='EN_long').show()
-plotting.plot_sankey(results['gwp'][0], label='EN_long', color='ColorPastel').show()
+plotting.plot_sankey_1(results['gwp'][0], label='EN_long', color='ColorPastel').show()
 
 
 '''

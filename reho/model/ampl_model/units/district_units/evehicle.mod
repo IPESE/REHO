@@ -73,15 +73,6 @@ param frequency_outcharging{a in Activities} default 1; # - not all activities p
 param share_district_activity{a in Activities, d in Districts} default 0; # to describe the distribution of EVs plugged out in the other disctricts : default 0 means that there is no interaction with other districts = run as standalone
 param outside_charging_price{d in Districts, p in PeriodStandard, t in Time[p]} default Cost_supply_network["Electricity",p,t];
 
-
-# Old, to be cleaned
-# param normalization_factor :=  max{p in PeriodStandard} ( sum{t in Time[p]}EV_plugging_in[p,t]);
-# param EV_displacement_init{p in Period} := 
-# 		if p in PeriodStandard then 23.8 * 1.56 / 6 / normalization_factor	# km/person/day * person/car / km/kWh / normalisation factor 	[4] p.30, 32 and [5] 
-# 		else  0.0;
-# param EV_displacement{u in UnitsOfType['EV'],p in Period, t in Time[p]} := EV_displacement_init[p] * EV_plugging_in[p,t] * n_vehicles;
-param EV_displacement{u in UnitsOfType['EV'],p in Period, t in Time[p]} := EV_plugging_in[u,p,t] * 0;	#parce que y a du post traitement qui appelle cette variable TODO : remove postraitement 
-	
 # ----------------------------------------- VARIABLES ---------------------------------------
 var n_vehicles{u in UnitsOfType['EV']} integer >= 0;
 var EV_E_stored{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;

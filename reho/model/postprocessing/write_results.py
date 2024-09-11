@@ -141,7 +141,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         if "EV_district" in [unit for unit, value in ampl.getVariable('Units_Use').instances()]:
             df5 = get_variable_in_pandas(df, 'EV_E_stored')
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-            df6 = get_parameter_in_pandas(ampl, "EV_displacement", multi_index=True)
+            df6 = get_parameter_in_pandas(ampl, "EV_E_mob", multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             if len(ampl.getSet('Districts').getValues().toList()) > 0:
                 df7 = get_variable_in_pandas(df, 'EV_E_charged_outside', multi_index=True)

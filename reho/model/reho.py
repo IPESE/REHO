@@ -655,7 +655,7 @@ class reho(district_decomposition):
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
-    def pathway(self,EMOO_list=[400],EMOO_type="GWP",existing_init=None,EV=[],EV_battery=[]):
+    def pathway(self,EMOO_list=[400,400,400],EMOO_type="GWP",existing_init=None,EV=[],EV_battery=[]):
 
         if existing_init is None:
             if EV != []:

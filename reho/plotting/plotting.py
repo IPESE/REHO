@@ -1782,7 +1782,7 @@ def unit_monthly_plot(results, to_plot, label='EN_short', save_path="", filename
 
 def plot_pathway(results,scn_id=None, EMOO_list=[], y_span=[],Battery_yearly=[],EV_yearly=[],y_span_yearly=[],label='EN_short', save_path="", filename=None, export_format='html', objective=None, constraint=None, district=None, scn_number=None,era=None):
     """
-        Generate a line plot showing the investment pathway for the respective Objective function and EMOO selected
+        Generate a line plot showing the investment pathway for the respective Objective function and EMOO selected + Units installed and reinforcement required
 
         :param results: Dictionary containing REHO results.
         :type results: dict
@@ -1895,7 +1895,7 @@ def plot_pathway(results,scn_id=None, EMOO_list=[], y_span=[],Battery_yearly=[],
 
     # Plot data on the second y-axis
     lns2 = ax11.plot(y_span, constr, label=constraint, color='C1', linewidth=2)
-    #lns3 = ax11.plot(y_span, EMOO_list, label='EMOO', color='C1', linestyle='--', linewidth=2)
+
 
     # right y-axis parameters
     ax11.set_ylabel(constr_label, color='C1',fontsize=20)
@@ -1960,7 +1960,7 @@ def plot_pathway(results,scn_id=None, EMOO_list=[], y_span=[],Battery_yearly=[],
         start_df=start_df.apply(lambda x: next((g for g in grouped if g in x['Unit']), x['Unit']), axis=1)
         start=start_df.squeeze()
 
-        # start = reho.results[scn_id][i]['df_Unit'].query("Units_Use==1").reset_index().apply(lambda x: x['Unit'].split('_Building')[0], axis=1)
+
         if i==0:
             df_transformer=pd.DataFrame(data=[results[scn_id][0]['df_Grid'].loc['Network'].loc['Electricity']['Capacity']*results[scn_id][0]['df_Grid'].loc['Network'].loc['Electricity']['UseCapacity']],
                      columns=['Units_Mult'], index=['TransformerReinforcement'])
@@ -1983,7 +1983,7 @@ def plot_pathway(results,scn_id=None, EMOO_list=[], y_span=[],Battery_yearly=[],
 
     average_network_power = results[scn_id][0]['df_Annuals'].xs('Electricity').loc['Network']['Supply_MWh'] * 1000 / (results[scn_id][0]['df_Time']['dp'].sum() * 24)
     df_reinforcement = df_reinforcement/average_network_power
-        # df=pd.concat([df,reho.results[scn_id][0]['df_Unit'].query("Units_Use==1")['Units_Mult'].reset_index().groupby(start).sum('Units_Mult').rename(columns={'Units_Mult': str(y_span[i])})],axis=1)
+
 
     # Plot buildings
 
@@ -2026,8 +2026,8 @@ def plot_pathway(results,scn_id=None, EMOO_list=[], y_span=[],Battery_yearly=[],
     nticks = 6
     ax2.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
     ax22.yaxis.set_major_locator(matplotlib.ticker.LinearLocator(nticks))
-    ax22.set_yticks(np.linspace(0, 200, 6))
-    ax2.set_yticks(np.linspace(0, 4200, 6))
+    ax22.set_yticks(np.linspace(0, 60, 6))
+    ax2.set_yticks(np.linspace(0, 1200, 6))
     ax22.grid()
     # Show resulting figure
     fig2.tight_layout()
@@ -2163,7 +2163,7 @@ def plot_pathway_FR(results, scn_id=None, EMOO_list=[], y_span=[], Battery_yearl
                  label='EN_short', save_path="", filename=None, export_format='html', objective=None, constraint=None,
                  district=None, scn_number=None):
     """
-        Generate a line plot showing the investment pathway for the respective Objective function and EMOO selected
+        Generate plots showing the installed units
 
         :param results: Dictionary containing REHO results.
         :type results: dict
@@ -2185,11 +2185,7 @@ def plot_pathway_FR(results, scn_id=None, EMOO_list=[], y_span=[], Battery_yearl
     if scn_id is None:
         scn_id = list(results.keys())[0]
 
-    if objective is None:
-        raise SystemExit('Please select the objective function used in the optimization')
 
-    if constraint is None:
-        raise SystemExit('Please select the epsilon constraint used in the optimization')
 
     if EMOO_list == []:
         raise SystemExit('Please enter the list of epsilon constraint used in the pathway optimization')
@@ -2198,9 +2194,6 @@ def plot_pathway_FR(results, scn_id=None, EMOO_list=[], y_span=[], Battery_yearl
         raise SystemExit('Please enter the list of years used in the pathway optimization')
 
 
-    ############################################
-    ##### Second plot: Installed capacities ####
-    ############################################
 
     # Specify color palettes
     colors_buildings = ['#42a227', '#8727a2', '#a22742', '#27a287', '#2742a2', '#a28727', '#a24327', '#85a227',
@@ -2230,7 +2223,7 @@ def plot_pathway_FR(results, scn_id=None, EMOO_list=[], y_span=[], Battery_yearl
         start_df = start_df.apply(lambda x: next((g for g in grouped if g in x['Unit']), x['Unit']), axis=1)
         start = start_df.squeeze()
 
-        # start = reho.results[scn_id][i]['df_Unit'].query("Units_Use==1").reset_index().apply(lambda x: x['Unit'].split('_Building')[0], axis=1)
+
         if i == 0:
             df_transformer = pd.DataFrame(data=[
                 results['df_Grid'].xs(0, level=0).xs('Network', level=0).loc['Electricity']['Capacity'] *
@@ -2258,7 +2251,7 @@ def plot_pathway_FR(results, scn_id=None, EMOO_list=[], y_span=[], Battery_yearl
     average_network_power = results['df_Annuals'].xs(0,level=0).xs('Electricity',level=0).loc['Network']['Supply_MWh']*1000/8760
     df_reinforcement = df_reinforcement / average_network_power
 
-    # df=pd.concat([df,reho.results[scn_id][0]['df_Unit'].query("Units_Use==1")['Units_Mult'].reset_index().groupby(start).sum('Units_Mult').rename(columns={'Units_Mult': str(y_span[i])})],axis=1)
+
 
     # Plot buildings
 

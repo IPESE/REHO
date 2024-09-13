@@ -655,12 +655,13 @@ class reho(district_decomposition):
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
-    def pathway(self,EMOO_list=[400,400,400],EMOO_type="GWP",existing_init=None,EV=[],EV_battery=[]):
+    def pathway(self,EMOO_list=[0,0,0],EMOO_type="GWP",existing_init=None,EV=[],EV_battery=[]):
 
-        if existing_init is None:
-            if EV != []:
+        
+        if existing_init is None: # Check whether a file with existing units is used
+            if EV != []:# If a list of number of EV is sent, it will specify them for each iteration. This is a special case since no cost model of EV
                 self.parameters["n_vehicles"] = EV[0]
-            if EV_battery != []:
+            if EV_battery != []: # If a list of number of EV is sent, it will specify them for each iteration. This is a special case since used for free batteries from EV
                 self.parameters["Units_Ext_district"] = np.array(
                     [EV_battery[1] if "Battery_district" in u else 0 for u in self.infrastructure.UnitsOfDistrict])
             Scn_ID=self.scenario["name"]
@@ -734,12 +735,15 @@ class reho(district_decomposition):
 
 
     def get_logistic(self,E_start=1e-2,E_stop=1e-3,y_start=2024,y_stop=2050,k=1,c=2035,n=2):
+        # Create a logistic curve 
         #k must be always positive, and c must be always between y_start and y_stop
         y_span=np.linspace(start=y_start,stop=y_stop,num=n+1,endpoint=True)[1:]
         EMOO_list=E_stop+(E_start-E_stop)/(1+np.exp(-k*(c-y_span)))
         return EMOO_list,y_span
 
     def get_battery_pathway_from_EV(self,N_EV_start=0,N_EV_stop=15,c_EV=2039,k_EV=1,y_start=2024,y_stop=2050,n=7,EV_battery_lifetime=10,battery_reuse_lifetime=10,EV_battery_capacity=70,EV_battery_degradation_factor=0.7):
+
+        # From an initial and starting number of EV in the system, this function computes the battery capacities for each time step
         goal, y_span3 = reho.get_logistic(self,E_start=N_EV_start, E_stop=N_EV_stop, y_start=y_start, y_stop=y_stop,
                                           k=k_EV, c=c_EV, n=y_stop - y_start)
         goal = np.round(goal)
@@ -766,116 +770,7 @@ class reho(district_decomposition):
         y_span_final = np.linspace(start=y_start, stop=y_stop, num=n + 1, endpoint=True)[1:]
         y_span_final=np.round(np.array([y_start] + list(y_span_final)))
         return Battery_pathway[[x in y_span_final for x in y_span3]],y_span_final,Battery_pathway,goal,y_span3
-
-
-
-        return Battery_pathway
-    def determine_max_constraint(self,precision=1e-3,lower_init=0, upper_init=1,EMOO='elec_export',constraint_type='lower'):
-        EMOO='EMOO_'+EMOO
-        Scn_ID=self.scenario['name']
-        # Initialization
-        lower = lower_init
-        upper = upper_init
-        upper_search = True
-        lower_search = True
-        flag = True
-        constraint = (upper + lower) / 2
-
-        # Constraint search
-        if 'EMOO' not in self.scenario.keys():
-            self.scenario['EMOO']={EMOO:constraint}
-        else:
-            self.scenario['EMOO'][EMOO] = constraint
-
-        while flag:
-            try:
-                print("The current constraint is at:%.3e" % constraint)
-                self.single_optimization(Pareto_ID=-1)
-            except:
-                if constraint_type=='lower':
-                    upper_search = False
-                elif constraint_type=='upper':
-                    lower_search = False
-
-                if lower_search and constraint_type=='lower':
-                    lower=lower-abs(upper-lower)
-                    upper=constraint
-                    constraint = (upper + lower) / 2
-                    self.scenario['EMOO'][EMOO] = constraint
-                elif (lower_search==False) and constraint_type=='lower':
-                    upper = constraint
-                    constraint = (upper + lower) / 2
-                    self.scenario['EMOO'][EMOO] = constraint
-                elif upper_search and constraint_type=='upper':
-                    upper = upper + abs(upper - lower)
-                    lower = constraint
-                    constraint = (upper + lower) / 2
-                    self.scenario['EMOO'][EMOO] = constraint
-                elif (upper_search==False) and constraint_type=='upper':
-                    lower = constraint
-                    constraint = (upper + lower) / 2
-                    self.scenario['EMOO'][EMOO] = constraint
-            else:
-                if constraint_type == 'lower':
-                    lower_search = False
-                if constraint_type == 'upper':
-                    upper_search = False
-
-                if upper_search and constraint_type=='lower':
-                    upper=upper+abs(upper-lower)
-                    lower = constraint
-                    constraint = (upper + lower) / 2
-                    self.scenario['EMOO'][EMOO] = constraint
-                elif (upper_search==False) and constraint_type=='lower':
-                    if abs(upper - constraint) < precision:
-                        flag = False
-                        # Compute max value of pathway
-                        if EMOO=='EMOO_elec_export':
-                            era = self.results[Scn_ID][-1]['df_Buildings']['ERA'].sum()
-                            if self.method['building-scale']:
-                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc['Network']
-                                max_export = (df_an['Demand_MWh'] - df_an['Supply_MWh']) / era
-                            else:
-                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc[
-                                    ['Network', 'Building1', 'Building2']]
-                                max_export = (df_an['Demand_MWh'].loc['Network'] - df_an['Demand_MWh'].loc['Building1'] -
-                                    df_an['Demand_MWh'].loc['Building2'] - df_an['Supply_MWh'].loc[
-                                    'Network']) / era
-
-                    else:
-                        lower = constraint
-                        constraint = (lower + upper) / 2
-                        self.scenario['EMOO'][EMOO] = constraint
-                elif lower_search and constraint_type=='upper':
-                    lower = lower - abs(upper - lower)
-                    upper = constraint
-                    constraint = (upper + lower) / 2
-                    self.scenario['EMOO'][EMOO] = constraint
-                elif (lower_search==False) and constraint_type=='upper':
-                    if abs(lower - constraint) < precision:
-                        flag = False
-                        # Compute max value of pathway
-                        if EMOO=='EMOO_elec_export':
-                            era = self.results[Scn_ID][-1]['df_Buildings']['ERA'].sum()
-                            if self.method['building-scale']:
-                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc['Network']
-                                max_export = (df_an['Demand_MWh'] - df_an['Supply_MWh']) / era
-                            else:
-                                df_an = self.results[Scn_ID][-1]['df_Annuals'].loc['Electricity'].loc[
-                                    ['Network', 'Building1', 'Building2']]
-                                max_export = (df_an['Demand_MWh'].loc['Network'] - df_an['Demand_MWh'].loc['Building1'] -
-                                    df_an['Demand_MWh'].loc['Building2'] - df_an['Supply_MWh'].loc[
-                                    'Network']) / era
-                    else:
-                        upper = constraint
-                        constraint = (lower + upper) / 2
-                        self.scenario['EMOO'][EMOO] = constraint
-
-        print("The final constraint is: %.3e:" %constraint)
-        if EMOO=='EMOO_elec_export':
-            print("Max export is at: %.3e:" %max_export)
-
-        return constraint
+    
 
 
 

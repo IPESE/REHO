@@ -124,12 +124,7 @@ Units_Mult[u]-Units_Ext[u] >= Units_Use[u]*Units_Fmin[u];
 subject to Units_sizing_c2{u in Units}:
 Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
 
-# Old constraints, without existing units
-#subject to Unit_sizing_c1{u in Units}:
-#Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
 
-#subject to Unit_sizing_c2{u in Units}:
-#Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
 
 # Discrete units
 subject to Unit_sizing_c1_1interval{u in UnitsOfDiscreteCost}:
@@ -367,9 +362,6 @@ GWP_op = sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]}(GWP_supply
 subject to Annual_CO2_construction_unit{u in Units}:
 GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*GWP_unit2[u])/lifetime[u];
 
-# Old constraint, without existing unit
-#subject to Annual_CO2_construction_unit{u in Units}:
-#GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
 GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]/Line_Lifetime[h,l]);
@@ -396,9 +388,6 @@ lca_op[k, l] = sum{p in PeriodStandard,t in Time[p]}(lca_kpi_supply[k,l,p,t]*Net
 subject to LU_inv_cst{k in Lca_kpi, u in Units}:
 lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + (Units_Mult[u]-Units_Ext[u])*lca_kpi_2[k, u])/lifetime[u];
 
-# Old constraint, without existing units
-#subject to LU_inv_cst{k in Lca_kpi, u in Units}:
-#lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
 
 subject to LU_tot_cst{k in Lca_kpi}:
 lca_tot[k] = sum{u in Units} lca_units[k, u] + sum{l in ResourceBalances} lca_op[k, l];
@@ -439,11 +428,6 @@ var Costs_rep >= 0;
 
 #-CONSTRAINTS
 
-#subject to transformer_additional_capacity_c3{l in ResourceBalances}:
-#Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
-
-#subject to transformer_additional_capacity_c4{l in ResourceBalances}:
-#TransformerCapacity[l]>=Transformer_Ext[l];
 
 subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
 Use_LineCapacity[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacity[l,hl]-Line_Ext[hl,l];
@@ -453,10 +437,6 @@ LineCapacity[l,hl]>=Line_Ext[hl,l];
 
 subject to Costs_Unit_capex{u in Units diff UnitsOfDiscreteCost}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
-
-# Old constraint, without existing unit
-#subject to Costs_Unit_capex{u in Units diff UnitsOfDiscreteCost}:
-#Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
 
 subject to Costs_Unit_capex_discrete{u in Units inter UnitsOfDiscreteCost}:
 Costs_Unit_inv[u] = Units_Use_1[u]*Cost_inv1[u] + (Units_Mult_1[u]-Units_Ext[u])*Cost_inv2[u] + Units_Use_2[u]*Cost_inv1_2[u] + (Units_Mult_2[u]-Units_Ext[u])*Cost_inv2_2[u];
@@ -641,7 +621,6 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-#param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;	#kW
 
 subject to LineCapacity_supply{l in ResourceBalances,hl in HousesOfLayer[l],p in Period,t in Time[p]}:
 Grid_supply[l,hl,p,t] <= LineCapacity[l,hl];
@@ -653,7 +632,6 @@ Grid_demand[l,hl,p,t] <= LineCapacity[l,hl];
 #--------------------------------------------------------------------------------------------------------------------#
 #---Transformer capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-#param TransformerCapacity{l in ResourceBalances}>=0 default 1e8;	#kW
 
 
 subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:

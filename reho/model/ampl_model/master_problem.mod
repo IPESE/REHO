@@ -145,14 +145,6 @@ Units_Mult[u]-Units_Ext[u] >= Units_Use[u]*Units_Fmin[u];
 subject to Units_sizing_c2{u in Units}:
 Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
 
-# Old constraints, without Units_Ext
-
-#subject to Unit_sizing_c1{u in Units}:
-#Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
-
-#subject to Unit_sizing_c2{u in Units}:
-#Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
-
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -238,15 +230,11 @@ Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= Transfor
 subject to transformer_additional_capacity_c2{l in ResourceBalances}:
 TransformerCapacity[l]>=Transformer_Ext[l];
 
-#subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
-#Use_LineCapacityAdd[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacityAdd[l,hl];
 
 subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
 
-# Old constraint, without Units_Ext
-#subject to Costs_Unit_capex{u in Units} :
-# Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
+
 
 subject to Costs_Unit_replacement:
 Costs_rep= tau* sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
@@ -293,9 +281,6 @@ var GWP_tot;
 subject to CO2_construction_unit{u in Units}:
 GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*GWP_unit2[u])/lifetime[u];
 
-# Old constraint, without Units_Ext
-#subject to CO2_construction_unit{u in Units}:
-#GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
 
 subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
@@ -337,9 +322,6 @@ var lca_tot_house{k in Lca_kpi, h in House} default 0;
 subject to LU_inv_cst{k in Lca_kpi, u in Units}:
 lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + (Units_Mult[u]-Units_Ext[u])*lca_kpi_2[k, u])/lifetime[u];
 
-#Old constraint, without Units_Ext
-#subject to LU_inv_cst{k in Lca_kpi, u in Units}:
-#lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
 
 subject to LCA_construction_house{k in Lca_kpi, h in House}:
 lca_house_units[k, h] = sum{f in FeasibleSolutions}(lambda[f,h] * lca_house_units_SPs[f,k,h]);
@@ -374,14 +356,12 @@ param EMOO_GWP default 1000;
 param EMOO_TOTEX default 1000;
 param EMOO_grid default 0;
 param EMOO_lca{k in Lca_kpi} default 1e6;
-
 param EMOO_elec_export default 0;
 
 var EMOO_slack                >= 0, <= abs(EMOO_CAPEX) * Area_tot;
 var EMOO_slack_opex           >= 0, <= abs(EMOO_OPEX)*Area_tot;
 var EMOO_slack_gwp            >= 0, <= abs(EMOO_GWP)*Area_tot;
 var EMOO_slack_totex          >= 0, <= abs(EMOO_TOTEX)*Area_tot;
-
 var EMOO_slack_elec_export >=0;
 
 #--------------------------------------------------------------------------------------------------------------------#
@@ -405,13 +385,13 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 #--------------------------------------------------------------------------------------------------------------------#
 #---Grid capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-#param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;  #kW
+
 
 subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];# + LineCapacityAdd[l,h];
+Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
 
 subject to LineCapacity_demand{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];# + LineCapacityAdd[l,h];
+Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
 
 #--------------------------------------------------------------------------------------------------------------------#
 #---Transformer capacity constraints

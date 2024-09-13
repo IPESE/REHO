@@ -495,12 +495,6 @@ class district_decomposition:
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses)))+1
 
-        ### Other way, pass the set through set_indexed
-        # if 'ReinforcementTrOfLayer' in self.set_indexed.keys():
-        #     MP_set_indexed['ReinforcementTrOfLayer']=self.set_indexed['ReinforcementTrOfLayer']
-        #     # additional = additional + ["ReinforcementTrOfLayer"]
-        # if 'ReinforcementLineOfLayer' in self.infrastructure.__dict__.keys():
-        #     additional = additional + ["ReinforcementLineOfLayer"]
 
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS

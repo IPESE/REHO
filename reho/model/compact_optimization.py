@@ -245,9 +245,6 @@ class compact_optimization:
             ampl.read('heat_curtailment.mod')
             ampl.cd(path_to_ampl_model)
 
-        #existing_units = read_csv(os.path.join(path_to_infrastructure, "existing_units.csv")).reset_index()
-        #parameters_data = {row['Unit']: row['Units_Mult'] for _, row in existing_units.iterrows()}
-        #print(ampl.getParameter('Units_Ext').to_pandas())  # .setValues(parameters_data)
 
         return ampl
 

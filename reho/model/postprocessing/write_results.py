@@ -146,9 +146,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         if "EV_district" in [unit for unit, value in ampl.getVariable('Units_Use').instances()]:
             df5 = get_ampl_data(ampl, 'EV_E_stored', multi_index=True)
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-            df6 = get_ampl_data(ampl, "EV_displacement", multi_index=True)
+            df6 = get_ampl_data(ampl, "EV_E_mob", multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
+            if len(ampl.getSet('Districts').getValues().toList()) > 0:
+                df7 = get_variable_in_pandas(df, 'EV_E_charged_outside', multi_index=True)
+            else:
+                df7 = pd.DataFrame()
+            df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         else:
             df_Unit_t = pd.concat([df1, df2, df3, df4], axis=1)
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
@@ -487,11 +491,20 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df4 = get_ampl_data(ampl, 'GWP_supply', multi_index=True)
     df5 = get_ampl_data(ampl, 'Network_supply', multi_index=True)
     df6 = get_ampl_data(ampl, 'Network_demand', multi_index=True)
+    df7 = get_ampl_data(ampl,"Domestic_energy",multi_index = True)
 
     if binary:
-        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1).sort_index()
+        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1).sort_index()
     else:
         df_District_t = pd.concat([df5, df6], axis=1)
+    if "EV_district" in district.UnitsOfDistrict:
+        df8 = get_ampl_data(ampl,"charging_externalload",multi_index = True)
+        df8 = df8[['charging_externalload']].unstack(level = 0)
+        df8.columns = [f'{i}[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
+        df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
+        if binary:
+            df_District_t = pd.concat([df_District_t,df8], axis=1).sort_index()
+
     df_District_t.index.names = ['Layer', 'Period', 'Time']
     df_Results["df_District_t"] = df_District_t.sort_index()
 
@@ -540,15 +553,24 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         if "EV_district" in district.UnitsOfDistrict:
             df4 = get_ampl_data(ampl, 'EV_E_stored', multi_index=True)
             df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
-            df5 = get_ampl_data(ampl, 'EV_displacement', multi_index=True)
-            df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-            df6 = get_ampl_data(ampl, 'EV_V2V', multi_index=True)
-            df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6], axis=1)
+            df5 = get_ampl_data(ampl, 'EV_V2V', multi_index=True)
+            df5 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
+            df6 = get_ampl_data(ampl, 'EV_E_charging', multi_index=True)
+            df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])            if len(ampl.getSet('Districts').getValues().toList()) > 0:
+            if len(ampl.getSet('Districts').getValues().toList()) > 0:
+                df7 = get_ampl_data(ampl, 'EV_E_charged_outside', multi_index=True)
+                df7 = df7[['EV_E_charged_outside']].unstack(level = [0,1])
+                df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j,k in df7.columns]
+                df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
+            else:
+                df7 = pd.DataFrame()
+            df8 = get_ampl_data(ampl, 'EV_E_mob', multi_index=True) 
+            df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
+            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6, df7, df8], axis=1)
 
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-        units_districts = district.UnitsOfDistrict
+        units_districts = district.UnitsOfDistrict # TODO debug
         district_l_u = []
         for layer, units in district.UnitsOfLayer.items():
             [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]

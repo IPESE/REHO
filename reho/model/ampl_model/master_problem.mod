@@ -71,6 +71,8 @@ param Grid_usage_max_supply default 0;
 param Units_flowrate_in{l in ResourceBalances, u in Units}  >=0 default 0;
 param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 
+param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 default 0;
+
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
 
@@ -85,7 +87,7 @@ var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >=
 
 # Constraints
 subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #pi_c
-   Network_supply[l,p,t] - Network_demand[l,p,t]   =  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+   Network_supply[l,p,t] - Network_demand[l,p,t]   = (Domestic_energy[l,p,t] +   sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 
 subject to complicating_cst_GWP{l in ResourceBalances, p in Period, t in Time[p]}: #pi_g
@@ -150,12 +152,16 @@ param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} defau
 
 var Costs_op;
 var Costs_House_op{h in House};
+var ExternalEV_Costs_op{p in Period,t in Time[p]};  # TODO : to be put >= 0  if no mobility ? 
 
 subject to Costs_opex_house{h in House}:
 Costs_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in PeriodStandard, t in Time[p]} lambda[f,h]*(Cost_supply_network[l,p,t]*Grid_supply[l,f,h,p,t] - Cost_demand_network[l,p,t]*Grid_demand[l,f,h,p,t])* dp[p] * dt[p]; 
 
 subject to Costs_opex:
-Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]); 
+Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]); 
+
+subject to ExternalEV_Costs_positive{p in Period,t in Time[p]}:
+ExternalEV_Costs_op[p,t] >=0 ; # TODO : add the functionnality that this constraint can be disabled if we allow the district to sell more energy than it imports 
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES

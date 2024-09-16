@@ -173,7 +173,15 @@ class SubProblem:
         # district Units
         if 'EV' in self.infrastructure_sp.UnitTypes:
             ampl.cd(path_to_district_units)
+            ampl.read('mobility.mod')
             ampl.read('evehicle.mod')
+            # ampl.read('proxy_mobilitydemand.mod')
+        if 'Bike' in self.infrastructure_compact.UnitTypes:
+            ampl.cd(path_to_district_units)
+            ampl.read('bike.mod')
+        if 'ICE' in self.infrastructure_compact.UnitTypes:
+            ampl.cd(path_to_district_units)
+            ampl.read('icevehicle.mod')
         # Storage Units
         ampl.cd(path_to_units_storage)
         if 'WaterTankSH' in self.infrastructure_sp.UnitTypes:
@@ -296,8 +304,17 @@ class SubProblem:
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_sp.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_sp.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(
-                        self.cluster_sp, self.local_data["df_Timestamp"])
+                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_sp)
+                    # self.parameters_to_ampl["bike_dailyprofile"] = EV_gen.bike_temp(self.cluster_compact)
+                    d = None
+                    m = None
+                    if 'DailyDist' in self.parameters_sp:
+                        d = self.parameters_sp['DailyDist']
+                    if "Mode_Speed" in self.parameters_sp:
+                        m = self.parameters_sp['Mode_Speed']
+                    p = EV_gen.generate_mobility_parameters(self.cluster_sp,self.parameters_sp['Population'],
+                                                            d,m,np.append(self.infrastructure_sp.UnitsOfLayer["Mobility"],'Public_transport'))
+                    self.parameters_to_ampl.update(p)
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -624,6 +641,8 @@ class SubProblem:
             ampl.getConstraint('AC_c3').drop()
         if 'EV' in self.infrastructure_sp.UnitTypes:
             ampl.getConstraint('unidirectional_service').drop()
+            ampl.getConstraint('EV_supplyprofile1').drop()
+            ampl.getConstraint('EV_supplyprofile2').drop()
 
         if self.method_sp['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()

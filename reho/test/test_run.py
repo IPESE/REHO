@@ -3,7 +3,7 @@ from reho.model.reho import *
 from reho.plotting import plotting
 
 
-def test_run():
+def test_run(save_results=False):
 
     try:
         # Set building parameters
@@ -33,6 +33,9 @@ def test_run():
         # Run optimization
         reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
         reho.single_optimization()
+
+        if save_results:
+            reho.save_results(format=['xlsx', 'pickle'], filename='test_results')
 
         # Plot results
         plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()

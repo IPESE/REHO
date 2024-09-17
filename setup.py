@@ -17,9 +17,10 @@ setup(
     version='1.1.1',
     entry_points={
         'console_scripts': [
+            'reho-test-import = reho.test.test_import:test_import_reho_modules',
             'reho-test-run = reho.test.test_run:test_run',
-            'reho-test-plot = reho.test.test_plot:test_plot',
-            'reho-test-examples = reho.test.test_examples:test_examples',
+            'reho-test-plot = reho.test.test_plot:all_plots',
+            'reho-download-examples = reho.test.test_examples:test_download_examples',
         ],
     },
     packages=find_packages(),
@@ -48,6 +49,7 @@ setup(
         "scikit-learn==1.3.2",
         "scikit-learn-extra",
         "scipy",
+        "setuptools",
         "shapely",
         "sqlalchemy<2.0.0",
         "urllib3",

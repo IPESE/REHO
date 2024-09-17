@@ -91,6 +91,7 @@ autodoc_mock_imports = [
     "scikit-learn",
     "scikit-learn-extra",
     "scipy",
+    "setuptools",
     "shapely",
     "sqlalchemy",
     "urllib3",

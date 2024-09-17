@@ -474,7 +474,11 @@ class REHO(MasterProblem):
         columns = ["Cost_demand", "Cost_supply", "GWP_demand", "GWP_supply"]
         for h in self.buildings_data.keys():
             for column in columns:
-                df.loc[pd.IndexSlice[:, h, :, :], column] = df_network[column].values
+                values_to_assign = df_network[column].values
+                target_slice = df.loc[pd.IndexSlice[:, h, :, :], column]
+
+                if len(values_to_assign) != len(target_slice):
+                    raise ValueError("Mismatch between target slice length and values length")
 
         df_Grid_t = pd.concat([df, df_network])
 

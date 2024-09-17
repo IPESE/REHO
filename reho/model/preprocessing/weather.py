@@ -190,8 +190,7 @@ def generate_output_data(cl, attributes, location):
     # - construct : model data
     # - ** inter-period
     data_idy = pd.DataFrame(
-        np.stack((np.arange(1, data_idx.loc[:, cl.nbr_opt].shape[0] + 1, 1), data_idx.loc[:, cl.nbr_opt].values),
-                 axis=1), columns=["IndexYr", "inter_t"])
+        np.stack((np.arange(1, data_idx.loc[:, cl.nbr_opt].shape[0] + 1, 1), data_idx.loc[:, cl.nbr_opt].values), axis=1), columns=["IndexYr", "inter_t"])
     if cl.modulo != 0:
         max_time_dd = len(cl.attr_org)
         data_idy = pd.concat([data_idy, pd.DataFrame([[max_time_dd + 1, max_time_dd + 1]], columns=data_idy.columns)],
@@ -226,7 +225,7 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
 
     Notes
     -----
-    - Independently from the clustering attributes, time dependent files are generated:
+    - Independently of the clustering attributes, time dependent files are generated:
         - 'frequency_File_ID.dat'
         - 'index_File_ID.dat'
         - 'timestamp_File_ID.dat'

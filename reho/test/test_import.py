@@ -1,22 +1,21 @@
 import pytest
 
 
-def test_import_reho_module():
-    try:
-        import reho.model.reho
-    except ImportError as e:
-        pytest.fail(f"Importing reho.model.reho module failed: {e}")
+def test_import_reho_modules():
+    modules = [
+        'reho',
+        'reho.model.reho',
+        'reho.model.master_problem',
+        'reho.model.sub_problem',
+        'reho.model.actors_problem',
+        'reho.model.infrastructure',
+        'reho.model.preprocessing',
+        'reho.model.postprocessing',
+        'reho.plotting',
+    ]
 
-
-def test_import_plotting_module():
-    try:
-        import reho.plotting
-    except ImportError as e:
-        pytest.fail(f"Importing reho.plotting module failed: {e}")
-
-
-def test_import_reho_package():
-    try:
-        import reho
-    except ImportError as e:
-        pytest.fail(f"Importing reho package failed: {e}")
+    for module in modules:
+        try:
+            __import__(module)
+        except ImportError as e:
+            pytest.fail(f"Importing {module} module failed: {e}")

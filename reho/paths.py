@@ -47,11 +47,11 @@ path_to_areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt')  # area of 
 path_to_cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt')  # location of centre points
 
 path_to_weather = os.path.join(path_to_data, 'weather')
+path_to_mobility = os.path.join(path_to_data, 'mobility')
 
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
 path_to_configurations = os.path.join(os.getcwd(), 'results', 'configurations')
-path_to_mobility = os.path.join(os.getcwd(), 'data', 'mobility')
 
 
 def path_handler(path_given):

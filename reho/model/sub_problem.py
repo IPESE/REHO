@@ -170,18 +170,6 @@ class SubProblem:
             else:
                 ampl.read('pv.mod')
 
-        # district Units
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.cd(path_to_district_units)
-            ampl.read('mobility.mod')
-            ampl.read('evehicle.mod')
-            # ampl.read('proxy_mobilitydemand.mod')
-        if 'Bike' in self.infrastructure_compact.UnitTypes:
-            ampl.cd(path_to_district_units)
-            ampl.read('bike.mod')
-        if 'ICE' in self.infrastructure_compact.UnitTypes:
-            ampl.cd(path_to_district_units)
-            ampl.read('icevehicle.mod')
         # Storage Units
         ampl.cd(path_to_units_storage)
         if 'WaterTankSH' in self.infrastructure_sp.UnitTypes:
@@ -639,10 +627,6 @@ class SubProblem:
                 ampl.getConstraint('DHN_heat').drop()
         if 'Air_Conditioner' in self.infrastructure_sp.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_sp.units]:
             ampl.getConstraint('AC_c3').drop()
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.getConstraint('unidirectional_service').drop()
-            ampl.getConstraint('EV_supplyprofile1').drop()
-            ampl.getConstraint('EV_supplyprofile2').drop()
 
         if self.method_sp['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()

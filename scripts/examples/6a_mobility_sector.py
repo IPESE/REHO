@@ -25,8 +25,7 @@ if __name__ == '__main__':
     scenario['specific'] = ['EV_supplyprofile1',"EV_supplyprofile2"]
 
     ## Example 2 : if you want to modify the share of some modes in the demand
-    shares = {  "share_EV" : 0.4,
-            }
+    shares = {"share_EV": 0.4}
     perc_point_window = 0.03 # the range between the max and the min constraint (in percentage points)
 
     for key in shares.keys():
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     # Set method options
     method = {'building-scale': True}
     # Run optimization
-    reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
     reho.single_optimization()
 
     # Save results

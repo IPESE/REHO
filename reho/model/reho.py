@@ -409,6 +409,13 @@ class REHO(MasterProblem):
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
+        # remove DHN_pipes from district_units since they are considered at building scale later
+        district_units = [i for i in self.infrastructure.district_units if i["UnitOfType"] != "DHN_pipes"]
+        units = {"building_units": self.infrastructure.units, "district_units": district_units}
+        buildings = {"buildings_data": self.buildings_data}
+        self.infrastructure = infrastructure.Infrastructure(buildings,  units, self.infrastructure.grids)
+
+
     def add_df_Results(self, ampl, Scn_ID, Pareto_ID, scenario):
         if self.method['building-scale'] or self.method['district-scale']:
             df_Results = self.get_df_Results_from_MP_and_SPs(Scn_ID, Pareto_ID)
@@ -666,59 +673,3 @@ class REHO(MasterProblem):
 
                     writer.close()
                     self.logger.info('Results are saved in ' + result_file_path)
-
-    def save_mobility_results(self,filename = 'mobility_results'):
-        """"
-        Applies some data shuffling on the reho.results and saves the resulting dataframes in an excel file
-        Parameters
-        ----------
-        filename : str, optional
-            Base name of the file to be saved. The extension will be added based on the format.
-            Default is 'mobility_results'.
-        Returns
-        -------
-        None
-        """
-        try:
-            os.makedirs('results')
-        except OSError:
-            if not os.path.isdir('results'):
-                raise
-
-        # reho results
-        results = self.results
-
-        for Scn_ID in list(results.keys()):
-            for Pareto_ID in list(results[Scn_ID].keys()):
-
-                # access results and datawrangling
-                df_Unit_t = results[Scn_ID][Pareto_ID]['df_Unit_t']
-                df_Grid_t = results[Scn_ID][Pareto_ID]['df_Grid_t']
-
-                df_Unit_t_pkm = df_Unit_t[df_Unit_t.index.get_level_values("Layer") == "Mobility"]
-                df_Grid_t_pkm = df_Grid_t[(df_Grid_t.index.get_level_values("Layer") == "Mobility") & (df_Grid_t.index.get_level_values("Hub") == "Network") ]
-                df_Grid_t_pkm.reset_index("Hub", inplace=True)
-
-                df_pkm = df_Unit_t_pkm[['Units_supply']].unstack(level='Unit')
-                df_pkm['PT'] = df_Grid_t_pkm['Grid_supply']
-                df_pkm['Domestic_energy'] = df_Grid_t_pkm['Domestic_energy']
-                
-
-                df_EV = df_Unit_t[(df_Unit_t.index.get_level_values("Layer") == "Electricity") & (df_Unit_t.index.get_level_values("Unit").str.contains('EV')) ] # TODO more properly than .str.contains('EV') ? 
-
-
-                # saving
-                if Pareto_ID == 0:
-                    result_file_path = 'results/' + str(filename) + '_' + str(Scn_ID) + '.xlsx'
-                else:
-                    result_file_path = 'results/' + str(filename) + '_' + str(Scn_ID) + str(Pareto_ID) + '.xlsx'
-                
-                writer = pd.ExcelWriter(result_file_path)
-                df_pkm.to_excel(writer, sheet_name='df_pkm')
-                df_EV.to_excel(writer, sheet_name='df_EV')
-
-                writer.close()
-                print('Results are saved in ' + result_file_path)
-
-
-                

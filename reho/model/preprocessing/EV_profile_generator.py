@@ -127,7 +127,7 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
 
     # Periods
     # TODO IMPLEMENTATION of flexible period duration
-    File_ID = WD.get_cluster_file_ID(cluster)
+    File_ID = weather.get_cluster_file_ID(cluster)
 
     if 'W' in File_ID.split('_'):
         use_weekdays = True
@@ -137,7 +137,7 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     if use_weekdays:
         timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3),
                                skiprows=1)
-        timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
+        timestamp = pd.DataFrame(timestamp, columns=["Day", "Frequency", "Weekday"])
     else:
         df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
         timestamp = df.fillna(1)  # only weekdays
@@ -149,7 +149,7 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
 
     # Read the profiles and the transportation Units
     profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
-    units = pd.read_csv(os.path.join(path_to_infrastructure,"district_units.csv"),sep = ";")
+    units = pd.read_csv(os.path.join(path_to_infrastructure, "district_units.csv"),sep = ";")
     units = units[units.Unit.isin(transportunits)]
 
     # Domestic demand ================================================================================================

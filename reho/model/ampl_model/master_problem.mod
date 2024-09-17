@@ -91,7 +91,7 @@ subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #p
 
 
 subject to complicating_cst_GWP{l in ResourceBalances, p in Period, t in Time[p]}: #pi_g
-   Network_supply_GWP[l,p,t] - Network_demand_GWP[l,p,t]   =  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+   Network_supply_GWP[l,p,t] - Network_demand_GWP[l,p,t]   =  (Domestic_energy[l,p,t] +  sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 
 subject to TOTAL_profile_c1{l in ResourceBalances, p in Period,t in Time[p]}:
@@ -274,7 +274,7 @@ subject to LCA_construction{k in Lca_kpi}:
 lca_inv[k] = sum {u in Units} lca_units[k, u] + sum{h in House} lca_house_units[k, h];
 
 subject to complicating_cst_lca{k in Lca_kpi, l in ResourceBalances, p in Period, t in Time[p]}:
-Network_supply_lca[k,l,p,t] - Network_demand_lca[k,l,p,t] = ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+Network_supply_lca[k,l,p,t] - Network_demand_lca[k,l,p,t] = (Domestic_energy[l,p,t] +  sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 subject to LU_op_cst{k in Lca_kpi, l in ResourceBalances}:
 lca_op[k, l] = sum{p in PeriodStandard,t in Time[p]}(lca_kpi_supply[k,l,p,t]*Network_supply_lca[k,l,p,t] - lca_kpi_demand[k,l,p,t]*Network_demand_lca[k,l,p,t]);

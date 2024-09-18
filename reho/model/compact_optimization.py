@@ -747,6 +747,9 @@ def initialize_default_methods(method):
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False
 
+    if "external_district" not in method:
+        method['external_district'] = False
+
     if 'use_Storage_Interperiod' not in method:
         method['use_Storage_Interperiod'] = False
 

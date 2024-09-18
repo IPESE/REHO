@@ -89,7 +89,7 @@ def generate_EV_plugged_out_profiles_district(cluster):
     return EV_plugged_out, EV_plugging_in
 
 
-def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custom,transportunits):
+def generate_mobility_parameters(cluster, parameters,transportunits):
     """
     Based on EV_profile_generator_structure
 
@@ -99,27 +99,28 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     ----------
     cluster : 
         to get periods characterisations (p,t) => usually the value self.cluster_compact or 
-    mode_speed_custom : None or a dictionnay
-        either None or a dictionnay given by the user in the scenario initialisation
-    dailydist : float
-        duplicata of the ampl param Dailydist, declared later in the program (TODO : Could be coded better bc the duplicatas are not linked)
-    population : float
-        the input reho.parameters['Population'] in the initialisation of the scenario. duplicata of the ampl param Population, declared later in the program (TODO : Could be coded better bc the duplicatas are not linked)
+    parameters :
+        From the parameters will be extracted values related to the mobility namely DailyDist, Mode_Speed and Population. Population and DailyDist are float, Mode_Speed is a dictionnary given by the user in the scenario initialisation. It can contains customed values for only some modes while the other remain default. 
     transportunits : list
-        a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network supply['Mobility']
+        a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network_supply['Mobility']
 
     Returns:
     -------
     param_output : a dict of dataframes containing the profiles for each param. 
+
+    ..caution:
+    The default values in this function are a hardcoded copy of parameters DailyDist and Population in mobility.mod.
     """
     param_output = dict()
     
-    if dailydist is None:
-        dailydist = 36.8 # km per day
-    if mode_speed_custom is None:
+    if not "DailyDist" in parameters:
+        parameters['DailyDist'] = 36.8 # km per day
+    if not "Population" in parameters:
+        parameters['Population'] = 10 # km per day  
+    if "Mode_Speed" in parameters:
+        mode_speed_custom = parameters['Mode_Speed']
+    else:
         mode_speed_custom = pd.DataFrame()
-    if population is None:
-        population = 10 # km per day
 
     # Periods
     # TODO IMPLEMENTATION of flexible period duration
@@ -151,8 +152,8 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     # Domestic demand ================================================================================================
     # The labels look like this : demwdy => normalized mobility demand of a weekday
     columns = ["dem" + x for x in days_mapping.values()]
-    profiles_input[columns] *= population
-    profiles_input[columns] *= dailydist
+    profiles_input[columns] *= parameters['Population']
+    profiles_input[columns] *= parameters['DailyDist']
 
     mobility_demand = pd.DataFrame(columns=['l', 'p', 't', 'Domestic_energy'])
 
@@ -193,7 +194,7 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
         profile = profiles_input.loc[:, profiles_input.columns.str.contains(f"prf{days_mapping[day]}")].copy()
         profile = profile.multiply(dd_filter.iloc[:,0],axis = 'index')
         profile.columns = [x.split('_')[0] + "_district" for x in profile.columns]
-        missing_units = set(transportunits) - set(profile.columns)
+        missing_units = set(transportunits) - set(profile.columns) - {'Public_transport'}
         for unit in missing_units:
             profile[unit] = dd  # fill missing series with the period demand profile
 
@@ -341,93 +342,6 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     param_output['Mode_Speed'] = mode_speed
 
     return param_output
-
-
-def bike_temp(cluster):
-    """
-    Temporary function to be removed
-    """
-    File_ID = WD.get_cluster_file_ID(cluster)
-
-    if 'W' in File_ID.split('_'):
-        use_weekdays = True
-    else:
-        use_weekdays = False
-
-    if use_weekdays:
-        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3),
-                               skiprows=1)
-        timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
-    else:
-        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
-        timestamp = df.fillna(1)  # only weekdays
-
-    profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
-    bikedailyprofile = pd.DataFrame(columns=['u', 'p', 't', 'Daily_Profile'])
-    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            profile = profiles_input[["Bike_prfwdy"]].copy()
-        except:
-            raise ("day type not possible")
-        profile.rename(columns={"Bike_prfwdy": "Daily_Profile"}, inplace=True)
-        profile.index.name = 't'
-        profile.reset_index(inplace=True)
-        profile['p'] = j + 1
-        bikedailyprofile = pd.concat([bikedailyprofile, profile])
-
-    pd.concat([bikedailyprofile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
-    pd.concat([bikedailyprofile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
-
-    bikedailyprofile['u'] = "Bike_district"
-    bikedailyprofile.set_index(['u', 'p', 't'], inplace=True)
-
-    return bikedailyprofile
-
-
-def scenario_profiles_temp(cluster):
-    """
-    Temporary function to be removed
-    """
-    File_ID = WD.get_cluster_file_ID(cluster)
-
-    if 'W' in File_ID.split('_'):
-        use_weekdays = True
-    else:
-        use_weekdays = False
-
-    if use_weekdays:
-        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3),
-                               skiprows=1)
-        timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
-    else:
-        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
-        timestamp = df.fillna(1)  # only weekdays
-
-    profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
-    bikedailyprofile = pd.DataFrame(columns=['u', 'p', 't', 'Daily_Profile'])
-    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            profile = profiles_input[["Bike_prfwnd"]].copy()
-        except:
-            raise ("day type not possible")
-        profile.rename(columns={"Bike_prfwnd": "Daily_Profile"}, inplace=True)
-        profile.index.name = 't'
-        profile.reset_index(inplace=True)
-        profile['p'] = j + 1
-        bikedailyprofile = pd.concat([bikedailyprofile, profile])
-
-    pd.concat([bikedailyprofile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
-    pd.concat([bikedailyprofile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
-
-    bikedailyprofile['u'] = "Bike_district"
-    bikedailyprofile.set_index(['u', 'p', 't'], inplace=True)
-
-    output = {
-        "Daily_Profile": bikedailyprofile
-    }
-    return output
-
-
 
 def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     """

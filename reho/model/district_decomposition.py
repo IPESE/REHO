@@ -91,10 +91,11 @@ class district_decomposition:
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
-                                                "DailyDist","Mode_Speed","outside_charging_price","charging_externalload","Districts","share_district_activity","externalload_sellingprice",
+                                                "DailyDist","Mode_Speed","outside_charging_price","charging_externalload","share_district_activity","externalload_sellingprice",
                                                 "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" , "n_ICEperhab"], # attention District is a SET
-                         "list_constraints_MP": ["EV_supplyprofile1","EV_supplyprofile2"]
+                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" , "n_ICEperhab"],
+                         "list_constraints_MP": ["EV_supplyprofile1","EV_supplyprofile2"],
+                         "list_set_indexed_MP" : ["Districts"]
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -255,7 +256,7 @@ class district_decomposition:
         print('INITIATE HOUSE: ', h)
 
         # find district structure and parameter for one single building
-        buildings_data_SP, parameters_SP, infrastructure_SP = self.__split_parameter_sets_per_building(h)
+        buildings_data_SP, parameters_SP, infrastructure_SP, set_indexed_SP = self.__split_parameter_sets_per_building(h)
 
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
         if epsilon_init is not None and self.method['building-scale']:
@@ -273,9 +274,9 @@ class district_decomposition:
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, self.set_indexed, self.cluster, scenario, self.method, self.solver)
+            REHO = compact_optimization(infrastructure_SP, buildings_data_SP, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method, self.solver)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -443,8 +444,6 @@ class district_decomposition:
 
 
         for key in self.lists_MP['list_parameters_MP']:
-            if key == "Districts": # bc it's a SET
-                continue
             if key in self.parameters.keys():
                 MP_parameters[key] = self.parameters[key]
 
@@ -456,17 +455,7 @@ class district_decomposition:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
                     MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster)
-                    # MP_parameters["bike_dailyprofile"] = EV_gen.bike_temp(self.cluster)
-                    d = None
-                    m = None
-                    pop = None #TODO : here do ERA/ the surface per person ? 
-                    if 'DailyDist' in self.parameters:
-                        d = self.parameters['DailyDist']
-                    if "Mode_Speed" in self.parameters:
-                        m = self.parameters['Mode_Speed']
-                    if "Population" in self.parameters:
-                        pop = self.parameters['Population']
-                    p = EV_gen.generate_mobility_parameters(self.cluster,pop, d, m,
+                    p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
                                                             np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
                     MP_parameters.update(p)
 
@@ -522,9 +511,9 @@ class district_decomposition:
         if 'EV_district' in self.infrastructure.UnitsOfDistrict: # TODO : trouver une meilleure condition d'activation de la mobilité et de déclaration des modes (esp. Public_transport)
             MP_set_indexed['transport_Units'] = np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train','PT_bus'])
 
-        if "Districts" in self.lists_MP['list_parameters_MP']:
-            if "Districts" in self.parameters:
-                MP_set_indexed['Districts'] = np.array(self.parameters["Districts"])
+        if self.method['external_district']:
+            MP_set_indexed['Districts'] = np.array(self.set_indexed["Districts"])
+
 
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS
@@ -1141,7 +1130,7 @@ class district_decomposition:
         col = self.number_SP_solutions.columns.difference(["House"])
         self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean(numeric_only=True)
 
-    def __split_parameter_sets_per_building(self, h, parameters_SP=dict({})):
+    def __split_parameter_sets_per_building(self, h, parameters_SP=dict({}),set_indexed_SP=dict({})):
         """
         Description
         -----------
@@ -1157,6 +1146,7 @@ class district_decomposition:
         buildings_data_SP: dictionary, egid, surface area, class of the building, ...
         parameters_SP: dictionary, Parameters from the script for a single house (f.e. tariffs)
         infrastructure_SP: dictionary, The district structure for a single house
+        set_indexed_SP: dictionnary, the set_indexed variable without the values concerning only the master problem (district scale)
         """
         ID = np.where(h == self.infrastructure.House)[0][0]
 
@@ -1175,6 +1165,10 @@ class district_decomposition:
                         parameters_SP[key] = profile_building_x[ID]
                 else:
                     parameters_SP[key] = self.parameters[key][ID]
+        
+        for key in self.set_indexed:
+            if key not in self.lists_MP["list_set_indexed_MP"]:
+                set_indexed_SP[key] = self.set_indexed[key]
 
         infrastructure_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
 
@@ -1182,7 +1176,7 @@ class district_decomposition:
         unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]
         infrastructure_SP.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = unit_param[["Units_Fmax", "Cost_inv2"]]
 
-        return buildings_data_SP, parameters_SP, infrastructure_SP
+        return buildings_data_SP, parameters_SP, infrastructure_SP, set_indexed_SP
 
     def return_combined_SP_results(self, df_Results, df_name):
 

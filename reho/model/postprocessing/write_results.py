@@ -143,10 +143,11 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
             df6 = get_parameter_in_pandas(ampl, "EV_E_mob", multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            if len(ampl.getSet('Districts').getValues().toList()) > 0:
+            try:
                 df7 = get_variable_in_pandas(df, 'EV_E_charged_outside', multi_index=True)
-            else:
+            except:
                 df7 = pd.DataFrame()
+                print('get_df_Results_from_SP : The parameter EV_E_charged_outside could not be retrieved')
             df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         else:
             df_Unit_t = pd.concat([df1, df2, df3, df4], axis=1)
@@ -522,13 +523,14 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
             df6 = get_parameter_in_pandas(ampl, 'EV_E_charging', multi_index=True) 
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            if len(ampl.getSet('Districts').getValues().toList()) > 0:
+            try:
                 df7 = get_parameter_in_pandas(ampl, 'EV_E_charged_outside', multi_index=True)
                 df7 = df7[['EV_E_charged_outside']].unstack(level = [0,1])
                 df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j,k in df7.columns]
                 df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
-            else:
+            except:
                 df7 = pd.DataFrame()
+                print('get_df_Results_from_MP : The parameter EV_E_charged_outside could not be retrieved')
             df8 = get_parameter_in_pandas(ampl, 'EV_E_mob', multi_index=True) 
             df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
 

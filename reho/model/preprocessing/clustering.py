@@ -1,8 +1,9 @@
-import pandas as pd
-import numpy as np
 import scipy.spatial
-from sklearn_extra.cluster import KMedoids
-from sklearn.metrics import pairwise_distances
+from pyclustering.cluster.kmedoids import kmedoids
+from pyclustering.utils.metric import distance_metric, type_metric
+from pyclustering.utils import calculate_distance_matrix
+import numpy as np
+import pandas as pd
 
 __doc__ = """
 Clustering algorithm for input data reduction.
@@ -86,26 +87,34 @@ class Clustering:
 
     @staticmethod
     def __run_KMedoids(matrix, n_clusters):
-
         if len(matrix) == 1:  # check for trivial solution
             df_res = pd.DataFrame([1], columns=['1'])
-
         else:
-
             print('Applying algorithm for', n_clusters, 'clusters')
 
-            dist_a = pairwise_distances(matrix, metric='sqeuclidean')
-            kmedoids = KMedoids(n_clusters=n_clusters, method='pam', random_state=42)
-            kmedoids.fit(dist_a)
+            # Calculate distance matrix using squared Euclidean metric
+            metric = distance_metric(type_metric.EUCLIDEAN_SQUARE)
+            dist_matrix = calculate_distance_matrix(matrix, metric)
 
-            cluster_assignments = kmedoids.labels_
-            medoid_indices = kmedoids.medoid_indices_
+            # Choose random initial medoids
+            initial_medoids = np.random.choice(len(matrix), n_clusters, replace=False).tolist()
 
-            label_to_medoid = dict(zip(np.unique(cluster_assignments), medoid_indices))
-            mapped_cluster_assignments = np.vectorize(label_to_medoid.get)(cluster_assignments)
+            # Create KMedoids instance and run the algorithm
+            kmedoids_instance = kmedoids(dist_matrix, initial_medoids, data_type='distance_matrix')
+            kmedoids_instance.process()
+
+            # Extract results
+            clusters = kmedoids_instance.get_clusters()
+            medoids = kmedoids_instance.get_medoids()
+
+            # Create a mapping from cluster index to medoid index
+            cluster_assignments = np.zeros(len(matrix), dtype=int)
+            for cluster_idx, cluster_points in enumerate(clusters):
+                for point in cluster_points:
+                    cluster_assignments[point] = medoids[cluster_idx]
 
             df_res = pd.DataFrame()
-            df_res[str(n_clusters)] = mapped_cluster_assignments
+            df_res[str(n_clusters)] = cluster_assignments
 
         return df_res
 

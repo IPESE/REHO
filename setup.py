@@ -14,7 +14,7 @@ def read_file(file_path):
 setup(
 
     name='REHO',
-    version='1.1.1',
+    version='1.1.2',
     entry_points={
         'console_scripts': [
             'reho-test-import = reho.test.test_import:test_import_reho_modules',
@@ -40,14 +40,13 @@ setup(
         "psycopg2<3.0.0 ; platform_system != 'Windows'",
         "psycopg2-binary<3.0.0 ; platform_system == 'Windows'",
         "pvlib",
+        "pyclustering",
         "pyproj",
         "python-dotenv",
         "pytest",
         "qmcpy",
         "requests",
         "SALib",
-        "scikit-learn==1.3.2",
-        "scikit-learn-extra",
         "scipy",
         "setuptools",
         "shapely",

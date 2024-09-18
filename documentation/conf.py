@@ -82,26 +82,18 @@ autodoc_mock_imports = [
     "plotly",
     "psycopg2",
     "pvlib",
+    "pyclustering"
     "pyproj",
     "python-dotenv",
     "pytest",
     "qmcpy",
     "requests",
     "SALib",
-    "scikit-learn",
-    "scikit-learn-extra",
     "scipy",
     "setuptools",
     "shapely",
     "sqlalchemy",
     "urllib3",
 ]
-sys.modules['scikit-learn'] = MagicMock()
-sys.modules['sklearn'] = MagicMock()
-sys.modules['sklearn.metrics'] = MagicMock()
-sys.modules['scikit-learn-extra'] = MagicMock()
-sys.modules['sklearn_extra'] = MagicMock()
-sys.modules['sklearn_extra.cluster'] = MagicMock()
-sys.modules['sqlalchemy'] = MagicMock()
 sys.modules['sqlalchemy.dialects'] = MagicMock()
 sys.modules['sqlalchemy.exc'] = MagicMock()

@@ -445,7 +445,9 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                         district_data="custom_district_units.csv", storage_data=True)
     """
 
-    default_units_to_exclude = ["Air_Conditioner", "DHN_hex", 'HeatPump_Anergy', 'HeatPump_Lake', 'DataHeat_SH']
+    default_units_to_exclude = ['HeatPump_Anergy', 'HeatPump_Lake']
+    if "Mobility" not in grids.keys():
+        default_units_to_exclude = default_units_to_exclude + ['EVcharging_district']
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:

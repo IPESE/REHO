@@ -67,8 +67,8 @@ param T_ext{p in Period,t in Time[p]};		#deg C
 param I_global{p in Period,t in Time[p]};	#W/m2
 
 #-THERMAL STREAMS
-param T_DHN_supply_cst default 16; 			#deg C
-param T_DHN_return_cst default 16; 			#deg C
+param T_DHN_supply_cst default 45; 			#deg C
+param T_DHN_return_cst default 35; 			#deg C
 param T_DHN_supply{p in Period, t in Time[p]} default T_DHN_supply_cst; #deg C
 param T_DHN_return{p in Period, t in Time[p]} default T_DHN_return_cst; #deg C
 

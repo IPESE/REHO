@@ -275,18 +275,18 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
     def set_dfs_lca(ampl):
 
-        LCA_units = get_ampl_data(ampl, 'lca_units')
+        LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)
         LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
 
         LCA_tot = get_ampl_data(ampl, 'lca_tot')
         LCA_tot = LCA_tot.stack().unstack(level=0)
         LCA_tot.index = ["Network"]
-        LCA_tot_house = get_ampl_data(ampl, 'lca_tot_house')
+        LCA_tot_house = get_ampl_data(ampl, 'lca_tot_house', multi_index=True)
         LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
         LCA_tot = pd.concat([LCA_tot_house, LCA_tot], axis=0)
         LCA_tot.index.names = ['Hub']
 
-        LCA_op = get_ampl_data(ampl, 'lca_op')
+        LCA_op = get_ampl_data(ampl, 'lca_op', multi_index=True)
         LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
 
         return LCA_units, LCA_tot, LCA_op

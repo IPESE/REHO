@@ -47,8 +47,6 @@ class REHO(MasterProblem):
         else:
             self.nPareto = self.scenario['nPareto']  # intermediate points
             self.total_Pareto = self.nPareto * 2 + 2  # total pareto points: both objectives plus boundaries
-        if self.method['building-scale'] and 'EV' not in self.infrastructure.UnitTypes:
-            self.scenario['specific'] = self.scenario['specific'] + ["disallow_exchanges_1", "disallow_exchanges_2"]
 
         self.results = dict()
 
@@ -393,7 +391,10 @@ class REHO(MasterProblem):
         self.MP_iteration(scenario_MP, Scn_ID=0, binary=False, Pareto_ID=0, read_DHN=True)
 
         if not self.method["DHN_CO2"]:
-            delta_enthalpy = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"]).mean() * 4.18
+            if "T_DHN_supply_cst" in self.parameters and "T_DHN_return_cst" in self.parameters:
+                delta_enthalpy = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"]).mean() * 4.18
+            else:
+                delta_enthalpy = 10 * 4.18
         else:
             delta_enthalpy = 179.5
 

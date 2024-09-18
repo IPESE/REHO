@@ -19,5 +19,5 @@ def cluster():
 
 
 def test_clustering(qbuildings_data, weather_data, cluster):
-    cl = Clustering(data=weather_data, nb_clusters=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
+    cl = Clustering(data=weather_data, nb_clusters=[cluster['Periods']], period_duration=cluster['PeriodDuration'], options={"year-to-day": True, "extreme": []})
     cl.run_clustering()

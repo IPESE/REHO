@@ -77,7 +77,7 @@ def generate_weather_data(cluster, qbuildings_data):
         attributes.append('Emissions')
 
     df = df[attributes]
-    cl = Clustering(data=df, nb_clusters=[cluster['Periods']], option={"year-to-day": True, "extreme": []}, pd=cluster['PeriodDuration'])
+    cl = Clustering(data=df, nb_clusters=[cluster['Periods']], period_duration=cluster['PeriodDuration'], options={"year-to-day": True, "extreme": []})
     cl.run_clustering()
 
     generate_output_data(cl, attributes, cluster['Location'])
@@ -181,8 +181,8 @@ def generate_output_data(cl, attributes, location):
     # Get the max/min irradiance from the same day
     T_max = cl.data_org.iloc[[T_idx[1]]].copy()
     T_max['Irr'] = cl.data_org.loc[T_day[1] * 24: T_day[1] * 24 + 24, 'Irr'].max()
-    T_min.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[0], 1, 1]
-    T_max.loc[:, ['time.dd', 'time.hh', 'dt']] = [T_day[1], 1, 1]
+    T_min[['time.dd', 'time.hh', 'dt']] = [T_day[0], 1, 1]
+    T_max[['time.dd', 'time.hh', 'dt']] = [T_day[1], 1, 1]
     data_cls = pd.concat([data_cls, T_min.rename({T_idx[0]: 240}), T_max.rename({T_idx[1]: 241})])
     # Add a 10% margin for the extreme over 20 years
     data_cls.loc[[240, 241], ['Text', 'Irr']] = data_cls.loc[[240, 241], ['Text', 'Irr']] * 1.1
@@ -200,7 +200,7 @@ def generate_output_data(cl, attributes, location):
     data_idp = pd.DataFrame(
         np.stack((np.arange(1, data_cls.shape[0] + 1, 1), np.arange(1, data_cls.shape[0] + 1, 1)), axis=1),
         columns=["IndexDy", "intra_t"])
-    data_idp["intra_end"] = [id + cl.pd if (id % cl.pd) == 0 else 0 for id in data_idp.index]
+    data_idp["intra_end"] = [id + cl.period_duration if (id % cl.period_duration) == 0 else 0 for id in data_idp.index]
 
     # Call for the write_dat_files function
     write_dat_files(attributes, location, data_cls, data_idy)
@@ -366,174 +366,146 @@ def write_dat_files(attributes, location, values_cluster, index_inter):
 
 
 def plot_cluster_KPI_separate(df, save_fig):
-    plt.rcParams.update({'font.size': 18})
-    print(df)
+    # Transpose the DataFrame
     df = df.transpose()
-    df.columns.names = ['KPI']
-    df.rename({'Irr': 'Global Irradiation', 'Text': 'Ambient Temperature'}, inplace=True)
-    df_irr = df.xs('Global Irradiation', level=1)
-    df_T = df.xs('Ambient Temperature', level=1)
 
+    # Ensure proper column renaming
+    df.columns.names = ['iteration', 'KPI']
+    df = df.rename(index={'Text': 'Ambient Temperature', 'Irr': 'Global Irradiation'})
+
+    # Select the relevant KPIs for plotting
+    df_irr = df.xs('Global Irradiation', axis=0)
+    df_T = df.xs('Ambient Temperature', axis=0)
+
+    # Plot RMSD and LDC for Global Irradiation and Ambient Temperature
     fig, ax = plt.subplots()
     fig.set_size_inches(4, 8)
-    df_irr['RMSD'].plot(linestyle='--', color='black', label='RMSD (Irr)', ax=ax)
-    df_T['RMSD'].plot(linestyle='-', color='black', label='RMSD (T)', ax=ax)
-    df_irr['LDC'].plot(linestyle='--', color="red", label='LDC (Irr)', ax=ax)
-    df_T['LDC'].plot(linestyle='-', color="red", label='LDC (T)', ax=ax)
+    df_irr[:, 'RMSD'].plot(linestyle='--', color='black', label='RMSD (Irr)', ax=ax)
+    df_T[:, 'RMSD'].plot(linestyle='-', color='black', label='RMSD (T)', ax=ax)
+    df_irr[:, 'LDC'].plot(linestyle='--', color="red", label='LDC (Irr)', ax=ax)
+    df_T[:, 'LDC'].plot(linestyle='-', color="red", label='LDC (T)', ax=ax)
 
-    plt.xlabel('number of clusters [-]')
-    plt.ylabel('key performance indicator (KPI) [-]')
-    # plt.title('KPI for $ \u2B27 $ =  Global Irradiation, $\u00D7$ = Ambient Temperature', size = 14)
+    plt.xlabel('Number of clusters [-]')
+    plt.ylabel('Key performance indicator (KPI) [-]')
     plt.legend(title="KPI")
 
-    # plt.ylim([0,0.40])
     if save_fig:
         plt.tight_layout()
-        export_format = 'pdf'
-        plt.savefig(('Cluster_KPIs' + '.' + export_format), format=export_format, dpi=300)
+        plt.savefig('Cluster_KPIs.pdf', format='pdf', dpi=300)
     else:
         plt.show()
 
+    # Plot MAE
     fig, ax = plt.subplots()
     fig.set_size_inches(4, 8)
-    df_irr['MAE'].plot(linestyle='--', color='black', label='MAE (Irr)', ax=ax)
-    df_T['MAE'].plot(linestyle='-', color='black', label='MAE (T)', ax=ax)
+    df_irr[:, 'MAE'].plot(linestyle='--', color='black', label='MAE (Irr)', ax=ax)
+    df_T[:, 'MAE'].plot(linestyle='-', color='black', label='MAE (T)', ax=ax)
 
-    plt.xlabel('number of clusters [-]')
-    plt.ylabel('mean average error (MAE)  [-]')
-    # plt.title('KPI for $ \u2B27 $ =  Global Irradiation, $\u00D7$ = Ambient Temperature', size = 14)
+    plt.xlabel('Number of clusters [-]')
+    plt.ylabel('Mean average error (MAE) [-]')
     plt.legend(title="KPI")
-    # plt.ylim([0,0.40])
+
     if save_fig:
         plt.tight_layout()
-        export_format = 'pdf'
-        plt.savefig(('MAE_KPIs' + '.' + export_format), format=export_format, dpi=300)
+        plt.savefig('MAE_KPIs.pdf', format='pdf', dpi=300)
     else:
         plt.show()
 
+    # Plot MAPE
     fig, ax = plt.subplots()
     fig.set_size_inches(4, 8)
-    df_irr['MAPE'].plot(linestyle='--', color='black', label='MAPE  (Irr)', ax=ax)
-    df_T['MAPE'].plot(linestyle='-', color='black', label='MAPE  (T)', ax=ax)
+    df_irr[:, 'MAPE'].plot(linestyle='--', color='black', label='MAPE (Irr)', ax=ax)
+    df_T[:, 'MAPE'].plot(linestyle='-', color='black', label='MAPE (T)', ax=ax)
 
-    plt.xlabel('number of clusters [-]')
-    plt.ylabel('mean average percentage error  [-]')
-    # plt.title('KPI for $ \u2B27 $ =  Global Irradiation, $\u00D7$ = Ambient Temperature', size = 14)
+    plt.xlabel('Number of clusters [-]')
+    plt.ylabel('Mean average percentage error (MAPE) [-]')
     plt.legend(title="KPI")
-    # plt.ylim([0,0.40])
+
     if save_fig:
         plt.tight_layout()
-        export_format = 'pdf'
-        plt.savefig(('MAPE_KPIs' + '.' + export_format), format=export_format, dpi=300)
+        plt.savefig('MAPE_KPIs.pdf', format='pdf', dpi=300)
     else:
         plt.show()
 
 
 def plot_LDC(cl, save_fig):
     nbr_plot = cl.nbr_opt
-    print('plotting for number of typical days: ', nbr_plot)
+    print('Plotting for number of typical days:', nbr_plot)
 
-    # get original, not clustered data
+    # Get original (non-clustered) data
     T_org = cl.data_org['Text']
     IRR_org = cl.data_org['Irr']
-    # E_org= cl.data_org['Emissions']
 
-    # get clustered data and undo normalization
-    df_clu = cl.attr_clu.xs(str(nbr_plot), axis=1)
+    # Get clustered data and undo normalization
+    df_clu = cl.attr_clu.xs(str(nbr_plot))
     T_clu = df_clu['Text'] * (T_org.max() - T_org.min()) + T_org.min()
     IRR_clu = df_clu['Irr'] * (IRR_org.max() - IRR_org.min()) + IRR_org.min()
-    #  E_clu= df_clu['Emissions']* (E_org.max() - E_org.min()) + E_org.min()
 
-    # get assigned typical period
+    # Get assigned typical period
     res = cl.results['idx'][str(nbr_plot)]
-    # instead of typical period (f.e. day 340) get index (1)
     for i, d in enumerate(res.unique()):
         res = np.where(res == d, i + 1, res)
-    # get array of 8760 -modulo timesteps
-    res = np.repeat(res, cl.pd)
 
-    # add modulo
-    modulo = cl.data_org.shape[0] % cl.pd
-    res = np.append(res, np.repeat(int(nbr_plot) + 1, modulo))  # add modulo as extra period
+    # Repeat result to match time steps
+    res = np.repeat(res, cl.period_duration)
+    modulo = cl.data_org.shape[0] % cl.period_duration
+    res = np.append(res, np.repeat(int(nbr_plot) + 1, modulo))
 
-    # ----------------------------------------------------------------------------
-    # Plotting
-    # ------------------------------------------------------------------------
-
+    # Plot original and clustered data
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
 
     ax[0].plot(T_org, color='grey', alpha=0.5)
-    sc = ax[0].scatter(T_clu.index, T_clu.values, s=10, c=res, cmap=cm)
+    sc = ax[0].scatter(T_clu.index, T_clu.values, s=10, c=res, cmap='viridis')
     ax[1].plot(IRR_org, color='grey', alpha=0.5)
-    ax[1].scatter(IRR_clu.index, IRR_clu.values, s=10, c=res, cmap=cm)
-    # ax[2].plot(E_org, color='grey', alpha=0.5)
-    # ax[2].scatter(E_clu.index, E_clu.values, s=10, c=res, cmap=cm)
+    ax[1].scatter(IRR_clu.index, IRR_clu.values, s=10, c=res, cmap='viridis')
 
-    # set months instead of timestep as xticks
     plt.xticks(np.arange(8760, step=730), calendar.month_name[1:13], rotation=30, fontsize=16)
+    ax[0].set_ylabel('Temperature [°C]')
+    ax[1].set_ylabel('Global Irradiation [W/m$^2$]')
 
-    ax[0].set_ylabel('temperature [C]')
-    ax[1].set_ylabel('global irradiation [W/m$^2$]')
-    # ax[2].set_ylabel('global warming potential [gCO2/kWh]')
-    # plt.subplots_adjust(bottom=0.1, right=0.8, top=0.9)
-
-    legend1 = ax[0].legend(*sc.legend_elements(),
-                           loc='upper right', bbox_to_anchor=(1.0, 1.0), title="Period", ncol=2)
+    # Add period legend
+    legend1 = ax[0].legend(*sc.legend_elements(), loc='upper right', bbox_to_anchor=(1.0, 1.0), title="Period", ncol=2)
     ax[0].add_artist(legend1)
 
     if save_fig:
         plt.tight_layout()
-        format = 'pdf'
-        plt.savefig(('Year_Cluster' + '.' + format), format=format, dpi=300)
+        plt.savefig('Year_Cluster.pdf', format='pdf', dpi=300)
     else:
         plt.show()
 
-    df_T = pd.DataFrame(T_clu)
+    # Sorted DataFrames for LDC plots
+    df_T = pd.DataFrame(T_clu, columns=['Text'])
     df_T['Period'] = res
-    df_T = df_T.sort_values(by=['Text'], ignore_index=True, ascending=False)
+    df_T = df_T.sort_values(by=['Text'], ascending=False, ignore_index=True)
 
-    df_Irr = pd.DataFrame(IRR_clu)
+    df_Irr = pd.DataFrame(IRR_clu, columns=['Irr'])
     df_Irr['Period'] = res
-    df_Irr = df_Irr.sort_values(by=['Irr'], ignore_index=True, ascending=False)
+    df_Irr = df_Irr.sort_values(by=['Irr'], ascending=False, ignore_index=True)
 
-    # df_E = pd.DataFrame(E_clu)
-    # df_E['Period'] = res
-    # df_E = df_E.sort_values(by=['Emissions'], ignore_index=True, ascending=False)
-
+    # Sorting original data
     T_sort = T_org.sort_values(ascending=False, ignore_index=True)
     IRR_sort = IRR_org.sort_values(ascending=False, ignore_index=True)
-    # E_sort =  E_org.sort_values(ascending=False, ignore_index=True)
 
+    # Plot sorted LDC data
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
     ax[0].scatter(T_sort.index, T_sort.values, color='grey', alpha=0.5)
-    ax[0].scatter(df_T.index, df_T['Text'], c=df_T['Period'], cmap=cm, s=20)
-
+    ax[0].scatter(df_T.index, df_T['Text'], c=df_T['Period'], cmap='viridis', s=20)
     ax[1].scatter(IRR_sort.index, IRR_sort.values, color='grey', alpha=0.5)
-    ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap=cm, s=20)
+    ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap='viridis', s=20)
 
-    #  ax[2].scatter(E_sort.index, E_sort.values, color='grey', alpha=0.5)
-    # ax[2].scatter(df_E.index, df_E['Emissions'], c=df_Irr['Period'], cmap=cm, s=20)
-
-    ax[0].set_ylabel('temperature [C]')
-    ax[1].set_ylabel('global irradiation [W/m$^2$]')
-    # ax[2].set_ylabel('global warming potential [gCO2/kWh]')
-
+    ax[0].set_ylabel('Temperature [°C]')
+    ax[1].set_ylabel('Global Irradiation [W/m$^2$]')
     plt.xlabel('Hours [h]')
-
-    legend1 = ax[0].legend(*sc.legend_elements(),
-                           loc='upper right', bbox_to_anchor=(1.0, 1.0), title="Period", ncol=2)
-    ax[0].add_artist(legend1)
 
     if save_fig:
         plt.tight_layout()
-        format = 'pdf'
-        plt.savefig(('LDC' + '.' + format), format=format, dpi=300)
+        plt.savefig('LDC.pdf', format='pdf', dpi=300)
     else:
         plt.show()
 
 
 if __name__ == '__main__':
-    cm = plt.cm.get_cmap('Spectral_r')
+    cm = plt.get_cmap('Spectral_r')
 
     weather_file = '../../../scripts/examples/data/profiles/Sion.csv'
     Attributes = ['Text', 'Irr']
@@ -542,7 +514,7 @@ if __name__ == '__main__':
     df_annual = read_custom_weather(weather_file)
     df_annual = df_annual[Attributes]
 
-    cl = Clustering(data=df_annual, nb_clusters=nb_clusters, option={"year-to-day": True, "extreme": []}, pd=24)
+    cl = Clustering(data=df_annual, nb_clusters=nb_clusters, period_duration=24, options={"year-to-day": True, "extreme": []})
     cl.run_clustering()
 
     plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)

@@ -77,7 +77,7 @@ class Clustering:
         dist_matrix = calculate_distance_matrix(matrix, metric)
         initial_medoids = np.random.choice(len(matrix), n_clusters, replace=False).tolist()
 
-        kmedoids_instance = kmedoids(dist_matrix, initial_medoids, data_type='distance_matrix')
+        kmedoids_instance = kmedoids(dist_matrix, initial_medoids, ccore=False, data_type='distance_matrix')  # ccore=False, otherwise incompatible with ARM64
         kmedoids_instance.process()
 
         cluster_assignments = np.zeros(len(matrix), dtype=int)

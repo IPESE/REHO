@@ -78,7 +78,7 @@ autodoc_mock_imports = [
     "matplotlib",
     "numpy",
     "openpyxl",
-    "pandas<2.0.0",
+    "pandas",
     "plotly",
     "psycopg2",
     "pvlib",

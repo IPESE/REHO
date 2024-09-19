@@ -16,7 +16,7 @@ def generate_EV_plugged_out_profiles_district(cluster, df_Timestamp):
     Parameters
     ----------
     cluster : dict
-        Define location district, number of periods, and number of timesteps.
+        Define location, number of periods, and number of timesteps.
     df_Timestamp : pd.DataFrame
         Information for clustering results, used to know the periods and period duration.
 

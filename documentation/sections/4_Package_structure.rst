@@ -45,7 +45,6 @@ Directory for data-related files.
 - ``QBuildings/``
 - ``SIA/``
 - ``skydome/``
-- ``weather/``
 
 **model/**
 ==================

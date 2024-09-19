@@ -22,12 +22,11 @@ class Clustering:
         Interval for the number of clusters possible.
     """
 
-    def __init__(self, data, nb_clusters=None, period_duration=24, outliers=None, options=None):
+    def __init__(self, data, nb_clusters=None, period_duration=24, options=None):
         """
         Initializes the Clustering object with the given parameters.
         """
         self.nb_clusters = nb_clusters if nb_clusters is not None else [8]
-        self.outlier_removal = outliers
         self.data_org = data
         self.period_duration = period_duration
         self.data_nor = None
@@ -90,7 +89,7 @@ class Clustering:
 
     def __execute_clustering(self):
         """
-        Executes the K-Medoids clustering for each number of clusters and handles outlier removal.
+        Executes the K-Medoids clustering for each number of clusters.
         """
         df_res = pd.DataFrame()
 

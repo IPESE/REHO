@@ -45,8 +45,6 @@ path_to_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
 path_to_areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt')  # area of patches
 path_to_cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt')  # location of centre points
 
-path_to_weather = os.path.join(path_to_data, 'weather')
-
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
 path_to_configurations = os.path.join(os.getcwd(), 'results', 'configurations')

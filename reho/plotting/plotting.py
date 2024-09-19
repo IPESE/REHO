@@ -1397,7 +1397,7 @@ def plot_composite_curve(df_Results, cluster, periods=["Yearly"], filename=None,
     df_Results: pd.DataFrame
         DataFrame coming from REHO results (already extracted from the desired *Scn_ID* and *Pareto_ID*).
     cluster: dict
-        Define location district, number of periods, and number of timesteps.
+        Define location, number of periods, and number of timesteps.
     periods: list
         Indicate the desired timeframe.
     filename: str

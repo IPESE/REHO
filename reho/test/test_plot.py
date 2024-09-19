@@ -53,14 +53,3 @@ def test_plot_profiles(results):
                                title="Energy profiles with a weekly moving average").show()
     except ImportError as e:
         pytest.fail(f"plot_profiles failed: {e}")
-
-
-def all_plots(results):
-    try:
-        test_plot_performance(results)
-        test_plot_expenses(results)
-        test_plot_sankey(results)
-        test_plot_eud(results)
-        test_plot_profiles(results)
-    except ImportError as e:
-        pytest.fail(f"Plotting failed: {e}")

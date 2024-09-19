@@ -14,12 +14,11 @@ def read_file(file_path):
 setup(
 
     name='REHO',
-    version='1.1.2',
+    version='1.1.4',
     entry_points={
         'console_scripts': [
             'reho-test-import = reho.test.test_import:test_import_reho_modules',
             'reho-test-run = reho.test.test_run:test_run',
-            'reho-test-plot = reho.test.test_plot:all_plots',
             'reho-download-examples = reho.test.test_examples:test_download_examples',
         ],
     },
@@ -33,7 +32,7 @@ setup(
         "geopandas<1.0.0",
         "kaleido",
         "matplotlib",
-        "numpy",
+        "numpy<2.0.0",
         "openpyxl",
         "pandas<2.0.0",
         "plotly",

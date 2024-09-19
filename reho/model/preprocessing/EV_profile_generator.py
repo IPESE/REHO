@@ -4,91 +4,6 @@ import pandas as pd
 import numpy as np
 
 
-def generate_EV_plugged_out_profiles_district(cluster):
-    """
-    Computes hourly electric vehicle (EV) profiles for each typical day considering weekdays and weekends. Data are taken from
-    `UK Department for Transport 2013 <https://www.gov.uk/government/collections/energy-and-environment-statistics#publications>`_
-    and `SFSO 2015 <https://www.bfs.admin.ch/asset/fr/1840478>`_. The EV occupancy profiles are used to
-    optimize EV electricity demand profiles with the evehicle.mod ampl model.
-
-
-
-    Parameters
-    ----------
-    cluster : dict
-        Define location district, number of periods, and number of timesteps.
-
-    Returns
-    -------
-    EV_plugged_out : array
-        Hourly profile of the share of vehicles being plugged out of the district LV grid.
-    EV_plugging_in : array
-        Hourly profile of the share of vehicles connecting to the district LV grid.
-
-    Notes
-    -----
-    - EV_plugged_out, EV_plugging_in
-
-    """
-    # TODO IMPLEMENTATION of flexible period duration
-    File_ID = WD.get_cluster_file_ID(cluster)
-
-    if 'W' in File_ID.split('_'):
-        use_weekdays = True
-    else:
-        use_weekdays = False
-
-    if use_weekdays:
-        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3),
-                               skiprows=1)
-        timestamp = pd.DataFrame(timestamp, columns=("Day", "Frequency", "Weekday"))
-    else:
-        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
-        timestamp = df.fillna(1)  # only weekdays
-
-    # Federal Office of Statistic, Comportement de la population en matiere de transports, 2015
-    profiles_weekday = [0.01, 0.0, 0.0, 0.0, 0.0, 0.03, 0.1, 0.12, 0.11, 0.12, 0.12, 0.14, 0.13, 0.14, 0.13, 0.13, 0.18,
-                        0.2, 0.15, 0.1, 0.07, 0.06, 0.05, 0.03]
-    profiles_weekend = [0.01, 0.0, 0.0, 0.0, 0.0, 0.00, 0.0, 0.00, 0.03, 0.10, 0.12, 0.11, 0.12, 0.12, 0.14, 0.13, 0.14,
-                        0.13, 0.15, 0.1, 0.07, 0.06, 0.05, 0.03]
-
-    # UK department for transport Electric Chargepoint Analysis 2017: Domestics
-    profiles_weekday = [0.0, 0.0, 0.0, 0.0, 0.01, 0.02, 0.08, 0.2, 0.31, 0.35, 0.38, 0.39, 0.39, 0.38, 0.38, 0.36, 0.31,
-                        0.24, 0.18, 0.13, 0.09, 0.05, 0.03, 0.01]
-    profiles_weekend = [0.0, 0.0, 0.0, 0.0, 0.01, 0.02, 0.08, 0.2, 0.31, 0.35, 0.38, 0.39, 0.39, 0.38, 0.38, 0.36, 0.31,
-                        0.24, 0.18, 0.13, 0.09, 0.05, 0.03, 0.01]
-
-    plugging_in_weekday = [0.017, 0.006, 0.004, 0.003, 0.004, 0.005, 0.01, 0.019, 0.03, 0.034, 0.036, 0.042, 0.043,
-                           0.045, 0.047, 0.067, 0.088, 0.111, 0.109, 0.087, 0.069, 0.058, 0.043, 0.023]
-    plugging_in_weekend = [0.017, 0.006, 0.004, 0.003, 0.004, 0.005, 0.01, 0.019, 0.03, 0.034, 0.036, 0.042, 0.043,
-                           0.045, 0.047, 0.067, 0.088, 0.111, 0.109, 0.087, 0.069, 0.058, 0.043, 0.023]
-
-    EV_plugged_out = []  # all vehicules not connected
-    EV_plugging_in = []  # vehicules connecting at time t
-    # iter over the typical periods
-    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        if day == 0:
-            profile = profiles_weekend
-            profile_plug_in = plugging_in_weekend
-        elif day == 1:
-            profile = profiles_weekday
-            profile_plug_in = plugging_in_weekday
-            # profile = np.tile(profiles_weekday, 365).tolist() # workaround -  whole year profile
-        else:
-            raise ("day type not possible")
-
-        EV_plugged_out = EV_plugged_out + profile
-        EV_plugging_in = EV_plugging_in + profile_plug_in
-
-    EV_plugged_out = EV_plugged_out + [0.0, 0.0]  # extreme hours
-    EV_plugged_out = np.array(EV_plugged_out)
-
-    EV_plugging_in = EV_plugging_in + [0.0, 0.0]  # extreme hours
-    EV_plugging_in = np.array(EV_plugging_in)
-
-    return EV_plugged_out, EV_plugging_in
-
-
 def generate_mobility_parameters(cluster, parameters,transportunits):
     """
     Based on EV_profile_generator_structure
@@ -217,9 +132,9 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     # IN/OUT and activity profiles (ex : EV and Electric Bikes) ========================================================
     # the default profiles are taken from EV_xxx
     EV_plugged_out = pd.DataFrame(columns=['u', 'p', 't', 'EV_plugged_out'])
-    EV_plugging_in = pd.DataFrame(columns=['u', 'p', 't', 'EV_plugging_in'])
+    EV_charging_profile = pd.DataFrame(columns=['u', 'p', 't', 'EV_charging_profile'])
     activity_profile = pd.DataFrame(columns=['a', 'u', 'p', 't', 'EV_activity'])
-    Bikes_plugging_in = pd.DataFrame(columns=['u', 'p', 't', 'Bikes_plugging_in'])
+    EBikes_charging_profile = pd.DataFrame(columns=['u', 'p', 't', 'EBikes_charging_profile'])
 
     EV_units = list(units[units.UnitOfType == "EV"][['Unit','UnitOfType']].Unit)
     EBike_units = list(units[units.UnitOfType == "EBike"][['Unit','UnitOfType']].Unit)
@@ -233,21 +148,21 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
             raise ("day type not possible")
         
 
-        # EV plugging in
-        pli = EV_profiles.loc[:,EV_profiles.columns.str.contains("pli")].copy()
-        pli['default'] = pli['EV_pli'+days_mapping[day]]
-        missing_units = set(EV_units) - set(pli.columns)
+        # EV charging profile
+        cpf = EV_profiles.loc[:,EV_profiles.columns.str.contains("cpf")].copy()
+        cpf['default'] = cpf['EV_cpf'+days_mapping[day]]
+        missing_units = set(EV_units) - set(cpf.columns)
         for unit in missing_units:
-            pli[unit] = pli['default']
-        pli = pli[EV_units]
+            cpf[unit] = cpf['default']
+        cpf = cpf[EV_units]
 
-        pli.index.name = 't'
-        pli.columns.name = 'u'
-        pli = pli.stack().to_frame(name = "EV_plugging_in")
-        pli.reset_index(inplace=True)
-        pli['p'] = j + 1
+        cpf.index.name = 't'
+        cpf.columns.name = 'u'
+        cpf = cpf.stack().to_frame(name = "EV_charging_profile")
+        cpf.reset_index(inplace=True)
+        cpf['p'] = j + 1
 
-        EV_plugging_in = pd.concat([EV_plugging_in, pli])
+        EV_charging_profile = pd.concat([EV_charging_profile, cpf])
 
         # EV plugged out
         out = EV_profiles.loc[:,EV_profiles.columns.str.contains("out")].copy()
@@ -291,32 +206,32 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
         except:
             raise ("day type not possible")
 
-        pli = EBike_profiles.loc[:, EBike_profiles.columns.str.contains("pli")].copy()
-        pli['default'] = pli['EBike_pli' + days_mapping[day]]
-        missing_units = set(EBike_units) - set(pli.columns)
+        cpf = EBike_profiles.loc[:, EBike_profiles.columns.str.contains("cpf")].copy()
+        cpf['default'] = cpf['EBike_cpf' + days_mapping[day]]
+        missing_units = set(EBike_units) - set(cpf.columns)
         for unit in missing_units:
-            pli[unit] = pli['default']
-        pli = pli[EBike_units]
+            cpf[unit] = cpf['default']
+        cpf = cpf[EBike_units]
 
-        pli.index.name = 't'
-        pli.columns.name = 'u'
-        pli = pli.stack().to_frame(name="Bikes_plugging_in")
-        pli.reset_index(inplace=True)
-        pli['p'] = j + 1
+        cpf.index.name = 't'
+        cpf.columns.name = 'u'
+        cpf = cpf.stack().to_frame(name="EBikes_charging_profile")
+        cpf.reset_index(inplace=True)
+        cpf['p'] = j + 1
 
-        Bikes_plugging_in = pd.concat([Bikes_plugging_in, pli])
+        EBikes_charging_profile = pd.concat([EBikes_charging_profile, cpf])
 
 
     # extreme hours
-    aaa = pd.DataFrame({"u": EV_plugging_in.u.unique(),"p": 11, "t": 1, "EV_plugging_in": 0},index=[f"{x}1" for x in EV_plugging_in.u.unique()])
-    EV_plugging_in = pd.concat([EV_plugging_in, aaa])
-    EV_plugging_in = pd.concat([EV_plugging_in, pd.DataFrame({"u" : EV_plugging_in.u.unique(),"p": 12, "t": 1, "EV_plugging_in": 0},index=[[f"{x}2" for x in EV_plugging_in.u.unique()]])])
+    aaa = pd.DataFrame({"u": EV_charging_profile.u.unique(),"p": 11, "t": 1, "EV_charging_profile": 0},index=[f"{x}1" for x in EV_charging_profile.u.unique()])
+    EV_charging_profile = pd.concat([EV_charging_profile, aaa])
+    EV_charging_profile = pd.concat([EV_charging_profile, pd.DataFrame({"u" : EV_charging_profile.u.unique(),"p": 12, "t": 1, "EV_charging_profile": 0},index=[[f"{x}2" for x in EV_charging_profile.u.unique()]])])
     EV_plugged_out =  pd.concat([EV_plugged_out, pd.DataFrame({"u" : EV_plugged_out.u.unique(),"p": 11, "t": 1, "EV_plugged_out": 0},index=[[f"{x}1" for x in EV_plugged_out.u.unique()]])])
     EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u" : EV_plugged_out.u.unique(),"p": 12, "t": 1, "EV_plugged_out": 0},index=[[f"{x}2" for x in EV_plugged_out.u.unique()]])])
     
 
-    EV_plugging_in.set_index(['u', 'p', 't'], inplace=True)
-    param_output['EV_plugging_in'] = EV_plugging_in
+    EV_charging_profile.set_index(['u', 'p', 't'], inplace=True)
+    param_output['EV_charging_profile'] = EV_charging_profile
 
     EV_plugged_out.set_index(['u', 'p', 't'], inplace=True)
     param_output['EV_plugged_out'] = EV_plugged_out
@@ -324,8 +239,8 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     activity_profile.set_index(['a','u', 'p', 't'], inplace=True)
     param_output['EV_activity'] = activity_profile
 
-    Bikes_plugging_in.set_index(['u', 'p', 't'], inplace=True)
-    param_output['Bikes_plugging_in'] = Bikes_plugging_in
+    EBikes_charging_profile.set_index(['u', 'p', 't'], inplace=True)
+    param_output['EBikes_charging_profile'] = EBikes_charging_profile
 
     # Mode_Speed =======================================================================================================
     default_speed = pd.DataFrame({ "UnitOfType" : ['Bike','EV','ICE','PT_train','PT_bus',"EBike"],
@@ -364,7 +279,7 @@ def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     share = pd.DataFrame(index=ext_districts,columns=activities).fillna(1/len(ext_districts))
     for act in rho.columns:
         share[act] = rho[act] / rho[act][rho.index.isin(ext_districts)].sum()
-    share = share.stack().to_frame(name= "share_district_activity").reorder_levels([1,0])
+    share = share.stack().to_frame(name= "share_activity").reorder_levels([1,0])
     share.loc['travel'] = 0 # additionnal precaution
     return share
 
@@ -384,8 +299,8 @@ def compute_iterative_parameters(variables,parameters,district_parameters,only_p
             df_prices = pd.concat([df_prices,price])
 
         for d in variables.keys():
-            parameters[d] = {   "outside_charging_price"    : df_prices[df_prices.index.get_level_values(level="district") != d].rename(columns = {'pi' : 'outside_charging_price'}),
-                                "externalload_sellingprice" : variables[d]['pi'].rename("externalload_sellingprice")
+            parameters[d] = {   "Cost_demand_ext"    : df_prices[df_prices.index.get_level_values(level="district") != d].rename(columns = {'pi' : 'Cost_demand_ext'}),
+                                "Cost_supply_ext" : variables[d]['pi'].rename("Cost_supply_ext")
                                 }
 
     else:
@@ -404,9 +319,9 @@ def compute_iterative_parameters(variables,parameters,district_parameters,only_p
         df_load.columns = df_load.columns.astype(int)
         
         for d in variables.keys():
-                parameters[d] = {   "charging_externalload"     : df_load[[d]].rename(columns={d :"charging_externalload"}) / district_parameters[d]['f'], 
-                                    "outside_charging_price"    : df_prices[df_prices.index.get_level_values(level="district") != d].rename(columns = {'pi' : 'outside_charging_price'}),
-                                    "externalload_sellingprice" : variables[d]['pi'].to_frame(name = "externalload_sellingprice")}
+                parameters[d] = {   "EV_charger_supply_ext"     : df_load[[d]].rename(columns={d :"EV_charger_supply_ext"}) / district_parameters[d]['f'], 
+                                    "Cost_demand_ext"    : df_prices[df_prices.index.get_level_values(level="district") != d].rename(columns = {'pi' : 'Cost_demand_ext'}),
+                                    "Cost_supply_ext" : variables[d]['pi'].to_frame(name = "Cost_supply_ext")}
 
 
 

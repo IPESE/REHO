@@ -21,9 +21,9 @@ param max_share_EBikes default 1; # [1] G 3.3.1.6 : share of bikes and walking a
 param tau_relaxation_Ebike default 0.03; # relaxation of the daily profile constraint by 3%. 
 
 # electrical parameters
-param EBike_mobeff default 80;      # km/kWh [2]
+param EBike_eff_travel default 80;      # km/kWh [2]
 param EBike_capacity default 0.5;   # kWh  [3]
-param Bikes_plugging_in{u in UnitsOfType['EBike'],p in Period,t in Time[p]} default 0.15;
+param EBikes_charging_profile{u in UnitsOfType['EBike'],p in Period,t in Time[p]} default 0.15;
 param EBike_eff_ch default 0.9;	# taken from EVs
 param EBike_charging_power default 0.07; # kW [3]
 
@@ -31,7 +31,7 @@ param EBike_charging_power default 0.07; # kW [3]
 var n_EBikes{u in UnitsOfType['EBike']} integer >= 0;
 var share_EBike{u in UnitsOfType['EBike'],p in Period } >= 0;
 
-var Bike_E_mob{u in UnitsOfType['EBike'],p in Period,t in Time[p]} >= 0;
+var EBike_supply_travel{u in UnitsOfType['EBike'],p in Period,t in Time[p]} >= 0;
 var EBike_SOC{u in UnitsOfType['EBike'],p in Period,t in Time[p]}  >= 0;
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
@@ -61,14 +61,14 @@ subject to EBike_EB_mobility1{u in UnitsOfType['EBike'],p in Period,t in Time[p]
 Units_supply['Mobility',u,p,t] <= Mode_Speed[u] * n_EBikes[u];
 
 subject to EBike_EB_mobility2{u in UnitsOfType['EBike'],p in PeriodStandard,t in Time[p]}:
-Bike_E_mob[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i] / EBike_mobeff ) * Bikes_plugging_in[u,p,t];
+EBike_supply_travel[u,p,t] = sum {i in Time[p] : i<=t}(Units_supply['Mobility',u,p,i] / EBike_eff_travel ) * EBikes_charging_profile[u,p,t];
 
 
 subject to EBike_EB_main{u in UnitsOfType['EBike'],p in PeriodStandard,t in Time[p] diff {first(Time[p])}}:
-EBike_SOC[u,p,t] = EBike_SOC[u,p,prev(t,Time[p])] - Bike_E_mob[u,p,t] + Units_demand['Electricity',u,p,t]*EBike_eff_ch;
+EBike_SOC[u,p,t] = EBike_SOC[u,p,prev(t,Time[p])] - EBike_supply_travel[u,p,t] + Units_demand['Electricity',u,p,t]*EBike_eff_ch;
 
 subject to EBike_EB_cyclic{u in UnitsOfType['EBike'],p in PeriodStandard,t in Time[p]:t=first(Time[p])}:
-EBike_SOC[u,p,t] = EBike_SOC[u,p,last(Time[p])] - Bike_E_mob[u,p,t] + Units_demand['Electricity',u,p,t]*EBike_eff_ch;
+EBike_SOC[u,p,t] = EBike_SOC[u,p,last(Time[p])] - EBike_supply_travel[u,p,t] + Units_demand['Electricity',u,p,t]*EBike_eff_ch;
 
 # capacities
 subject to EBike_capacityc1{u in UnitsOfType['EBike'],p in PeriodStandard,t in Time[p]}:

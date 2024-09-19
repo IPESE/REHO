@@ -333,16 +333,8 @@ class compact_optimization:
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_compact.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_compact.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster_compact)
-                    # self.parameters_to_ampl["bike_dailyprofile"] = EV_gen.bike_temp(self.cluster_compact)
-                    d = None
-                    m = None
-                    if 'DailyDist' in self.parameters_compact:
-                        d = self.parameters_compact['DailyDist']
-                    if "Mode_Speed" in self.parameters_compact:
-                        m = self.parameters_compact['Mode_Speed']
-                    p = EV_gen.generate_mobility_parameters(self.cluster_compact,self.parameters_compact['Population'],
-                                                            d,m,np.append(self.infrastructure_compact.UnitsOfLayer["Mobility"],'Public_transport'))
+                    p = EV_gen.generate_mobility_parameters(self.cluster_compact,self.parameters_compact,
+                                                            np.append(self.infrastructure_compact.UnitsOfLayer["Mobility"],'Public_transport'))
                     self.parameters_to_ampl.update(p)
 
     def set_HP_parameters(self, ampl):
@@ -679,8 +671,8 @@ class compact_optimization:
             ampl.getConstraint('AC_c3').drop()
         if 'EV' in self.infrastructure_compact.UnitTypes:
             ampl.getConstraint('unidirectional_service').drop()
-            ampl.getConstraint('EV_supplyprofile1').drop()
-            ampl.getConstraint('EV_supplyprofile2').drop()
+            ampl.getConstraint('EV_chargingprofile1').drop()
+            ampl.getConstraint('EV_chargingprofile2').drop()
 
         if self.method_compact['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()

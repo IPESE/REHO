@@ -1606,7 +1606,7 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
                 df = reho.results[scenario][Pareto_ID]["df_Unit_t"].copy()
             else:
                 df = reho[scenario][Pareto_ID]["df_Unit_t"].copy()
-            df = df.loc[:,df.columns.str.contains('EV_E_charged_outside')].xs('Electricity').dropna()
+            df = df.loc[:,df.columns.str.contains('EV_demand_ext')].xs('Electricity').dropna()
             df['demand'] = name
             df.set_index("demand",append=True,inplace=True)
             new_columns = [x.split('[')[1].split(']')[0].split(',') for x in df.columns ]
@@ -1634,7 +1634,7 @@ def plot_EVexternalloadandprice(rehos_dict,scenario = 'totex',run_label = ""):
                 df_extload = reho.results[scenario][Pareto_ID]["df_Grid_t"].copy()
             else:
                 df_extload = reho[scenario][Pareto_ID]["df_Grid_t"].copy()
-            df_extload = df_extload.loc[:,df_extload.columns.str.startswith('charging_externalload')].xs(('Electricity','Network')).agg('sum',axis = 1)
+            df_extload = df_extload.loc[:,df_extload.columns.str.startswith('EV_charger_supply_ext')].xs(('Electricity','Network')).agg('sum',axis = 1)
             df_extload.index = [f"{int(x)}_{int(y)}" for x,y in df_extload.index ]
             fig.add_trace(go.Scatter(x=df_extload.index, y=df_extload.values, mode='lines', name='total load',marker=dict(color=colors[name])),row=r, col=col)
 

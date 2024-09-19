@@ -104,7 +104,7 @@ def df_sankey(df_results, label='FR_long', color='ColorPastel', precision=2, uni
     # Electrical storage device
     elec_storage_list = ['Battery']
     # EV and their charging station are handled together
-    EV_device = ['EV_district', "EVshared_district", "EVcharging_district"]
+    EV_device = ['EV_district', "EVshared_district", "EV_charger_district"]
     # Manual handled devices (list below not used, just here for the information)
     manual_device     = ['PV', 'WaterTankSH']
     # Semi automatic handled devices

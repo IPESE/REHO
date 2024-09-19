@@ -79,4 +79,4 @@ Bike_district,Bikes,Bike,Vélos,#90EE90,lightgreen,#90EE90,lightgreen
 ElectricBike_district,Electric bikes,EBike,Vélos électriques,#00FF7F,springgreen,#00FF7F,springgreen
 Total_EV_fleet,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue
-EVcharging_district,EV charging station,EVchrg,Stations de recharge,#008080,teal,#008080,teal
+EV_charger_district,EV charging station,EVchrg,Stations de recharge,#008080,teal,#008080,teal

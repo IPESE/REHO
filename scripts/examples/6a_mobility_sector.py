@@ -14,25 +14,9 @@ if __name__ == '__main__':
     # Set scenario
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
-    scenario['name'] = 'totex'
-    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
+    scenario['EMOO'] = {}
+    scenario['exclude_units'] = [ 'NG_Cogeneration']
     scenario['enforce_units'] = ['EV_district']
-
-    parameters = dict()
-
-    # scenario parameters related to mobility
-    # Example 1 : if you want to activate a forced charging profile
-    scenario['specific'] = ['EV_supplyprofile1',"EV_supplyprofile2"]
-
-    ## Example 2 : if you want to modify the share of some modes in the demand
-    shares = {  "share_EV" : 0.4,
-            }
-    perc_point_window = 0.03 # the range between the max and the min constraint (in percentage points)
-
-    for key in shares.keys():
-        parameters[f"max_{key}"] = shares[key] + perc_point_window/2
-        parameters[f"min_{key}"] = shares[key] - perc_point_window/2
-
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
@@ -40,12 +24,34 @@ if __name__ == '__main__':
                                              'FossilFuel': {},
                                              'Mobility': {},
                                              })
-    units = infrastructure.initialize_units(scenario, grids,district_data=True)
+    units = infrastructure.initialize_units(scenario, grids,district_data=True)    
 
     # Set method options
     method = {'building-scale': True}
+
+
+    # SCENARIO 1
+    scenario['name'] = 'totex_1'
+
+    # Set parameters
+    parameters = {  "Population": 9,
+                    "max_share_EV": 0.7,
+                    "min_share_EV": 0.4,
+                    "DailyDist" : 29
+                }
+
     # Run optimization
     reho = reho(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho.single_optimization()
+
+    # SCENARIO 2
+    scenario['name'] = 'totex_EVchargingprofile'
+
+    # Activate the constraint forcing the charging profile of electric vehicles. 
+    scenario['specific'] = ['EV_chargingprofile1',"EV_chargingprofile2"]
+
+    # Run optimization
+    reho.scenario = scenario
     reho.single_optimization()
 
     # Save results

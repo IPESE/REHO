@@ -131,7 +131,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df3 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_inv')
         df4 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
         df5 = get_ampl_data(ampl, 'lifetime')
-        df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
+        df6 = get_ampl_data(ampl, 'Units_Ext', multi_index=False)
+        df_Unit = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
         if method['print_logs']:
@@ -159,6 +160,30 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Unit_t = df_Unit_t.sort_index()
 
         return df_Unit, df_Unit_t
+
+    def set_df_grid_SP(ampl):
+        df1 = get_ampl_data(ampl,'LineCapacity')
+        df2 = get_ampl_data(ampl, 'Use_LineCapacity')
+        df3 = get_ampl_data(ampl, 'CostLine_inv1', multi_index=False)
+        df4 = get_ampl_data(ampl, 'CostLine_inv2', multi_index=False)
+        df5 = get_ampl_data(ampl, 'GWP_Line1', multi_index=False)
+        df6 = get_ampl_data(ampl, 'GWP_Line2', multi_index=False)
+        df7 = get_ampl_data(ampl, 'Line_Ext', multi_index=True)
+        df8 = get_ampl_data(ampl, 'Line_Length', multi_index=True)
+
+        df3.index.names = ['Layer']
+        df4.index.names = ['Layer']
+        df5.index.names = ['Layer']
+        df6.index.names = ['Layer']
+        df7.index.names = ['Hub','Layer']
+        df8.index.names = ['Hub','Layer']
+        df_12 = pd.concat([df1,df2],axis=1,sort=True)
+        df_12.columns = ['Capacity', 'UseCapacity']
+        df_12.index.names=['Layer','Hub']
+        df_Grid=df_12.swaplevel().sort_index()
+        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostLine_inv1']+(df_Grid['Capacity'] -df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df4['CostLine_inv2']*df8['Line_Length']
+        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Line1'] + (df_Grid['Capacity']-df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df6['GWP_Line2']*df8['Line_Length']
+        return df_Grid
 
     def set_df_grid(ampl, method):
         # Grid_t
@@ -355,6 +380,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     df_Results["df_Performance"] = set_df_performance(ampl, scenario)
     df_Results["df_Annuals"] = set_df_annuals(ampl)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
+    df_Results["df_Grid"] = set_df_grid_SP(ampl)
     df_Results["df_Grid_t"] = set_df_grid(ampl, method)
     df_Results["df_Time"], df_Weather, df_Index = set_dfs_other(ampl)
 
@@ -427,6 +453,32 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Buildings = pd.concat([df1, df2], axis=1)
         df_Buildings.index.names = ['FeasibleSolution', 'Hub']
         df_Results["df_Buildings"] = df_Buildings.sort_index()
+
+    # Grid
+    df1 = get_ampl_data(ampl, 'TransformerCapacity')
+    df2 = get_ampl_data(ampl, 'Use_TransformerCapacity')
+    df3 = get_ampl_data(ampl, 'CostTransformer_inv1', multi_index=False)
+    df4 = get_ampl_data(ampl, 'CostTransformer_inv2', multi_index=False)
+    df5 = get_ampl_data(ampl, 'GWP_Transformer1', multi_index=False)
+    df6 = get_ampl_data(ampl, 'GWP_Transformer2', multi_index=False)
+    df7 = get_ampl_data(ampl,'Transformer_Ext', multi_index=False)
+
+    df3.index.names = ['Layer']
+    df4.index.names = ['Layer']
+    df5.index.names = ['Layer']
+    df6.index.names = ['Layer']
+    df7.index.names = ['Layer']
+
+    df12 = pd.concat([df1, df2], axis=1)
+    df12.columns=['Capacity', 'UseCapacity']
+    df12.index.names = ['Layer']
+    df12['Hub']='Network'
+    df12.set_index('Hub', append=True, inplace=True)
+    df_Grid=df12.swaplevel().sort_index()
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostTransformer_inv1'] + (df_Grid['Capacity']-df7['Transformer_Ext']*(1-df_Grid['UseCapacity'])) * df4['CostTransformer_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Transformer1'] + (df_Grid['Capacity']-df7['Transformer_Ext']*(1-df_Grid['UseCapacity'])) * df6['GWP_Transformer2']
+
+    df_Results['df_Grid'] = df_Grid
 
     # District
     df1 = get_ampl_data(ampl, 'Costs_House_op')

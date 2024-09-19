@@ -115,12 +115,13 @@ class MasterProblem:
 
 
         # TODO : un jour, peut-être changer la nomenclature de ces parametres pour semi-automatiser la separation entre MP et SP : (ex : tous les param MP finissent pas _MP)
-        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
+        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
                                                 "DailyDist","Mode_Speed","outside_charging_price","charging_externalload","Districts","share_district_activity","externalload_sellingprice",
                                                 "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" , "n_ICEperhab"], # attention District is a SET
+                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" , "n_ICEperhab", 
+                                                 "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"], # attention District is a SET
                          "list_constraints_MP": []
                          }
 
@@ -187,12 +188,12 @@ class MasterProblem:
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
-        if "TransformerCapacity" in self.parameters:
+        if "Transformer_Ext" in self.parameters:
             nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
             profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
             max_DEL = profile_building_x.max(axis=1).sum()
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["TransformerCapacity"][0] * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["TransformerCapacity"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -477,7 +478,11 @@ class MasterProblem:
             if key == "Districts":
                 continue
             if key in self.parameters.keys():
-                MP_parameters[key] = self.parameters[key]
+                if key == "Units_Ext_district":
+                    key2 = "Units_Ext"
+                    MP_parameters[key2] = self.parameters[key]
+                else:
+                    MP_parameters[key] = self.parameters[key]
 
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
@@ -519,7 +524,11 @@ class MasterProblem:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']:
+        additional = []
+        if 'ReinforcementTrOfLayer' in self.infrastructure.Set.keys():
+             additional = additional + ["ReinforcementTrOfLayer"]
+
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']+additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
@@ -974,7 +983,7 @@ class MasterProblem:
 
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
-                            'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2'] + self.lists_MP["list_constraints_MP"]
+                            'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
         for cst in list_constraints:
             ampl.getConstraint(cst).drop()
 
@@ -1042,7 +1051,7 @@ class MasterProblem:
     def remove_emoo_constraints(scenario):
 
         EMOOs = list(scenario['EMOO'].keys())
-        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', 'EMOO_lca']
+        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', 'EMOO_lca', "EMOO_elec_export", "EMOO_EV"]
         if 'EMOO' in scenario:
             for key in list(set(EMOOs).intersection(keys_to_remove)):
                 scenario['EMOO'].pop(key, None)

@@ -93,7 +93,7 @@ class district_decomposition:
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
                                                 "DailyDist","Mode_Speed","Cost_demand_ext","EV_charger_supply_ext","share_activity","Cost_supply_ext",
                                                 "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes" , "n_ICEperhab"],
+                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes", "min_share_EBikes" ,"max_share_bikes", "min_share_bikes", "n_ICEperhab"],
                          "list_constraints_MP": ["EV_chargingprofile1","EV_chargingprofile2"],
                          "list_set_indexed_MP" : ["Districts"]
                          }

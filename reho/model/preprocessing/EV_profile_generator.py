@@ -134,7 +134,7 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     EV_plugged_out = pd.DataFrame(columns=['u', 'p', 't', 'EV_plugged_out'])
     EV_charging_profile = pd.DataFrame(columns=['u', 'p', 't', 'EV_charging_profile'])
     activity_profile = pd.DataFrame(columns=['a', 'u', 'p', 't', 'EV_activity'])
-    EBikes_charging_profile = pd.DataFrame(columns=['u', 'p', 't', 'EBikes_charging_profile'])
+    EBike_charging_profile = pd.DataFrame(columns=['u', 'p', 't', 'EBike_charging_profile'])
 
     EV_units = list(units[units.UnitOfType == "EV"][['Unit','UnitOfType']].Unit)
     EBike_units = list(units[units.UnitOfType == "EBike"][['Unit','UnitOfType']].Unit)
@@ -215,11 +215,11 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
 
         cpf.index.name = 't'
         cpf.columns.name = 'u'
-        cpf = cpf.stack().to_frame(name="EBikes_charging_profile")
+        cpf = cpf.stack().to_frame(name="EBike_charging_profile")
         cpf.reset_index(inplace=True)
         cpf['p'] = j + 1
 
-        EBikes_charging_profile = pd.concat([EBikes_charging_profile, cpf])
+        EBike_charging_profile = pd.concat([EBike_charging_profile, cpf])
 
 
     # extreme hours
@@ -239,8 +239,8 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     activity_profile.set_index(['a','u', 'p', 't'], inplace=True)
     param_output['EV_activity'] = activity_profile
 
-    EBikes_charging_profile.set_index(['u', 'p', 't'], inplace=True)
-    param_output['EBikes_charging_profile'] = EBikes_charging_profile
+    EBike_charging_profile.set_index(['u', 'p', 't'], inplace=True)
+    param_output['EBike_charging_profile'] = EBike_charging_profile
 
     # Mode_Speed =======================================================================================================
     default_speed = pd.DataFrame({ "UnitOfType" : ['Bike','EV','ICE','PT_train','PT_bus',"EBike"],

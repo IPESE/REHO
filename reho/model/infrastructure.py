@@ -69,6 +69,18 @@ class Infrastructure:
         self.HousesOfLayer = {}
         for l in self.Layers:
             self.HousesOfLayer[l] = np.array([])
+            self.ReinforcementTrOfLayer={}
+            self.ReinforcementLineOfLayer = {}
+            for l in grids.keys():
+                if 'ReinforcementTrOfLayer' in grids[l].keys():
+                    self.ReinforcementTrOfLayer[l] = grids[l]['ReinforcementTrOfLayer']
+                else:
+                    self.ReinforcementTrOfLayer[l] = np.array([1e8])
+
+                if 'ReinforcementLineOfLayer' in grids[l].keys():
+                    self.ReinforcementLineOfLayer[l] = grids[l]['ReinforcementLineOfLayer']
+                else:
+                    self.ReinforcementLineOfLayer[l] = np.array([1e8])
 
         self.StreamsOfBuilding = {}
         self.StreamsOfUnit = {}
@@ -86,7 +98,6 @@ class Infrastructure:
         self.Streams_H = pd.DataFrame()
 
         self.HP_parameters = {}
-
         self.generate_structure()
         self.generate_parameter()
 
@@ -161,6 +172,12 @@ class Infrastructure:
         self.Set['StreamsOfBuilding'] = self.StreamsOfBuilding
         self.Set['StreamsOfUnit'] = self.StreamsOfUnit
         self.Set['Lca_kpi'] = self.lca_kpis
+
+        if 'ReinforcementTrOfLayer' in self.__dict__.keys():
+            self.Set['ReinforcementTrOfLayer']=self.ReinforcementTrOfLayer
+
+        if 'ReinforcementLineOfLayer' in self.__dict__.keys():
+            self.Set['ReinforcementLineOfLayer']=self.ReinforcementLineOfLayer
 
     def generate_parameter(self):
         # Units Flows -----------------------------------------------------------

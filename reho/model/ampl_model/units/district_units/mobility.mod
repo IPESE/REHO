@@ -15,6 +15,8 @@ param DailyDist default 36.8; # [1] Caution : unlinked default value duplicata i
 param max_travel_time default 3; # 1.3 hours national mean, by default the constraint is relaxed
 
 set transport_Units; # TODO : check if dynamic to the rest of the code
+set transport_Units_MD;
+set transport_Units_cars;
 set Activities := {"work","leisure","travel"}; 
 set Districts default {};
 param Mode_Speed{u in transport_Units} default 37.1; # [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
@@ -49,16 +51,16 @@ sum {t in Time[p]}(travel_time[p,t]) <= max_travel_time * Population;
 # constraint on the max share of cars
 
 subject to allcars_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) + sum {u in UnitsOfType['EV'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_cars * Population * DailyDist;
+sum {u in transport_Units_cars, t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_cars * Population * DailyDist;
 
 subject to allcars_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) + sum {u in UnitsOfType['EV'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_cars * Population * DailyDist;
+sum {u in transport_Units_cars, t in Time[p]}(Units_supply['Mobility',u,p,t])  >= min_share_cars * Population * DailyDist;
 
 subject to MD_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) + sum {u in UnitsOfType['EBike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_MD * Population * DailyDist;
+sum {u in transport_Units_MD, t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_MD * Population * DailyDist;
 
 subject to MD_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) + sum {u in UnitsOfType['EBike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_MD * Population * DailyDist;
+sum {u in transport_Units_MD, t in Time[p]}(Units_supply['Mobility',u,p,t]) >= min_share_MD * Population * DailyDist;
 
 
 

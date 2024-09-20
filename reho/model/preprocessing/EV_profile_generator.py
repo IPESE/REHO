@@ -258,6 +258,43 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
 
     return param_output
 
+
+def generate_transport_units_sets(transportunits):
+    """
+
+    Creates the sets transport_Units_MD and transport_Units_cars that are subsets of the available transport units, respectively for soft mobility and cars. 
+    Used later to constrain the maximum and minimum share of public transport, soft mobility, cars in the total mobility supply.
+
+    Parameters
+    ----------
+    transportunits : dict of arrays
+        Each key of the dict is a UnitOfType label containing a list of all the Units names. should be something like self.infrastructure.UnitsOfType
+
+    Returns
+    -------
+    transport_Units_MD : set
+    transport_Units_cars :set
+    """
+    soft_mobility_UnitofType_all = {"Bike", "EBike"}
+    cars_UnitofType_all = {"EV","ICE"}
+
+    transport_Units_MD = list()
+    for key in soft_mobility_UnitofType_all:
+        if key in transportunits.keys():
+            transport_Units_MD = transport_Units_MD + list(transportunits[key])
+
+    transport_Units_cars = list()
+    for key in cars_UnitofType_all:
+        if key in transportunits.keys():
+            transport_Units_cars = transport_Units_cars + list(transportunits[key])
+
+    transport_Units_cars = np.array(transport_Units_cars)
+    transport_Units_MD = np.array(transport_Units_MD)
+
+
+    return transport_Units_MD,transport_Units_cars
+
+
 def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     """
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.

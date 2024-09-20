@@ -162,12 +162,12 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         return df_Unit, df_Unit_t
 
     def set_df_grid_SP(ampl):
-        df1 = get_ampl_data(ampl,'LineCapacity')
-        df2 = get_ampl_data(ampl, 'Use_LineCapacity')
-        df3 = get_ampl_data(ampl, 'CostLine_inv1', multi_index=False)
-        df4 = get_ampl_data(ampl, 'CostLine_inv2', multi_index=False)
-        df5 = get_ampl_data(ampl, 'GWP_Line1', multi_index=False)
-        df6 = get_ampl_data(ampl, 'GWP_Line2', multi_index=False)
+        df1 = get_ampl_data(ampl, 'LineCapacity', multi_index=True)
+        df2 = get_ampl_data(ampl, 'Use_LineCapacity', multi_index=True)
+        df3 = get_ampl_data(ampl, 'CostLine_inv1')
+        df4 = get_ampl_data(ampl, 'CostLine_inv2')
+        df5 = get_ampl_data(ampl, 'GWP_Line1')
+        df6 = get_ampl_data(ampl, 'GWP_Line2')
         df7 = get_ampl_data(ampl, 'Line_Ext', multi_index=True)
         df8 = get_ampl_data(ampl, 'Line_Length', multi_index=True)
 
@@ -175,12 +175,12 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df4.index.names = ['Layer']
         df5.index.names = ['Layer']
         df6.index.names = ['Layer']
-        df7.index.names = ['Hub','Layer']
-        df8.index.names = ['Hub','Layer']
-        df_12 = pd.concat([df1,df2],axis=1,sort=True)
+        df7.index.names = ['Hub', 'Layer']
+        df8.index.names = ['Hub', 'Layer']
+        df_12 = pd.concat([df1, df2], axis=1, sort=True)
         df_12.columns = ['Capacity', 'UseCapacity']
-        df_12.index.names=['Layer','Hub']
-        df_Grid=df_12.swaplevel().sort_index()
+        df_12.index.names = ['Layer', 'Hub']
+        df_Grid = df_12.swaplevel().sort_index()
         df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostLine_inv1']+(df_Grid['Capacity'] -df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df4['CostLine_inv2']*df8['Line_Length']
         df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Line1'] + (df_Grid['Capacity']-df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df6['GWP_Line2']*df8['Line_Length']
         return df_Grid

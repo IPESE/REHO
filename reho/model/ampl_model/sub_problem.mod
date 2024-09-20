@@ -337,11 +337,8 @@ Use_LineCapacity[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapaci
 subject to line_additional_capacity_c2{l in ResourceBalances,hl in HousesOfLayer[l]}:
 LineCapacity[l,hl]>=Line_Ext[hl,l];
 
-subject to Costs_Unit_capex{u in Units diff UnitsOfDiscreteCost}:
+subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
-
-subject to Costs_Unit_capex_discrete{u in Units inter UnitsOfDiscreteCost}:
-Costs_Unit_inv[u] = Units_Use_1[u]*Cost_inv1[u] + (Units_Mult_1[u]-Units_Ext[u])*Cost_inv2[u] + Units_Use_2[u]*Cost_inv1_2[u] + (Units_Mult_2[u]-Units_Ext[u])*Cost_inv2_2[u];
 
 subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacity[l,h]+CostLine_inv2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);

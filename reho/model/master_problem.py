@@ -405,8 +405,6 @@ class MasterProblem:
                 ampl_MP.read('evehicle.mod')
                 mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_supplyprofile1", "EV_supplyprofile2", 'ExternalEV_Costs_positive']
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + mobility_cst
-            else:
-                scenario['exclude_units'] = scenario['exclude_units'] + ['EVCharging_district']
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
@@ -559,8 +557,8 @@ class MasterProblem:
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
 
-        if 'EV_district' in self.infrastructure.UnitsOfDistrict: # TODO : trouver une meilleure condition d'activation de la mobilité et de déclaration des modes (esp. Public_transport)
-            MP_set_indexed['transport_Units'] = np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train','PT_bus'])
+        if 'Mobility' in self.infrastructure.UnitsOfLayer:
+            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EVcharging_district"]), ['PT_train', 'PT_bus'])
 
         if "Districts" in self.lists_MP['list_parameters_MP']:
             if "Districts" in self.parameters:

@@ -342,7 +342,7 @@ def generate_mobility_parameters(cluster, population, dailydist,mode_speed_custo
     mode_speed_custom = pd.DataFrame.from_dict(mode_speed_custom,orient='index',columns = ["Mode_Speed"])
     mode_speed.update(mode_speed_custom)
 
-    param_output['Mode_Speed'] = mode_speed
+    param_output['Mode_Speed'] = mode_speed.dropna()
 
     return param_output
 

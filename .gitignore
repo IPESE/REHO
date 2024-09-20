@@ -312,7 +312,11 @@ reho/data/QBuildings/*
 documentation/_build
 documentation/sections/_autosummary
 
+# Test
+reho/test/data/*
+reho/test/figures/*
+reho/test/results/*
+
 # Scripts
 scripts/*
 !scripts/examples/
-!scripts/test/

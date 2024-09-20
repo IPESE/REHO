@@ -36,7 +36,7 @@ class MasterProblem:
     set_indexed : dict, optional
         The indexes used in the model.
     cluster : dict, optional
-        Define location district, number of periods, and number of timesteps.
+        Define location, number of periods, and number of timesteps.
         To use your own weather file, you can add a key ``custom_weather`` with the corresponding path.
     method : dict, optional
         The different methods to run the optimization (refer to :ref:`tbl-methods`).

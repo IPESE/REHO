@@ -40,7 +40,7 @@ if __name__ == '__main__':
     try:
         reho.read_configurations()  # if configurations were already generated, simply import them
     except FileNotFoundError:
-        reho.generate_configurations(n_sample=5, tariffs_ranges=tariffs_ranges)
+        reho.generate_configurations(n_sample=2, tariffs_ranges=tariffs_ranges)
 
     # Find actors bounds
     reho.scenario["name"] = "Renters"
@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     # Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"
-    reho.execute_actors_problem(n_sample=25, bounds=bounds, actor="Renters")
+    reho.execute_actors_problem(n_sample=2, bounds=bounds, actor="Renters")
 
     print(reho.samples, "\n")
     print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")

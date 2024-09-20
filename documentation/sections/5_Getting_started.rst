@@ -101,7 +101,7 @@ Entry points allow to verify the proper intallation of REHO. Select the desired 
     reho-examples-test
 
 
-These commands will download files from the ``scripts/test/`` and ``scripts/examples/`` folders from the `repository <https://github.com/IPESE/REHO/tree/main/scripts/examples>`__, copy them locally and execute them.
+These commands will download files from the ``reho/test/`` and ``scripts/examples/`` folders from the `repository <https://github.com/IPESE/REHO/tree/main/scripts/examples>`__, copy them locally and execute them.
 
 
 If your installation is correct, you should:
@@ -116,6 +116,13 @@ If your installation is correct, you should:
    :name: sankey
 
    Sankey diagram resulting from a basic REHO single-optimization.
+
+.. figure:: ../images/performance.png
+   :width: 1000
+   :align: center
+   :name: sankey
+
+   Economical performance resulting from a REHO multi-objective optimization (Pareto).
 
 From source
 ------------------
@@ -181,7 +188,7 @@ Please include a ``venv`` at the project root folder and install dependencies wi
 Checking proper installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run ``scripts/test/run.py``, ``scripts/test/plot.py`` or any of the files in ``scripts/examples/``.
+Run ``reho/test/test_run.py``, ``reho/test/test_plot.py`` or any of the files in ``scripts/examples/``.
 
 If your installation is correct, each run should end with *“Process finished with exit code 0”*.
 Some files will also render some results in your web browser and open different tabs showing the outcome of your optimization.
@@ -193,7 +200,7 @@ Some files will also render some results in your web browser and open different 
 Git tracking
 ~~~~~~~~~~~~~
 
-You will also see some files appear in some newly created subfolders such as ``data/clustering/``, ``results/`` and ``figures/``. These are not git-tracked. But all the other Python files in ``scripts/examples/`` and ``scripts/test/`` are git-tracked.
+You will also see some files appear in some newly created subfolders such as ``data/clustering/``, ``results/`` and ``figures/``. These are not git-tracked. But all the other Python files in ``scripts/examples/`` are git-tracked.
 
 You should then be careful to not modify the content of these files.
 
@@ -203,12 +210,12 @@ However, for your future work and own case-studies with REHO, you can create any
 Running REHO
 ================
 
-The following paragraphs describe the content of ``scripts/test/run.py`` and ``scripts/test/plot.py``. These latter should allow you to get started with the tool and conduct your first optimizations.
+The following paragraphs describe the content of ``reho/test/test_run.py`` and ``reho/test/test_plot.py``. These latter should allow you to get started with the tool and conduct your first optimizations.
 
-.. literalinclude:: ../../scripts/test/run.py
+.. literalinclude:: ../../reho/test/test_run.py
    :language: python
 
-.. literalinclude:: ../../scripts/test/plot.py
+.. literalinclude:: ../../reho/test/test_plot.py
    :language: python
 
 Set building parameters
@@ -574,7 +581,7 @@ These results can be saved as a `.pickle` or `.xlsx` file with:
 
 .. code-block:: python
 
-    reho.save_results(format=['pickle', 'xlsx'], filename='my_case_study')
+    reho.save_results(format=['pickle', 'xlsx'], filename='test_results')
 
 
 Read results
@@ -584,7 +591,7 @@ Saved results can be accessed with:
 
 .. code-block:: python
 
-    results = pd.read_pickle('my_case_study.pickle')
+    results = pd.read_pickle('test_results.pickle')
 
 And browsing through ``Scn_ID`` and ``Pareto_ID`` with:
 

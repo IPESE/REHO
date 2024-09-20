@@ -858,7 +858,7 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
             return fig
 
 
-def plot_sunburst_eud(results, label='EN_long', title=None, filename=None, export_format='html', scaling_factor=1, return_df=False):
+def plot_eud(results, label='EN_long', title=None, filename=None, export_format='html', scaling_factor=1, return_df=False):
     """
     Plots a Sunburst for End Use Demand (EUD) based on REHO results, grouped by buildings' class.
 
@@ -1397,7 +1397,7 @@ def plot_composite_curve(df_Results, cluster, periods=["Yearly"], filename=None,
     df_Results: pd.DataFrame
         DataFrame coming from REHO results (already extracted from the desired *Scn_ID* and *Pareto_ID*).
     cluster: dict
-        Define location district, number of periods, and number of timesteps.
+        Define location, number of periods, and number of timesteps.
     periods: list
         Indicate the desired timeframe.
     filename: str

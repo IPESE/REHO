@@ -4,6 +4,7 @@ from pathlib import Path
 from pandas import read_csv, read_table, read_excel
 import sys
 from dotenv import load_dotenv
+import geopandas as gpd
 
 __doc__ = """
 File for managing file paths and configurations.
@@ -44,8 +45,7 @@ path_to_skydome = os.path.join(path_to_data, 'skydome')
 path_to_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
 path_to_areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt')  # area of patches
 path_to_cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt')  # location of centre points
-
-path_to_weather = os.path.join(path_to_data, 'weather')
+path_to_mobility = os.path.join(path_to_data, 'mobility')
 
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
@@ -77,6 +77,8 @@ def file_reader(file, index_col=None):
                 line = next(f).strip()
                 delim = sniffer.sniff(line)
             return read_csv(file, sep=delim.delimiter, index_col=index_col)
+        elif file.suffix == '.gpkg':
+            return gpd.read_file(file)
         elif file.suffix == '.xlsx':
             return read_excel(file)
         else:

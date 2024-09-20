@@ -28,6 +28,7 @@ extensions = ['sphinxcontrib.bibtex',
               'sphinx_design',
               'sphinx_copybutton',
               'nbsphinx']
+source_suffix = [".rst", ".md"]
 exclude_patterns = ['LICENSE']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
@@ -49,7 +50,7 @@ html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
   'header_links_before_dropdown': 7,
   'navbar_align': 'left',
-  "external_links": [{"name": "REHO-fm", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
+  # "external_links": [{"name": "REHO-fm", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
                   "icon": "https://github.com/IPESE/REHO/blob/documentation/documentation/images/logos/ipese_square.png?raw=true",
@@ -67,34 +68,32 @@ toc_object_entries_show_parents = 'all'
 
 # ------------ Autodoc ------------------------------------
 autodoc_member_order = 'bysource'
-autodoc_mock_imports = ['amplpy',
-                        'pandas',
-                        'openpyxl',
-                        'numpy',
-                        'scipy',
-                        'scikit-learn',
-                        'scikit-learn-extra',
-                        'sqlalchemy',
-                        'psycopg2',
-                        'geopandas',
-                        'matplotlib',
-                        'plotly',
-                        'kaleido',
-                        'dotenv',
-                        'requests',
-                        'coloredlogs',
-                        'SALib',
-                        'qmcpy',
-                        'pvlib',
-                        'pyproj',
-                        'shapely',
-                        'pytest']
-sys.modules['scikit-learn'] = MagicMock()
-sys.modules['sklearn'] = MagicMock()
-sys.modules['sklearn.metrics'] = MagicMock()
-sys.modules['scikit-learn-extra'] = MagicMock()
-sys.modules['sklearn_extra'] = MagicMock()
-sys.modules['sklearn_extra.cluster'] = MagicMock()
-sys.modules['sqlalchemy'] = MagicMock()
+autodoc_mock_imports = [
+    "amplpy",
+    "ampl_module_base",
+    "ampl_module_highs",
+    "coloredlogs",
+    "geopandas",
+    "kaleido",
+    "matplotlib",
+    "numpy",
+    "openpyxl",
+    "pandas<2.0.0",
+    "plotly",
+    "psycopg2",
+    "pvlib",
+    "pyclustering"
+    "pyproj",
+    "python-dotenv",
+    "pytest",
+    "qmcpy",
+    "requests",
+    "SALib",
+    "scipy",
+    "setuptools",
+    "shapely",
+    "sqlalchemy",
+    "urllib3",
+]
 sys.modules['sqlalchemy.dialects'] = MagicMock()
 sys.modules['sqlalchemy.exc'] = MagicMock()

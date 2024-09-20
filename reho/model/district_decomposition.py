@@ -451,12 +451,10 @@ class district_decomposition:
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
 
-        if 'EV_plugged_out' not in MP_parameters:
-            if len(self.infrastructure.UnitsOfDistrict) != 0:
-                if 'EV_district' in self.infrastructure.UnitsOfDistrict:
-                    p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                            np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
-                    MP_parameters.update(p)
+        if "Mobility" in self.infrastructure.UnitsOfLayer:
+            p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
+                                                    np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
+            MP_parameters.update(p)
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -507,8 +505,9 @@ class district_decomposition:
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses)))+1
 
-        if 'EV_district' in self.infrastructure.UnitsOfDistrict: # TODO : trouver une meilleure condition d'activation de la mobilité et de déclaration des modes (esp. Public_transport)
+        if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train','PT_bus'])
+            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
 
         if self.method['external_district']:
             MP_set_indexed['Districts'] = np.array(self.set_indexed["Districts"])

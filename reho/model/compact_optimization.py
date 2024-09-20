@@ -193,7 +193,7 @@ class compact_optimization:
                 ampl.read('pv.mod')
 
         # district Units
-        if 'EV' in self.infrastructure_compact.UnitTypes:
+        if 'EV' in self.infrastructure_compact.UnitTypes: # TODO : ici, si je lit mobility.mod dès qu'il y a le LAyer mobilité, alors derriere ca bug parce que les units existent que à l'échelle du district.
             ampl.cd(path_to_district_units)
             ampl.read('mobility.mod')
             ampl.read('evehicle.mod')

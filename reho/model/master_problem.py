@@ -1218,12 +1218,6 @@ class MasterProblem:
             if key not in self.lists_MP["list_set_indexed_MP"]:
                 set_indexed_SP[key] = self.set_indexed[key]
 
-        infrastructure_SP = infrastructure.infrastructure(single_building_data, building_units, self.infrastructure.grids)  # initialize District
-
-        # TODO: better integration Units_Parameters specific to each house
-        unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]
-        infrastructure_SP.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = unit_param[["Units_Fmax", "Cost_inv2"]]
-
         return buildings_data_SP, parameters_SP, set_indexed_SP
 
     def build_infrastructure_SP(self):
@@ -1239,7 +1233,7 @@ class MasterProblem:
         return
 
     @staticmethod
-    def return_combined_SP_results(self, df_Results, df_name):
+    def return_combined_SP_results(df_Results, df_name):
 
         t = {(i, j, k, l, m): df_Results[i][j][k][l][m][df_name]
              for i in df_Results.keys()

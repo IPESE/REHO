@@ -310,4 +310,5 @@ documentation/sections/_autosummary
 # Scripts
 scripts/*
 !scripts/examples/
+!scripts/template/
 !scripts/test/

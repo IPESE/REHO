@@ -694,8 +694,8 @@ if __name__ == '__main__':
 
     weather_file = '../../../scripts/template/data/profiles/pully.csv'
     Attributes = ['Text', 'Irr','Weekday','Emissions','DataLoad']
-    nb_clusters = [10]
-    #nb_clusters = [2, 4, 6, 8, 10, 12, 16]
+    #nb_clusters = [10]
+    nb_clusters = [2, 4, 6, 8, 10, 12, 16]
 
     df_annual = read_custom_weather(weather_file)
     print(df_annual)
@@ -704,7 +704,7 @@ if __name__ == '__main__':
     cl = Clustering(data=df_annual, nb_clusters=nb_clusters, option={"year-to-day": True, "extreme": []}, pd=24)
     cl.run_clustering()
 
-    #plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)
+    plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)
     plot_LDC(cl, save_fig=False)
 
     generate_output_data(cl, Attributes, "Pully")

@@ -203,23 +203,23 @@ class SubProblem:
 
             # Storage Units
             ampl.cd(path_to_units_storage)
-            ampl.read('h2_storage.mod')
-            ampl.read('heatstorage_interperiod.mod')
-            ampl.read('LHS_storage.mod')
+            #ampl.read('h2_storage.mod')
+            #ampl.read('heatstorage_interperiod.mod')
+            #ampl.read('LHS_storage.mod')
             ampl.read('battery_interperiod.mod')
-            ampl.read('PTES.mod')
-            ampl.read('CH4_tank.mod')
+            #ampl.read('PTES.mod')
+            #ampl.read('CH4_tank.mod')
 
             # H2 Units
-            ampl.cd(path_to_units_h2)
-            ampl.read('fuel_cell.mod')
-            ampl.read('electrolyser.mod')
-            ampl.read('SOEFC.mod')
-            ampl.read('methanizer.mod')
+            #ampl.cd(path_to_units_h2)
+            #ampl.read('fuel_cell.mod')
+            #ampl.read('electrolyser.mod')
+            #ampl.read('SOEFC.mod')
+            #ampl.read('methanizer.mod')
 
-            ampl.cd(path_to_units)
-            ampl.read('heat_curtailment.mod')
-            ampl.cd(path_to_ampl_model)
+            #ampl.cd(path_to_units)
+            #ampl.read('heat_curtailment.mod')
+            #ampl.cd(path_to_ampl_model)
 
         return ampl
 

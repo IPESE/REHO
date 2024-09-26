@@ -402,7 +402,7 @@ class MasterProblem:
                 ampl_MP.read('mobility.mod')
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
-                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_supplyprofile1", "EV_supplyprofile2", 'ExternalEV_Costs_positive']
+                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + mobility_cst
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
@@ -485,7 +485,7 @@ class MasterProblem:
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                    np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
+                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'),self.infrastructure.UnitsOfType["EV_charger"]))
             MP_parameters.update(p)
 
         if read_DHN:
@@ -542,7 +542,7 @@ class MasterProblem:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EVcharging_district"]), ['PT_train', 'PT_bus'])
+            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]), ['PT_train', 'PT_bus'])
             MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
 
         if self.method['external_district']:

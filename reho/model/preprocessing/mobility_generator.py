@@ -6,8 +6,6 @@ import numpy as np
 
 def generate_mobility_parameters(cluster, parameters,transportunits):
     """
-    Based on EV_profile_generator_structure
-
     This reads the input data on the file dailyprofiles.csv and initializes (almost) all the necessary parameters to run the mobility sector in REHO.
 
     Parameters:

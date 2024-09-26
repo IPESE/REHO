@@ -617,7 +617,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
                 df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
             except:
                 df7 = pd.DataFrame()
-            df8 = get_ampl_data(ampl, 'EV_E_mob', multi_index=True) 
+            df8 = get_ampl_data(ampl, 'EV_supply_travel', multi_index=True) 
             df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
             df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6, df7, df8], axis=1)
 

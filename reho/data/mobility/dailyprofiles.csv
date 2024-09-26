@@ -1,4 +1,4 @@
-t,demwdy,demwnd,EV_pliwdy,EV_pliwnd,EV_outwdy,EV_outwnd,Bike_prfwdy,Bike_prfwnd,EV_aworkwdy,EV_atravelwdy,EV_aleisurewdy,EV_aleisurewnd,EV_aworkwnd,EV_atravelwnd,EBike_pliwdy,EBike_pliwnd
+t,demwdy,demwnd,EV_cpfwdy,EV_cpfwnd,EV_outwdy,EV_outwnd,Bike_prfwdy,Bike_prfwnd,EV_aworkwdy,EV_atravelwdy,EV_aleisurewdy,EV_aleisurewnd,EV_aworkwnd,EV_atravelwnd,EBike_cpfwdy,EBike_cpfwnd
 1,0.00406056445116614,0.0113906585791449,0.017,0.017,0.0,0.0,0.002,0.002,0.005629,0.004371,0,0,0,0.01,0.0,0.017
 2,0.00297561727685792,0.00834717460356024,0.023,0.023,0.0,0.0,0.001,0.001,0.00677,0.00323,0,0,0.000831,0.009169,0.0,0.006
 3,0.00270234250542053,0.00826973093743599,0.027,0.027,0.0,0.0,0.001,0.001,0.007072,0.002928,0,0,0.000916,0.009084,0.0,0.004

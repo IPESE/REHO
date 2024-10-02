@@ -43,7 +43,7 @@ subject to Bikes_profile2{u in UnitsOfType['Bike'],p in Period, t in Time[p]}:
 Units_supply['Mobility',u,p,t] >= share_bike[u,p] * Daily_Profile[u,p,t] * (1 - tau_relaxation);
 
 subject to Bikes_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_bikes * Population * DailyDist;
+sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_bikes * Population * sum{dist in Distances} (DailyDist[dist] );
 
 subject to Bikes_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_bikes * Population * DailyDist;
+sum {u in UnitsOfType['Bike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_bikes * Population * sum{dist in Distances} (DailyDist[dist] );

@@ -13,7 +13,7 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     cluster : 
         to get periods characterisations (p,t) => usually the value self.cluster_compact or 
     parameters :
-        From the parameters will be extracted values related to the mobility namely DailyDist, Mode_Speed and Population. Population and DailyDist are float, Mode_Speed is a dictionnary given by the user in the scenario initialisation. It can contains customed values for only some modes while the other remain default. 
+        From the parameters will be extracted values related to the mobility namely DailyDist, Mode_Speed and Population. Population is a float, DailyDist a dict of float, Mode_Speed is a dictionnary given by the user in the scenario initialisation. It can contains customed values for only some modes while the other remain default. 
     transportunits : list
         a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network_supply['Mobility']
 
@@ -27,7 +27,7 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     param_output = dict()
     
     if not "DailyDist" in parameters:
-        parameters['DailyDist'] = 36.8 # km per day
+        parameters['DailyDist'] = {"all" : 36.8} # km per day
     if not "Population" in parameters:
         parameters['Population'] = 10 # km per day  
     if "Mode_Speed" in parameters:
@@ -59,37 +59,69 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
 
     # Read the profiles and the transportation Units
     profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
+    share_input = pd.read_csv(os.path.join(path_to_mobility, "modalshares.csv"), index_col=0)
     units = pd.read_csv(os.path.join(path_to_infrastructure, "district_units.csv"),sep = ";")
     units = units[units.Unit.isin(transportunits)]
 
     # Domestic demand ================================================================================================
-    # The labels look like this : demwdy => normalized mobility demand of a weekday
+    # The labels look like this : demwdy_def, demwdy_long => normalized mobility demand of a weekday 
+
     columns = ["dem" + x for x in days_mapping.values()]
-    profiles_input[columns] *= parameters['Population']
-    profiles_input[columns] *= parameters['DailyDist']
+    profiles_demand = profiles_input[columns].copy() 
+    profiles_demand = profiles_demand  * parameters['Population'] # * sum(parameters['DailyDist'].values())
+
+    distances = parameters['DailyDist'].keys()
 
     mobility_demand = pd.DataFrame(columns=['l', 'p', 't', 'Domestic_energy'])
+    demand_pkm =  pd.DataFrame(columns=['dist', 'p', 't', 'Domestic_energy_pkm'])
 
     # iter over the typical periods 
-    for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            profile = profiles_input[["dem" + days_mapping[day]]].copy()
-        except:
-            raise ("day type not possible")
-        profile.rename(columns={"dem" + days_mapping[day]: "Domestic_energy"}, inplace=True)
-        profile.index.name = 't'
-        profile.reset_index(inplace=True)
-        profile['p'] = j + 1
+    for dist in distances:
+        for j, day in enumerate(list(timestamp.Weekday)[:-2]):
+            try:
+                profile = profiles_demand[[f"dem{days_mapping[day]}_{dist}" ]].copy()
+            except:
+                raise ("day type not possible")
+            profile.rename(columns={"dem" + days_mapping[day]: "Domestic_energy"}, inplace=True)
+            profile.index.name = 't'
+            profile.reset_index(inplace=True)
+            profile['p'] = j + 1
 
-        mobility_demand = pd.concat([mobility_demand, profile])
+            mobility_demand = pd.concat([mobility_demand, profile])
 
     # extreme hours
-    pd.concat([mobility_demand, pd.DataFrame({"p": 11, "t": 1, "Domestic_energy": 0}, index=["extremehour1"])])
-    pd.concat([mobility_demand, pd.DataFrame({"p": 12, "t": 1, "Domestic_energy": 0}, index=["extremehour2"])])
+    mobility_demand = pd.concat([mobility_demand, pd.DataFrame({"p": 11, "t": 1, "Domestic_energy": 0}, index=["extremehour1"])])
+    mobility_demand = pd.concat([mobility_demand, pd.DataFrame({"p": 12, "t": 1, "Domestic_energy": 0}, index=["extremehour2"])])
 
     mobility_demand['l'] = "Mobility"
     mobility_demand.set_index(['l', 'p', 't'], inplace=True)
     param_output['Domestic_energy'] = mobility_demand
+
+    # Demand per type of distance =====================================================================================
+    # For now the same profiles as the total demand are used, but this could be changed if needed. 
+    columns = ["dem" + x for x in days_mapping.values()]
+    profiles_demand = profiles_input[columns].copy() 
+    profiles_demand = profiles_demand * parameters['Population']
+
+    demand_pkm =  pd.DataFrame(columns=['dist', 'p', 't', 'Domestic_energy_pkm'])
+    profiles = pd.DataFrame()
+
+    for k in parameters["DailyDist"].keys():
+        profiles[k] = mobility_demand["Domestic_energy"] # TODO : change to have different profiles than the total one if needed. 
+
+    # extreme hours
+    extreme_hours = pd.concat(
+        [
+            pd.DataFrame({"p": 11, "t": 1, "Domestic_energy_pkm": 0}, index=parameters['DailyDist'].keys()),
+            pd.DataFrame({"p": 12, "t": 1, "Domestic_energy_pkm": 0}, index=parameters['DailyDist'].keys())
+        ]
+    )
+    extreme_hours.index.name = 'dist'
+    extreme_hours.reset_index(inplace = True)
+    demand_pkm = pd.concat([demand_pkm, extreme_hours])
+    
+    demand_pkm.set_index(['dist', 'p', 't'], inplace=True)
+    param_output['Domestic_energy_pkm'] = demand_pkm
 
     # Daily profiles (ex : Bikes and ICE) ==============================================================================
     # The labels look like this : Bike_pfrwdy => the normalized daily profile of the Unit Bike_district on a weekday (_district is omitted)
@@ -253,6 +285,10 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     mode_speed.update(mode_speed_custom)
 
     param_output['Mode_Speed'] = mode_speed.dropna()
+
+    # Convert DailyDist to df ===========================================================================
+    parameters['DailyDist'] = pd.DataFrame.from_dict(parameters['DailyDist'],orient ='index',columns = ["DailyDist"])
+
 
     return param_output
 

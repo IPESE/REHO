@@ -1,0 +1,7 @@
+transportunits,min_short,max_short,min_long,max_long
+EV_district,0,1,0,1
+Bike_district,0,1,0,1
+ICE_district,0,1,0,1
+ElectricBike_district,0,1,0,1
+PT_train,0,1,0,1
+PT_bus,0,1,0,1

@@ -55,10 +55,10 @@ subject to ElectricBikes_profile2{u in UnitsOfType['EBike'],p in Period, t in Ti
 Units_supply['Mobility',u,p,t] >= coeff_supply_EBike[u,p] * Daily_Profile[u,p,t] * (1 - tau_relaxation_supply_Ebike);
 
 subject to ElectricBikes_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EBike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_EBikes * Population * DailyDist;
+sum {u in UnitsOfType['EBike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_EBikes * Population * sum{dist in Distances} (DailyDist[dist] );
 
 subject to ElectricBikes_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EBike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_EBikes * Population * DailyDist;
+sum {u in UnitsOfType['EBike'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_EBikes * Population * sum{dist in Distances} (DailyDist[dist] );
 
 # Constraints related to the electric battery (taken from the EVehicle.mod)
 subject to EBike_EB_mobility1{u in UnitsOfType['EBike'],p in Period,t in Time[p]}:

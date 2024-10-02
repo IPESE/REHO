@@ -48,10 +48,10 @@ n_ICE[u] <= max_n_ICE;
 # ICE_E_tank[u,p,t] <= ICE_capacity[u] * n_ICE[u];
 
 subject to ICE_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_ICE * Population * DailyDist;
+sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_ICE * Population * sum{dist in Distances} (DailyDist[dist] );
 
 subject to ICE_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_ICE * Population * DailyDist;
+sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_ICE * Population * sum{dist in Distances} (DailyDist[dist] );
 
 
 subject to ICE_timeoftravel{p in Period,u in UnitsOfType['ICE']}:

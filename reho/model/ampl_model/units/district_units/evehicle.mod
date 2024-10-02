@@ -166,10 +166,10 @@ sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
 #--Max share and time of travel
 subject to EV_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_EV * Population * DailyDist; 
+sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_EV * Population * sum{dist in Distances} (DailyDist[dist] ); 
 
 subject to EV_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) >= min_share_EV * Population * DailyDist; 
+sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) >= min_share_EV * Population * sum{dist in Distances} (DailyDist[dist] ); 
 
 subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
 sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 

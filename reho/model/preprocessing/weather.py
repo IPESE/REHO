@@ -156,6 +156,7 @@ def generate_weather_data(cluster, qbuildings_data):
     # Set the time for the new rows (variable hours per period)
     T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0], 1, 1]
     T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1], 1, 1]
+    T_min["Text"] = -10.0
 
     # Append the new extreme values to the data
     new_index_min = len(data_cls)  # Dynamically find the next available index
@@ -307,7 +308,7 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
     IterationFile.write(header)
     for key in dict_index:
         pt = df_time.iloc[0].timesteps  # take the same period duration also for modulo
-        date = dt.datetime(2005, 1, 1) + dt.timedelta(hours=float((key - 1) * pt))
+        date = dt.datetime(2005, 1, 1) + dt.timedelta(hours=float((key) * pt))
 
         if 'Weekday' in attributes:
             text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict_index[key] - 1]) + '\t' + str(

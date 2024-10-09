@@ -353,16 +353,18 @@ class MasterProblem:
         ValueError: If the sets are not arrays or if the parameters are not arrays or floats or dataframes. Or if the MP optimization did not converge
         """
 
-        # Create the ampl Master Problem (MP)
-        if os.getenv('USE_AMPL_MODULES', False):
-            from amplpy import modules
-            modules.load()
-            ampl_MP = AMPL()
-        else:
+        if "AMPL_PATH" in os.environ:
             try:
                 ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
-                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+        else:
+            try:
+                from amplpy import modules
+                modules.load()
+                ampl_MP = AMPL()
+            except:
+                raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license: https://reho.readthedocs.io/en/main/sections/5_Getting_started.html#ampl-license")
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('solution_round', 11)

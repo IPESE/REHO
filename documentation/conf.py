@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath('../'))
 project = 'REHO'
 copyright = '2021, IPESE, EPFL'
 author = 'D. Lepour, J. Loustau, C. Terrier'
-release = '1.1.0'
+release = '1.1.5'
 
 
 # -- General configuration ---------------------------------------------------
@@ -95,5 +95,6 @@ autodoc_mock_imports = [
     "sqlalchemy",
     "urllib3",
 ]
-sys.modules['sqlalchemy.dialects'] = MagicMock()
-sys.modules['sqlalchemy.exc'] = MagicMock()
+sys.modules['pyclustering.cluster.kmedoids'] = MagicMock()
+sys.modules['pyclustering.utils.metric'] = MagicMock()
+sys.modules['pyclustering.utils'] = MagicMock()

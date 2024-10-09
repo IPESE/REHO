@@ -38,34 +38,125 @@ Prerequisites
 Python 3
 ------------------
 
-You will need `Python3 <https://www.python.org/downloads/>`_, just pick the latest version.
-As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_.
+You will need `Python3 <https://www.python.org/downloads/>`_. REHO is compatible with Python 3.9 and above.
+
+As IDE we recommend to use `PyCharm <https://www.jetbrains.com/pycharm/>`_, but `Visual Studio Code <https://code.visualstudio.com/>`_ (VS Code) is also a good choice.
+
 
 AMPL
 ------------------
 
-As REHO is based on AMPL, it requires a licence of AMPL and at least one LP solver.
-
-- The `AMPL Community Edition <https://ampl.com/ce/>`_ offers a free, full-powered AMPL license for personal, academic, and commercial-prototyping use.
-- The `HiGHS <https://highs.dev/>`_ solver is automatically installed via the `amplpy <https://amplpy.ampl.com/en/latest/>`_ library and REHO's requirements, and is chosen by default by the ``REHO()`` constructor when performing an optimization.
-- However, using the `Gurobi <https://www.gurobi.com/>`_ solver reduces calculation time by a factor of 3, and its use is therefore recommended.
-
-Plenty of text editors exist which feature AMPL. We recommend using `Sublime Text <https://www.sublimetext.com/>`_, which provides the `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_.
-
-AMPL license path
+AMPL syntax
 ~~~~~~~~~~~~~~~~~~
 
-You need to include a ``.env`` file at the project root folder. This one should contain the path to your AMPL license (cf. file ``example.env``):
+For most convenient use, we recommend using a text editor that supports AMPL syntax highlighting. As PyCharm does not currently provide an extension for AMPL syntax, we suggest using a different editor for AMPL files such as `Sublime Text <https://www.sublimetext.com/>`_, with its `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_. VS Code in turn features several extensions for AMPL.
 
-.. code-block:: bash
+For a quick introduction to AMPL syntax, please refer to `AMPL Resoures - Quick introduction <https://dev.ampl.com/ampl/introduction.html>`_.
 
-   AMPL_PATH = "path_to_your_license"
+AMPL license
+~~~~~~~~~~~~~~~~~~
 
-.. warning:: Running code from VScode or Terminal
+As REHO is based on AMPL, it requires an AMPL licence. There are two main options:
 
-    Running scripts from VScode or from a standalone terminal may lead to path issues, either when importing the REHO module or when providing the path to ``.env``.
+.. grid::
 
-    Please refer to the instructions in `REHO/Issues/Relative Path in VScode <https://github.com/IPESE/REHO/issues/13>`_.
+    .. grid-item-card:: Option 1: Standard AMPL license
+        :padding: 3
+
+        You already have an AMPL licence (standard or custom licence for research, teaching, business, consultant) and you know the path to your licence file.
+
+        ++++++++++++++++++++++
+
+        You need to provide the path to your license file in a ``.env`` file located at the root of your project, and containing the following line:
+
+        .. code-block:: bash
+
+            AMPL_PATH="path_to_your_license"
+
+.. grid::
+
+    .. grid-item-card:: Option 2: AMPL Community Edition license
+        :padding: 3
+
+        You plan to use the free `AMPL Community Edition <https://ampl.com/ce/>`_. This AMPL license is full-sized and full-featured for personal, academic, and commercial-prototyping use. Since 2023, there are no more restrictions on the number of variables or constraints one can use. This Community Edition operates on a cloud license, requiring an internet connection to function.
+
+        ++++++++++++++++++++++
+
+        Follow the installation steps in AMPL website to request your license, (install AMPL), and activate the license.
+
+
+.. note::
+    You do not strictly need to install AMPL on your machine, as AMPL modules will be automatically installed in your environment with REHO. However, you will need to either activate your cloud license or provide your local license path. Come back to this section after you have installed REHO, either from PyPI or from source, to set up your license accordingly.
+
+    Additional information and support can be found in the ``amplpy`` library documentation (`AMPL Python API <https://amplpy.ampl.com/en/latest/>`_).
+
+
+.. warning:: Running code from VS Code or Terminal
+    Running scripts from VS Code or from a standalone terminal may lead to path issues, either when importing the REHO module or when providing the path to ``.env``.
+    Please refer to the issue raised in `REHO/Issues/Relative Path in VS Code <https://github.com/IPESE/REHO/issues/13>`_.
+
+
+
+Solver
+~~~~~~~~~~~~~~~~~~
+
+REHO requires at least one linear programming solver.
+
+The requirements already specify the installation of the `HiGHS <https://highs.dev/>`_ solver, which is chosen by default when performing an optimization.
+
+However, you have the possibility to install other open-source or licensed solvers, and specify them in the ``REHO(solver="...")`` class constructor. The `Gurobi <https://www.gurobi.com/>`_ solver works particularly well with REHO, with a calculation time reduced by a factor of 3 compared to HiGHS.
+
+Please refer to `AMPL Modules for Python <https://dev.ampl.com/ampl/python/modules.html>`_ page further insights about AMPL solvers available.
+
+
+PostgreSQL
+------------------
+
+For large-scale applications, REHO can be connected to relational database management systems. The `QBuildings database <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ used as a reference for the input to REHO is built with PostgreSQL.
+
+More specifically, the `psycopg2 <https://pypi.org/project/psycopg2/>`_ library is used to connect to the database and execute queries in Python. This library is already included in the REHO requirements but is known to cause some issues, as some prerequisites are frequently missing (i.e. the PostgreSQL package and Python development tools).
+
+.. note::
+    For Windows users, the binary wheel ``psycopg2-binary`` is already specified in REHO requirements so this should no longer be an issue.
+
+For Linux and Mac users, 2 options are suggested:
+
+.. grid::
+
+    .. grid-item-card:: Option 1: Install the wheel ``psycopg2-binary`` instead
+        :padding: 3
+
+        .. code-block:: bash
+
+            pip install psycopg2-binary
+
+.. grid::
+
+    .. grid-item-card:: Option 2: Install prerequisites for ``psycopg2`` from source
+        :padding: 3
+
+        .. grid:: 1 2 2 2
+            :gutter: 4
+
+            .. grid-item-card:: Linux users
+                :class-card: install-card
+                :columns: 12 12 6 6
+                :padding: 3
+
+                .. code-block:: bash
+
+                    sudo apt install python3-dev libpq-dev
+
+            .. grid-item-card:: Mac users
+                :class-card: install-card
+                :columns: 12 12 6 6
+                :padding: 3
+
+                .. code-block:: bash
+
+                    brew install postgresql
+
+        You may refer to the discussion `How to install psycopg2 with "pip" on Python? <https://stackoverflow.com/questions/5420789/how-to-install-psycopg2-with-pip-on-python/5450183#5450183>`__ for additional support.
 
 
 Installation
@@ -86,43 +177,29 @@ Select the project root containing a Python environment and install the latest s
 Checking proper installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Entry points allow to verify the proper intallation of REHO. Select the desired folder and type:
+Entry points allow to verify the proper installation of REHO:
 
 .. code-block:: bash
 
-    reho-run-test
+    reho-test-import
 
 .. code-block:: bash
 
-    reho-plot-test
-
-.. code-block:: bash
-
-    reho-examples-test
-
-
-These commands will download files from the ``reho/test/`` and ``scripts/examples/`` folders from the `repository <https://github.com/IPESE/REHO/tree/main/scripts/examples>`__, copy them locally and execute them.
-
+    reho-test-run
 
 If your installation is correct, you should:
 
 - See the results of the optimizations in the terminal.
-- See files appear in the newly created subfolders ``data/clustering/``, ``results/`` and ``figures/``.
-- Have an overview of the results in your web browser (different tabs showing figures such as below).
+- See files appear in the newly created subfolders ``data/clustering/`` and ``results/`` and ``figures/``.
+- Have an overview of a Sankey diagram in your web browser.
 
-.. figure:: ../images/sankey.png
-   :width: 1000
-   :align: center
-   :name: sankey
+.. code-block:: bash
 
-   Sankey diagram resulting from a basic REHO single-optimization.
+   reho-download-examples
 
-.. figure:: ../images/performance.png
-   :width: 1000
-   :align: center
-   :name: sankey
+This command will download files from the ``scripts/examples/`` folder from the `repository <https://github.com/IPESE/REHO/tree/main/scripts/examples>`__, and copy them locally in the working directory.
 
-   Economical performance resulting from a REHO multi-objective optimization (Pareto).
+Finally, the folder ``reho/test/`` contains several scripts written with pytest, allowing to check for REHO functionalities.
 
 From source
 ------------------
@@ -148,53 +225,17 @@ Please include a ``venv`` at the project root folder and install dependencies wi
 
    pip install -r requirements.txt
 
-.. warning::
-    The ``psycopg2`` dependency is known to cause some issues, as some prerequisites are frequently missing (i.e. the PostgreSQL library and Python development tools). For Windows users, the binary wheel ``psycopg2-binary`` is already specified in REHO's requirements so this should no longer be an issue.
-
-    For Linux and Mac users, 2 options are suggested:
-
-    1. Try to install the ``psycopg2-binary`` instead:
-
-    .. code-block:: bash
-
-        pip install psycopg2-binary
-
-    2. Install the prerequisites for building ``psycopg2`` from source:
-
-    .. grid:: 1 2 2 2
-        :gutter: 4
-
-        .. grid-item-card:: Linux users
-            :class-card: install-card
-            :columns: 12 12 6 6
-            :padding: 3
-
-            .. code-block:: bash
-
-                sudo apt install python3-dev libpq-dev
-
-        .. grid-item-card:: Mac users
-            :class-card: install-card
-            :columns: 12 12 6 6
-            :padding: 3
-
-            .. code-block:: bash
-
-                brew install postgresql
-
-    You may refer to `How to install psycopg2 with "pip" on Python? <https://stackoverflow.com/questions/5420789/how-to-install-psycopg2-with-pip-on-python/5450183#5450183>`__ for further investigations.
-
 
 Checking proper installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run ``reho/test/test_run.py``, ``reho/test/test_plot.py`` or any of the files in ``scripts/examples/``.
+Run any of the files in ``reho/test/`` or ``scripts/examples/`` folders.
 
 If your installation is correct, each run should end with *“Process finished with exit code 0”*.
-Some files will also render some results in your web browser and open different tabs showing the outcome of your optimization.
+Some scripts will also render some results in your web browser and open different tabs showing the outcome of your optimization.
 
 .. warning::
-    In ``scripts/examples/``, the solver is explicitly defined as Gurobi to reduce calculation time. Simply remove the ``REHO(solver="gurobi")`` argument and it will by default substitute the open-source solver HiGHS.
+    In ``scripts/examples/``, the solver is always explicitly set to Gurobi to reduce calculation time. But you can simply remove the ``REHO(solver="gurobi")`` argument and the open-source solver HiGHS will be used by default instead.
 
 
 Git tracking

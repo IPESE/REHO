@@ -108,15 +108,19 @@ class SubProblem:
                     self.parameters_to_ampl[parameter][b] = self.parameters_sp[parameter]
 
     def init_ampl_model(self):
-        if os.getenv('USE_AMPL_MODULES', False):
-            from amplpy import modules
-            modules.load()
-            ampl = AMPL()
-        else:
+
+        if "AMPL_PATH" in os.environ:
             try:
                 ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
-                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+        else:
+            try:
+                from amplpy import modules
+                modules.load()
+                ampl = AMPL()
+            except:
+                raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license.")
 
         # -AMPL (GNU) OPTIONS
         ampl.setOption('solution_round', 11)

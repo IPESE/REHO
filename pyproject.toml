@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "REHO"
+keywords = ["MILP", "MOO decision support", "sustainable energy systems", "energy communities"]
+dynamic = ['version']
+description = "Renewable Energy Hub Optimizer (REHO) - A Comprehensive Decision Support Tool for Sustainable Energy System Planning"
+license = {text = "Apache Software License"}
+authors = [
+    {name = "Dorsan Lepour", email = "dorsan.lepour@epfl.ch"},
+]
+maintainers = [
+    {name = "IPESE-IT", email = "it.ipese@epfl.ch"},
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent"
+]
+dependencies = [
+    "amplpy",
+    "ampl_module_base",
+    "ampl_module_highs",
+    "coloredlogs",
+    "geopandas<1.0.0",
+    "kaleido",
+    "matplotlib",
+    "numpy<2.0.0",
+    "openpyxl",
+    "pandas<2.0.0",
+    "plotly",
+    "psycopg2<3.0.0 ; sys_platform != 'win32'",
+    "psycopg2-binary<3.0.0 ; sys_platform == 'win32'",
+    "pvlib",
+    "pyclustering",
+    "pyproj",
+    "python-dotenv",
+    "pytest",
+    "qmcpy",
+    "requests",
+    "SALib",
+    "scipy",
+    "setuptools",
+    "shapely",
+    "sqlalchemy<2.0.0",
+    "urllib3"
+]
+
+[project.urls]
+"Documentation" = "https://reho.readthedocs.io/"
+"Repository" = "https://github.com/IPESE/REHO"
+"Download" = "https://pypi.org/project/REHO"
+
+[tool.setuptools.package-data]
+"REHO" = ["*.csv", "*.xlsx", "*.dat", "*.txt", "*.mod", "*.ini"]
+
+[project.scripts]
+reho-test-import = "reho.test.test_import:test_import_reho_modules"
+reho-test-run = "reho.test.test_run:test_run"
+reho-download-examples = "reho.test.test_examples:test_download_examples"

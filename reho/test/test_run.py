@@ -3,7 +3,7 @@ from reho.model.reho import *
 from reho.plotting import plotting
 
 
-def test_run(save_results=False):
+def test_run(save_results=True):
 
     try:
         # Set building parameters
@@ -38,7 +38,7 @@ def test_run(save_results=False):
             reho.save_results(format=['xlsx', 'pickle'], filename='test_results')
 
         # Plot results
-        plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()
+        plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram", filename="figures/Sankey").show()
 
     except ImportError as e:
         pytest.fail(f"Running REHO failed: {e}")

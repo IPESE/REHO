@@ -168,22 +168,22 @@ class QBuildingsReader:
 
         return qbuildings
 
-    def read_db(self, transformer=None, nb_buildings=None, egid=None, to_csv=False):
+    def read_db(self, district_boundary="transformers", district_id=None, nb_buildings=None, egid=None, to_csv=False):
         """
-        Reads the database and extract from it the buildings required, by the LV transformer's ID.
-
-        If not all the buildings from the transformer should be extracted, one can give a number of buildings or if
-        the EGIDs are known, pass a list of EGIDs.
-        The fields from the database are translated to the corresponding ones used in REHO.
+        Reads the database and extracts the relevant buildings data.
+        If only some buildings from the district_id need to be extracted, you can specify the desired number of buildings or, if the EGIDs are known, provide a list of EGIDs.
+        The fields from the database are translated to the nomenclature used in REHO.
 
         Parameters
         ----------
-        transformer : int
-            ID of the transformer on which we want to optimize
+        district_boundary : str
+            The boundary of the district. It can be either 'transformers' or 'geo_girec'. By default, a district corresponds to a LV tranformer area as defined in QBuidings database.
+        district_id : int or str
+            ID or name of the district where the buildings lie.
         nb_buildings : int
             Number of buildings to select
         egid : list
-            To specify a list of buildings to optimize with their EGIDs
+            To specify a list of buildings their EGIDs
         to_csv : bool
             To export the data into csv
 
@@ -206,7 +206,7 @@ class QBuildingsReader:
         >>> from reho.model.reho import *
         >>> reader = QBuildingsReader(load_roofs=True)
         >>> reader.establish_connection('Suisse')
-        >>> qbuildings_data = reader.read_db(transformer=3658, egid=[954117])
+        >>> qbuildings_data = reader.read_db(district_id=3658, egid=[954117])
 
         >>> qbuildings_data['buildings_data']
         {'buildings_data': {'Building1': {'id_class': 'I', 'ratio': '1.0', 'status': "['existing', 'existing', 'existing']", 'ERA': 1396.0, 'SolarRoofArea': 1121.8206745917826, 'area_facade_m2': 848.6771960464813, 'height_m': 9.211343577064236, 'U_h': 0.00152, 'HeatCapacity': 120.29999999999991, 'T_comfort_min_0': 20.0, 'Th_supply_0': 65.0, 'Th_return_0': 50.0, 'Tc_supply_0': 12.0, 'Tc_return_0': 17.0, 'x': 2592703.9673297284, 'y': 1120087.7339999992, 'z': 572.4461527539248, 'geometry': <POLYGON ((2592684.383 1120074.623, 2592683.644 1120075.443, 2592679.083 112...>, 'transformer': 3658, 'id_building': '40214', 'egid': '954117', 'period': '1981-1990', 'n_p': 34.9, 'energy_heating_signature_kWh_y': 111855.52745599969, 'energy_cooling_signature_kWh_y': 0.0, 'energy_hotwater_signature_kWh_y': 4562.903646729638, 'energy_el_kWh_y': 39088.0}}
@@ -230,17 +230,22 @@ class QBuildingsReader:
 
         # TODO: SQL query to select only buildings, roofs and facades of interest
 
-        # Select the right transformer
-        sqlQuery = select([self.tables[self.db_schema + '.' + 'transformers']]) \
-            .where(self.tables[self.db_schema + '.' + 'transformers'].columns.id == transformer)
-        self.data['transformers'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine,
-                                                     geom_col='geometry').fillna(np.nan)
+        if district_boundary == "transformers":
+            id_key = "transformer"
+        elif district_boundary == "geo_girec":
+            id_key = "geo_girec"
+        else:
+            raise Exception("The district boundary is not recognized.")
+
+        # Select the right boundary
+        sqlQuery = select([self.tables[self.db_schema + '.' + district_boundary]]).where(
+            self.tables[self.db_schema + '.' + district_boundary].columns.id == district_id)
+        self.data[district_boundary] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
 
         # Select buildings
-        sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]) \
-            .where(self.tables[self.db_schema + '.' + 'buildings'].columns.transformer == transformer)
-        self.data['buildings'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine,
-                                                  geom_col='geometry').fillna(np.nan)
+        sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]).where(
+            getattr(self.tables[self.db_schema + '.' + 'buildings'].columns, id_key) == district_id)
+        self.data['buildings'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
         mask = (self.data['buildings']['egid'].isnull())
         self.data['buildings'] = self.data['buildings'].loc[~mask, :]
 
@@ -316,7 +321,7 @@ class QBuildingsReader:
 
         else:
             nb_select = 1
-            if type(egid) != list:
+            if not isinstance(egid, list):
                 egid = [egid]
 
             buildings_data = gpd.GeoDataFrame()
@@ -343,7 +348,6 @@ class QBuildingsReader:
 
 
 def translate_buildings_to_REHO(df_buildings):
-
     dict_QBuildings_REHO = {
 
         #################################################
@@ -427,7 +431,6 @@ def translate_buildings_to_REHO(df_buildings):
 
 
 def translate_facades_to_REHO(df_facades, df_buildings):
-
     dict_facades = {'azimuth': 'AZIMUTH',
                     'id_facade': 'Facades_ID',
                     'area_facade_solar_m2': 'AREA',
@@ -452,7 +455,7 @@ def translate_facades_to_REHO(df_facades, df_buildings):
             translated_facades_data[REHO_index] = df_facades[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
-            
+
     df_facades = translated_facades_data
     df_facades['CX'] = df_facades['geometry'].centroid.x
     df_facades['CY'] = df_facades['geometry'].centroid.y
@@ -467,7 +470,6 @@ def translate_facades_to_REHO(df_facades, df_buildings):
 
 
 def translate_roofs_to_REHO(df_roofs):
-
     dict_roofs = {'tilt': 'TILT',
                   'azimuth': 'AZIMUTH',
                   'id_roof': 'ROOF_ID',
@@ -491,7 +493,7 @@ def translate_roofs_to_REHO(df_roofs):
             translated_roofs_data[REHO_index] = df_roofs[key]
         except KeyError:
             print('Key %s not in the dictionary' % key)
-        
+
     df_roofs = translated_roofs_data
 
     return df_roofs

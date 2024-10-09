@@ -240,7 +240,7 @@ REHO can connect to QBuildings and read the data it contains with the following 
 
     reader = QBuildingsReader()                             # load QBuildingsReader class
     reader.establish_connection('Geneva')                   # connect to QBuildings database
-    qbuildings_data = reader.read_db(71, egid=['1009515'])  # read data
+    qbuildings_data = reader.read_db(district_id=71, egid=['1009515'])  # read data
 
 
 See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_db` for further description.
@@ -544,7 +544,7 @@ These lines of code will enable PV orientation and PV on facades:
 
     reader = QBuildingsReader(load_roofs=True, load_facades=True)
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    qbuildings_data = reader.read_db(district_id=3658, nb_buildings=2)
     method = {'use_pv_orientation': True, 'use_facades': True, 'district-scale': True}
 
 

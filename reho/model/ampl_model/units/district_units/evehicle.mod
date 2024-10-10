@@ -28,8 +28,6 @@ param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 
 param EV_charging_profile{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
 param tau_relaxation_charging_profile default 0.03;
 param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}; # initialized through the function generate_mobility_parameters
-param min_share_EV default 0;
-param max_share_EV default 1; # [4] G 3.3.1.6 : share of cars is 66 %
 param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # usually a car spends 1h per day on the move - source : Timo
 
 # Computed parameters to calculate the variation between EV_E_stored (plug_in and plug_out) depending on EV_plugged_out at each interval of time
@@ -165,11 +163,11 @@ sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
 
 #--Max share and time of travel
-subject to EV_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_EV * Population * sum{dist in Distances} (DailyDist[dist] ); 
+subject to EV_maxshare{u in UnitsOfType['EV'],p in PeriodStandard, dist in Distances}:
+sum {t in Time[p]}(pkm_supply[u,dist,p,t]) <= max_share[u,dist] * Population * DailyDist[dist] ; 
 
-subject to EV_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) >= min_share_EV * Population * sum{dist in Distances} (DailyDist[dist] ); 
+subject to EV_minshare{u in UnitsOfType['EV'],p in PeriodStandard, dist in Distances}:
+sum {t in Time[p]}(pkm_supply[u,dist,p,t]) >= min_share[u,dist] * Population * DailyDist[dist] ; 
 
 subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
 sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 

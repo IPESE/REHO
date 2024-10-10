@@ -119,11 +119,10 @@ class MasterProblem:
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
                                                 "DailyDist","Mode_Speed","Cost_demand_ext","EV_charger_supply_ext","share_activity","Cost_supply_ext",
-                                                "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes", "min_share_EBikes" ,"max_share_bikes", "min_share_bikes", "n_ICEperhab",
+                                                "max_share", "min_share","max_share_modes", "min_share_modes" ,  "n_ICEperhab",
                                                  "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
                          "list_constraints_MP": [],
-                         "list_set_indexed_MP" : ["Districts"]
+                         "list_set_indexed_MP" : ["Districts","Distances"]
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -485,7 +484,7 @@ class MasterProblem:
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'),self.infrastructure.UnitsOfType["EV_charger"]))
+                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train',"PT_bus"]),self.infrastructure.UnitsOfType["EV_charger"]))
             MP_parameters.update(p)
 
         if read_DHN:
@@ -544,6 +543,7 @@ class MasterProblem:
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]), ['PT_train', 'PT_bus'])
             MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['Distances'] = np.array(MP_parameters['DailyDist'].index)
 
         if self.method['external_district']:
             MP_set_indexed['Districts'] = np.array(self.set_indexed["Districts"])

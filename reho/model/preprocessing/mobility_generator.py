@@ -66,8 +66,7 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     # Domestic demand ================================================================================================
     # The labels look like this : demwdy_def, demwdy_long => normalized mobility demand of a weekday 
 
-    columns = ["dem" + x for x in days_mapping.values()]
-    profiles_demand = profiles_input[columns].copy() 
+    profiles_demand = profiles_input.loc[:,profiles_input.columns.str.startswith("dem")]
     profiles_demand = profiles_demand  * parameters['Population'] # * sum(parameters['DailyDist'].values())
 
     distances = parameters['DailyDist'].keys()
@@ -80,34 +79,21 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
         for j, day in enumerate(list(timestamp.Weekday)[:-2]):
             try:
                 profile = profiles_demand[[f"dem{days_mapping[day]}_{dist}" ]].copy()
+                profile.rename(columns={f"dem{days_mapping[day]}_{dist}": "Domestic_energy_pkm"}, inplace=True)
             except:
-                raise ("day type not possible")
-            profile.rename(columns={"dem" + days_mapping[day]: "Domestic_energy"}, inplace=True)
+                try:
+                    profile = profiles_demand[[f"dem{days_mapping[day]}_def" ]].copy() # default profile
+                    profile.rename(columns={f"dem{days_mapping[day]}_def": "Domestic_energy_pkm"}, inplace=True)
+                except:
+                    raise (f"Demand profile error : no default demand profile for {day} daytype")
             profile.index.name = 't'
             profile.reset_index(inplace=True)
             profile['p'] = j + 1
 
-            mobility_demand = pd.concat([mobility_demand, profile])
+            profile["Domestic_energy_pkm"] *= parameters['DailyDist'][dist]
+            profile['dist'] = dist
 
-    # extreme hours
-    mobility_demand = pd.concat([mobility_demand, pd.DataFrame({"p": 11, "t": 1, "Domestic_energy": 0}, index=["extremehour1"])])
-    mobility_demand = pd.concat([mobility_demand, pd.DataFrame({"p": 12, "t": 1, "Domestic_energy": 0}, index=["extremehour2"])])
-
-    mobility_demand['l'] = "Mobility"
-    mobility_demand.set_index(['l', 'p', 't'], inplace=True)
-    param_output['Domestic_energy'] = mobility_demand
-
-    # Demand per type of distance =====================================================================================
-    # For now the same profiles as the total demand are used, but this could be changed if needed. 
-    columns = ["dem" + x for x in days_mapping.values()]
-    profiles_demand = profiles_input[columns].copy() 
-    profiles_demand = profiles_demand * parameters['Population']
-
-    demand_pkm =  pd.DataFrame(columns=['dist', 'p', 't', 'Domestic_energy_pkm'])
-    profiles = pd.DataFrame()
-
-    for k in parameters["DailyDist"].keys():
-        profiles[k] = mobility_demand["Domestic_energy"] # TODO : change to have different profiles than the total one if needed. 
+            demand_pkm = pd.concat([demand_pkm, profile])
 
     # extreme hours
     extreme_hours = pd.concat(
@@ -116,12 +102,20 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
             pd.DataFrame({"p": 12, "t": 1, "Domestic_energy_pkm": 0}, index=parameters['DailyDist'].keys())
         ]
     )
+
     extreme_hours.index.name = 'dist'
     extreme_hours.reset_index(inplace = True)
     demand_pkm = pd.concat([demand_pkm, extreme_hours])
-    
+
     demand_pkm.set_index(['dist', 'p', 't'], inplace=True)
     param_output['Domestic_energy_pkm'] = demand_pkm
+
+    mobility_demand = demand_pkm.groupby(['p','t']).agg('sum')
+    mobility_demand.reset_index(inplace=True)
+    mobility_demand['l'] = "Mobility"
+    mobility_demand.set_index(['l', 'p', 't'], inplace=True)
+    mobility_demand.rename(columns={"Domestic_energy_pkm" : "Domestic_energy"},inplace=True)
+    param_output['Domestic_energy'] = mobility_demand
 
     # Daily profiles (ex : Bikes and ICE) ==============================================================================
     # The labels look like this : Bike_pfrwdy => the normalized daily profile of the Unit Bike_district on a weekday (_district is omitted)
@@ -131,7 +125,7 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
         # get daily demand
         try:
-            dd = profiles_input[["dem" + days_mapping[day]]].copy()
+            dd = profiles_input[["dem" + days_mapping[day] + "_def"]].copy()
         except:
             raise ("day type not possible")
         dd_filter = dd.astype('bool')
@@ -286,8 +280,41 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
 
     param_output['Mode_Speed'] = mode_speed.dropna()
 
+    
+    # Modal shares =========================================================================================
+    modes = ['cars','PT','MD']
+
+    minshare = share_input.loc[:,share_input.columns.str.startswith("min")]
+    minshare.columns = [x.split('_')[1] for x in minshare.columns]
+
+    minshare.columns.name = "dist"
+    minshare = minshare.stack()
+    minshare_modes = minshare[minshare.index.get_level_values(0).isin(modes)]
+    minshare = minshare[minshare.index.get_level_values(0).isin(transportunits)]
+    minshare_modes.name = "min_share_modes"
+    minshare.name = "min_share"
+
+    param_output['min_share'] = minshare
+    param_output['min_share_modes'] = minshare_modes
+
+    maxshare = share_input.loc[:,share_input.columns.str.startswith("max")]
+    maxshare.columns = [x.split('_')[1] for x in maxshare.columns]
+
+    maxshare.columns.name = "dist"
+    maxshare = maxshare.stack()
+    maxshare_modes = maxshare[maxshare.index.get_level_values(0).isin(modes)]
+    maxshare = maxshare[maxshare.index.get_level_values(0).isin(transportunits)]
+    maxshare_modes.name = "max_share_modes"
+    maxshare.name = "max_share"
+
+
+    param_output['max_share'] = maxshare
+    param_output['max_share_modes'] = maxshare_modes
+
+
+
     # Convert DailyDist to df ===========================================================================
-    parameters['DailyDist'] = pd.DataFrame.from_dict(parameters['DailyDist'],orient ='index',columns = ["DailyDist"])
+    param_output['DailyDist'] = pd.DataFrame.from_dict(parameters['DailyDist'],orient ='index',columns = ["DailyDist"])
 
 
     return param_output

@@ -8,16 +8,26 @@
 
 import os
 import sys
+import requests
 from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
+try:
+    response = requests.get("https://pypi.org/pypi/REHO/json")
+    if response.status_code == 200:
+        data = response.json()
+        latest_version = data["info"]["version"]
+    else:
+        latest_version = ">1.1.5"
+except Exception as e:
+    f"error: {str(e)}"
+
 project = 'REHO'
 copyright = '2021, IPESE, EPFL'
 author = 'D. Lepour, J. Loustau, C. Terrier'
-release = '1.1.5'
-
+version = latest_version
 
 # -- General configuration ---------------------------------------------------
 

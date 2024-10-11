@@ -3,18 +3,29 @@ from csv import Sniffer
 from pathlib import Path
 from pandas import read_csv, read_table, read_excel
 import sys
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 __doc__ = """
 File for managing file paths and configurations.
 """
 
-load_dotenv()
-
 path_to_reho = os.path.dirname(__file__)
 path_to_data = os.path.join(path_to_reho, 'data')
 path_to_model = os.path.join(path_to_reho, 'model')
 path_to_plotting = os.path.join(path_to_reho, 'plotting')
+
+# Load environment variables
+package_dotenv = find_dotenv(os.path.join(path_to_reho, '.env'))  # Find the .env file in project root or REHO package installation directory
+current_dir_dotenv = find_dotenv(os.path.join(os.getcwd(), '.env'))  # Find the .env file in the current working directory (where script is run)
+
+if package_dotenv:
+    load_dotenv(dotenv_path=package_dotenv)
+    print(f"Loaded .env from package root: {package_dotenv}")
+elif current_dir_dotenv:
+    load_dotenv(dotenv_path=current_dir_dotenv, override=True)
+    print(f"Loaded .env from current working directory: {current_dir_dotenv}")
+else:
+    print("No .env file found, using system environment variables.")
 
 # AMPL model
 path_to_ampl_model = os.path.join(path_to_model, 'ampl_model')
@@ -22,7 +33,6 @@ path_to_units = os.path.join(path_to_ampl_model, 'units')
 path_to_district_units = os.path.join(path_to_ampl_model, 'units', 'district_units')
 path_to_units_storage = os.path.join(path_to_ampl_model, 'units', 'storage')
 path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'h2_units')
-
 
 # data
 path_to_elcom = os.path.join(path_to_data, 'elcom')

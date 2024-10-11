@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools-scm"]
+requires = ["setuptools", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -55,8 +55,14 @@ dependencies = [
 "Repository" = "https://github.com/IPESE/REHO"
 "Download" = "https://pypi.org/project/REHO"
 
+[tool.setuptools]
+packages = ["reho"]
+
 [tool.setuptools.package-data]
 "REHO" = ["*.csv", "*.xlsx", "*.dat", "*.txt", "*.mod", "*.ini"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
 
 [project.scripts]
 reho-test-import = "reho.test.test_import:test_import_reho_modules"

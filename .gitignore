@@ -320,3 +320,8 @@ reho/test/results/*
 # Scripts
 scripts/*
 !scripts/examples/
+*.json
+*.dat
+*.txt
+*.pickle
+reho/data/mobility/modalshares_copy.csv

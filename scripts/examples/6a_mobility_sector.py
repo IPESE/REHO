@@ -35,9 +35,11 @@ if __name__ == '__main__':
 
     # Set parameters
     parameters = {  "Population": 9,
-                    "max_share_EV": 0.7,
-                    "min_share_EV": 0.4,
-                    "DailyDist" : 29
+                    "DailyDist" : {"long" : 20,
+                                   'short' : 10},
+                    "max_share_PT" : 1,
+                    # "max_share_MD" : 1,
+                    "max_share_cars" : 1
                 }
 
     # Run optimization

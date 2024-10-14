@@ -18,6 +18,7 @@ param max_travel_time default 3; # 1.3 hours national mean, by default the const
 set transport_Units; # TODO : check if dynamic to the rest of the code
 set transport_Units_MD;
 set transport_Units_cars;
+set transport_Units_PT :={'PT_train','PT_bus'};
 set Activities := {"work","leisure","travel"}; 
 set Districts default {};
 param Mode_Speed{u in transport_Units} default 37.1; # [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
@@ -75,17 +76,17 @@ sum {t in Time[p]}(travel_time[p,t]) <= max_travel_time * Population;
 
 # constraint on the max share of cars
 
-subject to allcars_maxshare{p in PeriodStandard}:
-sum {u in transport_Units_cars, t in Time[p]}(Units_supply['Mobility',u,p,t]) <= Population * sum{dist in Distances} (DailyDist[dist]*max_share_modes['cars',dist] );
+subject to allcars_maxshare{p in PeriodStandard,dist in Distances}:
+sum {u in transport_Units_cars, t in Time[p]}(pkm_supply[u,dist,p,t]) <= Population *  (DailyDist[dist]*max_share_modes['cars',dist] );
 
-subject to allcars_minshare{p in PeriodStandard}:
-sum {u in transport_Units_cars, t in Time[p]}(Units_supply['Mobility',u,p,t])  >=  Population * sum{dist in Distances} (DailyDist[dist] *min_share_modes['cars',dist]);
+subject to allcars_minshare{p in PeriodStandard,dist in Distances}:
+sum {u in transport_Units_cars, t in Time[p]}(pkm_supply[u,dist,p,t])  >=  Population *  (DailyDist[dist] *min_share_modes['cars',dist]);
 
-subject to MD_maxshare{p in PeriodStandard}:
-sum {u in transport_Units_MD, t in Time[p]}(Units_supply['Mobility',u,p,t]) <= Population * sum{dist in Distances} (DailyDist[dist] * max_share_modes['MD',dist] );
+subject to MD_maxshare{p in PeriodStandard,dist in Distances}:
+sum {u in transport_Units_MD, t in Time[p]}(pkm_supply[u,dist,p,t]) <= Population *  (DailyDist[dist] * max_share_modes['MD',dist] );
 
-subject to MD_minshare{p in PeriodStandard}:
-sum {u in transport_Units_MD, t in Time[p]}(Units_supply['Mobility',u,p,t]) >= Population * sum{dist in Distances} (DailyDist[dist] * min_share_modes['MD',dist] );
+subject to MD_minshare{p in PeriodStandard,dist in Distances}:
+sum {u in transport_Units_MD, t in Time[p]}(pkm_supply[u,dist,p,t]) >= Population *  (DailyDist[dist] * min_share_modes['MD',dist] );
 
 
 
@@ -112,13 +113,13 @@ subject to TP_c3{p in Period, t in Time[p]}:
 Network_demand["Mobility",p,t]  = 0;
 
 subject to TP_train_maxshare{p in PeriodStandard,dist in Distances}:
-sum {t in Time[p]}(pkm_PT_train[p,t])/dp[p] <= max_share["PT_train",dist]* Population * DailyDist[dist];
+sum {t in Time[p]}(pkm_supply["PT_train",dist,p,t])<= max_share["PT_train",dist]* Population * DailyDist[dist];
 
 subject to TP_bus_maxshare{p in PeriodStandard,dist in Distances}:
-sum {t in Time[p]}(pkm_PT_bus[p,t])/dp[p] <= max_share["PT_bus",dist] * Population * DailyDist[dist];
+sum {t in Time[p]}(pkm_supply["PT_bus",dist,p,t])<= max_share["PT_bus",dist] * Population * DailyDist[dist];
 
-subject to TP_maxshare{p in PeriodStandard}:
-sum {t in Time[p]}(Network_supply["Mobility",p,t])/dp[p] <= Population * sum{dist in Distances} (DailyDist[dist] * max_share_modes['PT',dist] ); 
+subject to TP_maxshare{p in PeriodStandard,dist in Distances}:
+sum {u in transport_Units_PT, t in Time[p]}(pkm_supply[u,dist,p,t])  <= Population * (DailyDist[dist] * max_share_modes['PT',dist] ); 
 
 
 
@@ -128,7 +129,7 @@ sum {t in Time[p]}(pkm_PT_train[p,t])/dp[p] >= min_share["PT_train",dist] * Popu
 subject to TP_bus_minshare{p in PeriodStandard,dist in Distances}:
 sum {t in Time[p]}(pkm_PT_bus[p,t])/dp[p] >= min_share["PT_bus",dist] * Population * DailyDist[dist];
 
-subject to TP_minshare{p in PeriodStandard}:
-sum {t in Time[p]}(Network_supply["Mobility",p,t])/dp[p] >= Population * sum{dist in Distances} (DailyDist[dist] * min_share_modes['PT',dist] ); 
+subject to TP_minshare{p in PeriodStandard,dist in Distances}:
+sum {u in transport_Units_PT, t in Time[p]}(pkm_supply[u,dist,p,t])  >= Population * (DailyDist[dist] * min_share_modes['PT',dist] ); 
 
 

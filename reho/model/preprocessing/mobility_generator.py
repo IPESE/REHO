@@ -288,6 +288,7 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     minshare.columns = [x.split('_')[1] for x in minshare.columns]
 
     minshare.columns.name = "dist"
+    minshare = minshare.join(pd.DataFrame(index = modes + list(transportunits)),how = 'outer').fillna(0)
     minshare = minshare.stack()
     minshare_modes = minshare[minshare.index.get_level_values(0).isin(modes)]
     minshare = minshare[minshare.index.get_level_values(0).isin(transportunits)]
@@ -301,6 +302,7 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     maxshare.columns = [x.split('_')[1] for x in maxshare.columns]
 
     maxshare.columns.name = "dist"
+    maxshare = maxshare.join(pd.DataFrame(index = modes + list(transportunits)),how = 'outer').fillna(1)
     maxshare = maxshare.stack()
     maxshare_modes = maxshare[maxshare.index.get_level_values(0).isin(modes)]
     maxshare = maxshare[maxshare.index.get_level_values(0).isin(transportunits)]

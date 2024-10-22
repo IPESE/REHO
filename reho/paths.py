@@ -24,7 +24,7 @@ path_to_ampl_model = os.path.join(path_to_model, 'ampl_model')
 path_to_units = os.path.join(path_to_ampl_model, 'units')
 path_to_district_units = os.path.join(path_to_ampl_model, 'units', 'district_units')
 path_to_units_storage = os.path.join(path_to_ampl_model, 'units', 'storage')
-path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'h2_units')
+path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'devlopping_units')
 
 
 # data

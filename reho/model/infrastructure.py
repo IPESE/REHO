@@ -371,7 +371,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
         grid_layers = list(grids.keys()) + ['HeatCascade']
 
     # Some units need to be defined for thermodynamical reasons in the model. They can still be set to 0.
-    units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "ThermalSolar"]
+    units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "ThermalSolar"]
 
     for idx, row in unit_data.iterrows():
         if all([layer in grid_layers for layer in row["UnitOfLayer"]]):
@@ -412,7 +412,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
         If None, district units will not be considered. Default is None.
     storage_data :  str or bool or None, optional
-        Path to the CSV file containing storage unit data. If True, storage units are initialized with 'storage_units.csv'.
+        Path to the CSV file containing storage unit data. If True, storage units are initialized with 'storage_units_1.csv'.
         If None, storage units won't be considered. Default is None.
 
     Returns
@@ -444,19 +444,19 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     building_units = prepare_units_array(building_data, exclude_units, grids)
 
     # TODO: these storage units are not fully working
-    storage_units_to_exclude = ['BESS_IP', 'PTES_S_IP', 'PTES_C_IP', 'H2S_storage', 'H2_compression', 'SOEFC', 'FC']
+    storage_units_to_exclude = ["PTES_S_IP", "PTES_C_IP", "FC", "ETZ", "HS_IP", "LHS", "SOEFC"]
 
     exclude_units = exclude_units + storage_units_to_exclude
     if storage_data is True:
         default_storage_units = os.path.join(path_to_infrastructure, "storage_units.csv")
-        building_units = np.concatenate([building_units, prepare_units_array(default_storage_units, exclude_units=exclude_units)])
+        building_units = np.concatenate([building_units, prepare_units_array(default_storage_units, exclude_units=exclude_units, grids=grids)]) #file, exclude_units=[], grids=None
     elif storage_data:
-        building_units = np.concatenate([building_units, prepare_units_array(storage_data, exclude_units=exclude_units)])
+        building_units = np.concatenate([building_units, prepare_units_array(storage_data, exclude_units=exclude_units, grids=grids)])
 
     if district_data is True:
-        district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids)
+        district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids)
     elif district_data:
-        district_units = prepare_units_array(district_data, exclude_units, grids)
+        district_units = prepare_units_array(district_data, exclude_units, grids=grids)
     else:
         district_units = []
 

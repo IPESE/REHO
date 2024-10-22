@@ -6,6 +6,7 @@ from reho.model.postprocessing.KPIs import *
 from reho.model.postprocessing.building_scale_network_builder import *
 from reho.paths import *
 
+from reho.model.postprocessing.write_results import get_ampl_data
 __doc__ = """
 File for constructing and solving the optimization problem.
 """
@@ -80,6 +81,7 @@ class REHO(MasterProblem):
                             ampl.getVariable('Units_Use').get(unit + '_' + h).fix(float(self.df_fix_Units.Units_Use.loc[unit + '_' + h]))
 
             ampl.solve()
+
             exitcode = exitcode_from_ampl(ampl)
 
         self.add_df_Results(ampl, Scn_ID, Pareto_ID, self.scenario)
@@ -538,6 +540,13 @@ class REHO(MasterProblem):
         df_Results["df_Unit"] = df_Unit
         df_Results["df_Grid_t"] = df_Grid_t
         df_Results["df_Time"] = df_Time
+
+        # Add Long-term storage to results dictionary (if 'use_Storage_Interperiod': True in method)
+        #if self.method["use_Storage_Interperiod"]:
+        #    self.
+
+
+
 
         if self.method["save_data_input"]:
             df_Results["df_Buildings"] = df_Buildings

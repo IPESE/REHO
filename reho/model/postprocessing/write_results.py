@@ -156,6 +156,35 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Unit, df_Unit_t
 
+    def set_df_storage(ampl):
+        try:
+            df1 = get_ampl_data(ampl, 'BAT_E_stored_IP', multi_index=True)
+            if df1.empty:
+                df1 = None
+        except:
+            df1 = None
+
+        try:
+            df2 = get_ampl_data(ampl, 'HS_E_stored_IP', multi_index=True)
+            if df2.empty:
+                df2 = None
+        except:
+            df2 = None
+
+        if df1 is not None and df2 is not None:
+            df_storage = pd.concat([df1, df2], axis=1)
+        elif df1 is not None:
+            df_storage = df1
+        elif df2 is not None:
+            df_storage = df2
+        else:
+            df_storage = pd.DataFrame()
+
+        if not df_storage.empty:
+            df_storage.index.names = ['Layer', 'Unit', 'HourOfYear']
+            df_storage = df_storage.sort_index()
+
+        return df_storage
     def set_df_grid(ampl, method):
         # Grid_t
         df1 = get_ampl_data(ampl, 'Grid_demand', multi_index=True)
@@ -225,6 +254,17 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Buildings_t.index.names = ['Hub', 'Period', 'Time']
 
         return df_Buildings_t.sort_index()
+
+    def set_df_storage_t(ampl):
+
+        # charge/discharge storage units (dp * Number of TD)
+        df_charge = get_ampl_data(ampl, "BAT_E_charging")
+        df_discharge = get_ampl_data(ampl, "BAT_E_discharging")
+
+        # main storage unit (8760)
+        df_main = get_ampl_data(ampl, "BAT_E_stored_IP")
+
+        return df_charge, df_discharge, df_main
 
     def set_df_streams_t(ampl):
 
@@ -384,6 +424,9 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
                 parameters_record[p] = ampl.getData(p).toPandas()
             except:
                 logging.info(p)
+
+    if method["use_Storage_Interperiod"]:
+        df_Results["df_storage"] = set_df_storage(ampl)
 
     if filter:
         for df_name, df in df_Results.items():
@@ -596,7 +639,6 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
 
     return df_Results
-
 
 def get_ampl_data(ampl, ampl_name, multi_index=False):
     # AMPl data in AMPLPY Dataframe

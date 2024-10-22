@@ -32,3 +32,4 @@ Units_supply['Electricity',u,p,t] <= Units_Mult[u]*SOEFC_power_limit_out[u];
 
 subject to SOEFC_PL_c2{u in UnitsOfType['SOEFC'],p in Period, t in Time[p]}:
 Units_demand['Electricity',u,p,t] <= Units_Mult[u]*SOEFC_power_limit_in[u];
+

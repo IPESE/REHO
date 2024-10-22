@@ -119,7 +119,7 @@ class SubProblem:
                 raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
 
         # -AMPL (GNU) OPTIONS
-        ampl.setOption('solution_round', 11)
+        ampl.setOption('solution_round', 8)
 
         ampl.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
@@ -180,6 +180,8 @@ class SubProblem:
             ampl.read('heatstorage.mod')
         if 'WaterTankDHW' in self.infrastructure_sp.UnitTypes:
             ampl.read('dhwstorage.mod')
+        if 'BESS_IP_district' in self.infrastructure_sp.UnitTypes:
+            ampl.read('battery_interperiod_district.mod')
         if 'Battery' in self.infrastructure_sp.UnitTypes:
             ampl.read('battery.mod')
         ampl.cd(path_to_ampl_model)
@@ -189,33 +191,56 @@ class SubProblem:
 
         # TODO: integrate all storage units into infrastructure (avoid using ampl eval)
         if self.method_sp['use_Storage_Interperiod']:
-            ampl.eval(
-                'set UnitsOfStorage := setof{u in UnitsOfType["Battery_interperiod"] union UnitsOfType["PTES_storage"]'
-                'union UnitsOfType["PTES_conversion"] union UnitsOfType["CH4storage"]'
-                'union UnitsOfType["H2storage"] union UnitsOfType["SOEFC"]'
-                'union UnitsOfType["Methanizer"] union UnitsOfType["FuelCell"]'
-                'union UnitsOfType["Electrolyzer"] union UnitsOfType["WaterTankSH_interperiod"]'
-                'union UnitsOfType["SolidLiquidLHS"]'
-                '} u;')
+            """
+            ampl.eval('set UnitsOfStorage := setof{u in UnitsOfType["BESS_IP"]} u;')
+            ampl.eval('set UnitsOfStorage := setof{u in UnitsOfType["Battery_interperiod"]} u;')
+            'union UnitsOfType["PTES_storage"]'
+            'union UnitsOfType["PTES_conversion"] union UnitsOfType["CH4storage"]'
+            'union UnitsOfType["H2storage"] union UnitsOfType["SOEFC"]'
+            'union UnitsOfType["Methanizer"] union UnitsOfType["FuelCell"]'
+            'union UnitsOfType["Electrolyzer"] union UnitsOfType["WaterTankSH_interperiod"]'
+            'union UnitsOfType["SolidLiquidLHS"]'
+            '} u;')
+            """
 
             # Storage Units
             ampl.cd(path_to_units_storage)
-            ampl.read('h2_storage.mod')
-            ampl.read('heatstorage_interperiod.mod')
-            ampl.read('LHS_storage.mod')
-            ampl.read('battery_interperiod.mod')
-            ampl.read('PTES.mod')
-            ampl.read('CH4_tank.mod')
+
+            if 'Battery_interperiod' in self.infrastructure_sp.UnitTypes:
+                ampl.read('battery_interperiod_v1.mod')
+
+            # ampl.read('h2_storage.mod')
+            if 'H2storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('STORAGE_H2.mod')
+            if 'CH4storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('STORAGE_CH4.mod')
+            if 'CO2storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('STORAGE_CO2.mod')
+            #if 'WaterTankSH_interperiod' in self.infrastructure_sp.UnitTypes:
+            #    ampl.read('heatstorage_interperiod.mod')
+
+
+            # ampl.read('heatstorage_interperiod.mod')
+            # ampl.read('LHS_storage.mod')
 
             # H2 Units
-            ampl.cd(path_to_units_h2)
-            ampl.read('fuel_cell.mod')
-            ampl.read('electrolyser.mod')
-            ampl.read('SOEFC.mod')
-            ampl.read('methanizer.mod')
+            #ampl.cd(path_to_units_h2)
+            #ampl.read('fuel_cell.mod')
+            #ampl.read('electrolyser.mod')
+            #ampl.read('SOEFC.mod')
+            if 'rSOC_CH4' in self.infrastructure_sp.UnitTypes:
+                #ampl.read('rSOC.mod')
+                ampl.read('rSOC_CH4_no_longer_useful.mod')
+
+            if 'rSOC' in self.infrastructure_sp.UnitTypes:
+                #ampl.read('rSOC.mod')
+                ampl.read('rSOC.mod')
+
+            if "Methanizer" in self.infrastructure_sp.UnitTypes:
+                ampl.read('methanizer.mod')
 
             ampl.cd(path_to_units)
-            ampl.read('heat_curtailment.mod')
+            #ampl.read('heat_curtailment.mod')
             ampl.cd(path_to_ampl_model)
 
         return ampl
@@ -563,7 +588,8 @@ class SubProblem:
         # TODO remove data_stream.dat
         ampl.readData('data_stream.dat')
         if self.method_sp['use_Storage_Interperiod']:
-            ampl.readData('data_stream_storage.dat')
+            #ampl.readData('data_stream_storage.dat')
+            print("")
 
         return ampl
 

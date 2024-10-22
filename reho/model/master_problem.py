@@ -402,9 +402,12 @@ class MasterProblem:
                 ampl_MP.read('heatpump_district.mod')
             if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
+            if "BESS_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("battery_interperiod_district.mod")
             if "Battery_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.cd(path_to_units_storage)
                 ampl_MP.read('battery.mod')
+
 
         if read_DHN:
             ampl_MP.cd(path_to_district_units)

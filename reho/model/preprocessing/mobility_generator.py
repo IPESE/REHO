@@ -30,6 +30,9 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
         parameters['DailyDist'] = {"all" : 36.8} # km per day
     if not "Population" in parameters:
         parameters['Population'] = 10 # km per day  
+    else:
+        if isinstance(parameters['Population'], np.ndarray):
+            parameters['Population'] = parameters['Population'][0]
     if "Mode_Speed" in parameters:
         mode_speed_custom = parameters['Mode_Speed']
     else:

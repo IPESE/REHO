@@ -9,6 +9,7 @@ from qmcpy import Sobol
 from scipy.stats import qmc
 
 from reho.model.reho import *
+from scripts.solene.functions import *
 
 __doc__ = """
 Performs a sensitivity analysis on the optimization.
@@ -108,6 +109,8 @@ class SensitivityAnalysis:
                     name = str(unit) + "___" + str(parameter)
                     SA_parameters[name] = np.array([0.5, 2]) * value
 
+        
+
         self.parameter = SA_parameters
         # 2) Generate a dictionary with all parameters and their bounds for the sampling
 
@@ -133,7 +136,18 @@ class SensitivityAnalysis:
             sampling = qmc.scale(sample, l_bounds_values, u_bounds_values)
         else:
             sampling = None
+
+        # TODO: insert here the formatting of parameters. 
+
         self.sampling = sampling
+
+    def format_mobilitySA(self,sample):
+        if "DailyDist" in self.parameter.keys():
+            DailyDist = sample[list(self.parameter).index('DailyDist')]
+            mob_param = mobility_demand_from_WP1data_modes(DailyDist,80,3,0.02)
+        else :
+            mob_param = mobility_demand_from_WP1data_modes(36.8,80,3,0.02)
+        return mob_param
 
     def run_SA(self, save_inter=True, save_inter_nb_iter=50, save_time_opt=True, intermediate_start=0):
         """
@@ -178,6 +192,10 @@ class SensitivityAnalysis:
             print("Optimization number", str(j + 1) + "/" + str(len(self.sampling)))
 
             sample = self.sampling[j]
+
+            # formatting of the mobility parameters
+            mob_param = self.format_mobilitySA(sample)
+
             for s, value in enumerate(sample):
                 parameter = list(self.parameter.keys())[s]
 
@@ -198,7 +216,10 @@ class SensitivityAnalysis:
                             units['building_units'][unit_id][parameter.split("___")[1]] = value
                 else:
                     if parameter in self.reho.lists_MP["list_parameters_MP"]:
-                        self.reho.parameters[parameter] = np.array([value])
+                        if parameter == 'DailyDist':
+                            self.reho.parameters[parameter] = mob_param['DailyDist']
+                        else:
+                            self.reho.parameters[parameter] = np.array([value]) 
                     else:
                         self.reho.parameters[parameter] = np.array([value] * n_houses)
 

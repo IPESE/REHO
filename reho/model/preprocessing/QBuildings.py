@@ -142,18 +142,16 @@ class QBuildingsReader:
         """
         self.data['buildings'] = file_reader(buildings_filename)
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
-        # self.data['buildings'] = add_geometry(self.data['buildings'])
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
         buildings = self.select_buildings_data(nb_buildings, None)
-        # buildings = add_geometry(buildings)
         qbuildings = {'buildings_data': buildings}
         if self.load_facades:
             self.data['facades'] = file_reader(path_handler(facades_filename))
             selected_facades = self.select_roofs_or_facades_data(roof=False)
             self.data['facades'] = self.data['facades'][self.data['facades'].index.isin(selected_facades)]
-            self.data['facades'] = add_geometry(self.data['facades'])
+            self.data['facades'] = read_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
             qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'], self.local_data)
@@ -162,7 +160,7 @@ class QBuildingsReader:
             self.data['roofs'] = file_reader(path_handler(roofs_filename))
             selected_roofs = self.select_roofs_or_facades_data(roof=True)
             self.data['roofs'] = self.data['roofs'][self.data['roofs'].index.isin(selected_roofs)]
-            self.data['roofs'] = add_geometry(self.data['roofs'])
+            self.data['roofs'] = read_geometry(self.data['roofs'])
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
 
@@ -316,7 +314,7 @@ class QBuildingsReader:
                 self.data['buildings']['id_building'].isin(selected_buildings)]
             self.data['buildings'].index = reindex
             if self.db_engine is None:
-                self.data['buildings'] = add_geometry(self.data['buildings'])
+                self.data['buildings'] = read_geometry(self.data['buildings'])
             buildings_data = self.data['buildings'].to_dict('index')
 
         else:
@@ -638,18 +636,20 @@ def return_shadows_id_building(id_building, df_district, local_data):
     return df_beta_dome
 
 
-def add_geometry(df):
-    # Avoid issues with geometry when reading data from a csv
-    try:
-        geom = gpd.GeoSeries.from_wkb(df['geometry'])
-    except KeyError:
-        print("No geometry in the dataframe")
+def read_geometry(df):
+    """
+    Avoid issues with geometry when reading data from a csv
+    """
+    if 'geometry' not in df.columns:
+        print("No geometry specified in the dataframe.")
         return df
-    except:
-        try:
-            geom = gpd.GeoSeries.from_wkt(df['geometry'])
-        except TypeError:
-            print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings")
+    else:
+        if isinstance(df["geometry"], gpd.geoseries.GeoSeries):
             return df
-
-    return gpd.GeoDataFrame(df, geometry=geom)
+        else:
+            try:
+                geometry = gpd.GeoSeries.from_wkt(df['geometry'])
+                return gpd.GeoDataFrame(df, geometry=geometry)
+            except TypeError:
+                print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings.")
+                return df

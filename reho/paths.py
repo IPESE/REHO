@@ -1,13 +1,15 @@
 import os
 from csv import Sniffer
 from pathlib import Path
-from pandas import read_csv, read_table, read_excel
+from pandas import read_csv, read_table, read_excel, set_option
 import sys
 from dotenv import load_dotenv, find_dotenv
 
 __doc__ = """
 File for managing file paths and configurations.
 """
+
+set_option('display.expand_frame_repr', False)
 
 path_to_reho = os.path.dirname(__file__)
 path_to_data = os.path.join(path_to_reho, 'data')

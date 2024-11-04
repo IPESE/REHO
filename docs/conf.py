@@ -36,8 +36,7 @@ extensions = ['sphinxcontrib.bibtex',
               'sphinx.ext.napoleon',
               'sphinx.ext.autosummary',
               'sphinx_design',
-              'sphinx_copybutton',
-              'nbsphinx']
+              'sphinx_copybutton']
 source_suffix = [".rst", ".md"]
 exclude_patterns = ['LICENSE']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -63,7 +62,7 @@ html_theme_options = {
   # "external_links": [{"name": "REHO-fm", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
-                  "icon": "https://github.com/IPESE/REHO/blob/documentation/documentation/images/logos/ipese_square.png?raw=true",
+                  "icon": "https://github.com/IPESE/REHO/blob/main/docs/images/logos/ipese_square.png?raw=true",
                   "type": "url"}],
   "logo": {"image_light": 'images/logos/logo_reho.png',
            "image_dark": "images/logos/logo_reho_light.png",
@@ -78,6 +77,8 @@ toc_object_entries_show_parents = 'all'
 
 # ------------ Autodoc ------------------------------------
 autodoc_member_order = 'bysource'
+
+# From REHO requirements.txt
 autodoc_mock_imports = [
     "amplpy",
     "ampl_module_base",
@@ -105,6 +106,12 @@ autodoc_mock_imports = [
     "sqlalchemy",
     "urllib3",
 ]
+
+# Handling specific imports
 sys.modules['pyclustering.cluster.kmedoids'] = MagicMock()
 sys.modules['pyclustering.utils.metric'] = MagicMock()
 sys.modules['pyclustering.utils'] = MagicMock()
+
+sys.modules['dotenv'] = MagicMock()
+
+sys.modules['pyproj'] = MagicMock()

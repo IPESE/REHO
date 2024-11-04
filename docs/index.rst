@@ -1,9 +1,3 @@
-.. REHO documentation master file
-
-.. to build :
-..      cd documentation
-..      make html
-
 Renewable Energy Hub Optimizer
 ==============================
 
@@ -75,14 +69,7 @@ Contents
    sections/6_Examples
    sections/7_Contribute
    sections/Appendix
-   sections/Notebook
 
-
-.. Indices and tables
-   ==================
-   * :ref:`genindex`
-   * :ref:`modindex`
-   * :ref:`search`
 
 Downloading REHO
 =======================
@@ -131,5 +118,5 @@ Main contributors
    :class: only-dark
 
 * Dorsan **Lepour** (2020-...)
-* Joseph **Loustau** (2022-2024)
 * Cédric **Terrier** (2021-...)
+* Joseph **Loustau** (2022-2024)

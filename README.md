@@ -1,4 +1,16 @@
 # REHO
+
+[![Python Version](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://pypi.org/project/REHO/)
+
+[![License](https://img.shields.io/badge/license-Apache%202-blue)](https://www.apache.org/licenses/LICENSE-2.0)
+
+[![PyPI](https://img.shields.io/pypi/v/REHO.svg)](https://pypi.org/project/REHO/)
+
+[![Upload Status](https://github.com/IPESE/REHO/actions/workflows/python-publish.yml/badge.svg)](https://pypi.org/project/REHO/)
+
+[![Documentation Status](https://readthedocs.org/projects/reho/badge/?version=main)](https://reho.readthedocs.io/)
+
+
 Renewable Energy Hub Optimizer (REHO) is a decision support tool for sustainable urban energy system planning.
 REHO simultaneously addresses the optimal design and operation of capacities, catering to multi-objective considerations
 across economic, environmental, and efficiency criteria.

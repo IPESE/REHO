@@ -14,7 +14,7 @@ How to cite
     .. code-block:: bash
 
         @online{REHO,
-            title={Renewable Energy Hub Optimizer (REHO) - A Comprehensive Decision Support Tool for Sustainable Energy System Planning},
+            title={Renewable Energy Hub Optimizer (REHO) -  A Decision Support Tool for Renewable Energy Communities},
             author={Lepour, Dorsan and Terrier, Cédric and Loustau, Joseph},
             url={https://github.com/IPESE/REHO},
             urldate={...},

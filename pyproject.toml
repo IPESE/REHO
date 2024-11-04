@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "REHO"
 keywords = ["MILP", "MOO decision support", "sustainable energy systems", "energy communities"]
 dynamic = ['version']
-description = "Renewable Energy Hub Optimizer (REHO) - A Comprehensive Decision Support Tool for Sustainable Energy System Planning"
+description = "Renewable Energy Hub Optimizer (REHO) - A Decision Support Tool for Renewable Energy Communities"
 license = {text = "Apache Software License"}
 authors = [
     {name = "Dorsan Lepour", email = "dorsan.lepour@epfl.ch"},
@@ -19,7 +19,12 @@ requires-python = ">=3.9"
 classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
-    "Operating System :: OS Independent"
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering"
 ]
 dependencies = [
     "amplpy",

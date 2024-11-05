@@ -15,7 +15,8 @@ set Period;				# Set of periods (days)
 set PeriodStandard;		# Set of standard periods (not extreme) 
 set PeriodExtreme := {Period diff PeriodStandard};
 set Lca_kpi;
-set HP_Tsupply default {35,45,55};																	#-
+set HP_Tsupply default {35,45,55};
+set ActorObjective;																#-
 
 #-TIME SETS
 param TimeStart default 1;
@@ -296,6 +297,7 @@ lca_tot_house[k, h] = sum{u in UnitsOfHouse[h]} lca_units[k, u] + sum{l in Resou
 param Costs_House_limit{h in House} default 0;						# CHF/yr
 param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
+param Costs_ins{h in House} default 0;
 
 param n_years default 25;
 param i_rate default 0.02;
@@ -311,7 +313,7 @@ subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]);	
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + Costs_ins[h];	
 
 subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
@@ -333,14 +335,21 @@ param Cost_supply{h in House,l in ResourceBalances,p in Period,t in Time[p]} def
 param Cost_demand_network{l in ResourceBalances,p in Period,t in Time[p]} default Cost_demand_cst[l];
 param Cost_supply_network{l in ResourceBalances,p in Period,t in Time[p]} default Cost_supply_cst[l];
 
-var Costs_House_op{House};
+var Costs_House_op{h in House};
 var Costs_op;
+var Cost_self_consumption{h in House};
 
 subject to Costs_house_opex{h in House}:
 Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply[h,l,p,t]*Grid_supply[l,h,p,t] - Cost_demand[h,l,p,t]*Grid_demand[l,h,p,t])*dp[p]*dt[p]); 
 
 subject to Costs_opex:
 Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t])*dp[p]*dt[p]); 
+
+subject to size_cstr5{h in House}:            
+Cost_demand_cst['Electricity'] <= Cost_self_consumption[h];
+
+subject to size_cstr6{h in House}:           
+Cost_self_consumption[h] <= Cost_supply_cst['Electricity'];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#

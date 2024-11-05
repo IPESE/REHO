@@ -589,11 +589,27 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df4 = get_ampl_data(ampl, 'Costs_House_inv')
         df4.columns = ["owner_inv"]
         df5 = get_ampl_data(ampl, 'owner_portfolio')
-        df_Actors = pd.concat([df1, df2, df3, df4, df5], axis=1)
-        df_6 = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
-        df_Actors = pd.concat([df_Actors, df_6], axis=0)
+        df6 = get_ampl_data(ampl, 'renter_expense')
+        df7 = get_ampl_data(ampl, 'C_rent_fix')
+        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
+        df_8 = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
+        df_Actors = pd.concat([df_Actors, df_8], axis=0)
         df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)
         df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
+
+        #TODO get_ampl_data dual
+        df1 = get_ampl_dual_values_in_pandas(ampl, 'Renter_epsilon', multi_index=False)
+        df1.columns = ['nu_renters']
+
+        df2 = get_ampl_dual_values_in_pandas(ampl, 'Owner_epsilon', multi_index=False)
+        df2.columns = ['nu_owner']
+
+        df3 = get_ampl_dual_values_in_pandas(ampl, 'Utility_epsilon', multi_index=False)
+        df3.columns = ['nu_utility']
+
+        df_Results["df_renters_dual"] = df1
+        df_Results["df_owner_dual"] = df2
+        df_Results['df_utility_dual'] = df3
 
     return df_Results
 

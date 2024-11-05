@@ -1,6 +1,5 @@
 from reho.model.actors_problem import *
 
-
 if __name__ == '__main__':
 
     # Set scenario
@@ -12,7 +11,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(234, nb_buildings=2)
+    qbuildings_data = reader.read_db(234, nb_buildings=4)
 
     # Set specific parameters
     parameters = {}
@@ -43,12 +42,12 @@ if __name__ == '__main__':
         reho.generate_configurations(n_sample=5, tariffs_ranges=tariffs_ranges)
 
     # Find actors bounds
-    reho.scenario["name"] = "Renters"
-    reho.execute_actors_problem(n_sample=1, bounds=None, actor="Renters")
     reho.scenario["name"] = "Owners"
-    reho.execute_actors_problem(n_sample=1, bounds=None, actor="Owners")
+    print("Calculate boundary for Owners")
+    reho.execute_actors_problem(n_sample=3, bounds=None, actor="Owners")
     reho.scenario["name"] = "Utility"
-    reho.execute_actors_problem(n_sample=1, bounds=None, actor="Utility")
+    print("Calculate boundary for Utility")
+    reho.execute_actors_problem(n_sample=3, bounds=None, actor="Utility")
 
     # Define samples
     bound_o = -np.array([reho.results[i][0]["df_Actors"].loc["Owners"][0] for i in reho.results])
@@ -57,11 +56,11 @@ if __name__ == '__main__':
 
     # Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"
-    reho.execute_actors_problem(n_sample=25, bounds=bounds, actor="Renters")
+    reho.set_actors_boundary(bounds=bounds, n_sample=1)
 
-    print(reho.samples, "\n")
-    print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
-    print(reho.results["Renters"][0]["df_Actors"])
+    reho.actor_decomposition_optimization()
 
+    # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
+    # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["save_all"], filename='actors_MOO')
+    reho.save_results(format=["xlsx"], filename='actors_MOO')

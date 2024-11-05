@@ -7,7 +7,10 @@ import reho.model.preprocessing.EV_profile_generator as EV_gen
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as weather
+import reho.model.preprocessing.actors as actors
+from reho.model.preprocessing import refurbishment
 from reho.model.preprocessing.QBuildings import *
+
 
 __doc__ = """
 File for handling data and optimization for an AMPL sub-problem.
@@ -725,8 +728,10 @@ def initialize_default_methods(method):
 
     if method['building-scale']:
         method['include_all_solutions'] = False  # avoid interactions between optimization scenarios
-        method[
-            'district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
+        method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
+
+    if 'refurbishment' not in method:
+        method['refurbishment'] = False # decision of refurbishment strategies
 
     return method
 

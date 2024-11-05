@@ -41,11 +41,29 @@ lca_tot["Human_toxicity"] + penalties;
 #--------------------------------------------------------------------------------------------------------------------#
 
 set Obj_fct := Lca_kpi union {'TOTEX', 'OPEX', 'CAPEX', 'GWP'};
+# set actors_dual := {'nu_owner', 'nu_renters', 'nu_utility'};
+# set actors := House union {'Owner', 'Utility'};
+
 param beta_duals{o in Obj_fct} default 0;
+# param nu_duals{ad in actors_dual, a in actors} default 0;
+param nu_renters{h in House} default 0;
+param nu_owner default 0;
+param nu_utility default 0;
+
+param C_rent_fix{h in House} default 0;
 
 minimize SP_obj_fct:
 beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau*(Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
-sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties;
+sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties 
++ sum{h in House} (nu_renters[h] * (C_rent_fix[h] 
+    + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply[h,l,p,t] * Grid_supply[l,h,p,t]) 
+    + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])))
++  nu_owner * (- sum{h in House} C_rent_fix[h] 
+    - sum{h in House, p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])  
+    - sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand[h,l,p,t] * Grid_demand[l,h,p,t])  
+    + sum{h in House} Costs_House_inv[h])
++ nu_utility * (- sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply[h,l,p,t] * Grid_supply[l,h,p,t])
+    + sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand[h,l,p,t] * Grid_demand[l,h,p,t]));
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -96,7 +114,7 @@ subject to EMOO_GU_demand_constraint{l in ResourceBalances,p in PeriodStandard,t
 Network_demand[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_demand);
 
 subject to EMOO_GU_supply_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
-Network_supply[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_supply );
+Network_supply[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_supply);
 
 
 ######################################################################################################################

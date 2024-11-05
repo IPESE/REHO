@@ -371,7 +371,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
         grid_layers = list(grids.keys()) + ['HeatCascade']
 
     # Some units need to be defined for thermodynamical reasons in the model. They can still be set to 0.
-    units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "ThermalSolar"]
+    units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "ThermalSolar","Battery"]
 
     for idx, row in unit_data.iterrows():
         if all([layer in grid_layers for layer in row["UnitOfLayer"]]):

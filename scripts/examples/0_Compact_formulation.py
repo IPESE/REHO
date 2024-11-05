@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # Set method options (as defined in sub_problem.py > initialize_default_methods)
     # By default a district-scale design is performed with a compact formulation.
     # Watch out the maximum number of buildings is around 10 due to exponential complexity.
-    method = {}
+    method = {"save_streams":True}
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")

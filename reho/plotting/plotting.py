@@ -1477,7 +1477,40 @@ def plot_composite_curve(df_Results, cluster, periods=["Yearly"], filename=None,
     else:
         return plt
 
-def plot_storage_profile(df_Results, resolution='daily'):
+def plot_storage_profile(df_Results, resolution='daily',storage_ID = "all"):
+
+    def plot_storage_sep(storage_SOC_tot,counter, fig, stor_var, items_average):
+        cm = {
+            "Electricity":"#a7a5a5",
+            "H2":"#0063a6",
+            "CH4":"#d7b652",
+            "CO2":"#D2363E"}
+
+
+        time_index = np.arange(0, 8760)
+
+        SOC_average = moving_average(storage_SOC_tot[stor_var], items_average)
+        time_index_average = moving_average(time_index, items_average)
+
+        mol = stor_var.split("_")[0]
+        if mol == "BAT":
+            mol = "Electricity"
+
+        fig.add_trace(go.Scatter(
+            x=time_index_average,
+            y=SOC_average,
+            mode='lines',
+            name=mol+" storage",
+            line=dict(color=cm[mol], width=0),
+            fill='tozeroy',
+            fillcolor="#0063a6"
+        ),
+            row = counter,
+            col = 1
+        )
+
+        return fig
+
     if resolution == 'monthly':
         items_average = 730
     elif resolution == 'weekly':
@@ -1487,33 +1520,52 @@ def plot_storage_profile(df_Results, resolution='daily'):
     else:
         items_average = 1
 
-    SOC = df_Results["df_storage"]["BAT_E_stored_IP"]
-    time_index = np.arange(0, 8760)
+    counter = 1
+    if storage_ID == 'all':
+        df_storage = df_Results["df_storage"].loc[:, (df_Results["df_storage"] != 0).any(axis=0)]
+        list_stor = list(df_storage.keys())
+        if len(list_stor) > 0:
+            storage_SOC_tot = df_storage.groupby(level=1).sum()
+            fig = make_subplots(rows=len(list_stor), cols=1, shared_xaxes=True, vertical_spacing=0.02)
+            for storage in list_stor:
+                fig = plot_storage_sep(storage_SOC_tot,counter,fig, storage, items_average)
+                if "CO2" in storage:
+                    fig.update_yaxes(title_text="SOC, mol", row=counter, col=1)
+                else:
+                    fig.update_yaxes(title_text="SOC, kWh", row=counter, col=1)
 
-    SOC_average = moving_average(SOC, items_average)
-    time_index_average = moving_average(time_index, items_average)
+                counter += 1
+    else:
+        if type(storage_ID) is list:
+            list_stor = storage_ID
+        else:
+            list_stor = [storage_ID]
+        df_storage = df_Results["df_storage"].loc[:, (df_Results["df_storage"] != 0).any(axis=0)]
+        if len(list_stor) > 0:
+            storage_SOC_tot = df_storage.groupby(level=1).sum()
+            fig = make_subplots(rows=len(list_stor), cols=1, shared_xaxes=True, vertical_spacing=0.02)
+            for storage in list_stor:
+                fig = plot_storage_sep(storage_SOC_tot,counter,fig, storage, items_average)
+                if "CO2" in storage:
+                    fig.update_yaxes(title_text="SOC, mol", row=counter, col=1)
+                else:
+                    fig.update_yaxes(title_text="SOC, kWh", row=counter, col=1)
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=time_index_average,
-        y=SOC_average,
-        mode='lines',
-        name='SOC',
-        line=dict(color='blue')
-    ))
+                counter+=1
 
-    fig.update_layout(
-        title='State of Charge Over Time',
-        xaxis_title='T',
-        yaxis_title='SOC (kWh)',
-        template='plotly',
-        showlegend=True
-    )
-
+    if len(list_stor) == 0:
+        fig = go.Figure()
+        fig.update_layout(
+            title="No storage technology active throughout the year (" + resolution + " resolution)")
+    else:
+        fig.update_xaxes(title_text="Hours in the year", row=counter, col=1)
+        fig.update_layout(
+            title="State of Charge of energy storage technology throughout the year ("+resolution + " resolution)",
+            showlegend=True
+        )
     return fig
 
-
-def plot_energy_balance_for_battery(df_Results, units_to_plot, color='ColorPastel', day_of_the_year = '' ,time_range='week', label='EN_long'):
+def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 ,time_range='week', label='EN_long'):
     if time_range == 'week':
         period = 7
     elif time_range == 'month':
@@ -1530,129 +1582,121 @@ def plot_energy_balance_for_battery(df_Results, units_to_plot, color='ColorPaste
     # selection of the period
     ending_hour = starting_hour + period * 24
 
-    SOC = df_Results["df_storage"]["BAT_E_stored_IP"][starting_hour:ending_hour]
+    time_frame = range(starting_hour, ending_hour)
+    TD_time = df_Results["df_Index"].loc[time_frame]
+    TD_time = TD_time.rename(columns={'PeriodOfYear': 'Period'})
+    TD_time["Time"] = np.mod(list(TD_time.index),24)
+    TD_time["Time"] = TD_time["Time"].replace(0,24)
+    #SOC = df_Results["df_storage"]["BAT_E_stored_IP"][starting_hour:ending_hour]
 
-    units_demand = []
-    units_supply = []
-    for unit in units_to_plot:
-        if unit == "BESS_IP":
-            continue
-        if unit == "PV":
-            units_supply.append(unit)
-        elif unit in ["Battery", "EV_district"]:
-            units_demand.append(unit)
-            units_supply.append(unit)
+    unit_elec_use_df = df_Results["df_Annuals"].loc["Electricity"]
+    unit_elec_use_df = unit_elec_use_df[(unit_elec_use_df["Demand_MWh"] != 0) | (unit_elec_use_df["Supply_MWh"] != 0)]
+    unit_elec_use = list(unit_elec_use_df.index)
+
+    unit_elec_use_unique = []
+
+    # Loop through each element in the list
+    for item in unit_elec_use:
+        # Split the string by '_'
+        item = item.split("_")
+        if len(item)>1:
+            base = "_".join(item[:-1])
         else:
-            units_demand.append(unit)
+            base = item[0]
 
-    # Grids
-    imports = {}
-    exports = {}
-    layers = df_Results['df_Grid_t'].index.get_level_values("Layer").unique()
-    for layer in layers:
-        imports[layer] = df_Results['df_Grid_t'].xs((layer, 'Network'), level=('Layer', 'Hub')).Grid_supply[:-2]
-        exports[layer] = df_Results['df_Grid_t'].xs((layer, 'Network'), level=('Layer', 'Hub')).Grid_demand[:-2]
+        # Check if the base element is already in the set
+        if (base not in unit_elec_use_unique) and ("Building" not in base):
+            unit_elec_use_unique.append(base)
 
-    import_profile = {}
-    export_profile = {}
-    for layer in layers:
-        import_profile[layer] = np.array([])
-        export_profile[layer] = np.array([])
-        for i in range(day_of_the_year, day_of_the_year + period):
-            id = df_Results['df_Index'].PeriodOfYear[i * 24]
-            import_profile[layer] = np.concatenate((import_profile[layer], imports[layer].xs(id)))
-            export_profile[layer] = np.concatenate((export_profile[layer], exports[layer].xs(id)))
+    unit_elec_use_unique.append("Building")
 
-    # Units
-    demands = dict()
-    supplies = dict()
-    for unit in units_to_plot:
-        df_aggregated = df_Results['df_Unit_t'][
-            df_Results['df_Unit_t'].index.get_level_values('Unit').str.contains(unit)]
-        if unit in units_demand:
-            demand = df_aggregated.droplevel('Layer').Units_demand[:-2].groupby(['Period', 'Time']).sum()
-            demands[unit] = np.array([])
-            for i in range(day_of_the_year, day_of_the_year + period):
-                t = df_Results['df_Index'].PeriodOfYear[i * 24]
-                demands[unit] = np.concatenate((demands[unit], demand.xs(t)))
-        if unit in units_supply:
-            supply = df_aggregated.droplevel('Layer').Units_supply[:-2].groupby(['Period', 'Time']).sum()
-            supplies[unit] = np.array([])
-            for i in range(day_of_the_year, day_of_the_year + period):
-                t = df_Results['df_Index'].PeriodOfYear[i * 24]
-                supplies[unit] = np.concatenate((supplies[unit], supply.xs(t)))
+    try:
+        df_storage = df_Results["df_storage"].loc[(slice(None),time_frame),:]
+        IP_storage = list(df_storage.loc[:, (df_storage != 0).any(axis=0)].columns)
+    except:
+        IP_storage = None
 
-    # Building
-    df_aggregated = df_Results["df_Buildings_t"]
+    fig = make_subplots(rows=2, cols=1,shared_xaxes=True,
+                        vertical_spacing=0.02)
 
-    demand = df_aggregated.droplevel('Hub').Domestic_electricity[:-2].groupby(['Period', 'Time']).sum()
-    building_demand = np.array([])
+    for unit in unit_elec_use_unique:
+        if unit == "Network":
+            Network_net = df_Results["df_Grid_t"].loc["Electricity"].loc[unit]
+            merged_df = pd.merge(TD_time, Network_net, on=['Period', 'Time'], how='left')
 
-    # Loop per ottenere la domanda giornaliera nel periodo specificato
-    for i in range(day_of_the_year, day_of_the_year + period):
-        t = df_Results['df_Index'].PeriodOfYear[i * 24]
-        building_demand = np.concatenate((building_demand, demand.xs(t)))
-
-    idx = list(range(1, len(import_profile["Electricity"])))
-
-    fig = go.Figure()
-
-    if export_profile["Electricity"].any() > 0:
-        fig.add_trace(go.Scatter(
-            x=idx,
-            y=-export_profile["Electricity"],
-            mode="lines",
-            name=layout.loc['Electrical_grid_feed_in', label],
-            line=dict(color=layout.loc['Electrical_grid_feed_in', color], dash='dash')
-        ))
-
-    if import_profile["Electricity"].any() > 0:
-        fig.add_trace(go.Scatter(
-            x=idx,
-            y=import_profile["Electricity"],
-            mode="lines",
-            name=layout.loc['Electrical_grid', label],
-            line=dict(color=layout.loc['Electrical_grid', color])
-        ))
-
-    for unit in units_demand:
-        if demands[unit].any() > 0:
             fig.add_trace(go.Scatter(
-                x=idx,
-                y=demands[unit],
+                x=list(TD_time.index),
+                y=merged_df["Grid_supply"]-merged_df["Grid_demand"],
                 mode="lines",
-                name=layout.loc[unit, label],
-                line=dict(color=layout.loc[unit, color])
-            ))
-    for unit in units_supply:
-        if supplies[unit].any() > 0:
+                name="Electrical grid",
+                line=dict(color="black", dash="solid")
+            ),
+                row=1,
+                col=1
+            )
+
+        elif unit == "Building":
+            buildings = pd.unique(df_Results["df_Buildings_t"].index.get_level_values(0))
+            building_demand = df_Results["df_Buildings_t"].loc["Building1"]
+            for bd in buildings[1:]:
+                building_demand += df_Results["df_Buildings_t"].loc[bd]
+
+            merged_df = pd.merge(TD_time, building_demand, on=['Period', 'Time'], how='left')
+
             fig.add_trace(go.Scatter(
-                x=idx,
-                y=-supplies[unit],
+                x=list(TD_time.index),
+                y=merged_df["Domestic_electricity"],
                 mode="lines",
-                name=layout.loc[unit, label],
-                line=dict(color=layout.loc[unit, color], dash='dash')
-            ))
+                name=unit,
+                line=dict(color="red", dash="solid")
+            ),
+                row=1,
+                col=1
+            )
+        else:
 
-    fig.add_trace(go.Scatter(
-        x=idx,
-        y=SOC,
-        mode="lines",
-        name="State of Charge (SOC)",
-        line=dict(color="green", dash="solid")
-    ))
+            units = pd.unique(df_Results["df_Unit_t"].loc["Electricity"].index.get_level_values(0)).tolist()
+            units = [u for u in units if unit in u]
+            net_supply = df_Results["df_Unit_t"].loc["Electricity"].loc[units[0]]
+            for bd in units[1:]:
+                net_supply += df_Results["df_Unit_t"].loc["Electricity"].loc[bd]
 
-    fig.add_trace(go.Scatter(
-        x=idx,
-        y=building_demand,
-        mode="lines",
-        name="building_demand",
-        line=dict(color="red", dash="solid")
-    ))
+            merged_df = pd.merge(TD_time, net_supply, on=['Period', 'Time'], how='left')
 
+            if (merged_df["Units_supply"].any() > 0) or (merged_df["Units_demand"].any() > 0):
+                fig.add_trace(go.Scatter(
+                    x=list(TD_time.index),
+                    y=merged_df["Units_supply"]-merged_df["Units_demand"],
+                    mode="lines",
+                    name=layout.loc[unit, label],
+                    line=dict(color=layout.loc[unit, color])
+                ),
+                    row=1,
+                    col=1
+                )
+    if IP_storage is not None:
+        for storage in IP_storage:
+            storage_SOC_tot = df_storage.groupby(level=1)[storage].sum()
+            fig.add_trace(go.Scatter(
+                x=list(TD_time.index),
+                y=storage_SOC_tot/max(storage_SOC_tot)*100,
+                mode="lines",
+                name=storage,
+                line=dict(color="#c0ddf3"),
+                fill='tozeroy',
+                fillcolor="#c0ddf3"
+            ),
+                row=2,
+                col=1
+            )
+        fig.update_yaxes(title_text="State of Charge of storages, %", row=2, col=1)
+
+    fig.update_yaxes(title_text="Electricity flows, kW", row=1,col=1)
     fig.update_layout(
+        title="Electricity flows and long term storage behaviour for "+str(time_range)+" starting form day: "+str(day_of_the_year),
         xaxis=dict(
             dtick=24 if time_range in ['month', '2weeks', 'week'] else 4
         ))
+
 
     return fig

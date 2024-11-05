@@ -47,7 +47,7 @@ subject to SOFC_Usable_heat_computation{h in House,u in UnitsOfType['rSOC'] inte
     Units_demand['Hydrogen',u,p,t]*SOFC_therm_eff[u] +
     Units_demand['Biogas',u,p,t]*SOFC_therm_eff[u] +
     Units_demand['Electricity',u,p,t]*SOEC_therm_eff[u]
-    >= sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t];
+    >= Units_supply['Heat',u,p,t];
 
 
 # Force mode_SOFC to be 1 when power is supplied
@@ -56,7 +56,7 @@ subject to SOFC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
 
 # Force mode_SOFC to be 0 when no power is supplied
 subject to SOFC_mode_off{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
-    Units_supply['Electricity',u,p,t] >= 1/bigM_rSOC * mode_SOFC[u,p,t];
+    Units_supply['Electricity',u,p,t] >= bigM_rSOC * mode_SOFC[u,p,t];
 
 # Force mode_SOEC to be 1 when power is supplied
 subject to SOEC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
@@ -64,7 +64,7 @@ subject to SOEC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
 
 # Force mode_SOEC to be 0 when no power is supplied
 subject to SOEC_mode_off{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
-    Units_demand['Electricity',u,p,t] >= 1/bigM_rSOC * mode_SOEC[u,p,t];
+    Units_demand['Electricity',u,p,t] >= bigM_rSOC * mode_SOEC[u,p,t];
 
 # Never both modes simultaneously
 subject to no_2_modes_simultaneously{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:
@@ -77,6 +77,7 @@ subject to SOFC_mult{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:
 subject to SOEC_mult{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:
     Units_demand['Electricity',u,p,t] <= Units_Mult[u]*SOEC_power_max_limit_in[u];
 
+/*
 # Part load limitations usibg bigM method to allow the electricity flow to be either 0 or at least the minimal threshold
 # SOFC mode part-load constraint
 subject to SOFC_partload{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:
@@ -87,3 +88,4 @@ subject to SOFC_partload{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:
 subject to SOEC_partload{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:
     Units_demand['Electricity',u,p,t] = 0
     or Units_demand['Electricity',u,p,t] >= Units_Mult[u] * SOEC_power_min_limit_in[u];
+*/

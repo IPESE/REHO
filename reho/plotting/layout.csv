@@ -71,7 +71,9 @@ Isolation_facade,Facade insulation,INS2,Isolation façade,#87c5a1,green_medium,#
 Isolation_full,Complete insulation,INS3,Isolation complète,#53ac7a,green_dark,#9AC0CD,bluegrey
 ,,,,,,,
 Battery,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
+Battery_district,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
 BESS_IP,Battery_IP,Bat,Batterie_IP,#A57300,darkyellow,#76EEC6,turquoise
+BESS_IP_district,Battery_IP,Bat,Batterie_IP,#A57300,darkyellow,#76EEC6,turquoise
 rSOC,rSOC,rSOC,rSOC,#00008B,darkblue,#9AC0CD,bluegrey
 H2_storage,Hydrogen storage,H2_stor,H2_storage,#82a4d6,lightblue,#9AC0CD,bluegrey
 CH4_storage,Biomethane storage,CH4_stor,CH4_storage,#82a4d6,lightblue,#9AC0CD,bluegrey

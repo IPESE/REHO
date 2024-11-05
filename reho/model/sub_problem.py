@@ -170,6 +170,13 @@ class SubProblem:
             else:
                 ampl.read('pv.mod')
 
+        if 'rSOC' in self.infrastructure_sp.UnitTypes:
+            # ampl.read('rSOC_district.mod')
+            ampl.read('rSOC.mod')
+
+        if "Methanizer" in self.infrastructure_sp.UnitTypes:
+            ampl.read('methanizer.mod')
+
         # district Units
         if 'EV' in self.infrastructure_sp.UnitTypes:
             ampl.cd(path_to_district_units)
@@ -190,6 +197,7 @@ class SubProblem:
         ampl.read('scenario.mod')
 
         # TODO: integrate all storage units into infrastructure (avoid using ampl eval)
+
         if self.method_sp['use_Storage_Interperiod']:
             """
             ampl.eval('set UnitsOfStorage := setof{u in UnitsOfType["BESS_IP"]} u;')
@@ -228,16 +236,6 @@ class SubProblem:
             #ampl.read('fuel_cell.mod')
             #ampl.read('electrolyser.mod')
             #ampl.read('SOEFC.mod')
-            if 'rSOC_CH4' in self.infrastructure_sp.UnitTypes:
-                #ampl.read('rSOC.mod')
-                ampl.read('rSOC_CH4_no_longer_useful.mod')
-
-            if 'rSOC' in self.infrastructure_sp.UnitTypes:
-                #ampl.read('rSOC.mod')
-                ampl.read('rSOC.mod')
-
-            if "Methanizer" in self.infrastructure_sp.UnitTypes:
-                ampl.read('methanizer.mod')
 
             ampl.cd(path_to_units)
             #ampl.read('heat_curtailment.mod')

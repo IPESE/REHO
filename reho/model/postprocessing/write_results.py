@@ -156,35 +156,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Unit, df_Unit_t
 
-    def set_df_storage(ampl):
-        try:
-            df1 = get_ampl_data(ampl, 'BAT_E_stored_IP', multi_index=True)
-            if df1.empty:
-                df1 = None
-        except:
-            df1 = None
-
-        try:
-            df2 = get_ampl_data(ampl, 'HS_E_stored_IP', multi_index=True)
-            if df2.empty:
-                df2 = None
-        except:
-            df2 = None
-
-        if df1 is not None and df2 is not None:
-            df_storage = pd.concat([df1, df2], axis=1)
-        elif df1 is not None:
-            df_storage = df1
-        elif df2 is not None:
-            df_storage = df2
-        else:
-            df_storage = pd.DataFrame()
-
-        if not df_storage.empty:
-            df_storage.index.names = ['Layer', 'Unit', 'HourOfYear']
-            df_storage = df_storage.sort_index()
-
-        return df_storage
     def set_df_grid(ampl, method):
         # Grid_t
         df1 = get_ampl_data(ampl, 'Grid_demand', multi_index=True)
@@ -254,17 +225,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Buildings_t.index.names = ['Hub', 'Period', 'Time']
 
         return df_Buildings_t.sort_index()
-
-    def set_df_storage_t(ampl):
-
-        # charge/discharge storage units (dp * Number of TD)
-        df_charge = get_ampl_data(ampl, "BAT_E_charging")
-        df_discharge = get_ampl_data(ampl, "BAT_E_discharging")
-
-        # main storage unit (8760)
-        df_main = get_ampl_data(ampl, "BAT_E_stored_IP")
-
-        return df_charge, df_discharge, df_main
 
     def set_df_streams_t(ampl):
 
@@ -426,7 +386,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
                 logging.info(p)
 
     if method["use_Storage_Interperiod"]:
-        df_Results["df_storage"] = set_df_storage(ampl)
+        df_Results["df_storage"] = set_df_IP_storage(ampl)
 
     if filter:
         for df_name, df in df_Results.items():
@@ -596,6 +556,10 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]
         df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
         df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
+
+        ##### ADD BESS_IP_district to the long-term storage sheet
+
+        df_Results["df_storage"] = set_df_IP_storage(ampl)
     else:
         df_Results["df_Unit_t"] = pd.DataFrame()
 
@@ -640,6 +604,50 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
     return df_Results
 
+def set_df_IP_storage(ampl):
+
+    IP_stor_list = []
+    def add_stor_to_list(IP_stor_list,ampl,var):
+        """
+        Check whether the var is an ampl variable and (if not empty) add it to the list of IP_stor_list if it is the case.
+        Use reset_index for level 1 as we want to differentiate on the  Building and the HourOfYear, not on the type
+        """
+        try:
+            df1 = get_ampl_data(ampl, var, multi_index=True).reset_index(level=1,drop=True)
+            if not df1.empty:
+                IP_stor_list.append(df1)
+        except:
+            df1 = None
+
+        return IP_stor_list
+
+    # Add here other long term storage variables (from the .mod files) if needed
+    #IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "BAT_E_stored")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "BAT_E_stored_IP")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "H2_stor_stored")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CH4_stor_stored")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CO2_stor_stored")
+    if IP_stor_list:
+        df_IP_storage = pd.concat(IP_stor_list,axis=1)
+        if df_IP_storage.index.nlevels == 1:
+            new_level = list(range(len(df_IP_storage)))
+            # Convert the existing index to a list (or use .get_level_values() for specific levels)
+            original_index = df_IP_storage.index.tolist()
+
+            # Check that 'new_level' matches the length of 'original_index'
+            assert len(original_index) == len(
+                new_level), "Length of new_level must match length of the existing index."
+
+            # Create a new MultiIndex with the converted index and new level
+            df_IP_storage.index = pd.MultiIndex.from_arrays([original_index, new_level],
+                                                            names=["original_index", "new_level"])
+
+        df_IP_storage.index.names = ['Building', 'HourOfYear']
+        df_IP_storage = df_IP_storage.sort_index()
+    else:
+        df_IP_storage = pd.DataFrame()
+
+    return df_IP_storage
 def get_ampl_data(ampl, ampl_name, multi_index=False):
     # AMPl data in AMPLPY Dataframe
     df = ampl.getData(ampl_name)

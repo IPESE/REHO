@@ -233,7 +233,7 @@ class MasterProblem:
                            self.infrastructure.houses}
 
                 # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
-                while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                while len(results[list(self.buildings_data.keys())[-1]].get(timeout=360)) != 2:
                     time.sleep(1)
 
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation
@@ -402,12 +402,13 @@ class MasterProblem:
                 ampl_MP.read('heatpump_district.mod')
             if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
-            if "BESS_IP_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read("battery_interperiod_district.mod")
+            if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('rSOC_district.mod')
             if "Battery_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.cd(path_to_units_storage)
                 ampl_MP.read('battery.mod')
-
+            if "BESS_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("battery_interperiod_v1.mod")
 
         if read_DHN:
             ampl_MP.cd(path_to_district_units)
@@ -415,6 +416,7 @@ class MasterProblem:
 
         ampl_MP.cd(path_to_clustering)
         ampl_MP.readData('frequency_' + self.local_data['File_ID'] + '.dat')
+        ampl_MP.readData('index_' + self.local_data['File_ID'] + '.dat')
         ampl_MP.cd(path_to_ampl_model)
 
         # -------------------------------------------------------------------------------------------------------------

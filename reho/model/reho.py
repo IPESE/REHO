@@ -508,9 +508,23 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp, level='Period', axis=0).sum() / 1000
+                #Only consider PeriodStandard (without extreme days) to compute annual balance.
+                PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
+                    ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
+
+                # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
+                                level='Period', axis=0).sum() / 1000
+
+                # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')
-                df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[['Units_demand', 'Units_supply']].values
+
+                # Assign results to specific columns after verifying columns exist in `data`
+                if 'Units_demand' in data and 'Units_supply' in data:
+                    df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[
+                        ['Units_demand', 'Units_supply']].values
+                else:
+                    raise ValueError("Expected columns 'Units_demand' and 'Units_supply' not found in `data`.")
         df_Annuals = pd.concat([df, df_network]).sort_index()
 
         # df_Buildings
@@ -541,11 +555,23 @@ class REHO(MasterProblem):
         df_Results["df_Grid_t"] = df_Grid_t
         df_Results["df_Time"] = df_Time
 
-        # Add Long-term storage to results dictionary (if 'use_Storage_Interperiod': True in method)
-        #if self.method["use_Storage_Interperiod"]:
-        #    self.
+        #Add Long-term storage to results dictionary (if 'use_Storage_Interperiod': True in method)
+        if (self.method["use_Storage_Interperiod"]):
+            try:
+                df_storage = self.get_final_SPs_results(MP_selection, 'df_storage')
+                df_storage = df_storage.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+            except:
+                df_storage = pd.DataFrame()
 
+            try:
+                df_storage_IP_district = last_results["df_storage"]
+            except:
+                df_storage_IP_district = pd.DataFrame()
 
+            df_storage_all = pd.concat([df_storage, df_storage_IP_district],axis=0)
+            df_storage_all = df_storage_all.sort_index(level=0)
+
+            df_Results["df_storage"] = df_storage_all
 
 
         if self.method["save_data_input"]:
@@ -671,7 +697,9 @@ class REHO(MasterProblem):
                     writer = pd.ExcelWriter(result_file_path)
 
                     for df_name, df in results[Scn_ID][Pareto_ID].items():
-                        if df is not None:
+                        if (df is not None):
+                            if df_name == "df_storage":
+                                filter = False
                             df = df.fillna(0)  # replace all NaN with zeros
                             if filter:
                                 df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros

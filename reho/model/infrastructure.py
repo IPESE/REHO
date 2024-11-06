@@ -412,7 +412,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
         If None, district units will not be considered. Default is None.
     storage_data :  str or bool or None, optional
-        Path to the CSV file containing storage unit data. If True, storage units are initialized with 'storage_units_1.csv'.
+        Path to the CSV file containing storage unit data. If True, storage units are initialized with 'development.csv'.
         If None, storage units won't be considered. Default is None.
 
     Returns

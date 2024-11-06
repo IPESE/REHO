@@ -1481,10 +1481,11 @@ def plot_storage_profile(df_Results, resolution='daily',storage_ID = "all"):
 
     def plot_storage_sep(storage_SOC_tot,counter, fig, stor_var, items_average):
         cm = {
-            "Electricity":"#a7a5a5",
-            "H2":"#0063a6",
-            "CH4":"#d7b652",
-            "CO2":"#D2363E"}
+            "Electricity": 'rgb(167, 165, 165, 0.1)',
+            "H2": 'rgb(121, 166, 210, 0.1)',
+            "CH4": 'rgb(215, 182, 82, 0.1)',
+            "CO2": 'rgb(210, 54, 62, 0.1)'
+        }
 
 
         time_index = np.arange(0, 8760)
@@ -1522,7 +1523,7 @@ def plot_storage_profile(df_Results, resolution='daily',storage_ID = "all"):
 
     counter = 1
     if storage_ID == 'all':
-        df_storage = df_Results["df_storage"].loc[:, (df_Results["df_storage"] != 0).any(axis=0)]
+        df_storage = df_Results["df_Storage"]
         list_stor = list(df_storage.keys())
         if len(list_stor) > 0:
             storage_SOC_tot = df_storage.groupby(level=1).sum()
@@ -1540,7 +1541,7 @@ def plot_storage_profile(df_Results, resolution='daily',storage_ID = "all"):
             list_stor = storage_ID
         else:
             list_stor = [storage_ID]
-        df_storage = df_Results["df_storage"].loc[:, (df_Results["df_storage"] != 0).any(axis=0)]
+        df_storage = df_Results["df_Storage"].loc[:, (df_Results["df_Storage"] != 0).any(axis=0)]
         if len(list_stor) > 0:
             storage_SOC_tot = df_storage.groupby(level=1).sum()
             fig = make_subplots(rows=len(list_stor), cols=1, shared_xaxes=True, vertical_spacing=0.02)
@@ -1611,7 +1612,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 
     unit_elec_use_unique.append("Building")
 
     try:
-        df_storage = df_Results["df_storage"].loc[(slice(None),time_frame),:]
+        df_storage = df_Results["df_Storage"].loc[(slice(None),time_frame),:]
         IP_storage = list(df_storage.loc[:, (df_storage != 0).any(axis=0)].columns)
     except:
         IP_storage = None
@@ -1645,7 +1646,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 
 
             fig.add_trace(go.Scatter(
                 x=list(TD_time.index),
-                y=merged_df["Domestic_electricity"],
+                y=-merged_df["Domestic_electricity"],
                 mode="lines",
                 name=unit,
                 line=dict(color="red", dash="solid")
@@ -1676,20 +1677,32 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 
                 )
     if IP_storage is not None:
         for storage in IP_storage:
+            cm = {
+                "Electricity": 'rgb(167, 165, 165, 0.1)',
+                "H2": 'rgb(121, 166, 210, 0.1)',
+                "CH4": 'rgb(215, 182, 82, 0.1)',
+                "CO2": 'rgb(210, 54, 62, 0.1)'
+            }
             storage_SOC_tot = df_storage.groupby(level=1)[storage].sum()
+
+            mol = storage.split("_")[0]
+            if mol == "BAT":
+                mol = "Electricity"
+
             fig.add_trace(go.Scatter(
                 x=list(TD_time.index),
                 y=storage_SOC_tot/max(storage_SOC_tot)*100,
                 mode="lines",
-                name=storage,
-                line=dict(color="#c0ddf3"),
+                name=mol + " storage",
+                line=dict(color=cm[mol]),
                 fill='tozeroy',
-                fillcolor="#c0ddf3"
+                fillcolor=cm[mol]
             ),
                 row=2,
                 col=1
             )
-        fig.update_yaxes(title_text="State of Charge of storages, %", row=2, col=1)
+
+        fig.update_yaxes(title_text="State of Charge of storage technologies, %", row=2, col=1)
 
     fig.update_yaxes(title_text="Electricity flows, kW", row=1,col=1)
     fig.update_layout(

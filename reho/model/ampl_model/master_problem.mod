@@ -32,7 +32,7 @@ set Year := {1..8760} circular;
 param PeriodOfYear{y in Year} default 1;
 param TimeOfYear{y in Year} default 1;
 
-param dt{p in Period} default 1;       # h
+param dt{p in Period} default 1;            # h
 param dp{p in Period} default 1;			# days
 
 param Area_tot default 100;

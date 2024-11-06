@@ -386,7 +386,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
                 logging.info(p)
 
     if method["use_Storage_Interperiod"]:
-        df_Results["df_storage"] = set_df_IP_storage(ampl)
+        df_Results["df_Storage"] = set_df_IP_storage(ampl)
 
     if filter:
         for df_name, df in df_Results.items():
@@ -557,9 +557,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
         df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
 
-        ##### ADD BESS_IP_district to the long-term storage sheet
-
-        df_Results["df_storage"] = set_df_IP_storage(ampl)
+        df_Results["df_Storage"] = set_df_IP_storage(ampl)
     else:
         df_Results["df_Unit_t"] = pd.DataFrame()
 
@@ -614,6 +612,7 @@ def set_df_IP_storage(ampl):
         """
         try:
             df1 = get_ampl_data(ampl, var, multi_index=True).reset_index(level=1,drop=True)
+            df1.index = df1.index.str.split("_").str[-1]
             if not df1.empty:
                 IP_stor_list.append(df1)
         except:
@@ -643,6 +642,8 @@ def set_df_IP_storage(ampl):
                                                             names=["original_index", "new_level"])
 
         df_IP_storage.index.names = ['Building', 'HourOfYear']
+        df_IP_storage = df_IP_storage.fillna(0)
+        df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
         df_IP_storage = df_IP_storage.sort_index()
     else:
         df_IP_storage = pd.DataFrame()

@@ -404,11 +404,21 @@ class MasterProblem:
                 ampl_MP.read('ng_cogeneration_district.mod')
             if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('rSOC_district.mod')
+
+            ampl_MP.cd(path_to_units_storage)
             if "Battery_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.cd(path_to_units_storage)
                 ampl_MP.read('battery.mod')
+
+        if self.method["use_Storage_Interperiod"]:
             if "BESS_IP_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read("battery_interperiod_v1.mod")
+                ampl_MP.read("battery_interperiod.mod")
+            if "CH4_storage_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("CH4storage.mod")
+            if "H2_storage_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("H2storage.mod")
+            if "CO2_storage_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("CO2storage.mod")
+
 
         if read_DHN:
             ampl_MP.cd(path_to_district_units)

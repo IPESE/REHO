@@ -43,7 +43,7 @@ subject to SOFC_energy_balance_2{u in UnitsOfType['rSOC'], p in Period,t in Time
     Units_supply['CO2',u,p,t] = mol_h_CO2_per_kW_CH4[u]*Units_demand['Biogas',u,p,t];
 
 #-hot stream heat leaving
-subject to SOFC_Usable_heat_computation{h in House,u in UnitsOfType['rSOC'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p]:Streams_Hin[st] = 1}:
+subject to SOFC_Usable_heat_computation{u in UnitsOfType['rSOC'],p in Period,t in Time[p]}:
     Units_demand['Hydrogen',u,p,t]*SOFC_therm_eff[u] +
     Units_demand['Biogas',u,p,t]*SOFC_therm_eff[u] +
     Units_demand['Electricity',u,p,t]*SOEC_therm_eff[u]

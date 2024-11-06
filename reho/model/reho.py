@@ -558,20 +558,20 @@ class REHO(MasterProblem):
         #Add Long-term storage to results dictionary (if 'use_Storage_Interperiod': True in method)
         if (self.method["use_Storage_Interperiod"]):
             try:
-                df_storage = self.get_final_SPs_results(MP_selection, 'df_storage')
+                df_storage = self.get_final_SPs_results(MP_selection, 'df_Storage')
                 df_storage = df_storage.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
             except:
                 df_storage = pd.DataFrame()
 
             try:
-                df_storage_IP_district = last_results["df_storage"]
+                df_storage_IP_district = last_results["df_Storage"]
             except:
                 df_storage_IP_district = pd.DataFrame()
 
             df_storage_all = pd.concat([df_storage, df_storage_IP_district],axis=0)
             df_storage_all = df_storage_all.sort_index(level=0)
 
-            df_Results["df_storage"] = df_storage_all
+            df_Results["df_Storage"] = df_storage_all
 
 
         if self.method["save_data_input"]:
@@ -698,8 +698,6 @@ class REHO(MasterProblem):
 
                     for df_name, df in results[Scn_ID][Pareto_ID].items():
                         if (df is not None):
-                            if df_name == "df_storage":
-                                filter = False
                             df = df.fillna(0)  # replace all NaN with zeros
                             if filter:
                                 df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros

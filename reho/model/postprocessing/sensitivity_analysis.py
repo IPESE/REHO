@@ -142,11 +142,17 @@ class SensitivityAnalysis:
         self.sampling = sampling
 
     def format_mobilitySA(self,sample):
+        share_cars = None
+        share_EV_infleet = None
+        if "share_cars" in self.parameter.keys():
+            share_cars = sample[list(self.parameter).index('share_cars')]
+        if "share_EV_infleet" in self.parameter.keys():
+            share_EV_infleet = sample[list(self.parameter).index('share_EV_infleet')]
         if "DailyDist" in self.parameter.keys():
             DailyDist = sample[list(self.parameter).index('DailyDist')]
-            mob_param = mobility_demand_from_WP1data_modes(DailyDist,80,3,0.02)
+            mob_param = mobility_demand_from_WP1data_modes(DailyDist,80,3,0.02,share_cars,share_EV_infleet)
         else :
-            mob_param = mobility_demand_from_WP1data_modes(36.8,80,3,0.02)
+            mob_param = mobility_demand_from_WP1data_modes(36.8,80,3,0.02,share_cars,share_EV_infleet)
         return mob_param
 
     def run_SA(self, save_inter=True, save_inter_nb_iter=50, save_time_opt=True, intermediate_start=0):
@@ -215,6 +221,10 @@ class SensitivityAnalysis:
                         if units['building_units'][unit_id]['name'] == parameter.split("___")[0]:
                             units['building_units'][unit_id][parameter.split("___")[1]] = value
                 else:
+                    if parameter in ['share_cars','share_EV_infleet']:
+                        # ces valeurs ont étés traitées dans format_mobilitySA et écrites dans modalshares.csv
+                        print(f"parameter {parameter} stored in modalshare.csv")
+                        continue
                     if parameter in self.reho.lists_MP["list_parameters_MP"]:
                         if parameter == 'DailyDist':
                             self.reho.parameters[parameter] = mob_param['DailyDist']

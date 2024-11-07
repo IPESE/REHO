@@ -2,10 +2,11 @@
 title: 'REHO: A Decision Support Tool for Renewable Energy Communities'
 tags:
   - Python
-  - Energy Communiy
-  - Renewables
-  - Decision Making
   - MILP
+  - Optimization
+  - Energy Communities
+  - Renewable Energy
+
 authors:
   - name: Dorsan Lepour
     orcid: 0009-0008-7309-5537
@@ -59,9 +60,9 @@ Initially developed within the _Industrial Process and Energy Systems Engineerin
 
 The energy hub concept [@mohammadiEnergyHubModel2017] is used to model an energy community where multi-energy carriers can supply diverse end-use demands through building units and district units optimally interconnected and operated.
 
-![District energy hub model in REHO..\label{fig:energy_hub}](energy_hub.pdf)
+![District energy hub model in REHO.\label{fig:district}](district.pdf)
 
-\autoref{fig:energy_hub} displays the input data necessary to characterize a district-level energy hub to be optimized with REHO:
+\autoref{fig:district} displays the input data necessary to characterize a district-level energy hub to be optimized with REHO:
 
 - The geographic boundaries of the considered territory;
 - The end-use demands, resulting from the building stock characteristics and local weather;
@@ -78,43 +79,43 @@ REHO exploits the benefits of two programming languages to explore the solution 
 - The data management structure is written in Python and used for input parameters preprocessing, and decision variables postprocessing.
 - The optimization model is written in AMPL, encompassing objective functions, modeling equations, and constraints at building-level and district-level.
 
-![Diagram of the REHO architecture.\label{fig:diagram}](diagram.pdf)
+![Diagram of REHO architecture.\label{fig:diagram}](architecture.pdf)
 
 ### Data reduction
-The task of optimally designing and scheduling energy systems with a high share of renewable energies is complex and computationally demanding. REHO includes machine learning techniques to cluster yearly input data. The model operates in the conventional way with typical periods $p$ of 24 timesteps $t$, but it can be freely adapted to a finer or coarser granularity as required.
+The task of optimally designing and scheduling energy systems with a high share of renewable energies is complex and computationally demanding. REHO includes machine learning techniques to cluster yearly input data. The model operates in the conventional way with typical periods of 24 timesteps, but it can be freely adapted to a finer or coarser granularity as required.
 
 ### MILP formulation with decomposition
-A Dantzig-Wolfe decomposition is applied to the district-level problem to define a master problem (MP) and one sub-problem (SP) for each building. Linking constraints allow the problem to iteratively converge to the solution minimizing the global objective function: the MP sends optimal district-level prices to the SPs, which in turn send back optimal building-level design proposals.
+A Dantzig-Wolfe decomposition is applied to the overall problem to define a master problem (MP) for district-level perspective and one sub-problem (SP) for each building. Linking constraints allow the problem to iteratively converge to the solution minimizing the global objective function: the MP sends district-level marginal costs to the SPs, which in turn send back building-level design proposals.
 
 
 # Embedded features
 
 #### Multi-Service Consideration
-REHO encompasses a wide range of end-use demands, including thermal comfort (heating and cooling loads), domestic hot water, domestic electricity, mobility, and information and communication technologies needs.
+REHO encompasses a wide range of end-use demands, including thermal comfort (heating and cooling loads), domestic hot water, domestic electricity, mobility, and information and communication technologies (ICT) energy needs.
 
 #### Multi-Energy Integration
-REHO incorporates various energy sources and networks, such as electricity, fossil fuels, biomass, biofuels, district heating and cooling networks, and hydrogen. This holistic approach ensures a comprehensive representation of the energy landscape.
+REHO incorporates various energy sources and networks, such as electricity, fossil fuels, biofuels (hydrogen, biomethane), and district heating and cooling networks. This holistic approach ensures a comprehensive representation of the energy landscape.
 
 #### Multi-Scale Capabilities
-REHO's flexibility spans various scales, from individual buildings to entire districts. The district-scale optimization feature capitalizes on synergies between buildings, allowing them to function as an energy community and enabling energy and financial flows between buildings. In addition, such an approach opens the possibility of deploying district-level infrastructures.
+REHO's flexibility spans various scales, from individual buildings to entire districts. The district-scale optimization feature capitalizes on synergies between buildings, allowing them to function as an energy community and enabling energy flows between buildings. In addition, such an approach opens the possibility of deploying district-level infrastructures.
 
 #### Multi-Objective Optimization
 REHO’s versatility extends to multi-objective optimization, accommodating objectives related to economic (capital and operational costs), environmental (life cycle analysis and global warming potential), and efficiency criteria. Epsilon constraints provide fine-grained control, enabling decision-makers to explore trade-offs and identify Pareto fronts.
 
 #### PV orientation
-Given the pivotal role of photovoltaic (PV) systems in the energy transition, their optimal deployment is of paramount importance and must consider the specific characteristics of the building morphology, the local solar irradiance, and the grid curtailment restrictions. REHO integrates the deployment of solar panels on roofs and facades, with the possibility of taking into consideration the orientation of surfaces.
+Given the pivotal role of photovoltaic (PV) systems in the energy transition, their optimal deployment is of paramount importance and must consider the specific characteristics of the building morphology, the local solar irradiance, and the local power grid integration. REHO integrates the deployment of solar panels on roofs and facades, with the possibility of taking into consideration the orientation of surfaces.
 
 #### Electric mobility
 REHO enables the integration of electric vehicles into neighborhoods, including the possibility of smart charging, unidirectional or bidirectional. The fleet of electric vehicles can thus be used to provide an energy storage service.
 
 #### Grid constraints
-As the electrification of diverse sectors gains momentum, the demands placed on the electricity grid are expected to further escalate. The existing electrical grid, originally designed for centralized power generation and unidirectional energy flows, now faces new demands and complexities. REHO allows for the consideration of the local grid specifications, through line and transformer capacities, or peak power shaving and curtailment measures.
+As the electrification of diverse sectors gains momentum, the demands placed on the electricity grid are expected to further escalate. The existing electrical grid, originally designed for centralized power generation and unidirectional energy flows, now faces new demands and complexities. REHO allows for the consideration of the local grid specifications, through line and transformer capacities, as well as peak power shaving and curtailment measures.
 
 #### District heating and cooling
 REHO enables the deployment of district heating and cooling networks, with consideration of several heat transfer fluids and distribution temperatures. Infrastructure costs are also incorporated, based on the topology of the considered neighborhood.
 
 #### Interoperability
-The interoperability of REHO boasts its capability to interface and exchange information with other tools, enabling extensive studies. By providing the relevant input data regarding energy needs and endogenous resources, investigations on energy communities can be carried out in a wide range of territories. _Relases_ section of REHO documentation keeps track of academic publications, conference proceedings, research projects, and other works using REHO.
+From a technical standpoint, REHO is designed to be user-friendly, with a modular structure that allows for easy customization and extension. The interoperability of REHO boasts its capability to interface and exchange information with other tools, enabling extensive studies in the field of energy communities and for a wide range of both research and practial applications. The _Relases_ section of REHO documentation keeps track of all publications and public projects related to REHO.
 
 # Acknowledgements
 

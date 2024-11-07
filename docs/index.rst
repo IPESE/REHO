@@ -13,7 +13,7 @@ informed decision-making for renewable energy deployment in urban areas.
 This documentation introduces REHO and highlights its key features and contributions to the field of
 sustainable energy system planning.
 
-.. figure:: images/district_documentation.svg
+.. figure:: images/district.svg
 
 
 Contents

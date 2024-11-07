@@ -106,7 +106,7 @@ class SensitivityAnalysis:
                 for parameter in unit_parameter:
                     value = default_units_values[default_units_values.index.str.contains(unit)][parameter].iloc[0]
                     name = str(unit) + "___" + str(parameter)
-                    SA_parameters[name] = np.array([0.5, 2]) * value
+                    SA_parameters[name] = np.array([0.5, 2.0]) * value
 
         self.parameter = SA_parameters
         # 2) Generate a dictionary with all parameters and their bounds for the sampling
@@ -180,6 +180,18 @@ class SensitivityAnalysis:
             sample = self.sampling[j]
             for s, value in enumerate(sample):
                 parameter = list(self.parameter.keys())[s]
+
+                if parameter in ['Elec_retail', 'Elec_feedin', 'NG_retail'] and not isinstance(self.reho.parameters["Cost_demand_network"], np.ndarray):
+                    self.reho.parameters["Cost_supply_network"].at["Electricity"] = self.reho.parameters["Cost_supply_network"].xs("Electricity").replace(0.25, sample[0]).replace(0.1, sample[1])
+                    self.reho.parameters["Cost_demand_network"].at["Electricity"] = self.reho.parameters["Cost_supply_network"].xs("Electricity") * 0.999
+                    self.reho.parameters["Cost_demand_network"].at[("Electricity", 6, 12)] = self.reho.parameters["Cost_supply_network"].xs("Electricity").xs(6).xs(12) * 1.001
+                    self.reho.parameters["Cost_demand_network"].at["NaturalGas"] = sample[2] * 0.999
+                    self.reho.parameters["Cost_supply_network"].at["NaturalGas"] = sample[2]
+                    self.reho.parameters["Cost_supply_network"] = np.array(self.reho.parameters["Cost_supply_network"])
+                    self.reho.parameters["Cost_demand_network"] = np.array(self.reho.parameters["Cost_demand_network"])
+                    self.reho.parameters["Cost_supply"] = self.reho.parameters["Cost_supply_network"]
+                    self.reho.parameters["Cost_demand"] = self.reho.parameters["Cost_demand_network"]
+                    continue
 
                 if parameter == 'Elec_retail':
                     grids["Electricity"]["Cost_supply_cst"] = value

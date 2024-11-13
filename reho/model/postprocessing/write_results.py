@@ -624,14 +624,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-        units_districts = district.UnitsOfDistrict # TODO debug
-        district_l_u = []
-        for layer, units in district.UnitsOfLayer.items():
-            [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]
-        df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
-        df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
-    else:
-        df_Results["df_Unit_t"] = pd.DataFrame()
+    df_Results["df_Unit_t"] = df_Unit_t.sort_index()
+
 
     # LCA
     if method["save_lca"]:

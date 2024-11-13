@@ -1203,16 +1203,20 @@ class MasterProblem:
         buildings_data_SP = {h: self.buildings_data[h]}
 
         for key in self.parameters:
-            if key not in self.lists_MP["list_parameters_MP"]:
-                if isinstance(self.parameters[key], (int, float)):
-                    parameters_SP[key] = self.parameters[key]
-                elif self.parameters[key].shape[0] >= self.DW_params['timesteps']:  # if demands profiles are set for more than 1 building
-                    if len(self.infrastructure.houses) < self.DW_params['timesteps']:
-                        nb_buildings = round(self.parameters[key].shape[0] / self.DW_params['timesteps'])
-                        profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
-                        parameters_SP[key] = profile_building_x[ID]
-                else:
-                    parameters_SP[key] = self.parameters[key][ID]
+                if key not in self.lists_MP["list_parameters_MP"]:
+                    if isinstance(self.parameters[key], (int, float)):
+                        parameters_SP[key] = self.parameters[key]
+                    else:
+                        try:
+                            timesteps = int(len(self.parameters[key])/len(self.buildings_data))
+                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps) # for time series
+                            parameters_SP[key] = profile_building_x[ID]
+                        except:
+                            if len(self.parameters[key]) == len(self.buildings_data):
+                                parameters_SP[key] = self.parameters[key][ID] # one parameter per building
+                            else:
+                                parameters_SP[key] = self.parameters[key] # one parameter for all buildings
+
         
         for key in self.set_indexed:
             if key not in self.lists_MP["list_set_indexed_MP"]:

@@ -624,7 +624,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-        units_districts = district.UnitsOfDistrict # TODO debug
+        units_districts = district.UnitsOfDistrict # TODO debug => bug comes from here ? 
         district_l_u = []
         for layer, units in district.UnitsOfLayer.items():
             [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]

@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # SA object used to generate the sampled values
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     SA  = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=8)
-    SA_parameters = {'Elec_retail': [0.2, 0.45],"share_cars" : [0,0.6], 'DailyDist' : [15,30], "share_EV_infleet" : [0.5,1]}
+    SA_parameters = {'Elec_retail': [0.2, 0.45],"Elec_feedin" : [0.05,0.25],"NG_retail" : [0.1,0.3] ,'DailyDist' : [15,30], "share_cars" : [0,0.65], "share_EV_infleet" : [0.1,1]}
     SA.build_SA( SA_parameters=SA_parameters,unit_parameter = [])
 
     df_sampling = pd.DataFrame(SA.sampling.T, index = SA.problem['names'])
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
         # Delete intermediate results
         for tr in districts:
-            # TODO : add something to save pi
+            # TODO : add something to save pi somewhere
             vars()[f"reho_{tr}"].results_MP = {}
             vars()[f"reho_{tr}"].results_SP = {}
 

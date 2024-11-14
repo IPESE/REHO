@@ -218,8 +218,9 @@ def compute_district_parameters(district_parameters):
     
     Parameters
     ---------
-    district_parameters : dict
+    district_parameters : dict or dataframe
         One entry per district, containing a dict of parameters of the district. 
+        ou alors un dataframe avec les données en colonnes et en index le nom du transformeur. 
 
     Returns
     ---------

@@ -12,13 +12,13 @@ if __name__ == '__main__':
     #reader.establish_connection('Suisse')
     #qbuildings_data = reader.read_db(transformer=3216, egid=[280001550])
     # Select weather data
-    cluster = {'Location': 'Pully', 'Attributes': ['I', 'T','E','D'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Pully', 'Attributes': ['I', 'T','E'], 'Periods': 12, 'PeriodDuration': 24}
     attributes = ['Irr', 'Text', 'Weekday','DataLoad']
     weather_file = '/Users/ravi/Desktop/PhD/My_Reho_Qgis_files/Reho_Sai_Fork/scripts/template/data/profiles/pully.csv'
     weather.data_centre_profile(size = 50)
     df_annual = weather.read_custom_weather(weather_file)
     df_annual = df_annual[attributes]
-    nb_clusters = [10]
+    nb_clusters = [12]
     cl = Clustering(data=df_annual, nb_clusters=nb_clusters, option={"year-to-day": True, "extreme": []}, pd=24)
     cl.run_clustering()
     val_cls = weather.generate_output_data(cl, attributes, "Pully")
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'GWP'
     scenario['name'] = 'gwp'
-    scenario['exclude_units'] = ['HeatPump_Geothermal','HeatPump_Air','HeatPump_Lake','HeatPump_Anergy','HeatPump_DHN', 'ElectricalHeater_SH', 'ThermalSolar', 'Battery'] #'OIL_Boiler',  'NG_Boiler','HeatPump_Air', 'HeatPump_Lake''HeatPump_Anergy''DataHeatSH',
+    scenario['exclude_units'] = ['HeatPump_Geothermal','HeatPump_Anergy','HeatPump_DHN', 'ElectricalHeater_SH', 'ThermalSolar', 'Battery','HeatPump_Lake'] #'OIL_Boiler',  'NG_Boiler','HeatPump_Air', 'HeatPump_Lake''HeatPump_Anergy''DataHeatSH',
 
     #
     #
@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
     units = infrastructure.initialize_units(scenario, grids, district_data= True)
 
-    parameters = {'n_vehicles': np.array([0.0]), 'T_DHN_supply_cst': np.repeat(70.0, n_house),'T_DHN_return_cst': np.repeat(60.0, n_house), "TransformerCapacity": np.array([1e8, 0])} #, 'Network_supply_heat': np.array([0.0])
+    parameters = {'n_vehicles': np.array([0.0]), 'T_DHN_supply_cst': np.repeat(70.0, n_house),'T_DHN_return_cst': np.repeat(60.0, n_house), "TransformerCapacity": np.array([1e8, 0]) } #, 'Network_supply_heat': np.array([0.0])
     #parameters = {}
 
     # Set method options

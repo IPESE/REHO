@@ -67,12 +67,14 @@ param TransformerCapacity{l in ResourceBalances} default 1e8;
 #adding this parameter here so that I can parse a temporal profile for the transformer capacity
 param TransformerCapacity_heat_t{l in ResourceBalances, p in Period, t in Time[p]: l = 'Heat'} default TransformerCapacity[l];
 
+
 param Grids_flowrate{l in ResourceBalances, h in House} default 1e9;
 param Grid_usage_max_demand default 0;
 param Grid_usage_max_supply default 0;
 
 param Units_flowrate_in{l in ResourceBalances, u in Units}  >=0 default 0;
 param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
+param elec_demand_datacentre{l in ResourceBalances, p in Period, t in Time[p] : l ='Electricity'} default 0;
 
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
@@ -89,7 +91,7 @@ var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >=
 
 # Constraints
 subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #pi_c
-   Network_supply[l,p,t] - Network_demand[l,p,t]   =  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+   Network_supply[l,p,t] - Network_demand[l,p,t]   =  ( sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t] -sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 
 subject to complicating_cst_GWP{l in ResourceBalances, p in Period, t in Time[p]}: #pi_g
@@ -124,6 +126,9 @@ subject to TOTAL_line_c6{l in ResourceBalances, p in Period,t in Time[p]}:
 
 param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
+#param Units_Fmax_t{u in Units, p in Period, t in Time[p]: u = 'Heat'} default TransformerCapacity[l];
+
+
 
 var Units_Mult{u in Units} <= Units_Fmax[u];
 var Units_Use{u in Units} binary >= 0, default 0;

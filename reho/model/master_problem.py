@@ -115,7 +115,7 @@ class MasterProblem:
 
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
-                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "TransformerCapacity_heat_t"],
+                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "TransformerCapacity_heat_t", "elec_demand_datacentre"],
                          "list_constraints_MP": []
                          }
 
@@ -402,6 +402,8 @@ class MasterProblem:
                 ampl_MP.read('heatpump_district.mod')
             if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
+            if "DataCentre_EPFL_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('data_district.mod')
             if "ORC_EPFL_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ORC_EPFL_district.mod')
                 ampl_MP.getConstraint('ORC_all_the_time').drop()
@@ -417,6 +419,26 @@ class MasterProblem:
         ampl_MP.cd(path_to_clustering)
         ampl_MP.readData('frequency_' + self.local_data['File_ID'] + '.dat')
         ampl_MP.cd(path_to_ampl_model)
+
+        # Assuming T_source_array is the flat numpy array with 580 values
+        df_end = ampl_MP.getParameter('TimeEnd').getValues().toPandas()
+        timesteps = int(df_end['TimeEnd'].sum())
+        T_source = []
+        max_cap = []
+        if 'HeatPump' in self.infrastructure.UnitsOfType:
+            for unit in self.infrastructure.UnitsOfType['HeatPump']:
+                if 'district' in unit:
+                    if 'DataCentre' in unit:
+                        T_source = np.concatenate([T_source, np.repeat(20, timesteps)])
+                        file_path_to_data_centre_profile = '/Users/ravi/Desktop/PhD/My_Reho_Qgis_files/Reho_Sai_Fork/scripts/template/data/clustering/D_Pully_10_24_T_I_W_D.dat'
+                        data_centre_profile_kW = np.loadtxt(file_path_to_data_centre_profile)
+                        max_cap =  data_centre_profile_kW #in kW data centre source is 288 kW max ,
+                    elif 'Geothermal' in unit:
+                        T_source = np.concatenate([T_source, np.repeat(15, timesteps)])
+                        max_cap = np.concatenate([max_cap, np.repeat(1e6, 242)])
+                    else:
+                        raise Exception('HP source undefined')
+
 
         # -------------------------------------------------------------------------------------------------------------
         # Set Parameters, only bool to choose if including all solutions found also from other Pareto_IDs
@@ -478,6 +500,10 @@ class MasterProblem:
             if len(self.infrastructure.UnitsOfDistrict) != 0:
                 if 'EV_district' in self.infrastructure.UnitsOfDistrict:
                     MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster, self.local_data["df_Timestamp"])
+
+        MP_parameters["T_source"] = T_source
+        MP_parameters["max_cap"] = max_cap
+
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:

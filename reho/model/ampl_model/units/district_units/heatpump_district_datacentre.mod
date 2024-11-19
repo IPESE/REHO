@@ -11,8 +11,7 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 #-TEMPERATURE DISCRETIZATION
 #-T_INDEX
-param T_source{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]} default 10; # lake considered as the source default 7
-param max_cap{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]} default 1e6; # lake considered as the source default 7
+#param T_source{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]}; #temperature of the condensor exit of the ORC associated with the data centre
 #---------------------------------------------------------------------#
 set HP_Tsupply default {16};																	#-
 
@@ -128,10 +127,11 @@ var HP_E_heating{u in UnitsOfType['HeatPump'],p in Period,t in Time[p],T in HP_T
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 #-Heating
 subject to HP_EB_c1{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
-Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply}(HP_COP[u,p,t,T]*HP_E_heating[u,p,t,T]); 		
+Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply}(HP_COP[u,p,t,T]*HP_E_heating[u,p,t,T]); 									#kW
 
-subject to HP_EB_c2{u in UnitsOfType['HeatPump'],p in Period,t in Time[p],T in HP_Tsupply}:						#kW	
-Units_supply['Heat',u,p,t] <= max_cap[u,p,t]+ (max_cap[u,p,t]/(HP_COP[u,p,t,T]-1));
+subject to data_centre_heat{u in UnitsOfType['HeatPump'],p in Period,t in Time[p],T in HP_Tsupply}:
+Units_supply['Heat',u,p,t] <= Network_supply['Heat',p,t]/(1-(1/(HP_COP[u,p,t,T]))); 	
+
 #subject to HP_EB_c2{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 #sum{st in StreamsOfUnit[u]: Streams_Tin[st,p,t] < 55} Streams_Q['DHW',st,p,t] = 0; 														#kW
 

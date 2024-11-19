@@ -376,7 +376,7 @@ class SubProblem:
             self.parameters_to_ampl['T_source_cool'] = T_source_cool
             if 'T_source_cool' in self.parameters_sp:
                 del self.parameters_sp["T_source_cool"]
-
+        
     def set_streams_temperature(self, ampl):
 
         df_end = ampl.getParameter('TimeEnd').getValues().toPandas()

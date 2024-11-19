@@ -51,8 +51,8 @@ def mobility_demand_from_WP1data_modes(DailyDist,max_dist = 70 ,nbins = 1,modalw
     modalshares_csv = pd.DataFrame()
     modalshares_custom = pd.DataFrame()
 
-    df_dist = pd.read_csv(r"C:\Users\Public\REHO2024\scripts\solene\data\mobility\WP1_distributionofdistances.csv",index_col = 0)
-    df_modalshares = pd.read_csv(r"C:\Users\Public\REHO2024\scripts\solene\data\mobility\WP1_modalsharesbydistances_work.tsv",sep = "\t",index_col = 0)
+    df_dist = pd.read_csv(os.path.join(path_to_mobility, 'WP1_distributionofdistances.csv'), index_col = 0)
+    df_modalshares = pd.read_csv(os.path.join(path_to_mobility, 'WP1_modalsharesbydistances_work.tsv'), sep = "\t",index_col = 0)
     
     # mapping_modesunits = {
     #     "Marche"   :  "Bike_district",
@@ -155,10 +155,9 @@ def mobility_demand_from_WP1data_units(DailyDist,max_dist = 70 ,nbins = 1,modalw
     parameters = {"DailyDist" : {},
                 }
     modalshares_csv = pd.DataFrame()
+    df_dist = pd.read_csv(os.path.join(path_to_mobility, 'WP1_distributionofdistances.csv'), index_col=0)
+    df_modalshares = pd.read_csv(os.path.join(path_to_mobility, 'WP1_modalsharesbydistances_work.tsv'), sep="\t", index_col=0)
 
-    df_dist = pd.read_csv(r"C:\Users\Public\REHO2024\scripts\solene\data\mobility\WP1_distributionofdistances.csv",index_col = 0)
-    df_modalshares = pd.read_csv(r"C:\Users\Public\REHO2024\scripts\solene\data\mobility\WP1_modalsharesbydistances_work.tsv",sep = "\t",index_col = 0)
-    
     mapping_modesunits = {
         "Marche"   :  "Bike_district",
         "Vélo"        : "Bike_district",

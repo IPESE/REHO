@@ -129,7 +129,7 @@ class SubProblem:
             ampl.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
-        ampl.setOption('solver',os.path.join(os.environ["AMPL_PATH"],f"{self.solver}.exe"))
+        ampl.setOption('solver', self.solver)
         if self.solver == "gurobi":
             ampl.eval("option gurobi_options 'NodeFileStart=0.5';")
         if self.solver == "cplex":

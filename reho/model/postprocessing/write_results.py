@@ -624,7 +624,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-    df_Results["df_Unit_t"] = df_Unit_t.sort_index()
+        df_Results["df_Unit_t"] = df_Unit_t.sort_index()
 
 
     # LCA

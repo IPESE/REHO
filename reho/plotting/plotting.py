@@ -1481,10 +1481,10 @@ def plot_storage_profile(df_Results, resolution='daily',storage_ID = "all"):
 
     def plot_storage_sep(storage_SOC_tot,counter, fig, stor_var, items_average):
         cm = {
-            "Electricity": 'rgb(167, 165, 165, 0.1)',
-            "H2": 'rgb(121, 166, 210, 0.1)',
-            "CH4": 'rgb(215, 182, 82, 0.1)',
-            "CO2": 'rgb(210, 54, 62, 0.1)'
+            "Electricity": 'rgba(167, 165, 165, 0.5)',
+            "H2": 'rgba(121, 166, 210, 0.5)',
+            "CH4": 'rgba(215, 182, 82, 0.5)',
+            "CO2": 'rgba(210, 54, 62, 0.5)'
         }
 
 
@@ -1504,7 +1504,7 @@ def plot_storage_profile(df_Results, resolution='daily',storage_ID = "all"):
             name=mol+" storage",
             line=dict(color=cm[mol], width=0),
             fill='tozeroy',
-            fillcolor="#0063a6"
+            fillcolor=cm[mol]
         ),
             row = counter,
             col = 1
@@ -1678,10 +1678,10 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 
     if IP_storage is not None:
         for storage in IP_storage:
             cm = {
-                "Electricity": 'rgb(167, 165, 165, 0.1)',
-                "H2": 'rgb(121, 166, 210, 0.1)',
-                "CH4": 'rgb(215, 182, 82, 0.1)',
-                "CO2": 'rgb(210, 54, 62, 0.1)'
+                "Electricity": 'rgba(167, 165, 165, 0.2)',
+                "H2": 'rgba(121, 166, 210, 0.2)',
+                "CH4": 'rgba(215, 182, 82, 0.2)',
+                "CO2": 'rgba(210, 54, 62, 0.2)'
             }
             storage_SOC_tot = df_storage.groupby(level=1)[storage].sum()
 

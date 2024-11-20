@@ -4,3 +4,4 @@ PTES_C_IP;kW;0.1;100000;0;574;PTES_conversion;Electricity/ HeatCascade;SH/ DHW;h
 HC;kW;0.1;100000;0;0.001;HeatCurtailment;HeatCascade;SH/ DHW;c_lt;;;;0;0;0;0;25;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
 HS_IP;m3;0.1;100000;0;2000;WaterTankSH_interperiod;HeatCascade;SH;h_lt/ c_lt;;;;0/ 0;0/ 0;0;0;20;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
 LHS;kWh;0.1;100000;0;52.8;SolidLiquidLHS;HeatCascade;SH;h_ht/ c_ht;;;;0/ 0;0/ 0;0;0;7.5;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0
+WaterTankSH_IP;m3;0.1;100000;1;1;WaterTankSH_interperiod;HeatCascade;SH;h_ht/ c_lt;;;;80/ 20;80/ 20;0;0;10;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0

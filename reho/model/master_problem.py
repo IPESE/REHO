@@ -393,6 +393,7 @@ class MasterProblem:
 
         if len(self.infrastructure.UnitsOfDistrict) > 0:
             ampl_MP.cd(path_to_district_units)
+
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
@@ -404,19 +405,21 @@ class MasterProblem:
                 ampl_MP.read('ng_cogeneration_district.mod')
             if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('rSOC_district.mod')
+            if "MTR_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('methanator_district.mod')
 
             ampl_MP.cd(path_to_units_storage)
             if "Battery_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('battery.mod')
 
         if self.method["use_Storage_Interperiod"]:
-            if "BESS_IP_district" in self.infrastructure.UnitsOfDistrict:
+            if "Battery_IP_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read("battery_interperiod.mod")
-            if "CH4_storage_district" in self.infrastructure.UnitsOfDistrict:
+            if "CH4_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read("CH4storage.mod")
-            if "H2_storage_district" in self.infrastructure.UnitsOfDistrict:
+            if "H2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read("H2storage.mod")
-            if "CO2_storage_district" in self.infrastructure.UnitsOfDistrict:
+            if "CO2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read("CO2storage.mod")
 
 

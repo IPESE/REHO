@@ -560,7 +560,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Storage"] = set_df_IP_storage(ampl)
     else:
         df_Results["df_Unit_t"] = pd.DataFrame()
-
+        df_Results["df_Storage"] = pd.DataFrame()
     # LCA
     if method["save_lca"]:
         LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)

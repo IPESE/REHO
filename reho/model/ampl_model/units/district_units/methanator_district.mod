@@ -18,8 +18,8 @@ subject to MTZ_co2_needs_computation{u in UnitsOfType['Methanator'], p in Period
     Units_demand['CO2',u,p,t] = MTZ_CO2_mol_h_per_kW_H2[u]*Units_demand['Hydrogen',u,p,t];
 
 #-hot stream heat leaving
-subject to MTZ_Usable_heat_computation{h in House,u in UnitsOfType['Methanator'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p]:Streams_Hin[st] = 1}:
-    Units_demand['Hydrogen',u,p,t]*(1-MTZ_conv_eff_basis[u])*0.9 >= sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t];
+subject to MTZ_Usable_heat_computation{u in UnitsOfType['Methanator'],p in Period,t in Time[p]}:
+    Units_demand['Hydrogen',u,p,t]*(1-MTZ_conv_eff_basis[u])*0.9 >= Units_supply['Heat',u,p,t];
 
 subject to MTZ_CH4_production{u in UnitsOfType['Methanator'], p in Period,t in Time[p]}:
     Units_supply['Biomethane',u,p,t] + Units_supply['NaturalGas',u,p,t] = MTZ_conv_eff_basis[u]*Units_demand['Hydrogen',u,p,t];

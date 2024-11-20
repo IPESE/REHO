@@ -19,15 +19,17 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = ['HeatPump_DHN']
     scenario["specific"] = ["enforce_DHN"]
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {},
-                                             'NaturalGas': {},
-                                             'Heat': {}})
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     # You can specify if the DHN is based on CO2. If not, a water DHN is assumed.
     method = {'building-scale': True, 'DHN_CO2': True}
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids({'Electricity': {},
+                                             'NaturalGas': {},
+                                             'Heat': {}})
+
+    units = infrastructure.initialize_units(scenario, method, grids, district_data=True)
 
     # Set specific parameters
     # Specify the temperature of the DHN

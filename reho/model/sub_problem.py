@@ -170,7 +170,6 @@ class SubProblem:
             else:
                 ampl.read('pv.mod')
         if 'rSOC' in self.infrastructure_sp.UnitTypes:
-            # ampl.read('rSOC_district.mod')
             ampl.read('rSOC.mod')
         if "Methanator" in self.infrastructure_sp.UnitTypes:
             ampl.read('methanator.mod')
@@ -179,11 +178,7 @@ class SubProblem:
         if 'Electrolyzer' in self.infrastructure_sp.UnitTypes:
             ampl.read('electrolyzer.mod')
 
-        # district Units
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.cd(path_to_district_units)
-            ampl.read('evehicle.mod')
-        # Storage Units
+        # Storage Units (only daily storage, no Inter-period storage, that's why still in building_units.csv)
         ampl.cd(path_to_units_storage)
         if 'WaterTankSH' in self.infrastructure_sp.UnitTypes:
             ampl.read('heatstorage.mod')
@@ -204,7 +199,6 @@ class SubProblem:
             if 'Battery_interperiod' in self.infrastructure_sp.UnitTypes:
                 ampl.read('battery_interperiod.mod')
 
-            # ampl.read('h2_storage.mod')
             if 'H2storage' in self.infrastructure_sp.UnitTypes:
                 ampl.read('H2storage.mod')
             if 'CH4storage' in self.infrastructure_sp.UnitTypes:

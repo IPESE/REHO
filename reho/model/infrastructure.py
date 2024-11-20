@@ -395,7 +395,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     return units
 
 
-def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
+def initialize_units(scenario, grids=None, method={}, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
                      district_data=None, storage_data=None):
     """
     Initializes the available units for the energy system.
@@ -404,6 +404,9 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ----------
     scenario : dict or None
         A dictionary containing information about the scenario.
+    method  : dict, (can be empty)
+        A dictionary containing information about the method to be used. Particularly useful for inter-period storage and district units.
+        If not specified, none of building_units_IP, district_units or interperiod_district_IP will be considered.
     grids : dict or None, optional
         Information about the energy layers considered. If None, ``['Electricity', 'NaturalGas', 'Oil', 'Wood', 'Data', 'Heat']``.
     building_data : str, optional
@@ -435,7 +438,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                         district_data="custom_district_units.csv", storage_data=True)
     """
 
-    default_units_to_exclude = ["Air_Conditioner", "DHN_hex", 'HeatPump_Anergy', 'HeatPump_Lake', 'DataHeat_SH']
+    default_units_to_exclude = ["Air_Conditioner", 'HeatPump_Anergy', 'HeatPump_Lake', 'DataHeat_SH', 'NG_Cogeneration', 'NG_Cogeneration_district']
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:
@@ -444,14 +447,22 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     building_units = prepare_units_array(building_data, exclude_units, grids)
 
     # TODO: these storage units are not fully working
-    storage_units_to_exclude = ["PTES_S_IP", "PTES_C_IP", "FC", "ETZ", "HS_IP", "LHS", "SOEFC"]
+    storage_units_to_exclude = ["HS_IP", "LHS"]
 
     exclude_units = exclude_units + storage_units_to_exclude
-    if storage_data is True:
-        default_storage_units = os.path.join(path_to_infrastructure, "storage_units.csv")
-        building_units = np.concatenate([building_units, prepare_units_array(default_storage_units, exclude_units=exclude_units, grids=grids)]) #file, exclude_units=[], grids=None
-    elif storage_data:
+
+    if "use_Storage_Interperiod" not in method:
+        method["use_Storage_Interperiod"] = False
+    if "district-scale" not in method:
+        method["district-scale"] = False
+    if ("building-scale" not in method):
+        method["building-scale"] = False
+
+    if method["use_Storage_Interperiod"] and (type(storage_data) is str):
         building_units = np.concatenate([building_units, prepare_units_array(storage_data, exclude_units=exclude_units, grids=grids)])
+    elif method["use_Storage_Interperiod"]:
+        default_storage_units = os.path.join(path_to_infrastructure, "building_units_IP.csv")
+        building_units = np.concatenate([building_units, prepare_units_array(default_storage_units, exclude_units=exclude_units, grids=grids)]) #file, exclude_units=[], grids=None
 
     if district_data is True:
         district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids)
@@ -459,6 +470,9 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         district_units = prepare_units_array(district_data, exclude_units, grids=grids)
     else:
         district_units = []
+
+    if district_data and method["use_Storage_Interperiod"]:
+        district_units = np.concatenate([district_units, prepare_units_array(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
 
     units = {"building_units": building_units, "district_units": district_units}
 

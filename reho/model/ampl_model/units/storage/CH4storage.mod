@@ -29,13 +29,13 @@ var mode_discharge_CH4{u in UnitsOfType['CH4storage'], p in Period, t in Time[p]
 param M_stor_CH4 := 1e12;
 
 subject to CH4_stor_charging_process{u in UnitsOfType['CH4storage'], p in Period,t in Time[p]}:
-	CH4_stor_charging[u,p,t] = CH4_stor_eff_charge[u]*Units_demand['Biogas',u,p,t];
+	CH4_stor_charging[u,p,t] = CH4_stor_eff_charge[u]*Units_demand['Biomethane',u,p,t];
 
 #subject to CH4_stor_elec_use{u in UnitsOfType['CH4storage'], p in Period,t in Time[p]}:
 #	Units_demand['Electricity',u,p,t] = CH4_stor_charging[u,p,t] * 0.1;
 
 subject to CH4_stor_discharging_process{u in UnitsOfType['CH4storage'], p in Period,t in Time[p]}:
-	CH4_stor_discharging[u,p,t] = 1/CH4_stor_eff_discharge[u]*Units_supply['Biogas',u,p,t];
+	CH4_stor_discharging[u,p,t] = 1/CH4_stor_eff_discharge[u]*Units_supply['Biomethane',u,p,t];
 
 #--Hourly Energy balance (valid for inter-period storage)
 subject to CH4_stor_energy_balance{u in UnitsOfType['CH4storage'], hy in Year}:
@@ -51,17 +51,17 @@ subject to CH4_stor_c2{u in UnitsOfType['CH4storage'], hy in Year}:
 
 #-- Power constraints
 subject to CH4_stor_c3{u in UnitsOfType['CH4storage'], p in PeriodStandard,t in Time[p]}:
-	Units_demand['Biogas',u,p,t]*dt[p] <= (CH4_stor_limit_ch[u]-CH4_stor_limit_di[u])*Units_Mult[u]*C_rate_CH4[u];
+	Units_demand['Biomethane',u,p,t]*dt[p] <= (CH4_stor_limit_ch[u]-CH4_stor_limit_di[u])*Units_Mult[u]*C_rate_CH4[u];
 
 subject to CH4_stor_c4{u in UnitsOfType['CH4storage'], p in PeriodStandard,t in Time[p]}:
-	Units_supply['Biogas',u,p,t]*dt[p] <= (CH4_stor_limit_ch[u]-CH4_stor_limit_di[u])*Units_Mult[u]*C_rate_CH4[u];
+	Units_supply['Biomethane',u,p,t]*dt[p] <= (CH4_stor_limit_ch[u]-CH4_stor_limit_di[u])*Units_Mult[u]*C_rate_CH4[u];
 
 # never charge and discharge storage simultaneously:
 subject to is_stor_CH4_discharging{u in UnitsOfType['CH4storage'], p in Period, t in Time[p]}:
-    Units_supply['Biogas',u,p,t] <= mode_discharge_CH4[u,p,t] * M_stor_CH4;
+    Units_supply['Biomethane',u,p,t] <= mode_discharge_CH4[u,p,t] * M_stor_CH4;
 
 subject to is_stor_CH4_charging{u in UnitsOfType['CH4storage'], p in Period, t in Time[p]}:
-    Units_demand['Biogas',u,p,t] <= mode_charge_CH4[u,p,t] * M_stor_CH4;
+    Units_demand['Biomethane',u,p,t] <= mode_charge_CH4[u,p,t] * M_stor_CH4;
 
 subject to no_charg_discharg_CH4{u in UnitsOfType['CH4storage'], p in Period, t in Time[p]}:
     mode_discharge_CH4[u,p,t] + mode_charge_CH4[u,p,t] <= 1;

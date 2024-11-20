@@ -131,20 +131,20 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv,FC_or_ETZ_use):
         H2_stor_to_FC = 0
         ETZ_to_H2_stor = 0
         # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('H2_storage', 'rSOC', 'Hydrogen', 'H2_storage', 'Supply_MWh',
+    df_label, df_stv, _ = add_flow('H2_storage_IP', 'rSOC', 'Hydrogen', 'H2_storage_IP', 'Supply_MWh',
                                    df_annuals, df_label, df_stv,False,None,-H2_stor_to_FC)
 
     # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('rSOC', 'H2_storage', 'Hydrogen', 'H2_storage', 'Demand_MWh',
+    df_label, df_stv, _ = add_flow('rSOC', 'H2_storage_IP', 'Hydrogen', 'H2_storage', 'Demand_MWh',
                                    df_annuals, df_label, df_stv,False, None, -ETZ_to_H2_stor)
 
     # Electricity consumption for H2 storage
-    df_label, df_stv, _ = add_flow('Electrical_consumption', 'H2_storage', 'Electricity', 'H2_storage',
+    df_label, df_stv, _ = add_flow('Electrical_consumption', 'H2_storage_IP', 'Electricity', 'H2_storage',
                                    'Demand_MWh',
                                    df_annuals, df_label, df_stv)
 
     # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('CH4_storage', 'rSOC', 'Biogas', 'CH4_storage', 'Supply_MWh',
+    df_label, df_stv, _ = add_flow('CH4_storage_IP', 'rSOC', 'Biomethane', 'CH4_storage_IP', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
     # 9 Device to H2
@@ -152,7 +152,7 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv,FC_or_ETZ_use):
                                    df_annuals, df_label, df_stv)
 
     # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('MTR', 'CH4_storage', 'Biogas', 'MTR', 'Supply_MWh',
+    df_label, df_stv, _ = add_flow('MTR', 'CH4_storage_IP', 'Biomethane', 'MTR', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
     return df_label, df_stv
@@ -297,9 +297,9 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     # manual_device = ['PV', 'WaterTankSH', '']
 
     # Electrical storage device
-    elec_storage_list = ['Battery',"BESS_IP", 'EV_district',"Battery_district","BESS_IP_district"]
+    elec_storage_list = ['Battery',"Battery_district","Battery_IP","Battery_IP_district",'EV_district']
 
-    mol_storage_list = ['H2_storage', 'CH4_storage']
+    mol_storage_list = ['H2_storage_IP', 'CH4_storage_IP']
     # Semi automatic handled devices
     semi_auto_device = [
         'NG_Boiler', 'NG_Cogeneration', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
@@ -337,7 +337,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     # check if molecule storage
     mol_storage_use = False
     for mol_storage in mol_storage_list:
-        if len(df_annuals.loc[((df_annuals['Layer'] == 'Hydrogen') | (df_annuals['Layer'] == 'Biogas')) & (df_annuals['Hub'] == mol_storage)]) != 0:
+        if len(df_annuals.loc[((df_annuals['Layer'] == 'Hydrogen') | (df_annuals['Layer'] == 'Biomethane')) & (df_annuals['Hub'] == mol_storage)]) != 0:
             mol_storage_use = True
 
     FC_or_ETZ_use = False

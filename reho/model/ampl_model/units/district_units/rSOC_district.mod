@@ -34,21 +34,20 @@ var mode_SOEC{u in UnitsOfType['rSOC'], p in Period, t in Time[p]} binary;
 subject to SOFC_energy_balance{u in UnitsOfType['rSOC'], p in Period,t in Time[p]}:
     Units_supply['Electricity',u,p,t] =
     SOFC_elec_eff[u]*Units_demand['Hydrogen',u,p,t] +
-    SOFC_elec_eff[u]*Units_demand['Biogas',u,p,t];
+    SOFC_elec_eff[u]*Units_demand['Biomethane',u,p,t];
 
 subject to SOEC_energy_balance{u in UnitsOfType['rSOC'], p in Period,t in Time[p]}:
     Units_supply['Hydrogen',u,p,t] = SOEC_conv_eff[u]*Units_demand['Electricity',u,p,t];
 
 subject to SOFC_energy_balance_2{u in UnitsOfType['rSOC'], p in Period,t in Time[p]}:
-    Units_supply['CO2',u,p,t] = mol_h_CO2_per_kW_CH4[u]*Units_demand['Biogas',u,p,t];
+    Units_supply['CO2',u,p,t] = mol_h_CO2_per_kW_CH4[u]*Units_demand['Biomethane',u,p,t];
 
 #-hot stream heat leaving
 subject to SOFC_Usable_heat_computation{u in UnitsOfType['rSOC'],p in Period,t in Time[p]}:
     Units_demand['Hydrogen',u,p,t]*SOFC_therm_eff[u] +
-    Units_demand['Biogas',u,p,t]*SOFC_therm_eff[u] +
+    Units_demand['Biomethane',u,p,t]*SOFC_therm_eff[u] +
     Units_demand['Electricity',u,p,t]*SOEC_therm_eff[u]
-    >= Units_supply['Heat',u,p,t];
-
+    >= Units_supply["Heat",u,p,t];
 
 # Force mode_SOFC to be 1 when power is supplied
 subject to SOFC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
@@ -56,7 +55,7 @@ subject to SOFC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
 
 # Force mode_SOFC to be 0 when no power is supplied
 subject to SOFC_mode_off{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
-    Units_supply['Electricity',u,p,t] >= bigM_rSOC * mode_SOFC[u,p,t];
+    Units_supply['Electricity',u,p,t] >= 1/bigM_rSOC * mode_SOFC[u,p,t];
 
 # Force mode_SOEC to be 1 when power is supplied
 subject to SOEC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
@@ -64,7 +63,7 @@ subject to SOEC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
 
 # Force mode_SOEC to be 0 when no power is supplied
 subject to SOEC_mode_off{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
-    Units_demand['Electricity',u,p,t] >= bigM_rSOC * mode_SOEC[u,p,t];
+    Units_demand['Electricity',u,p,t] >= 1/bigM_rSOC * mode_SOEC[u,p,t];
 
 # Never both modes simultaneously
 subject to no_2_modes_simultaneously{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:

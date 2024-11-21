@@ -4,22 +4,23 @@ Releases
 How to cite
 ===========
 
-.. caution::
+.. image:: https://joss.theoj.org/papers/10.21105/joss.06734/status.svg
+   :target: https://doi.org/10.21105/joss.06734
 
-    REHO has been submitted to `Journal of Open Source Software <https://joss.theoj.org/>`_ for review.
+REHO has been published in the `Journal of Open Source Software <https://joss.theoj.org/>`_. If you use REHO in your research, please cite it using the following reference:
 
-    In the meantime, the tool can be cited by mentioning the GitHub repository directly,
-    or by referring to the relevant academic work (see below).
+**APA**
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        @online{REHO,
-            title={Renewable Energy Hub Optimizer (REHO) -  A Decision Support Tool for Renewable Energy Communities},
-            author={Lepour, Dorsan and Terrier, Cédric and Loustau, Joseph},
-            url={https://github.com/IPESE/REHO},
-            urldate={...},
-            publisher={IPESE-EPFL}
-        }
+    Lepour et al., (2024). REHO: A Decision Support Tool for Renewable Energy Communities. Journal of Open Source Software, 9(103), 6734, https://doi.org/10.21105/joss.06734
+
+**BibTeX**
+
+.. code-block:: bash
+
+    @article{Lepour2024, doi = {10.21105/joss.06734}, url = {https://doi.org/10.21105/joss.06734}, year = {2024}, publisher = {The Open Journal}, volume = {9}, number = {103}, pages = {6734}, author = {Dorsan Lepour and Joseph Loustau and Cédric Terrier and François Maréchal}, title = {REHO: A Decision Support Tool for Renewable Energy Communities}, journal = {Journal of Open Source Software} }
+
 
 License
 ========

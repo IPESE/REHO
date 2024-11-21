@@ -83,8 +83,10 @@ celerybeat-schedule
 
 # Environments
 .env
+venv
 .venv
 docs/.venvdocs
+docs/venvdocs
 
 
 # Spyder project settings
@@ -158,6 +160,9 @@ cmake-build-release/
 *.iws
 
 ## Plugin-specific files:
+
+# VScode
+.vscode/
 
 # IntelliJ
 out/

@@ -6,11 +6,17 @@ from scripts.solene.functions import *
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
-    districts = [234,3112,837]
-    n_buildings = 2
-    district_parameters = {234 : {"N_house": 129, "rho": pd.Series([95,3,2],index=['household','industry','service']), "f" : 1 , "Scluster" : 94322 },
-                           3112 : {"N_house": 200, "rho": pd.Series([89,2,6],index=['household','industry','service']), "f" : 1 , "Scluster" : 110399 },
-                           837 : {"N_house": 56, "rho": pd.Series([70,10,20],index=['household','industry','service']), "f" : 1 , "Scluster" : 56540 }}
+    district_parameters = pd.read_csv(os.path.join(path_to_mobility, 'leman.csv'), index_col = 0)
+    districts = list(district_parameters.index.values)
+    districts = [int(x) for x in districts]
+    n_buildings = 3
+
+    # districts = [234,3112,837]
+    # district_parameters = {234 : {"N_house": 129, "rho": pd.Series([95,3,2],index=['household','industry','service']), "f" : 1 , "Scluster" : 94322 },
+    #                        3112 : {"N_house": 200, "rho": pd.Series([89,2,6],index=['household','industry','service']), "f" : 1 , "Scluster" : 110399 },
+    #                        837 : {"N_house": 56, "rho": pd.Series([70,10,20],index=['household','industry','service']), "f" : 1 , "Scluster" : 56540 }}
+    
+
     district_parameters = compute_district_parameters(district_parameters)
     for k in district_parameters.keys():
         district_parameters[k]['Population'] = n_buildings * district_parameters[k]['PopHouse']
@@ -51,7 +57,7 @@ if __name__ == '__main__':
         vars()[f'reho_{tr}'] = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, parameters=parameters, set_indexed=set_indexed, solver="gurobiasl")
 
         # Compute the f parameter
-        district_parameters[tr]['f'] = district_parameters[tr]['Scluster'] / vars()['reho_' + str(tr)].ERA
+        district_parameters[tr]['f'] = district_parameters[tr]['Scluster'] * 10**6/ vars()['reho_' + str(tr)].ERA
 
         # Compute the share activity parameter
         df_rho = pd.DataFrame()

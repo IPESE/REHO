@@ -241,29 +241,35 @@ def compute_district_parameters(district_parameters):
     elif isinstance(district_parameters,pd.DataFrame):
         modified_parameters = dict()
         try : 
-            df = district_parameters[["N_house", 'rho_household', 'rho_industry', 'rho_service', 'Scluster']]
+            df = district_parameters[["N_house", 'rho_household', 'rho_industry', 'rho_service', 'scale-up',"Scluster"]].copy()
+            df = df.rename(columns={"Scluster":"Sdistrict"})
+            df = df.rename(columns={"scale-up":"Scluster"})
         except:
             try:
-                df = district_parameters[["N_house",'rho_household', 'rho_industry', 'rho_service', 'ERA_m2']]
+                df = district_parameters[["N_house",'rho_household', 'rho_industry', 'rho_service', 'ERA_m2']].copy()
                 df = df.rename(columns={"ERA_m2":"Scluster"})
             except:
                 raise ValueError("Mislabelled or missing columns in the dataframe. Should contain ['N_house', 'rho_household', 'rho_industry', 'rho_service'] and (['Scluster'] OR ['ERA_m2']) ")
 
     # Calculate the parameters
-    df['Pop'] = df['Scluster'] * df['rho_household'] / 100 / 46.5 # 46.5 m² per person on average
+    df['Pop'] = df['Scluster'] * df['rho_household'] / 46.5 # 46.5 m² per person on average
     df['PopHouse'] = df['Pop']/df['N_house']
-    df['f'] = 1
+    df['f'] = df['Scluster'].mul(10**6)/ df['Sdistrict']
 
     # Casting to dict of parameters
     for d in df.index:
-        for key in ['PopHouse',"f","Scluster"]:
-            modified_parameters[d][key] = df.loc[d,key]
+        modified_parameters[d] = {
+            "PopHouse" : df.loc[d,"PopHouse"],
+            "f" : df.loc[d,"f"],
+            "Scluster" : df.loc[d,"Scluster"],
+        }
 
         rho = df.loc[d,df.columns.str.startswith('rho')]
         rho.index = [x[4:] for x in rho.index]
+        rho = rho/rho.sum()
         modified_parameters[d]["rho"] = rho
     
-    return district_parameters
+    return modified_parameters
 
 def calculate_modal_shares(results):
     """

@@ -1684,6 +1684,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 
                 "CO2": 'rgba(210, 54, 62, 0.2)'
             }
             storage_SOC_tot = df_storage.groupby(level=1)[storage].sum()
+            max_storage = df_Results["df_Storage"][storage].max()
 
             mol = storage.split("_")[0]
             if mol == "BAT":
@@ -1691,7 +1692,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 
 
             fig.add_trace(go.Scatter(
                 x=list(TD_time.index),
-                y=storage_SOC_tot/max(storage_SOC_tot)*100,
+                y=storage_SOC_tot/max_storage*100,
                 mode="lines",
                 name=mol + " storage",
                 line=dict(color=cm[mol]),
@@ -1708,8 +1709,9 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year = 1 
     fig.update_layout(
         title="Electricity flows and long term storage behaviour for "+str(time_range)+" starting form day: "+str(day_of_the_year),
         xaxis=dict(
-            dtick=24 if time_range in ['month', '2weeks', 'week'] else 4
-        ))
+            dtick=24 if time_range in ['month', '2weeks', 'week'] else 4),
+        yaxis2=dict(range=[0, 100])
+    )
 
 
     return fig

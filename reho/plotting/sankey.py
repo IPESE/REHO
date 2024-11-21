@@ -37,6 +37,22 @@ def update_label(source_name, target_name, df_label):
 
 
 def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, elec_storage_use, mol_storage_use):
+    """
+    This function is used to handle the layout of the Sankey diagram when electricity storage is active, to avoid false
+    representation of electricity exports to the grid.
+    Parameters
+    ----------
+    df_annuals: pandas.DataFrame, that gathers annual balance for all the layers and the corresponding units
+    df_label: Names of layers and units for the Sankey diagram
+    df_stv: pandas.DataFrame, containing all information about the streams and the numerical values in the Sankey diagram
+    elec_storage_list: list that contains all the units related to electricity storage (interperiod or not)
+    elec_storage_use: Boolean to check whether electricity storage is active.
+    mol_storage_use: Boolean to check whether molecular storage is active.
+
+    Returns
+    -------
+    updated: df_label and df_stv
+    """
     # Handle exports between PV panels and Battery (long-term storage especially). first calculate total electricity consumed onsite (incl. for storage purpose).
     # Then define PV to elec-onsite as the diff between elec_onsite and Network_supply. Then calculate PV to Network as the difference between PV production and PV cosnumed onsite.
     # Then calculate longterm storage to network as the difference between total Network demand and PV_to_network. This should all be done manually I guess.
@@ -121,7 +137,20 @@ def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, e
 
     return df_stv, df_label
 def add_mol_storages_to_sankey(df_annuals, df_label, df_stv,FC_or_ETZ_use):
+    """
+    This function is called to add all the streams/units that are related to molecule (interperiod storage) to the sankey diagram.
 
+    Parameters
+    ----------
+    df_annuals: pandas.DataFrame, that gathers annual balance for all the layers and the corresponding units
+    df_label: Names of layers and units for the Sankey diagram
+    df_stv: pandas.DataFrame, containing all information about the streams and the numerical values in the Sankey diagram
+    FC_or_ETZ_use: Variable to check whether other electrolyzer types (than the usual) are considered
+
+    Returns
+    -------
+    updated: df_label and df_stv
+    """
     if FC_or_ETZ_use:
         H2_stor_to_FC = df_annuals.loc[(df_annuals['Layer'] == "Hydrogen") & (df_annuals['Hub'] == "FC")][
             "Demand_MWh"].sum()
@@ -135,11 +164,11 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv,FC_or_ETZ_use):
                                    df_annuals, df_label, df_stv,False,None,-H2_stor_to_FC)
 
     # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('rSOC', 'H2_storage_IP', 'Hydrogen', 'H2_storage', 'Demand_MWh',
+    df_label, df_stv, _ = add_flow('rSOC', 'H2_storage_IP', 'Hydrogen', 'H2_storage_IP', 'Demand_MWh',
                                    df_annuals, df_label, df_stv,False, None, -ETZ_to_H2_stor)
 
     # Electricity consumption for H2 storage
-    df_label, df_stv, _ = add_flow('Electrical_consumption', 'H2_storage_IP', 'Electricity', 'H2_storage',
+    df_label, df_stv, _ = add_flow('Electrical_consumption', 'H2_storage_IP', 'Electricity', 'H2_storage_IP',
                                    'Demand_MWh',
                                    df_annuals, df_label, df_stv)
 
@@ -186,8 +215,7 @@ def add_label_value(df_label, df_stv, precision, units):
 
     Returns
     _______
-    pd.DataFrame
-        df_label pdated with the label values
+    df_stv and df_label updated
     """
     df_source_value = pd.DataFrame()
     df_source_value.index = df_label.pos

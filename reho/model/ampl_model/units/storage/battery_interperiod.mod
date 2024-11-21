@@ -16,14 +16,14 @@
 # [3] Efficiency degradation over time (efficiency used is an average of the battery efficiency over its lifetime)
 # [4] C-rate limitation (beware that maximum C-rate value is 1 (due to hourly resolution))
 
-param BAT_eff_charge_IP{u in UnitsOfType['Battery_interperiod']} 	default 1;	#- AC-AC efficiency
-param BAT_eff_discharge_IP{u in UnitsOfType['Battery_interperiod']} 	default 1;	#- AC-AC efficiency
+param BAT_eff_charge_IP{u in UnitsOfType['Battery_interperiod']} 	default 0.95;	#- AC-AC efficiency
+param BAT_eff_discharge_IP{u in UnitsOfType['Battery_interperiod']} 	default 0.95;	#- AC-AC efficiency
 
-param BAT_limit_ch_IP{u in UnitsOfType['Battery_interperiod']} default 1;			#-	[2]
-param BAT_limit_di_IP{u in UnitsOfType['Battery_interperiod']} default 0;			#-	[1]
+param BAT_limit_ch_IP{u in UnitsOfType['Battery_interperiod']} default 0.6;			#-	[2]
+param BAT_limit_di_IP{u in UnitsOfType['Battery_interperiod']} default 0.2;			#-	[1]
 
 param C_rate_IP{u in UnitsOfType['Battery_interperiod']} default 1;					#-
-param BAT_self_discharge_IP{u in UnitsOfType['Battery_interperiod']} default 1;	#-	[1]
+param BAT_self_discharge_IP{u in UnitsOfType['Battery_interperiod']} default 0.99992;	#-	[1]
 
 # param BAT_RTE_degradation_IP{u in UnitsOfType['Battery_interperiod']} default 0.005; # Battery efficiency degradation per year
 # param BAT_efficiency_IP{u in UnitsOfType['Battery_interperiod']} >=0, <= sqrt(BAT_eff_RTE_basis_IP[u]) := sqrt(BAT_eff_RTE_basis_IP[u]-BAT_RTE_degradation_IP[u]*lifetime[u]/2); #Computation of the one way efficiency (assuming equal efficiency out and in)

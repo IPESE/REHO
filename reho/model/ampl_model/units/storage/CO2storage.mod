@@ -3,12 +3,7 @@
 #	2. self-discharging efficiency
 #	3. dis-/charging limits
 #-References :
-# [1]	F. Oldewurtel et al., Building Control and Storage Management with [...], 2010
-# [2]   M. Koller et al., Defining a Degradation Cost Function for Optimal [...], 2013
 
-#-Adapted model to additionally include :
-# [3] Efficiency degradation over time (efficiency used is an average of the CO2_stortery efficiency over its lifetime)
-# [4] C-rate limitation (beware that maximum C-rate value is 1 (due to hourly resolution))
 
 param CO2_stor_eff_charge{u in UnitsOfType['CO2storage']} 	default 1;	#- AC-AC efficiency
 param CO2_stor_eff_discharge{u in UnitsOfType['CO2storage']} 	default 1;	#- AC-AC efficiency
@@ -16,19 +11,17 @@ param CO2_stor_eff_discharge{u in UnitsOfType['CO2storage']} 	default 1;	#- AC-A
 param CO2_stor_limit_ch{u in UnitsOfType['CO2storage']} default 1;			#-	[2]
 param CO2_stor_limit_di{u in UnitsOfType['CO2storage']} default 0;			#-	[1]
 
-param C_rate_CO2{u in UnitsOfType['CO2storage']} default 1;					#-
+param C_rate_CO2{u in UnitsOfType['CO2storage']} default 0.01;					#-
 param CO2_stor_self_discharge{u in UnitsOfType['CO2storage']} default 1;	#-	[1]
-
-# param CO2_stor_RTE_degradation{u in UnitsOfType['CO2storage']} default 0.005; # CO2_stortery efficiency degradation per year
-# param CO2_stor_efficiency{u in UnitsOfType['CO2storage']} >=0, <= sqrt(CO2_stor_eff_RTE_basis[u]) := sqrt(CO2_stor_eff_RTE_basis[u]-CO2_stor_RTE_degradation[u]*lifetime[u]/2); #Computation of the one way efficiency (assuming equal efficiency out and in)
+param CO2_stor_elec_eff{u in UnitsOfType['CO2storage']} default 0.02; #at medium pressure (75 bars)
 
 var CO2_stor_charging{u in UnitsOfType['CO2storage'], p in Period,t in Time[p]} >= 0;
 var CO2_stor_discharging{u in UnitsOfType['CO2storage'], p in Period,t in Time[p]} >= 0;
 var CO2_stor_stored{u in UnitsOfType['CO2storage'], hy in Year} >= 0;
 
-var mode_charge_CO2{u in UnitsOfType['CO2storage'], p in Period, t in Time[p]} binary;
-var mode_discharge_CO2{u in UnitsOfType['CO2storage'], p in Period, t in Time[p]} binary;
-param M_stor_CO2 := 1e12;
+var mode_charge_CO2{u in UnitsOfType['CO2storage'], p in Period, t in Time[p]} binary := 0;
+var mode_discharge_CO2{u in UnitsOfType['CO2storage'], p in Period, t in Time[p]} binary := 0;
+param M_stor_CO2 := 1e7;
 
 subject to CO2_stor_charging_process{u in UnitsOfType['CO2storage'], p in Period,t in Time[p]}:
 	CO2_stor_charging[u,p,t] = CO2_stor_eff_charge[u]*Units_demand['CO2',u,p,t];
@@ -36,8 +29,8 @@ subject to CO2_stor_charging_process{u in UnitsOfType['CO2storage'], p in Period
 subject to CO2_stor_discharging_process{u in UnitsOfType['CO2storage'], p in Period,t in Time[p]}:
 	CO2_stor_discharging[u,p,t] = 1/CO2_stor_eff_discharge[u]*Units_supply['CO2',u,p,t];
 
-#subject to CO2_stor_elec_use{u in UnitsOfType['CO2storage'], p in Period,t in Time[p]}:
-#	Units_demand['Electricity',u,p,t] = CO2_stor_charging[u,p,t] * 0.1;
+subject to CO2_stor_elec_use{u in UnitsOfType['CO2storage'], p in Period,t in Time[p]}:
+	Units_demand['Electricity',u,p,t] = CO2_stor_charging[u,p,t] * CO2_stor_elec_eff[u];
 
 #--Hourly Energy balance (valid for inter-period storage)
 subject to CO2_stor_energy_balance{u in UnitsOfType['CO2storage'], hy in Year}:

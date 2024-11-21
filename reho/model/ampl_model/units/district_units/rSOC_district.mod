@@ -11,7 +11,7 @@
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-param SOFC_elec_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.6; # (elec output/H2 LHV) eff
+param SOFC_elec_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.65; # (elec output/H2 LHV) eff
 param SOFC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.3; # (elec output/H2 LHV) eff
 param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.85; # (H2 LHV/elec output) eff
 param SOEC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.1; # (H2 LHV/elec output) efff
@@ -53,17 +53,9 @@ subject to SOFC_Usable_heat_computation{u in UnitsOfType['rSOC'],p in Period,t i
 subject to SOFC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
     Units_supply['Electricity',u,p,t] <= bigM_rSOC * mode_SOFC[u,p,t];
 
-# Force mode_SOFC to be 0 when no power is supplied
-subject to SOFC_mode_off{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
-    Units_supply['Electricity',u,p,t] >= 1/bigM_rSOC * mode_SOFC[u,p,t];
-
 # Force mode_SOEC to be 1 when power is supplied
 subject to SOEC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
     Units_demand['Electricity',u,p,t] <= bigM_rSOC * mode_SOEC[u,p,t];
-
-# Force mode_SOEC to be 0 when no power is supplied
-subject to SOEC_mode_off{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
-    Units_demand['Electricity',u,p,t] >= 1/bigM_rSOC * mode_SOEC[u,p,t];
 
 # Never both modes simultaneously
 subject to no_2_modes_simultaneously{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:

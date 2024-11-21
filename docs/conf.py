@@ -64,8 +64,8 @@ html_theme_options = {
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
                   "icon": "https://github.com/IPESE/REHO/blob/main/docs/images/logos/ipese_square.png?raw=true",
                   "type": "url"}],
-  "logo": {"image_light": 'images/logos/logo_reho.png',
-           "image_dark": "images/logos/logo_reho_light.png",
+  "logo": {"image_light": 'images/logos/logo-reho-black.png',
+           "image_dark": "images/logos/logo-reho-white.png",
            "alt_text": "REHO documentation - Home"},
   "navigation_depth": 6
 }

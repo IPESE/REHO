@@ -24,7 +24,7 @@ Electrical_grid_Cogeneration,Electricity (cogen),Elec COGEN,Électricité (cogé
 PV_SC,Electricity (self-consumption),Elec SC,Électricité (auto-consommation),#ffd980,yellow_light,#EEAD0E,darkyellow
 Electrical_appliances,Electrical appliances,EL,Électricité domestique,#007480,canard,#76EEC6,turquoise
 Electrical_consumption,Electrical consumption,EL,Électricité consommée,#007480,canard,#0000FF,royalblue
-Electrical_consumption_bp,Electrical consumption with storage,EL,Électricité consommée + stockage,#007480,canard,#0000FF,royalblue
+Electrical_consumption_bp,Electrical distribution board,EL,Électricité consommée + stockage,#007480,canard,#0000FF,royalblue
 ,,,,,,,
 ElectricalHeater,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light,#9A32CD,purple
 ElectricalHeater_DHW,Electrical heater DHW,EH (DHW),Chauffage électrique (ECS),#ff6666,groseille_light,#9A32CD,purple
@@ -60,7 +60,6 @@ PV_facades,PV facade,PV,PV façade,#ffc94d,yellow_medium,#EEAD0E,darkyellow
 solar_value,Solar value,Solar,Électricité solaire,#4d9ea6,canard_light,#00008B,darkblue
 solar_premium,Solar premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light,#EEAD0E,darkyellow
 Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark,#EEAD0E,darkyellow
-Battery,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue
 ,,,,,,,
 Air_Conditioner,Air conditioner,AC,Climatiseur,#00008B,darkblue,#9AC0CD,bluegrey
@@ -70,3 +69,19 @@ Isolation,Thermal insulation,INS,Isolation,#69B58A,green,#9AC0CD,bluegrey
 Isolation_roof,Roof insulation,INS1,Isolation toiture,#a9d6bc,green_light,#9AC0CD,bluegrey
 Isolation_facade,Facade insulation,INS2,Isolation façade,#87c5a1,green_medium,#9AC0CD,bluegrey
 Isolation_full,Complete insulation,INS3,Isolation complète,#53ac7a,green_dark,#9AC0CD,bluegrey
+,,,,,,,
+rSOC,rSOC,rSOC,rSOC,#00008B,darkblue,#9AC0CD,bluegrey
+MTR,Methanator,Methanator,Methanator,#9f8753,darkyellow,#9f8753,darkyellow
+FC,Fuel Cell,Fuel Cell,Fuel Cell,#00008B,darkblue,#9AC0CD,bluegrey
+ETZ,Electrolyzer,Electrolyzer,Electrolyzer,#00008B,darkblue,#9AC0CD,bluegrey
+,,,,,,,
+Battery,Battery,Bat,Batterie,#A57300,lightblue,#76EEC6,turquoise
+Battery_district,Battery,Bat,Batterie,#A57300,lightblue,#76EEC6,turquoise
+Battery_IP,Battery_IP,Bat,Batterie_IP,#A57300,lightblue,#76EEC6,turquoise
+Battery_IP_district,Battery_IP,Bat,Batterie_IP,#A57300,lightblue,#76EEC6,turquoise
+H2_storage_IP,Hydrogen storage,H2_stor,H2_storage,#82a4d6,lightblue,#9AC0CD,bluegrey
+H2_storage_IP_district,Hydrogen storage,H2_stor,H2_storage,#82a4d6,lightblue,#9AC0CD,bluegrey
+CH4_storage_IP,Biomethane storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CH4_storage_IP_district,Biomethane storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CO2_storage_IP,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CO2_storage_IP_district,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow

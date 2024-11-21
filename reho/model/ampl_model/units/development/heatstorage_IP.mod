@@ -5,8 +5,8 @@
 ######################################################################################################################
 
 param TES_IP_T_min{h in House,p in Period} default 20;																											#deg C															
-param TES_IP_T_max{h in House,p in Period} := min{Thp in HP_Tsupply: Thp >= min( max{t in Time[p]} Th_supply[h,p,t], max{i in HP_Tsupply} i)} Thp;	#deg C
-param TES_IP_T_ret{h in House,p in Period} := (T_comfort_min_0[h] + TES_IP_T_max[h,p]*(alpha_h[h]*Mcp_0h[h]))/(1+alpha_h[h]*Mcp_0h[h]);									#deg C
+param TES_IP_T_max{h in House,p in Period} := 60; #min{Thp in HP_Tsupply: Thp >= min( max{t in Time[p]} Th_supply[h,p,t], max{i in HP_Tsupply} i)} Thp;	#deg C
+param TES_IP_T_ret{h in House,p in Period} := 35; #(T_comfort_min_0[h] + TES_IP_T_max[h,p]*(alpha_h[h]*Mcp_0h[h]))/(1+alpha_h[h]*Mcp_0h[h]);									#deg C
 
 #Set the number of layer (size set) and their respective temperature. There are 2 different temperature here (Tmax at the top and T return)
 set TESindex_IP{h in House,p in Period} ordered by Reals := {TES_IP_T_max[h,p],TES_IP_T_ret[h,p]};																	#deg C

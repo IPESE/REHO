@@ -123,7 +123,7 @@ class SubProblem:
                 raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license.")
 
         # -AMPL (GNU) OPTIONS
-        ampl.setOption('solution_round', 11)
+        ampl.setOption('solution_round', 8)
 
         ampl.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
         ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
@@ -144,8 +144,9 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
         ampl.cd(path_to_ampl_model)
         ampl.read('sub_problem.mod')
+        ampl.read('scenario.mod')
 
-        # Energy conversion Units
+        # Load building units
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_sp.UnitTypes:
             ampl.read('electrical_heater.mod')
@@ -173,54 +174,42 @@ class SubProblem:
                 ampl.read('pv_orientation.mod')
             else:
                 ampl.read('pv.mod')
-
-        # district Units
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.cd(path_to_district_units)
-            ampl.read('evehicle.mod')
-        # Storage Units
-        ampl.cd(path_to_units_storage)
+        if 'rSOC' in self.infrastructure_sp.UnitTypes:
+            ampl.read('rSOC.mod')
+        if "Methanator" in self.infrastructure_sp.UnitTypes:
+            ampl.read('methanator.mod')
+        if 'FuelCell' in self.infrastructure_sp.UnitTypes:
+            ampl.read('fuel_cell.mod')
+        if 'Electrolyzer' in self.infrastructure_sp.UnitTypes:
+            ampl.read('electrolyzer.mod')
         if 'WaterTankSH' in self.infrastructure_sp.UnitTypes:
             ampl.read('heatstorage.mod')
         if 'WaterTankDHW' in self.infrastructure_sp.UnitTypes:
             ampl.read('dhwstorage.mod')
         if 'Battery' in self.infrastructure_sp.UnitTypes:
             ampl.read('battery.mod')
-        ampl.cd(path_to_ampl_model)
+        # ampl.read('heat_curtailment.mod')
 
-        # Objectives, epsilon constraints and specific constraints
-        ampl.read('scenario.mod')
+        # Load interperiod storage units
+        if self.method_sp['interperiod_storage']:
+            ampl.cd(path_to_units_interperiod)
 
-        # TODO: integrate all storage units into infrastructure (avoid using ampl eval)
-        if self.method_sp['use_Storage_Interperiod']:
-            ampl.eval(
-                'set UnitsOfStorage := setof{u in UnitsOfType["Battery_interperiod"] union UnitsOfType["PTES_storage"]'
-                'union UnitsOfType["PTES_conversion"] union UnitsOfType["CH4storage"]'
-                'union UnitsOfType["H2storage"] union UnitsOfType["SOEFC"]'
-                'union UnitsOfType["Methanizer"] union UnitsOfType["FuelCell"]'
-                'union UnitsOfType["Electrolyzer"] union UnitsOfType["WaterTankSH_interperiod"]'
-                'union UnitsOfType["SolidLiquidLHS"]'
-                '} u;')
+            if 'Battery_interperiod' in self.infrastructure_sp.UnitTypes:
+                ampl.read('battery_IP.mod')
+            if 'H2storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('H2storage_IP.mod')
+            if 'CH4storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('CH4storage_IP.mod')
+            if 'CO2storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('CO2storage_IP.mod')
 
-            # Storage Units
-            ampl.cd(path_to_units_storage)
-            ampl.read('h2_storage.mod')
-            ampl.read('heatstorage_interperiod.mod')
-            ampl.read('LHS_storage.mod')
-            ampl.read('battery_interperiod.mod')
-            ampl.read('PTES.mod')
-            ampl.read('CH4_tank.mod')
+            # if 'WaterTankSH_interperiod' in self.infrastructure_sp.UnitTypes:
+            #    ampl.read('heatstorage_IP.mod')
 
-            # H2 Units
-            ampl.cd(path_to_units_h2)
-            ampl.read('fuel_cell.mod')
-            ampl.read('electrolyser.mod')
-            ampl.read('SOEFC.mod')
-            ampl.read('methanizer.mod')
-
-            ampl.cd(path_to_units)
-            ampl.read('heat_curtailment.mod')
-            ampl.cd(path_to_ampl_model)
+        # Load EV units (district-scale, but can be included in building-scale)
+        if 'EV' in self.infrastructure_sp.UnitTypes:
+            ampl.cd(path_to_district_units)
+            ampl.read('evehicle.mod')
 
         return ampl
 
@@ -564,10 +553,7 @@ class SubProblem:
             else:
                 raise ValueError('Type Error setting AMPLPY Parameter', i)
 
-        # TODO remove data_stream.dat
-        ampl.readData('data_stream.dat')
-        if self.method_sp['use_Storage_Interperiod']:
-            ampl.readData('data_stream_storage.dat')
+        ampl.readData('data_stream.dat')  # TODO remove data_stream.dat
 
         return ampl
 
@@ -724,8 +710,8 @@ def initialize_default_methods(method):
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False
 
-    if 'use_Storage_Interperiod' not in method:
-        method['use_Storage_Interperiod'] = False
+    if 'interperiod_storage' not in method:
+        method['interperiod_storage'] = False
 
     if method['building-scale']:
         method['include_all_solutions'] = False  # avoid interactions between optimization scenarios

@@ -27,7 +27,12 @@ param TimeStart default 1;
 param TimeEnd{p in Period};
 set Time{p in Period} := {TimeStart .. TimeEnd[p]} ordered;
 
-param dt{p in Period} default 1;       # h
+#-INDEX SETS (useful for inter-period energy balance appart from the extreme periods)
+set Year := {1..8760} circular;
+param PeriodOfYear{y in Year} default 1;
+param TimeOfYear{y in Year} default 1;
+
+param dt{p in Period} default 1;            # h
 param dp{p in Period} default 1;			# days
 
 param Area_tot default 100;

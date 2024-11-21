@@ -6,6 +6,7 @@ from reho.model.postprocessing.KPIs import *
 from reho.model.postprocessing.building_scale_network_builder import *
 from reho.paths import *
 
+from reho.model.postprocessing.write_results import get_ampl_data
 __doc__ = """
 File for constructing and solving the optimization problem.
 """
@@ -47,8 +48,6 @@ class REHO(MasterProblem):
         else:
             self.nPareto = self.scenario['nPareto']  # intermediate points
             self.total_Pareto = self.nPareto * 2 + 2  # total pareto points: both objectives plus boundaries
-        if self.method['building-scale'] and 'EV' not in self.infrastructure.UnitTypes:
-            self.scenario['specific'] = self.scenario['specific'] + ["disallow_exchanges_1", "disallow_exchanges_2"]
 
         self.results = dict()
 
@@ -80,6 +79,7 @@ class REHO(MasterProblem):
                             ampl.getVariable('Units_Use').get(unit + '_' + h).fix(float(self.df_fix_Units.Units_Use.loc[unit + '_' + h]))
 
             ampl.solve()
+
             exitcode = exitcode_from_ampl(ampl)
 
         self.add_df_Results(ampl, Scn_ID, Pareto_ID, self.scenario)
@@ -506,9 +506,23 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp, level='Period', axis=0).sum() / 1000
+                #Only consider PeriodStandard (without extreme days) to compute annual balance.
+                PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
+                    ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
+
+                # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
+                                level='Period', axis=0).sum() / 1000
+
+                # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')
-                df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[['Units_demand', 'Units_supply']].values
+
+                # Assign results to specific columns after verifying columns exist in `data`
+                if 'Units_demand' in data and 'Units_supply' in data:
+                    df_network.loc[(key, unit), ['Demand_MWh', 'Supply_MWh']] = data[
+                        ['Units_demand', 'Units_supply']].values
+                else:
+                    raise ValueError("Expected columns 'Units_demand' and 'Units_supply' not found in `data`.")
         df_Annuals = pd.concat([df, df_network]).sort_index()
 
         # df_Buildings
@@ -538,6 +552,25 @@ class REHO(MasterProblem):
         df_Results["df_Unit"] = df_Unit
         df_Results["df_Grid_t"] = df_Grid_t
         df_Results["df_Time"] = df_Time
+
+        #Add Long-term storage to results dictionary (if 'interperiod_storage': True in method)
+        if (self.method["interperiod_storage"]):
+            try:
+                df_interperiod = self.get_final_SPs_results(MP_selection, 'df_Interperiod')
+                df_interperiod = df_interperiod.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
+            except:
+                df_interperiod = pd.DataFrame()
+
+            try:
+                df_interperiod_district = last_results["df_Interperiod"]
+            except:
+                df_interperiod_district = pd.DataFrame()
+
+            df_interperiod_all = pd.concat([df_interperiod, df_interperiod_district],axis=0)
+            df_interperiod_all = df_interperiod_all.sort_index(level=0)
+
+            df_Results["df_Interperiod"] = df_interperiod_all
+
 
         if self.method["save_data_input"]:
             df_Results["df_Buildings"] = df_Buildings

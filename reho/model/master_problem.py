@@ -233,7 +233,7 @@ class MasterProblem:
                            self.infrastructure.houses}
 
                 # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
-                while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                while len(results[list(self.buildings_data.keys())[-1]].get(timeout=360)) != 2:
                     time.sleep(1)
 
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation
@@ -393,8 +393,14 @@ class MasterProblem:
         if self.method["actors_problem"]:
             ampl_MP.read('actors_problem.mod')
 
+        # Load battery units (district-scale, but same model as building-scale)
+        ampl_MP.cd(path_to_units)
+        if "Battery_district" in self.infrastructure.UnitsOfDistrict:
+            ampl_MP.read('battery.mod')
+
+        # Load district units
+        ampl_MP.cd(path_to_district_units)
         if len(self.infrastructure.UnitsOfDistrict) > 0:
-            ampl_MP.cd(path_to_district_units)
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
@@ -404,16 +410,28 @@ class MasterProblem:
                 ampl_MP.read('heatpump_district.mod')
             if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
-            if "Battery_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.cd(path_to_units_storage)
-                ampl_MP.read('battery.mod')
-
+            if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('rSOC_district.mod')
+            if "MTR_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('methanator_district.mod')
         if read_DHN:
-            ampl_MP.cd(path_to_district_units)
             ampl_MP.read('DHN.mod')
+
+        # Load interperiod storage units
+        ampl_MP.cd(path_to_units_interperiod)
+        if self.method["interperiod_storage"]:
+            if "Battery_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("battery_IP.mod")
+            if "CH4_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("CH4storage_IP.mod")
+            if "H2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("H2storage_IP.mod")
+            if "CO2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("CO2storage_IP.mod")
 
         ampl_MP.cd(path_to_clustering)
         ampl_MP.readData('frequency_' + self.local_data['File_ID'] + '.dat')
+        ampl_MP.readData('index_' + self.local_data['File_ID'] + '.dat')
         ampl_MP.cd(path_to_ampl_model)
 
         # -------------------------------------------------------------------------------------------------------------

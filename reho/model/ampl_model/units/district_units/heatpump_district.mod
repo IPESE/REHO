@@ -6,10 +6,10 @@
 
 #-T_INDEX
 param T_source{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]} default 8;
-set HP_Tsupply default {16};																	#-
+set HP_Tsupply default {80};																	#-
 
 #-T_HOT
-set HP_Tsink default {16};																	#deg C
+set HP_Tsink default {60};																	#deg C
 param HP_Tsink_high{p in Period,t in Time[p],T in HP_Tsupply} :=  						#deg C
 	if max{Th in HP_Tsink} Th <= T then
 		max{Th in HP_Tsink} Th

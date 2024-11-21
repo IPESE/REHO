@@ -1,10 +1,11 @@
 from reho.model.actors_problem import *
 
 if __name__ == '__main__':
-
+    risk_factor = 0.1
+    Owner_portfolio = 0
     # Set scenario
     scenario = dict()
-    scenario['Objective'] = 'TOTEX_bui'
+    scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
     scenario['specific'] = []
 
@@ -24,22 +25,23 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'actors_problem': True}
+    method = {'actors_problem': True, "print_logs": True, "refurbishment": False}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
-
+    DW_params={}
+    DW_params['max_iter'] = 8
     # Initiate the actor-based problem formulation
-    reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
-
+    reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
+    #gurobiasl
     # Generate configurations
     tariffs_ranges = {'Electricity': {"Cost_supply_cst": [0.15, 0.45]},
                       'NaturalGas': {"Cost_supply_cst": [0.10, 0.30]}}
     try:
         reho.read_configurations()  # if configurations were already generated, simply import them
     except FileNotFoundError:
-        reho.generate_configurations(n_sample=5, tariffs_ranges=tariffs_ranges)
+        reho.generate_configurations(n_sample=3, tariffs_ranges=tariffs_ranges)
 
     # Find actors bounds
     reho.scenario["name"] = "Owners"
@@ -56,11 +58,11 @@ if __name__ == '__main__':
 
     # Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"
-    reho.set_actors_boundary(bounds=bounds, n_sample=1)
+    reho.set_actors_boundary(bounds=bounds, n_sample=3, risk_factor=risk_factor)
 
-    reho.actor_decomposition_optimization()
+    reho.actor_decomposition_optimization(scenario)
 
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["xlsx"], filename='actors_MOO')
+    reho.save_results(format=["pickle"], filename='actors_{}_{}'.format(risk_factor, Owner_portfolio))

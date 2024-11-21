@@ -174,7 +174,7 @@ var Costs_tot;
 var DHN_inv_house{h in House} >= 0;
 
 subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}} :
- Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
+Costs_Unit_inv[u] = (Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u]);
 
 subject to Costs_Unit_replacement:
 Costs_rep= tau* sum{u in Units diff {"DHN_pipes_district"},n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
@@ -370,10 +370,13 @@ lca_tot[k] <= EMOO_lca[k] * Area_tot;
 
 param penalty_ratio default 1e-6;
 var penalties default 0;
+var renter_subsidies{h in House} >= 0;
+
 
 subject to penalties_contraints:
 penalties = penalty_ratio * (Costs_inv + Costs_op + sum{k in Lca_kpi} lca_tot[k] +
-            sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t])) + Costs_cft;
+            sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
+             + Costs_cft + sum{h in House}renter_subsidies[h];
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Objective functions

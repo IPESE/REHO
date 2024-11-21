@@ -114,7 +114,7 @@ class MasterProblem:
             self.DW_params = DW_params
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
-        self.lists_MP = {"list_parameters_MP": ['renter_expense_max','utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
+        self.lists_MP = {"list_parameters_MP": ['risk_factor', 'renter_expense_max','utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
                          "list_constraints_MP": []
@@ -128,7 +128,7 @@ class MasterProblem:
         self.pool = None
         self.iter = 0  # keeps track of iterations, takes value of last iteration circle
         self.feasible_solutions = 0  # keeps track how many sets of SP solutions are proposed to the MP eg '2' means two per building
-        list_obj = list(self.infrastructure.lca_kpis) + ["TOTEX", "CAPEX", "OPEX", "GWP", "TOTEX_bui"]
+        list_obj = list(self.infrastructure.lca_kpis) + ["TOTEX", "CAPEX", "OPEX", "GWP"]
         self.flags = {obj: 0 for obj in list_obj}  # keep track if the initialization has already been done
 
         # output attributes
@@ -225,9 +225,19 @@ class MasterProblem:
             init_beta = [1000.0, 10, 1, 0.1, 0.001]
         else:
             init_beta = []  # skip the initialization
-
+##########TODO####################
         for beta in init_beta:  # execute SP for MP initialization
-            if self.method['parallel_computation']:
+            if self.method['refurbishment']:
+                for id, h in enumerate(self.infrastructure.houses):
+                    df_Results, df_Results2 , attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
+                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+
+                    self.feasible_solutions += 1
+                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results2, attr)
+                    self.feasible_solutions -= 1
+                self.feasible_solutions +=1
+
+            elif self.method['parallel_computation']:
 
                 # to run multiprocesses, a copy of the model is performed with pickles -> make sure there are no ampl libraries
                 results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta)) for h in
@@ -321,12 +331,50 @@ class MasterProblem:
 
         del ampl
         gc.collect()  # free memory
+
+        if self.method['refurbishment']:
+            U_h = refurbishment.U_h_insulation(self.buildings_data, insulation_data=True)
+            Cost_ins = refurbishment.calculate_refurbishment_cost(self.buildings_data, self.parameters)
+            for i in buildings_data_SP:
+                parameters_SP['U_h'] = U_h[i]
+                parameters_SP['Costs_ins'] = Cost_ins[i]
+            if self.method['use_facades'] or self.method['use_pv_orientation']:
+                REHO_ins= SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP,
+                                  self.set_indexed, self.cluster,
+                                  scenario, self.method, self.solver, self.qbuildings_data)
+            else:
+                REHO_ins = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP,
+                                  self.set_indexed, self.cluster,
+                                  scenario, self.method, self.solver)
+            ampl2 = REHO_ins.build_model_without_solving()
+
+            if self.method['fix_units']:
+                for unit in self.fix_units_list:
+                    if unit == 'PV':
+                        ampl2.getVariable('Units_Mult').get('PV_' + h).fix(
+                            self.df_fix_Units.Units_Mult.loc['PV_' + h] * 0.999)
+                        ampl2.getVariable('Units_Use').get('PV_' + h).fix(
+                            float(self.df_fix_Units.Units_Use.loc['PV_' + h]))
+                    else:
+                        ampl2.getVariable('Units_Mult').get(unit + '_' + h).fix(
+                            self.df_fix_Units.Units_Mult.loc[unit + '_' + h])
+                        ampl2.getVariable('Units_Use').get(unit + '_' + h).fix(
+                            float(self.df_fix_Units.Units_Use.loc[unit + '_' + h]))
+            ampl2.solve()
+            df_Results_2 = write_results.get_df_Results_from_SP(ampl2, scenario, self.method, self.buildings_data)
+
+            del ampl2
+            gc.collect()
+
         if exitcode != 0:
             # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
             if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
                 raise Exception('Sub problem did not converge')
 
-        return df_Results, attr
+        if self.method['refurbishment']:
+            return df_Results, df_Results_2, attr
+        else:
+            return df_Results, attr
 
     def MP_iteration(self, scenario, binary, Scn_ID=0, Pareto_ID=1, read_DHN=False):
         """
@@ -500,6 +548,10 @@ class MasterProblem:
 
         MP_set_indexed['FeasibleSolutions'] = df_Performance.index.unique('FeasibleSolution').to_numpy()  # index to array as set
 
+        #if self.method['refurbishment']:
+        #    MP_parameters["refurbishment_cost"] = refurbishment.calculate_refurbishment_cost(self.buildings_data)
+        #    MP_parameters["U_h"] = refurbishment.U_h_insulation(self.buildings_data)
+
         if self.method['actors_problem']:
             # MP_parameters['Costs_tot_actors_min'] = df_Performance[["Costs_op", "Costs_inv", "Costs_rep"]].sum(axis=1).groupby("house").min()
             MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
@@ -509,8 +561,13 @@ class MasterProblem:
                 dummy = df_Unit_t.xs("PV_" + bui, level="Unit")
                 df_PV_t = pd.concat([df_PV_t, dummy])
             MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
-            MP_parameters["renter_expense_max"] = actors.generate_renter_expense_max(self.buildings_data, self.parameters)
 
+            self.parameters["renter_expense_max"] = actors.generate_renter_expense_max(self.buildings_data, self.parameters)
+            MP_parameters["renter_expense_max"] = [100000] * len(self.buildings_data)
+            for i in range(len(self.parameters["renter_expense_max"])):
+                MP_parameters["renter_expense_max"][i] = self.parameters["renter_expense_max"][i]
+
+            #MP_parameters["ERA"] = pd.Series({key: value['ERA'] for key, value in self.buildings_data.items()})
             #MP_parameters["refurbishment_cost"] = refurbishment.calculate_refurbishment_cost(self.buildings_data)
             #MP_parameters["U_h"] = refurbishment.U_h_insulation(self.buildings_data)
 
@@ -603,9 +660,10 @@ class MasterProblem:
         if not binary:
             ampl_MP.getConstraint('convexity_binary').drop()
 
+        ampl_MP.setOption("solver_options", "logfile=stdout threads=4 outputflag=1")
+
         # Solve ampl_MP
         ampl_MP.solve()
-
         df_Results_MP = write_results.get_df_Results_from_MP(ampl_MP, binary, self.method, self.infrastructure, read_DHN=read_DHN, scenario=scenario)
         self.logger.info(str(ampl_MP.getCurrentObjective().getValues().toPandas()))
 
@@ -631,30 +689,39 @@ class MasterProblem:
         Pareto_ID: int
             pareto ID
         """
+        if self.method['refurbishment']:
+            for h in self.infrastructure.houses:
+                df_Results, df_Results2, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
+                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                self.feasible_solutions += 1
+                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results2, attr)
+                self.feasible_solutions -= 1
+            self.feasible_solutions += 1
 
-        if self.method['parallel_computation']:
+        elif self.method['parallel_computation']:
             # to run multiprocesses, a copy of the model is performed with pickles -> make sure ampl libraries are removed
             results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.infrastructure.houses}
             while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
                 time.sleep(1)
             # for now the memory which needs to be writable & shared is not parallel -> results have to be stored outside calculation
             for h in self.infrastructure.houses:
-                (df_Results, attr) = results[h].get()
+                #if self.method['refurbishment']:
+                #    df_Results,df_Results2, attr = results[h].get()
+                #    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                #    self.add_df_Results_SP(Scn_ID, Pareto_ID + 10000, self.iter, h, df_Results2, attr)
+                #else:
+                df_Results, attr = results[h].get()
                 self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
-
-                if self.method['refurbishment']:
-                    (df_Results2, attr) = results[h].get()
-                    self.add_df_Results_SP(Scn_ID, Pareto_ID + 100, self.iter, h, df_Results2, attr)
 
         else:
             for h in self.infrastructure.houses:
-                if self.method['refurbishment']:
-                    (df_Results, df_Results2, attr) = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
-                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
-                    self.add_df_Results_SP(Scn_ID, Pareto_ID + 100, self.iter, h, df_Results2, attr)
-                else:
-                    df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
-                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                #if self.method['refurbishment']:
+                #    df_Results, df_Results2, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
+                #    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                #    self.add_df_Results_SP(Scn_ID, Pareto_ID + 10000, self.iter, h, df_Results2, attr)
+                #else:
+                df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
+                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
         self.feasible_solutions += 1  # after each 'round' of SP execution-> increase
 
@@ -719,6 +786,26 @@ class MasterProblem:
             C_rent_fix = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]['df_District']['C_rent_fix']
             parameters_SP['C_rent_fix'] = C_rent_fix
 
+            if self.iter >= 1:
+                #df_renter_subsidies = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_District"]['renter_subsidies']
+                #parameters_SP['renter_subsidies'] = df_renter_subsidies
+
+                lambdas = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_DW"]['lambda']
+                df_sc_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_self_consumption"]["Electricity"]
+                df_sc = df_sc_f * lambdas
+                cost_self_consumption = df_sc.groupby(level='Hub').sum()
+                parameters_SP['Cost_self_consumption'] = cost_self_consumption
+
+                df_cost_supply_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_supply_district"]
+                df_cost_supply = df_cost_supply_f * lambdas
+                cost_supply_district = df_cost_supply.groupby(level=('Hub','ResourceBalances')).sum()
+                parameters_SP['Cost_supply_district'] = cost_supply_district
+
+                df_cost_demand_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_demand_district"]
+                df_cost_demand = df_cost_demand_f * lambdas
+                cost_demand_district = df_cost_demand.groupby(level=('Hub','ResourceBalances')).sum()
+                parameters_SP['Cost_demand_district'] = cost_demand_district
+
         # find district structure, objective, beta and parameter for one single building
         buildings_data_SP, parameters_SP = self.split_parameter_sets_per_building(h, parameters_SP)
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
@@ -781,7 +868,7 @@ class MasterProblem:
             ampl2.solve()
             df_Results_2 = write_results.get_df_Results_from_SP(ampl2, scenario, self.method, self.buildings_data)
 
-            del ampl, ampl2
+            del ampl2
             gc.collect()
 
 
@@ -830,7 +917,6 @@ class MasterProblem:
         # --------------------------------------------------------------
         # optimal solution found based on reduced costs
         # --------------------------------------------------------------
-        # TODO: Ask why feasible_solitions-1 instead of iter-1
         last_SP_results = self.results_SP[Scn_ID][Pareto_ID][self.iter][self.feasible_solutions - 1]
         Cop = pd.DataFrame(dtype='float')
         Cinv = pd.DataFrame(dtype='float')
@@ -879,7 +965,8 @@ class MasterProblem:
             mu = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'mu')
             Cop_house = Cop.xs((self.iter, self.feasible_solutions - 1, h))
             Cinv_house = Cinv.xs((self.iter, self.feasible_solutions - 1, h))
-            obj_fct = pd.Series([Cinv_house["TOTEX"], Cop_house["TOTEX"], Cinv_house["TOTEX"]+Cop_house["TOTEX"]], index=["CAPEX", "OPEX", "TOTEX_bui"])
+            # Cinv_house["TOTEX"]+Cop_house["TOTEX"] , "TOTEX_bui"
+            obj_fct = pd.Series([Cinv_house["TOTEX"], Cop_house["TOTEX"]], index=["CAPEX", "OPEX"])
             impacts = Cop_house + Cinv_house
             obj_fct = pd.concat([obj_fct, impacts.replace(np.nan, 0)])
 
@@ -889,7 +976,7 @@ class MasterProblem:
             beta_penalty = sum(beta * obj_fct)
 
             Costs_ft = last_SP_results[h]["df_Performance"].iloc[0].Costs_ft
-            reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu
+            reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu - rc_actors[h]
             if self.method['actors_problem']:
                 reduced_cost_h += rc_actors[h]
             reduced_cost.at[h, 'Reduced_cost'] = reduced_cost_h
@@ -1014,11 +1101,11 @@ class MasterProblem:
 
     def get_actor_expences(self, actor, Scn_ID, Pareto_ID, df_Grid_t,cost_supply=pd.Series(dtype='float'), cost_demand=pd.Series(dtype='float')):
 
-        tariff_supply = cost_supply['Electricity'].values
-        tariff_demand = cost_demand['Electricity'].values
-
         last_MP_results = self.results_MP[Scn_ID][Pareto_ID][self.iter]
         last_SP_results = self.results_SP[Scn_ID][Pareto_ID][self.iter][self.feasible_solutions - 1]
+
+        tariff_supply = cost_demand['Electricity'].values
+        tariff_demand = cost_demand['Electricity'].values
 
         cost_self_consumption = pd.Series(dtype='float')
         for b in self.buildings_data:
@@ -1036,7 +1123,7 @@ class MasterProblem:
             renter_expense = pd.Series(dtype='float')
             for b in self.buildings_data:
                 renter_expense[b] = (last_MP_results['df_District']['C_rent_fix'][b] +
-                                     sum(tariff_supply * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity']) +
+                                     sum(last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity']) +
                                      cost_self_consumption[b])
             return renter_expense
         elif actor == "Owner":
@@ -1044,14 +1131,14 @@ class MasterProblem:
                              - sum(cost_self_consumption)
                              - sum(last_MP_results['df_District']['Costs_inv']))
             for b in self.buildings_data:
-                owner_expense -= sum(tariff_demand * last_SP_results[b]['df_Grid_t']['Grid_demand']['Electricity'])
+                owner_expense -= sum(last_MP_results['df_Actors_tariff']['Cost_demand_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_demand']['Electricity'])
 
             return owner_expense
         elif actor == "Utility":
             utility_expense = 0
             for b in self.buildings_data:
-                utility_expense += (- sum(tariff_supply * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity'])
-                                    + sum(tariff_demand * last_SP_results[b]['df_Grid_t']['Grid_demand']['Electricity']))
+                utility_expense += (- sum(last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity'])
+                                    + sum(last_MP_results['df_Actors_tariff']['Cost_demand_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_demand']['Electricity']))
 
             return utility_expense
 

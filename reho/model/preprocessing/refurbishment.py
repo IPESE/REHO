@@ -8,8 +8,7 @@ def calculate_refurbishment_cost(buildings_data, parameters):
             'area_facade': data.get('area_facade_m2', 0),
             'area_footprint': data.get('area_footprint_m2', 0),
             'area_roof': data.get('SolarRoofArea', 0),
-            'total_area': data.get('area_facade_m2', 0) + data.get('area_footprint_m2', 0) + data.get('SolarRoofArea',
-                                                                                                      0),
+            'total_area': data.get('area_facade_m2', 0) + data.get('area_footprint_m2', 0) + data.get('SolarRoofArea',0),
         }
         for building_name, data in buildings_data.items()
     }
@@ -56,13 +55,13 @@ def calculate_refurbishment_cost(buildings_data, parameters):
             'roof_cost': roof_cost,
             'total_cost': facade_cost + footprint_cost + roof_cost
         }
-
+    #TODO delete 100000...
         total_cost[building_name] = cost_insulation[building_name]['total_cost']
 
     # GWP
-    if 'risk_factor' in parameters:
+    #if 'risk_factor' in parameters:
         # Get the risk factor value
-        risk_factor = parameters['risk_factor'].get('SWI_regBLBatiments_CriticalPart')
+    #    risk_factor = parameters['risk_factor'].get('SWI_regBLBatiments_CriticalPart')
         # Process each building's data
 
     return total_cost

@@ -575,11 +575,24 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_lca_operation"] = LCA_op
 
     if method["actors_problem"]:
+        df1 = get_ampl_data(ampl, 'renter_expense')
+        df2 = get_ampl_data(ampl, 'utility_portfolio')
+        df3 = get_ampl_data(ampl, 'owner_portfolio')
+        df_Results["df_Actors_expense"] = pd.concat([df1, df2, df3], axis=1)
+
         df1 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True).groupby(level=(0, 2)).sum()
         df2 = get_ampl_data(ampl, 'Cost_supply_district', multi_index=True).groupby(level=(0, 2)).sum()
         df3 = get_ampl_data(ampl, 'Cost_self_consumption', multi_index=True).groupby(level=1).sum()
         df3 = pd.concat({'Electricity': df3})
         df_Results["df_Actors_tariff"] = pd.concat([df1, df2, df3], axis=1)
+
+        df1 = get_ampl_data(ampl, 'Cost_self_consumption', multi_index=True)
+        df1 = pd.concat({'Electricity': df1})
+        df2 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True)
+        df3 = get_ampl_data(ampl, 'Cost_supply_district', multi_index=True)
+        df_actor_tariff = pd.concat([df1,df2,df3], axis=1)
+        df_actor_tariff.index.names = ['ResourceBalances', 'FeasibleSolutions', 'Hub']
+        df_Results["df_Actors_tariff_f"] = df_actor_tariff.sort_index()
 
         df_Results["df_Actors"] = get_ampl_data(ampl, 'objective_functions')
 
@@ -591,9 +604,11 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df5 = get_ampl_data(ampl, 'owner_portfolio')
         df6 = get_ampl_data(ampl, 'renter_expense')
         df7 = get_ampl_data(ampl, 'C_rent_fix')
-        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
-        df_8 = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
-        df_Actors = pd.concat([df_Actors, df_8], axis=0)
+        df8 = get_ampl_data(ampl, 'renter_subsidies')
+
+        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8], axis=1)
+        df_network = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
+        df_Actors = pd.concat([df_Actors, df_network], axis=0)
         df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)
         df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
 

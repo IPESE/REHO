@@ -298,6 +298,7 @@ param Costs_House_limit{h in House} default 0;						# CHF/yr
 param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
 param Costs_ins{h in House} default 0;
+param Costs_house_initiation default 6000;
 
 param n_years default 25;
 param i_rate default 0.02;
@@ -337,7 +338,7 @@ param Cost_supply_network{l in ResourceBalances,p in Period,t in Time[p]} defaul
 
 var Costs_House_op{h in House};
 var Costs_op;
-var Cost_self_consumption{h in House};
+
 
 subject to Costs_house_opex{h in House}:
 Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply[h,l,p,t]*Grid_supply[l,h,p,t] - Cost_demand[h,l,p,t]*Grid_demand[l,h,p,t])*dp[p]*dt[p]); 
@@ -345,11 +346,6 @@ Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}(
 subject to Costs_opex:
 Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t])*dp[p]*dt[p]); 
 
-subject to size_cstr5{h in House}:            
-Cost_demand_cst['Electricity'] <= Cost_self_consumption[h];
-
-subject to size_cstr6{h in House}:           
-Cost_self_consumption[h] <= Cost_supply_cst['Electricity'];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#

@@ -252,7 +252,7 @@ def compute_district_parameters(district_parameters):
                 raise ValueError("Mislabelled or missing columns in the dataframe. Should contain ['N_house', 'rho_household', 'rho_industry', 'rho_service'] and (['Scluster'] OR ['ERA_m2']) ")
 
     # Calculate the parameters
-    df['Pop'] = df['Scluster'] * df['rho_household'] / 46.5 # 46.5 m² per person on average
+    df['Pop'] = df['Sdistrict'] * df['rho_household'] / 46.5 # 46.5 m² per person on average
     df['PopHouse'] = df['Pop']/df['N_house']
     df['f'] = df['Scluster'].mul(10**6)/ df['Sdistrict']
 

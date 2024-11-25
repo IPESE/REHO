@@ -3,6 +3,25 @@ from reho.model.preprocessing.mobility_generator import *
 import datetime
 from scripts.solene.functions import *
 
+def remove_nan_QBuilding(qbuildings_data):
+    for bui in qbuildings_data["buildings_data"]:
+        bui_class = qbuildings_data["buildings_data"][bui]["id_class"]
+        qbuildings_data["buildings_data"][bui]["id_class"] = qbuildings_data["buildings_data"][bui]["id_class"].replace("nan", "II")
+        if bui_class != qbuildings_data["buildings_data"][bui]["id_class"]:
+            print(bui, "had nan class and was", bui_class)
+
+        if math.isnan(qbuildings_data["buildings_data"][bui]["U_h"]):
+            qbuildings_data["buildings_data"][bui]["U_h"] = 0.00181
+
+        if math.isnan(qbuildings_data["buildings_data"][bui]["HeatCapacity"]):
+            qbuildings_data["buildings_data"][bui]["HeatCapacity"] = 120
+
+        if math.isnan(qbuildings_data["buildings_data"][bui]["T_comfort_min_0"]):
+            qbuildings_data["buildings_data"][bui]["T_comfort_min_0"] = 20
+
+        return qbuildings_data
+
+
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
@@ -40,7 +59,8 @@ if __name__ == '__main__':
     # SA object used to generate the sampled values
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     SA = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=8)
-    SA_parameters = {'Elec_retail': [0.2, 0.45], "Elec_feedin": [0.05, 0.25], "NG_retail": [0.1,0.3], 'DailyDist': [15, 30], "share_cars": [0, 0.65], "share_EV_infleet": [0.1, 1]}
+    SA_parameters = {'Elec_retail': [0.15, 0.4], "Elec_feedin": [0.0, 0.149], "NG_retail": [0.1, 0.3],
+                     'DailyDist': [15, 45], "share_cars": [0.0, 1.0], "share_EV_infleet": [0.0, 1.0]}
     SA.build_SA(SA_parameters=SA_parameters, unit_parameter=[])
 
     df_sampling = pd.DataFrame(SA.sampling.T, index=SA.problem['names'])
@@ -48,7 +68,7 @@ if __name__ == '__main__':
     # Initialization of reho objects - one per district
     for tr in districts:
         qbuildings_data = reader.read_db(transformer=tr, nb_buildings=n_buildings)
-        
+        qbuildings_data = remove_nan_QBuilding(qbuildings_data)
         # District parameters and sets
         ext_districts = [d for d in districts if d != tr]
         set_indexed = {"Districts": ext_districts}

@@ -452,7 +452,7 @@ def compute_iterative_parameters(variables,district_parameters,only_prices = Fal
 
         df_load = df_load.groupby(["district" ,"Period", "Time"]).agg('sum').stack()
         df_load = df_load.unstack(level='district').reorder_levels([2,0,1])
-        df_load.columns = df_load.columns.astype(int)
+        df_load.columns = df_load.columns.astype(float).astype(int)
 
 
         for d in variables.keys():

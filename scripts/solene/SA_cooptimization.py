@@ -3,46 +3,53 @@ from reho.model.preprocessing.mobility_generator import *
 import datetime
 from scripts.solene.functions import *
 
-def remove_nan_QBuilding(qbuildings_data):
-    for bui in qbuildings_data["buildings_data"]:
-        bui_class = qbuildings_data["buildings_data"][bui]["id_class"]
-        qbuildings_data["buildings_data"][bui]["id_class"] = qbuildings_data["buildings_data"][bui]["id_class"].replace("nan", "II")
-        if bui_class != qbuildings_data["buildings_data"][bui]["id_class"]:
+def remove_nan_QBuilding(buildings_data):
+    for bui in buildings_data["buildings_data"]:
+        bui_class = buildings_data["buildings_data"][bui]["id_class"]
+        buildings_data["buildings_data"][bui]["id_class"] = buildings_data["buildings_data"][bui]["id_class"].replace("nan", "II")
+        buildings_data["buildings_data"][bui]["id_class"] = buildings_data["buildings_data"][bui]["id_class"].replace("VIII", "III")
+        buildings_data["buildings_data"][bui]["ratio"] = buildings_data["buildings_data"][bui]["ratio"].replace("nan", "0.0")
+        if bui_class != buildings_data["buildings_data"][bui]["id_class"]:
             print(bui, "had nan class and was", bui_class)
+        if math.isnan(buildings_data["buildings_data"][bui]["U_h"]):
+            buildings_data["buildings_data"][bui]["U_h"] = 0.00181
+        if math.isnan(buildings_data["buildings_data"][bui]["HeatCapacity"]):
+            buildings_data["buildings_data"][bui]["HeatCapacity"] = 120
+        if math.isnan(buildings_data["buildings_data"][bui]["T_comfort_min_0"]):
+            buildings_data["buildings_data"][bui]["T_comfort_min_0"] = 20
+    return buildings_data
 
-        if math.isnan(qbuildings_data["buildings_data"][bui]["U_h"]):
-            qbuildings_data["buildings_data"][bui]["U_h"] = 0.00181
-
-        if math.isnan(qbuildings_data["buildings_data"][bui]["HeatCapacity"]):
-            qbuildings_data["buildings_data"][bui]["HeatCapacity"] = 120
-
-        if math.isnan(qbuildings_data["buildings_data"][bui]["T_comfort_min_0"]):
-            qbuildings_data["buildings_data"][bui]["T_comfort_min_0"] = 20
-
-        return qbuildings_data
+def filter_data(reho, s):
+    for i in reho.results[f'S{s + 1}']:
+        df_Unit_t_local = reho.results[f'S{s + 1}'][i]["df_Unit_t"]
+        reho.results[f'S{s + 1}'][i]["df_Unit_t"] = df_Unit_t_local[df_Unit_t_local.index.get_level_values("Unit").str.contains("district")]
+        df_Grid_t_local = reho.results[f'S{s + 1}'][i]["df_Grid_t"]
+        reho.results[f'S{s + 1}'][i]["df_Grid_t"] = df_Grid_t_local[["Grid_demand", "Grid_supply"]]
+        reho.results[f'S{s + 1}'][i]["df_Grid_t_net"] = df_Grid_t_local.xs("Network", level="Hub")
+    return reho
 
 
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
-    district_parameters = pd.read_csv(os.path.join(path_to_mobility, 'leman.csv'), index_col = 0)
+    district_parameters = pd.read_csv(os.path.join(path_to_mobility, 'leman.csv'), index_col=0)[3:]
     districts = list(district_parameters.index.values)
     districts = [int(x) for x in districts]
-    n_buildings = 3
+    n_buildings = 600
 
-    # districts = [234,3112,837]
-    # district_parameters = {234 : {"N_house": 129, "rho": pd.Series([95,3,2],index=['household','industry','service']), "f" : 1 , "Scluster" : 94322 },
-    #                        3112 : {"N_house": 200, "rho": pd.Series([89,2,6],index=['household','industry','service']), "f" : 1 , "Scluster" : 110399 },
-    #                        837 : {"N_house": 56, "rho": pd.Series([70,10,20],index=['household','industry','service']), "f" : 1 , "Scluster" : 56540 }}
-    
+    reader = QBuildingsReader()
+    qbuildings_data = {}
+    for tr in districts:
+        path = 'data/' + str(tr) + '_'
+        qbuildings_data[tr] = reader.read_csv(buildings_filename=path+'buildings.gpkg', nb_buildings=n_buildings,
+                                      roofs_filename=path+'roofs.gpkg', facades_filename=path+'facades.gpkg')
+        qbuildings_data[tr] = remove_nan_QBuilding(qbuildings_data[tr])
+        district_parameters.at[tr, "Scluster"] = np.sum([qbuildings_data[tr]["buildings_data"][bui]["ERA"] for bui in qbuildings_data[tr]["buildings_data"]])
 
     district_parameters = compute_district_parameters(district_parameters)
     for k in district_parameters.keys():
-        district_parameters[k]['Population'] = n_buildings * district_parameters[k]['PopHouse']
+        district_parameters[k]['Population'] = len(qbuildings_data[k]["buildings_data"]) * district_parameters[k]['PopHouse']
 
-    reader = QBuildingsReader()
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=234, nb_buildings=n_buildings)
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     scenario = dict()
@@ -53,30 +60,27 @@ if __name__ == '__main__':
     scenario['specific'] = []
     scenario['EMOO'] = {}
     grids = infrastructure.initialize_grids({'Electricity': {}, 'NaturalGas': {}, 'FossilFuel': {}, 'Mobility': {}})
-    units = infrastructure.initialize_units(scenario, grids,district_data=True)
-    method = {'building-scale': True} # coordination entre batiments ou non
+    grids["Electricity"]["ReinforcementTrOfLayer"] = np.array([200.0, 1000.0])
+    tr_capacity = {9678: 200.0, 9697: 1000.0, 2534: 200.0, 10260: 200.0, 10312: 1000.0}
 
+    units = infrastructure.initialize_units(scenario, grids,district_data=True)
+    method = {'district-scale': True, "print_logs": True, "save_timeseries": True, "include_all_solutions": True}
+    DW_params = {"max_iter": 3}
     # SA object used to generate the sampled values
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
-    SA = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=8)
+    reho = REHO(qbuildings_data=qbuildings_data[districts[0]], units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
+    SA = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=2)
     SA_parameters = {'Elec_retail': [0.15, 0.4], "Elec_feedin": [0.0, 0.149], "NG_retail": [0.1, 0.3],
                      'DailyDist': [15, 45], "share_cars": [0.0, 1.0], "share_EV_infleet": [0.0, 1.0]}
     SA.build_SA(SA_parameters=SA_parameters, unit_parameter=[])
-
     df_sampling = pd.DataFrame(SA.sampling.T, index=SA.problem['names'])
 
     # Initialization of reho objects - one per district
     for tr in districts:
-        qbuildings_data = reader.read_db(transformer=tr, nb_buildings=n_buildings)
-        qbuildings_data = remove_nan_QBuilding(qbuildings_data)
-        # District parameters and sets
         ext_districts = [d for d in districts if d != tr]
         set_indexed = {"Districts": ext_districts}
-        parameters = {'Population': district_parameters[tr]['Population']}
-        
-        vars()[f'reho_{tr}'] = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, parameters=parameters, set_indexed=set_indexed, solver="gurobiasl")
-
-        # Compute the f parameter
+        parameters = {'Population': district_parameters[tr]['Population'], 'Transformer_Ext': np.array([tr_capacity[tr], 1e6, 1e6, 1e6]),
+                      "CostTransformer_inv1": np.array([10000, 0, 0, 0]), "CostTransformer_inv2": np.array([10000, 0, 0, 0])}
+        vars()[f'reho_{tr}'] = REHO(qbuildings_data=qbuildings_data[tr], units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, parameters=parameters, set_indexed=set_indexed, solver="gurobiasl", DW_params=DW_params)
         district_parameters[tr]['f'] = district_parameters[tr]['Scluster'] * 10**6/ vars()['reho_' + str(tr)].ERA
 
         # Compute the share activity parameter
@@ -117,8 +121,8 @@ if __name__ == '__main__':
                 elif parameter == 'NG_retail':
                     grids["NaturalGas"]["Cost_supply_cst"] = value
             
-            qbuildings_data = {'buildings_data': vars()[f"reho_{tr}"].buildings_data}
-            vars()[f"reho_{tr}"].infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+            qbuildings_data[tr] = {'buildings_data': vars()[f"reho_{tr}"].buildings_data}
+            vars()[f"reho_{tr}"].infrastructure = infrastructure.Infrastructure(qbuildings_data[tr], units, grids)
 
             vars()[f"reho_{tr}"].single_optimization(Pareto_ID = i)
 
@@ -129,7 +133,7 @@ if __name__ == '__main__':
         parameters, variables = compute_iterative_parameters(variables, district_parameters,only_prices=True)
 
         # Iterations for co-optimization
-        for i in range(1, 3):
+        for i in range(1, 4):
             for tr in districts:
                 print(f"S{s+1} - iteration {i} : district {tr}")
                 vars()[f"reho_{tr}"].method['external_district'] = True
@@ -156,8 +160,17 @@ if __name__ == '__main__':
                 pi_results[f'S{s+1}'][tr][i] = pd.DataFrame.from_dict(pi_results[f'S{s+1}'][tr][i])
         for tr in districts:
             vars()[f"reho_{tr}"].initialize_optimization_tracking_attributes()
+            vars()[f"reho_{tr}"] = filter_data(vars()[f"reho_{tr}"], s)
+
 
     # Save results
+    results = {}
     for tr in districts:
-        vars()[f"reho_{tr}"].save_results(format=[ 'pickle',"save_all"], filename=f'SAcooptimization_{tr}_{date}')
-    df_sampling.to_csv(f"SAcooptimization_samples_{date}.csv")
+        results[tr] = vars()[f"reho_{tr}"].results
+    vars()[f"reho_{districts[0]}"].results = results
+    vars()[f"reho_{districts[0]}"].save_results(format=['pickle'], filename=f'SA_{date}')
+    df_sampling.to_csv(f"results/SA_samples_{date}.csv")
+
+    f = open(f"results/SA_pi_{date}.pickle", 'wb')
+    pickle.dump(pi_results, f)
+    f.close()

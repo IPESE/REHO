@@ -70,8 +70,8 @@ subject to travel_time_c1{p in Period,t in Time[p]}:
 # travel_time[p,t] = sum{u in transport_Units : u != "Public_transport"}(Units_supply['Mobility',u,p,t] / Mode_Speed[u]) +( Network_supply['Mobility',p,t] / dp[p] / Mode_Speed['Public_transport']);
 travel_time[p,t] = sum{u in transport_Units : substr(u, 1, 2) != "PT"}(Units_supply['Mobility',u,p,t] / Mode_Speed[u]) +( pkm_PT_bus[p,t] / dp[p]/ Mode_Speed['PT_bus'] + pkm_PT_train[p,t]/ dp[p] / Mode_Speed['PT_train']);
 
-subject to travel_time_c2{p in Period}:
-sum {t in Time[p]}(travel_time[p,t]) <= max_travel_time * Population; 
+#subject to travel_time_c2{p in Period}:
+#sum {t in Time[p]}(travel_time[p,t]) <= max_travel_time * Population; 
 
 
 # constraint on the max share of cars

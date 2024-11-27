@@ -17,20 +17,20 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = ['EV_district']
 
+    # Set method options
+    method = {'building-scale': True}
+
+    # Set specific parameters
     parameters = dict()
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'FossilFuel' : {},
+                                             'FossilFuel': {},
                                              'Mobility': {},
                                              })
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    # Set method options
-    method = {'building-scale': True}
-
-    # Set specific parameters
+    units = infrastructure.initialize_units(scenario, grids, method, district_data=True)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,

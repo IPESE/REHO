@@ -29,7 +29,7 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['ThermalSolar', 'HeatPump', 'ElectricalHeater', 'PV', 'DataHeat']
     scenario['enforce_units'] = []
     grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Data': {}})
-    units = infrastructure.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids, method)
 
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()

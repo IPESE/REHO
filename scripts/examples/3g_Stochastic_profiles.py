@@ -19,15 +19,15 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
-
     # Set method options
     # Add stochasticity in the demand profiles given by the SIA standards, tunable with:
     # - standard deviation on the peak demand
     # - standard deviation on the time-shift
     method = {'building-scale': True, 'include_stochasticity': True, 'sd_stochasticity': [0.1, 2]}
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids, method)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

@@ -24,16 +24,16 @@ if __name__ == '__main__':
     # You can specify if the DHN is based on CO2. If not, a water DHN is assumed.
     method = {'building-scale': True, 'DHN_CO2': True}
 
+    # Set specific parameters
+    # Specify the temperature of the DHN
+    parameters = {'T_DHN_supply_cst': np.repeat(20.0, 4), "T_DHN_return_cst": np.repeat(15.0, 4)}
+
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
                                              'Heat': {}})
 
     units = infrastructure.initialize_units(scenario, method, grids, district_data=True)
-
-    # Set specific parameters
-    # Specify the temperature of the DHN
-    parameters = {'T_DHN_supply_cst': np.repeat(20.0, 4), "T_DHN_return_cst": np.repeat(15.0, 4)}
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

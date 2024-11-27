@@ -20,12 +20,12 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['NG_Cogeneration', 'OIL_Boiler', 'ThermalSolar']
     scenario['enforce_units'] = []
 
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
-
     # Set method options
     method = {'building-scale': True}
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids, method)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

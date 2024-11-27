@@ -26,8 +26,8 @@ subject to HEX_heating2{h in House,u in {'DHN_hex_in_'&h},p in Period,t in Time[
 
 
 # direct cooling
-subject to HEX_cooling1{h in House, u in {'DHN_hex_out_'&h}, p in Period,t in Time[p]}:
-	Units_supply['Heat',u,p,t]/(U_hex * T_m_out[h])  <= Units_Mult[u];	
+# subject to HEX_cooling1{h in House, u in {'DHN_hex_out_'&h}, p in Period,t in Time[p]}:
+# 	Units_supply['Heat',u,p,t]/(U_hex * T_m_out[h])  <= Units_Mult[u];	
 
-subject to HEX_cooling2{h in House, u in {'DHN_hex_out_'&h}, p in Period,t in Time[p]}:
-	Units_supply['Heat',u,p,t] * DHN_efficiency_out[u] = sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t];	
+# subject to HEX_cooling2{h in House, u in {'DHN_hex_out_'&h}, p in Period,t in Time[p]}:
+# 	Units_supply['Heat',u,p,t] * DHN_efficiency_out[u] = sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t];	

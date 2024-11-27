@@ -19,14 +19,14 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids=grids)
-
     # Set method options
     # You can provide here a profile for domestic electricity, domestic hot water, or building occupancy
     custom_elec_profile = str(Path(__file__).parent / 'data' / 'profiles' / 'electricity.csv')
     method = {'building-scale': True, 'use_custom_profiles': {'electricity': custom_elec_profile}}
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids=grids, method=method)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

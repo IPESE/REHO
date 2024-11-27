@@ -6,7 +6,7 @@ TOTEX,Total expenses,TOTEX,Coûts totaux,#007480,canard,,
 GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark,,
 ,,,,,,,
 Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark,#8B4513,brown
-NaturalGas,Natural gas,NG,Gaz naturel,#413D3A,ardoise,#413D3A,ardoise
+NaturalGas_grid,Natural gas import,NG,Gaz naturel,#413D3A,ardoise,#413D3A,ardoise
 NG_Boiler,Gas boiler,NGB,Chaudière à gaz,#413D3A,ardoise,#413D3A,ardoise
 NG_Boiler_district,District gas boiler,NGB,Chaudière à gaz (district),#413D3A,ardoise,#413D3A,ardoise
 NG_Cogeneration,NG cogeneration,COGEN,Cogénération,#413D3A,ardoise,#413D3A,ardoise
@@ -15,10 +15,12 @@ Oil,Oil,OIL,Mazout,#000000,dark,#8B4513,brown
 OIL_Boiler,Oil boiler,OB,Chaudière à mazout,#000000,dark,#8B4513,brown
 WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown,#A2CD5A,greenlight
 Wood,Wood network,Wood,Bois,#8B4513,brown,#556B2F,green
+Biomethane_grid,Biomethane import,biomethane,bio-méthane,#8B4513,brown,#556B2F,green
+Biomethane_grid_feed_in,Biomethane export,biomethane,bio-méthane,#8B4513,brown,#556B2F,green
 ,,,,,,,
 Electricity,Electrical grid,Elec,Réseau électrique,#007480,canard,#00008B,darkblue
-Electrical_grid,Electricity (import),Elec in,Électricité (achat),#007480,canard,#00008B,darkblue
-Electrical_grid_feed_in,Electricity (export),Elec out,Électricité (vente),#4d9ea6,canard_light,#00008B,darkblue
+Electrical_grid,Electricity import,Elec in,Électricité (achat),#007480,canard,#00008B,darkblue
+Electrical_grid_feed_in,Electricity export,Elec out,Électricité (vente),#4d9ea6,canard_light,#00008B,darkblue
 Electrical_grid_Cogeneration,Electricity (cogen),Elec COGEN,Électricité (cogénération),#413D3A,ardoise,#413D3A,ardoise
 PV_SC,Electricity (self-consumption),Elec SC,Électricité (auto-consommation),#ffd980,yellow_light,#EEAD0E,darkyellow
 Electrical_appliances,Electrical appliances,EL,Électricité domestique,#007480,canard,#76EEC6,turquoise
@@ -36,8 +38,10 @@ HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",
 HeatPump_Geothermal_district,HP geothermal (district),District HP geo,"PAC géothermie (district)",#FEA993,salmon,#CD1076,pink
 HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1076,pink
 ,,,,,,,
-Heat,Heat from DHN,Heat DHN,Chaleur (CAD),#FF8C00,orange,#FF3030,red
+Heat_grid,Heat import,Heat import,Chaleur (CAD),#FF8C00,orange,#FF3030,red
+Heat_grid_feed_in,Heat export,Heat import,Chaleur (CAD),#FF8C00,orange,#FF3030,red
 DHN_pipes,DHN connection,DHN,Connexion CAD,#FF8C00,orange,#EEE685,yellowgrey
+DHN,DHN,DHN,Connexion CAD,#FF8C00,orange,#EEE685,yellowgrey
 DHN_hex_in,Heat exchanger (in),HEX in,Échangeur de chaleur (entrée),#FF8C00,orange,#EEE685,yellowgrey
 DHN_hex_out,Heat exchanger (out),HEX out,Échangeur de chaleur (sortie),#FF8C00,orange,#EEE685,yellowgrey
 Heat_losses,Heat losses,SH leak,Pertes chaleur,#FF8C00,orange,#CDC8B1,grey
@@ -59,7 +63,6 @@ PV_facades,PV facade,PV,PV façade,#ffc94d,yellow_medium,#EEAD0E,darkyellow
 solar_value,Solar value,Solar,Électricité solaire,#4d9ea6,canard_light,#00008B,darkblue
 solar_premium,Solar premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light,#EEAD0E,darkyellow
 Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark,#EEAD0E,darkyellow
-Battery,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
 Air_Conditioner,Air conditioner,AC,Climatiseur,#00008B,darkblue,#9AC0CD,bluegrey
 Cooling,Fossil-fuel boiler,BO,Chaudière fossile,#00008B,darkblue,#9AC0CD,bluegrey
 ,,,,,,,
@@ -77,3 +80,21 @@ ElectricBike_district,Electric bikes,EBike,Vélos électriques,#00FF7F,springgre
 Total_EV_fleet,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise,#7AC5CD,blue
 EV_charger_district,EV charging station,EVchrg,Stations de recharge,#008080,teal,#008080,teal
+,,,,,,,
+rSOC,rSOC,rSOC,rSOC,#00008B,darkblue,#9AC0CD,bluegrey
+rSOC_district,rSOC,rSOC,rSOC,#00008B,darkblue,#9AC0CD,bluegrey
+MTR,Methanator,Methanator,Methanator,#9f8753,darkyellow,#9f8753,darkyellow
+MTR_district,Methanator,Methanator,Methanator,#9f8753,darkyellow,#9f8753,darkyellow
+FC,Fuel Cell,Fuel Cell,Fuel Cell,#00008B,darkblue,#9AC0CD,bluegrey
+ETZ,Electrolyzer,Electrolyzer,Electrolyzer,#00008B,darkblue,#9AC0CD,bluegrey
+,,,,,,,
+Battery,Battery,Bat,Batterie,#A57300,lightblue,#76EEC6,turquoise
+Battery_district,Battery,Bat,Batterie,#A57300,lightblue,#76EEC6,turquoise
+Battery_IP,Battery_IP,Bat,Batterie_IP,#A57300,lightblue,#76EEC6,turquoise
+Battery_IP_district,Battery_IP,Bat,Batterie_IP,#A57300,lightblue,#76EEC6,turquoise
+H2_storage_IP,Hydrogen storage,H2_stor,H2_storage,#82a4d6,lightblue,#9AC0CD,bluegrey
+H2_storage_IP_district,Hydrogen storage,H2_stor,H2_storage,#82a4d6,lightblue,#9AC0CD,bluegrey
+CH4_storage_IP,Biomethane storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CH4_storage_IP_district,Biomethane storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CO2_storage_IP,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CO2_storage_IP_district,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow

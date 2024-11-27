@@ -185,6 +185,32 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
     df_label, df_stv, _ = add_flow('MTR', 'CH4_storage_IP', 'Biomethane', 'MTR', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
+    df_label, df_stv, _ = add_flow('H2_storage_IP_district', 'rSOC_district', 'Hydrogen', 'H2_storage_IP_district','Supply_MWh',
+                                   df_annuals, df_label, df_stv, False, None, -H2_stor_to_FC)
+
+    # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
+    df_label, df_stv, _ = add_flow('rSOC_district', 'H2_storage_IP_district', 'Hydrogen', 'H2_storage_IP_district','Demand_MWh',
+                                   df_annuals, df_label, df_stv, False, None, -ETZ_to_H2_stor)
+
+    # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
+    df_label, df_stv, _ = add_flow('CH4_storage_IP_district', 'rSOC_district', 'Biomethane', 'CH4_storage_IP_district', 'Supply_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    # 9 Device to H2
+    df_label, df_stv, _ = add_flow('rSOC_district', 'MTR_district', 'Hydrogen', 'MTR_district', 'Demand_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    # 10 Device to CH4
+    df_label, df_stv, _ = add_flow('MTR_district', 'CH4_storage_IP_district', 'Biomethane', 'MTR_district', 'Supply_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    # 10 Device to CH4
+    df_label, df_stv, _ = add_flow('Biomethane_grid', 'rSOC_district', 'Biomethane', 'Network','Supply_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    # 10 Device to CH4
+    #df_label, df_stv, _ = add_flow('Biomethane', 'rSOC', 'Biomethane', 'Network', 'Supply_MWh',
+    #                               df_annuals, df_label, df_stv)
     return df_label, df_stv
 
 
@@ -199,6 +225,21 @@ def add_ETZ_FC_to_sankey(df_annuals, df_label, df_stv):
 
     return df_label, df_stv
 
+def add_DHN_units(df_annuals, DHN_units, df_label, df_stv):
+    for unit in DHN_units:
+        df_label, df_stv, _ = add_flow(unit, 'DHN', 'Heat', unit, 'Supply_MWh',
+                                       df_annuals, df_label, df_stv)
+
+
+    df_label, df_stv, _ = add_flow('Heat_grid', 'DHN', 'Heat', 'Network', 'Supply_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    df_label, df_stv, _ = add_flow('DHN', 'DHN_hex_in', 'Heat', 'DHN_hex_in', 'Demand_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    df_label, df_stv, _ = add_flow('DHN','Heat_grid_feed_in', 'Heat', 'Network', 'Demand_MWh',
+                                   df_annuals, df_label, df_stv)
+    return df_label, df_stv
 
 def add_label_value(df_label, df_stv, precision, units):
     """
@@ -329,22 +370,21 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     # manual_device = ['PV', 'WaterTankSH']
 
     # Electrical storage device
-    elec_storage_list = ['Battery']
+    elec_storage_list = ['Battery', "Battery_district", "Battery_IP", "Battery_IP_district", 'EV_district']
 
-    # EV and their charging station are handled together
-    EV_device = ['Battery', "Battery_district", "Battery_IP", "Battery_IP_district", 'EV_district']
+    EV_device = ["EV_district", "EV_charger_district"]
 
-    # Chemical storage device
     mol_storage_list = ['H2_storage_IP', 'CH4_storage_IP']
-
     # Semi automatic handled devices
     semi_auto_device = [
         'NG_Boiler', 'NG_Cogeneration', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
         'ElectricalHeater_DHW', 'ElectricalHeater_SH',
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'Air_Conditioner',
-        'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC',
-        'ICE_district','Bike_district'
+        'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC','rSOC_district',
+        'MTR_district', 'NG_Boiler_district'
     ]
+
+    DHN_units = ["HeatPump_Geothermal", "rSOC_district", "NG_Boiler_district", "MTR_district"]
 
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 
@@ -374,7 +414,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     # check if molecule storage
     mol_storage_use = False
     for mol_storage in mol_storage_list:
-        if len(df_annuals.loc[((df_annuals['Layer'] == 'Hydrogen') | (df_annuals['Layer'] == 'Biomethane')) & (df_annuals['Hub'] == mol_storage)]) != 0:
+        if len(df_annuals.loc[(df_annuals['Layer'] == 'Hydrogen') | (df_annuals['Layer'] == 'Biomethane')]) != 0:
             mol_storage_use = True
 
     FC_or_ETZ_use = False
@@ -463,11 +503,11 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                                        df_annuals, df_label, df_stv)
 
         # 2 Heat to Device
-        df_label, df_stv, _ = add_flow('Heat', device, 'Heat', device, 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
+        #df_label, df_stv, _ = add_flow('Heat', device, 'Heat', device, 'Demand_MWh',
+        #                               df_annuals, df_label, df_stv)
 
         # 3 NG to Device
-        df_label, df_stv, _ = add_flow('NaturalGas', device, 'NaturalGas', device, 'Demand_MWh',
+        df_label, df_stv, _ = add_flow('NaturalGas_grid', device, 'NaturalGas', device, 'Demand_MWh',
                                        df_annuals, df_label, df_stv)
 
         # 3 Wood to Device
@@ -507,6 +547,9 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
 
     if FC_or_ETZ_use:
         df_label, df_stv = add_ETZ_FC_to_sankey(df_annuals, df_label, df_stv)
+
+    if df_annuals["Layer"].isin(["Heat"]).sum() > 0:
+        add_DHN_units(df_annuals, DHN_units, df_label, df_stv)
 
     # df_label : add the label to display, the color and the label (node) values if selected
     df_label['label'] = layout[label]

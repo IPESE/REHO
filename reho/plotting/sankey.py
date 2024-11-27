@@ -326,18 +326,24 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     # If not, risk that something will be not displayed, there is no check provided by this function for that.
 
     # Manual handled devices (list below not used, just here for the information)
-    # manual_device = ['PV', 'WaterTankSH', '']
+    # manual_device = ['PV', 'WaterTankSH']
 
     # Electrical storage device
-    elec_storage_list = ['Battery', "Battery_district", "Battery_IP", "Battery_IP_district", 'EV_district']
+    elec_storage_list = ['Battery']
 
+    # EV and their charging station are handled together
+    EV_device = ['Battery', "Battery_district", "Battery_IP", "Battery_IP_district", 'EV_district']
+
+    # Chemical storage device
     mol_storage_list = ['H2_storage_IP', 'CH4_storage_IP']
+
     # Semi automatic handled devices
     semi_auto_device = [
         'NG_Boiler', 'NG_Cogeneration', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
         'ElectricalHeater_DHW', 'ElectricalHeater_SH',
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'Air_Conditioner',
-        'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC'
+        'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC',
+        'ICE_district','Bike_district'
     ]
 
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
@@ -408,6 +414,48 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     df_label, df_stv, _ = add_flow('SH_heat', 'SH', 'SH', 'WaterTankSH', 'Supply_MWh',
                                    df_annuals, df_label, df_stv, adjustment=heat_tot_sup - heat_loss_wt, fact=-1)
 
+    elec_storage_energy_in = 0
+    elec_storage_energy_out = 0
+    for elec_storage in elec_storage_list:
+        # 8 Electrical cons before elec storage to storage device
+        df_label, df_stv, dev_flow_in = add_flow('Electrical_consumption_bp', elec_storage, 'Electricity', elec_storage,
+                                                 'Demand_MWh', df_annuals, df_label, df_stv)
+        elec_storage_energy_in += dev_flow_in
+
+        # 9 storage device to Electrical cons
+        df_label, df_stv, dev_flow_out = add_flow(elec_storage, 'Electrical_consumption', 'Electricity', elec_storage,
+                                                  'Supply_MWh', df_annuals, df_label, df_stv)
+        elec_storage_energy_out += dev_flow_out
+
+    # 10 Electrical cons before elec storage to Electr cons
+    if elec_storage_use:
+        df_label = update_label('Electrical_consumption_bp', 'Electrical_consumption', df_label)
+        Ec_after_bp = df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] != 'Network')].Demand_MWh.sum()
+        Ec_after_bp -= elec_storage_energy_out
+        df_stv['Electrical_consumption_bp_to_Electrical_consumption'] = [df_label.loc['Electrical_consumption_bp', 'pos'],
+                                                                         df_label.loc['Electrical_consumption', 'pos'],
+                                                                         float(Ec_after_bp - elec_storage_energy_in)]
+
+    # 11 EV and charging station infrastructure
+    # check if EV device
+    EV_device_use = False
+    for device in EV_device:
+        if len(df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] == device)]) != 0:
+            EV_device_use = True
+
+    if EV_device_use:
+        for device in EV_device:
+            # 1 Ele Cons to Device (for charging stations)
+            df_label, df_stv, _ = add_flow('Electrical_consumption', "Total_EV_fleet", 'Electricity', device, 'Demand_MWh',
+                                        df_annuals, df_label, df_stv)
+            # 2 Device to Ele Cons
+            df_label, df_stv, _ = add_flow('Total_EV_fleet', "Electrical_consumption", 'Electricity', device, 'Supply_MWh',
+                                        df_annuals, df_label, df_stv)
+            # 3 Device to Mobility
+            df_label, df_stv, _ = add_flow("Total_EV_fleet", 'Mobility (0.1 kWh/pkm)', 'Mobility', device, 'Supply_MWh',
+                                       df_annuals, df_label, df_stv,fact=1/9.37)
+
+
     # Semi-Auto for the followings devices
     for device in semi_auto_device:
         # 1 Ele Cons to Device
@@ -430,6 +478,10 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         df_label, df_stv, _ = add_flow('Oil', device, 'Oil', device, 'Demand_MWh',
                                        df_annuals, df_label, df_stv)
 
+        # 4.1 FossilFuel to Device
+        df_label, df_stv, _ = add_flow('FossilFuel', device, 'FossilFuel', device, 'Demand_MWh',
+                                       df_annuals, df_label, df_stv)
+
         # 5 Device to DHW
         df_label, df_stv, _ = add_flow(device, 'DHW', 'DHW', device, 'Supply_MWh',
                                        df_annuals, df_label, df_stv)
@@ -445,6 +497,10 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         # 8 Device to Cooling
         df_label, df_stv, _ = add_flow(device, 'Cooling', 'Cooling', device, 'Supply_MWh',
                                        df_annuals, df_label, df_stv)
+
+        # 9 Device to Mobility
+        df_label, df_stv, _ = add_flow(device, 'Mobility (0.1 kWh/pkm)', 'Mobility', device, 'Supply_MWh',
+                                       df_annuals, df_label, df_stv,fact=1/9.37)
 
     if mol_storage_use:
         df_label, df_stv = add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use)

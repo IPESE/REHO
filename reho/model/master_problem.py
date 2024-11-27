@@ -113,10 +113,17 @@ class MasterProblem:
             self.DW_params = DW_params
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
-        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'TransformerCapacity',
-                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
-                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
-                         "list_constraints_MP": []
+
+        # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
+        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
+                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
+                                                "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
+                                                "DailyDist","Mode_Speed","Cost_demand_ext","EV_charger_supply_ext","share_activity","Cost_supply_ext",
+                                                "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
+                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes", "min_share_EBikes" ,"max_share_bikes", "min_share_bikes", "n_ICEperhab",
+                                                 "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
+                         "list_constraints_MP": [],
+                         "list_set_indexed_MP" : ["Districts"]
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -182,12 +189,12 @@ class MasterProblem:
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
-        if "TransformerCapacity" in self.parameters:
+        if "Transformer_Ext" in self.parameters:
             nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
             profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
             max_DEL = profile_building_x.max(axis=1).sum()
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["TransformerCapacity"][0] * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["TransformerCapacity"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -278,7 +285,7 @@ class MasterProblem:
             print('INITIATE HOUSE: ' + h)
 
         # find district structure and parameter for one single building
-        buildings_data_SP, parameters_SP = self.split_parameter_sets_per_building(h)
+        buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h)
 
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
         if epsilon_init is not None and self.method['building-scale']:
@@ -296,11 +303,9 @@ class MasterProblem:
             parameters_SP['beta_duals'] = beta_list
 
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster, scenario,
-                              self.method, self.solver, self.qbuildings_data)
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP,self.local_data, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster, scenario,
-                              self.method, self.solver)
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP,self.local_data, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method, self.solver)
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
@@ -401,9 +406,19 @@ class MasterProblem:
         # Load district units
         ampl_MP.cd(path_to_district_units)
         if len(self.infrastructure.UnitsOfDistrict) > 0:
+            ampl_MP.cd(path_to_district_units)
+            if "Mobility" in self.infrastructure.UnitsOfLayer:
+                ampl_MP.read('mobility.mod')
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
-                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + ['unidirectional_service', 'unidirectional_service2']
+                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_supplyprofile1", "EV_supplyprofile2", 'ExternalEV_Costs_positive']
+                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + mobility_cst
+            if "Bike_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('bike.mod')
+            if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ebike.mod')
+            if "ICE_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('icevehicle.mod')
             if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_boiler_district.mod')
             if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
@@ -479,16 +494,20 @@ class MasterProblem:
 
         for key in self.lists_MP['list_parameters_MP']:
             if key in self.parameters.keys():
-                MP_parameters[key] = self.parameters[key]
+                if key == "Units_Ext_district":
+                    key2 = "Units_Ext"
+                    MP_parameters[key2] = self.parameters[key]
+                else:
+                    MP_parameters[key] = self.parameters[key]
 
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
 
-        if 'EV_plugged_out' not in MP_parameters:
-            if len(self.infrastructure.UnitsOfDistrict) != 0:
-                if 'EV_district' in self.infrastructure.UnitsOfDistrict:
-                    MP_parameters['EV_plugged_out'], MP_parameters['EV_plugging_in'] = EV_gen.generate_EV_plugged_out_profiles_district(self.cluster, self.local_data["df_Timestamp"])
+        if "Mobility" in self.infrastructure.UnitsOfLayer:
+            p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
+                                                    np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
+            MP_parameters.update(p)
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -508,7 +527,11 @@ class MasterProblem:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']:
+        additional = []
+        if 'ReinforcementTrOfLayer' in self.infrastructure.Set.keys():
+             additional = additional + ["ReinforcementTrOfLayer"]
+
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']+additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
@@ -538,6 +561,14 @@ class MasterProblem:
                     MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
+
+        if "Mobility" in self.infrastructure.UnitsOfLayer:
+            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EVcharging_district"]), ['PT_train', 'PT_bus'])
+            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+
+        if self.method['external_district']:
+            MP_set_indexed['Districts'] = np.array(self.set_indexed["Districts"])
+
 
         # ---------------------------------------------------------------------------------------------------------------
         # CENTRAL UNITS
@@ -956,7 +987,7 @@ class MasterProblem:
 
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
-                            'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2'] + self.lists_MP["list_constraints_MP"]
+                            'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
         for cst in list_constraints:
             ampl.getConstraint(cst).drop()
 
@@ -1024,7 +1055,7 @@ class MasterProblem:
     def remove_emoo_constraints(scenario):
 
         EMOOs = list(scenario['EMOO'].keys())
-        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', 'EMOO_lca']
+        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', 'EMOO_lca', "EMOO_elec_export", "EMOO_EV"]
         if 'EMOO' in scenario:
             for key in list(set(EMOOs).intersection(keys_to_remove)):
                 scenario['EMOO'].pop(key, None)
@@ -1166,7 +1197,7 @@ class MasterProblem:
         col = self.number_SP_solutions.columns.difference(["House"])
         self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean(numeric_only=True)
 
-    def split_parameter_sets_per_building(self, h, parameters_SP=dict({})):
+    def split_parameter_sets_per_building(self, h, parameters_SP=None, set_indexed_SP=None):
         """
         Some inputs are for the district and some other for the houses. This function fuses the two
         and gives the parameters per house. This is important to run an optimization on a single building
@@ -1177,6 +1208,8 @@ class MasterProblem:
             House ID
         parameters_SP : dict
             Parameters of the house
+        set_indexed_SP : dict
+            Set indexed of the house
 
         Returns
         -------
@@ -1186,7 +1219,13 @@ class MasterProblem:
             Parameters from the script for a single house (f.e. tariffs)
         infrastructure_SP : dict
             The district structure for a single house
+        set_indexed_SP: dict
+            The set_indexed variable without the values concerning only the master problem (district scale)
         """
+        if set_indexed_SP is None:
+            set_indexed_SP = dict({})
+        if parameters_SP is None:
+            parameters_SP = dict({})
         ID = np.where(h == self.infrastructure.House)[0][0]
         buildings_data_SP = {h: self.buildings_data[h]}
 
@@ -1194,14 +1233,22 @@ class MasterProblem:
             if key not in self.lists_MP["list_parameters_MP"]:
                 if isinstance(self.parameters[key], (int, float)):
                     parameters_SP[key] = self.parameters[key]
-                elif self.parameters[key].shape[0] >= self.DW_params['timesteps']:  # if demands profiles are set for more than 1 building
-                    if len(self.infrastructure.houses) < self.DW_params['timesteps']:
-                        nb_buildings = round(self.parameters[key].shape[0] / self.DW_params['timesteps'])
-                        profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
-                        parameters_SP[key] = profile_building_x[ID]
                 else:
-                    parameters_SP[key] = self.parameters[key][ID]
-        return buildings_data_SP, parameters_SP
+                    try:
+                        timesteps = int(len(self.parameters[key]) / len(self.buildings_data))
+                        profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps)  # for time series
+                        parameters_SP[key] = profile_building_x[ID]
+                    except:
+                        if len(self.parameters[key]) == len(self.buildings_data):
+                            parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
+                        else:
+                            parameters_SP[key] = self.parameters[key]  # one parameter for all buildings
+
+        for key in self.set_indexed:
+            if key not in self.lists_MP["list_set_indexed_MP"]:
+                set_indexed_SP[key] = self.set_indexed[key]
+
+        return buildings_data_SP, parameters_SP, set_indexed_SP
 
     def build_infrastructure_SP(self):
         for h in self.buildings_data:

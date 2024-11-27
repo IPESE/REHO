@@ -91,15 +91,16 @@ param Streams_Mcp{s in Streams,p in Period,t in Time[p]}:=
 
 param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
+param Units_Ext{u in Units} default 0;
 
 var Units_Mult{u in Units} <= Units_Fmax[u];
 var Units_Use{u in Units} binary, default 0;
 
-subject to Unit_sizing_c1{u in Units}:
-Units_Mult[u] >= Units_Use[u]*Units_Fmin[u];
+subject to Units_sizing_c1{u in Units}:
+Units_Mult[u]-Units_Ext[u] >= Units_Use[u]*Units_Fmin[u];
 
-subject to Unit_sizing_c2{u in Units}:
-Units_Mult[u] <= Units_Use[u]*Units_Fmax[u];
+subject to Units_sizing_c2{u in Units}:
+Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -220,6 +221,29 @@ sum{st in HC_Hot_loc_SQ[h,sq]:Streams_Tout_corr[st,p,t] <= k-epsilon} (Streams_M
 subject to HC_upperbound_Balance{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]: k=Max_T[h,sq,p,t]}:
 sum{st in HC_Cold_loc_SQ[h,sq]: Streams_Tout_corr[st,p,t]>=k+epsilon} (Streams_Mcp[st,p,t]*HC_Streams_Mult[st,sq,p,t]*(Streams_Tout_corr[st,p,t] - k)) = 0;
 
+# Transformer additional capacity
+set ReinforcementTrOfLayer{ResourceBalances} default {};
+var TransformerCapacity{l in ResourceBalances} in ReinforcementTrOfLayer[l];
+var Use_TransformerCapacity{l in ResourceBalances} binary;
+param CostTransformer_inv1{l in ResourceBalances}>=0 default 0;
+param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
+param GWP_Transformer1{l in ResourceBalances} default 0;
+param GWP_Transformer2{l in ResourceBalances} default 0;
+param Transformer_Ext{l in ResourceBalances} default 1e8;
+param Transformer_Lifetime{l in ResourceBalances} default 20;
+
+# Lines additional capacities
+set ReinforcementLineOfLayer{ResourceBalances} default {};
+var LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
+var Use_LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
+param CostLine_inv1{l in ResourceBalances} default 0;
+param CostLine_inv2{l in ResourceBalances} default 0; # [CHF/kW/m]
+param Line_Length{h in House,l in ResourceBalances} default 10;
+param GWP_Line1{l in ResourceBalances} default 0;
+param GWP_Line2{l in ResourceBalances} default 0;
+param Line_Ext{h in House, l in ResourceBalances} default 1e8;
+param Line_Lifetime{h in House, l in ResourceBalances} default 20;
+
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 # Emission and LCA
@@ -241,31 +265,31 @@ param GWP_unit2{u in Units} default 0;
 var GWP_house_op{h in House};
 var GWP_op;
 var GWP_Unit_constr{u in Units} >= 0;
-var GWP_house_constr{h in House} >=0; 
-var GWP_constr>=0; 
+var GWP_house_constr{h in House} >=0;
+var GWP_constr>=0;
 
 subject to Annual_CO2_operation_house{h in House}: 
 GWP_house_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]} (GWP_supply[l,p,t]*Grid_supply[l,h,p,t]-GWP_demand[l,p,t]*Grid_demand[l,h,p,t]) *dp[p]*dt[p];
 
-subject to Annual_CO2_operation: 
+subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]}(GWP_supply[l,p,t]*Network_supply[l,p,t]-GWP_demand[l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
 
 subject to Annual_CO2_construction_unit{u in Units}:
-GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
+GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
-GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u]);
+GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]/Line_Lifetime[h,l]);
 
 subject to Annual_CO2_construction:
-GWP_constr = sum{ u in Units} GWP_Unit_constr[u];
+GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]/Line_Lifetime[h,l]);
 
 
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
 param lca_kpi_2{k in Lca_kpi, u in Units} default 0;
 param lca_kpi_supply_cst{k in Lca_kpi, l in ResourceBalances} default 0.1;
-param lca_kpi_demand_cst{k in Lca_kpi, l in ResourceBalances} default 0.0; 
+param lca_kpi_demand_cst{k in Lca_kpi, l in ResourceBalances} default 0.0;
 param lca_kpi_supply{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_supply_cst[k,l];
-param lca_kpi_demand{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_demand_cst[k,l];	
+param lca_kpi_demand{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_demand_cst[k,l];
 
 var lca_op{k in Lca_kpi, l in ResourceBalances} default 0;
 var lca_units{k in Lca_kpi, u in Units} default 0;
@@ -276,7 +300,7 @@ subject to LU_op_cst{k in Lca_kpi, l in ResourceBalances}:
 lca_op[k, l] = sum{p in PeriodStandard,t in Time[p]}(lca_kpi_supply[k,l,p,t]*Network_supply[l,p,t] - lca_kpi_demand[k,l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
 
 subject to LU_inv_cst{k in Lca_kpi, u in Units}:
-lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + Units_Mult[u]*lca_kpi_2[k, u])/lifetime[u];
+lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + (Units_Mult[u]-Units_Ext[u])*lca_kpi_2[k, u])/lifetime[u];
 
 subject to LU_tot_cst{k in Lca_kpi}:
 lca_tot[k] = sum{u in Units} lca_units[k, u] + sum{l in ResourceBalances} lca_op[k, l];
@@ -307,20 +331,26 @@ var Costs_House_rep{h in House} >= Costs_House_limit[h];
 var Costs_inv >= 0;
 var Costs_rep >= 0;
 
+subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
+Use_LineCapacity[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacity[l,hl]-Line_Ext[hl,l];
+
+subject to line_additional_capacity_c2{l in ResourceBalances,hl in HousesOfLayer[l]}:
+LineCapacity[l,hl]>=Line_Ext[hl,l];
+
 subject to Costs_Unit_capex{u in Units}:
-Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
+Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]);	
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacity[l,h]+CostLine_inv2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);
 
 subject to Costs_House_replacement{h in House}:
-Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
+Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 subject to Costs_Grid_supply:
-Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]);	
+Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{l in ResourceBalances, h in HousesOfLayer[l]} (CostLine_inv1[l]*Use_LineCapacity[l,h]+CostLine_inv2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacity[l]+CostTransformer_inv2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l]));
 
 subject to Costs_replacement:
-Costs_rep =  sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
+Costs_rep =  sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-OPERATING EXPENSES
@@ -337,10 +367,10 @@ var Costs_House_op{House};
 var Costs_op;
 
 subject to Costs_house_opex{h in House}:
-Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply[h,l,p,t]*Grid_supply[l,h,p,t] - Cost_demand[h,l,p,t]*Grid_demand[l,h,p,t])*dp[p]*dt[p]); 
+Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply[h,l,p,t]*Grid_supply[l,h,p,t] - Cost_demand[h,l,p,t]*Grid_demand[l,h,p,t])*dp[p]*dt[p]);
 
 subject to Costs_opex:
-Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t])*dp[p]*dt[p]); 
+Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t])*dp[p]*dt[p]);
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -389,12 +419,12 @@ Costs_House_cft[h] = sum{p in PeriodStandard,t in Time[p]} T_penality[h]*(T_inf[
 #--------------------------------------------------------------------------------------------------------------------#
 
 #-Design parameters
-param Tc_out_0 default 35;																																#deg C	: Warm nominal ambient temperature 
+param Tc_out_0 default 35;																																#deg C	: Warm nominal ambient temperature
 param Th_out_0 default if card(Period) > 1 then T_ext[card(Period)-1,1] else -6;															#deg C	: Cold nominal ambient temperature
-param Tc_supply_0{h in House} default 12;																												#deg C	: Warm nominal supply temperature 
-param Th_supply_0{h in House} default 65;																												#deg C	: Cold nominal supply temperature 	
-param Tc_return_0{h in House} default 17;																												#deg C	: Warm nominal return temperature 
-param Th_return_0{h in House} default 50;																												#deg C	: Cold nominal return temperature 	
+param Tc_supply_0{h in House} default 12;																												#deg C	: Warm nominal supply temperature
+param Th_supply_0{h in House} default 65;																												#deg C	: Cold nominal supply temperature
+param Tc_return_0{h in House} default 17;																												#deg C	: Warm nominal return temperature
+param Th_return_0{h in House} default 50;																												#deg C	: Cold nominal return temperature
 param Th_threshold{h in House} default 16;																												#deg C																																																						#m2
 param Qc_0{h in House} 		:= U_h[h]*ERA[h]*(Tc_out_0-T_comfort_min_0[h]);																						#kW
 param Qh_0{h in House} 		:= U_h[h]*ERA[h]*(T_comfort_min_0[h]-Th_out_0);																						#kW
@@ -444,7 +474,7 @@ subject to House_EB_cyclic1{h in House,p in Period,t in Time[p]:t=last(Time[p])}
 
 #-additional constraints
 subject to no_ElectricalHeater_without_HP{h in House}:
-2 * sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ElectricalHeater'] inter UnitsOfHouse[h]} Units_Use[ui]; 
+2 * sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ElectricalHeater'] inter UnitsOfHouse[h]} Units_Use[ui];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -473,10 +503,9 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 #--------------------------------------------------------------------------------------------------------------------#
 # Grid capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param LineCapacity{l in ResourceBalances,h in HousesOfLayer[l]}>=0 default 1e8;
 
 subject to LineCapacity_supply{l in ResourceBalances,hl in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_supply[l,hl,p,t] <= LineCapacity[l,hl]; 
+Grid_supply[l,hl,p,t] <= LineCapacity[l,hl];
 
 subject to LineCapacity_demand{l in ResourceBalances,hl in HousesOfLayer[l],p in Period,t in Time[p]}:
 Grid_demand[l,hl,p,t] <= LineCapacity[l,hl];
@@ -484,7 +513,6 @@ Grid_demand[l,hl,p,t] <= LineCapacity[l,hl];
 #--------------------------------------------------------------------------------------------------------------------#
 # Transformer capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param TransformerCapacity{l in ResourceBalances}>=0 default 1e8;
 
 subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
 Network_supply[l,p,t] <= TransformerCapacity[l];

@@ -36,6 +36,9 @@ lca_tot["mine_res"] + penalties;
 minimize Human_toxicity:
 lca_tot["Human_toxicity"] + penalties;
 
+minimize MAX_EXPORT:
+-sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) * dp[p] * dt[p] / 1000 + penalties;
+
 #--------------------------------------------------------------------------------------------------------------------#
 # Decomposition
 #--------------------------------------------------------------------------------------------------------------------#
@@ -93,10 +96,10 @@ subject to EMOO_network_constraint{l in ResourceBalances,p in PeriodStandard,t i
 Network_supply[l,p,t] - Network_demand[l,p,t] <= if EMOO_network!=0 then EMOO_network*sum{i in Time[p]}((Network_supply[l,p,i] - Network_demand[l,p,i])*dt[p])/(card(Time[p])) else 1e8;
 
 subject to EMOO_GU_demand_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
-Network_demand[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_demand);
+Network_demand[l,p,t] <=  sum{h in House} (E_house_max[h]* EMOO_GU_demand);
 
 subject to EMOO_GU_supply_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
-Network_supply[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_supply );
+Network_supply[l,p,t] <=  sum{h in House} (E_house_max[h]* EMOO_GU_supply );
 
 
 ######################################################################################################################
@@ -123,6 +126,12 @@ var AnnualNetwork_supply{l in ResourceBalances}                 >= 0;   #MWh
 var AnnualNetwork_demand{l in ResourceBalances}                 >= 0;   #MWh
 var AnnualHeatGainHouse{h in House}                             >= 0;   #MWh
 var AnnualSolarGainHouse{h in House}                            >= 0;   #MWh
+
+param EMOO_elec_export default 0;
+var EMOO_slack_elec_export 						>= 0;
+
+subject to EMOO_elec_export_constraint:
+    sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]} ( Network_demand[l,p,t] - Network_supply[l,p,t] ) * dp[p] * dt[p] / 1000  =  EMOO_slack_elec_export + EMOO_elec_export * (sum{h in House} ERA[h]);
 
 subject to total_units_Q{s in Services, u in UnitsOfService[s]}:
 AnnualUnit_Q[s,u] = sum{st in StreamsOfService[s] inter StreamsOfUnit[u],p in PeriodStandard,t in Time[p]}(Streams_Q[s,st,p,t]*dp[p]*dt[p]/1000);

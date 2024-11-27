@@ -289,8 +289,9 @@ class SubProblem:
         if "EV_plugged_out" not in self.parameters_to_ampl:
             if len(self.infrastructure_sp.UnitsOfDistrict) != 0:
                 if "EV_district" in self.infrastructure_sp.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(
-                        self.cluster_sp, self.local_data["df_Timestamp"])
+                    p = EV_gen.generate_mobility_parameters(self.cluster_sp,self.parameters_sp,
+                                                            np.append(self.infrastructure_sp.UnitsOfLayer["Mobility"],'Public_transport'))
+                    self.parameters_to_ampl.update(p)
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -581,6 +582,8 @@ class SubProblem:
         ampl.getConstraint('EMOO_GWP_constraint').drop()
         ampl.getConstraint('EMOO_lca_constraint').drop()
 
+        ampl.getConstraint('EMOO_elec_export_constraint').drop()
+
         ampl.getConstraint('EMOO_GU_demand_constraint').drop()
         ampl.getConstraint('EMOO_GU_supply_constraint').drop()
         ampl.getConstraint('EMOO_grid_constraint').drop()
@@ -612,8 +615,6 @@ class SubProblem:
                 ampl.getConstraint('DHN_heat').drop()
         if 'Air_Conditioner' in self.infrastructure_sp.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_sp.units]:
             ampl.getConstraint('AC_c3').drop()
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.getConstraint('unidirectional_service').drop()
 
         if self.method_sp['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()
@@ -712,6 +713,9 @@ def initialize_default_methods(method):
 
     if 'interperiod_storage' not in method:
         method['interperiod_storage'] = False
+
+    if "external_district" not in method:
+        method['external_district'] = False
 
     if method['building-scale']:
         method['include_all_solutions'] = False  # avoid interactions between optimization scenarios

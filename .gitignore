@@ -86,12 +86,11 @@ celerybeat-schedule
 
 # Environments
 .env
+venv
 .venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+docs/.venvdocs
+docs/venvdocs
+
 
 # Spyder project settings
 .spyderproject
@@ -164,6 +163,9 @@ cmake-build-release/
 *.iws
 
 ## Plugin-specific files:
+
+# VScode
+.vscode/
 
 # IntelliJ
 out/
@@ -310,7 +312,9 @@ reho/data/QBuildings/*
 
 # Documentation
 documentation/_build
-documentation/sections/_autosummary
+documentation/_autosummary
+docs/_build
+docs/sections/_autosummary
 
 # Test
 reho/test/data/*

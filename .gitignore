@@ -83,8 +83,10 @@ celerybeat-schedule
 
 # Environments
 .env
+venv
 .venv
 docs/.venvdocs
+docs/venvdocs
 
 
 # Spyder project settings

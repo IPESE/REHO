@@ -1,6 +1,5 @@
 from reho.model.reho import *
 
-
 if __name__ == '__main__':
 
     # Set building parameters
@@ -24,8 +23,8 @@ if __name__ == '__main__':
 
     grids["Electricity"]["ReinforcementTrOfLayer"] = np.array([30, 100]) # available capacities of transformer
     parameters = {'Transformer_Ext': np.array([30, 1e6]), # available capacities of grids (Electricity, NaturalGas)
-                  "CostTransformer_inv1": np.array([1, 0]), # fixed cost of grids reinforcement (Electricity, NaturalGas)
-                  "CostTransformer_inv2": np.array([1, 0])} # variable cost of grids reinforcement (Electricity, NaturalGas)
+                  "CostTransformer_inv1": np.array([100, 0]), # fixed cost of grids reinforcement (Electricity, NaturalGas)
+                  "CostTransformer_inv2": np.array([10, 0])} # variable cost of grids reinforcement (Electricity, NaturalGas)
 
     # Set method options
     method = {'district-scale': True}
@@ -36,4 +35,4 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='2a')
+    reho.save_results(format=['xlsx', 'pickle'], filename='3j')

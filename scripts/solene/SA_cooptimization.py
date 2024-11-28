@@ -32,7 +32,7 @@ def filter_data(reho, s):
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
-    district_parameters = pd.read_csv(os.path.join(path_to_mobility, 'leman.csv'), index_col=0)[3:]
+    district_parameters = pd.read_csv(os.path.join(path_to_mobility, 'leman.csv'), index_col=0)
     districts = list(district_parameters.index.values)
     districts = [int(x) for x in districts]
     n_buildings = 600
@@ -64,8 +64,10 @@ if __name__ == '__main__':
     tr_capacity = {9678: 200.0, 9697: 1000.0, 2534: 200.0, 10260: 200.0, 10312: 1000.0}
 
     units = infrastructure.initialize_units(scenario, grids,district_data=True)
-    method = {'district-scale': True, "print_logs": True, "save_timeseries": True, "include_all_solutions": True}
+    method = {'use_pv_orientation': True, 'use_dynamic_emission_profiles': True, 'district-scale': True,
+              "print_logs": False, "save_timeseries": False, "save_data_input": False, "include_all_solutions": True}
     DW_params = {"max_iter": 3}
+
     # SA object used to generate the sampled values
     reho = REHO(qbuildings_data=qbuildings_data[districts[0]], units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
     SA = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=2)
@@ -93,82 +95,86 @@ if __name__ == '__main__':
     pi_results = {}
     # RUN the different samples
     for s in range(len(SA.sampling)):
-        pi_results[f'S{s+1}'] = {}
-        print("Co-optimization number", str(s + 1) + "/" + str(len(SA.sampling)))
+        try:
+            pi_results[f'S{s+1}'] = {}
+            print("Co-optimization number", str(s + 1) + "/" + str(len(SA.sampling)))
 
-        scenario['name'] = f'S{s+1}'
-        sample = SA.sampling[s]
-        mob_param = SA.format_mobilitySA(sample)
+            scenario['name'] = f'S{s+1}'
+            sample = SA.sampling[s]
+            mob_param = SA.format_mobilitySA(sample)
 
-        # variables for co-optimisation
-        variables = dict()
+            # variables for co-optimisation
+            variables = dict()
 
-        # Initialization RUN
-        i = 0
-        for tr in districts:
-            print(f"S{s+1} - iteration {i} (uncoordinated): district {tr}")
-
-            # Parameters update
-            vars()[f"reho_{tr}"].scenario = scenario
-            for p in mob_param.keys():
-                vars()[f"reho_{tr}"].parameters[p] = mob_param[p]
-            for k, value in enumerate(sample):
-                parameter = list(SA.parameter.keys())[k]
-                if parameter == 'Elec_retail':
-                    grids["Electricity"]["Cost_supply_cst"] = value
-                elif parameter == 'Elec_feedin':
-                    grids["Electricity"]["Cost_demand_cst"] = value
-                elif parameter == 'NG_retail':
-                    grids["NaturalGas"]["Cost_supply_cst"] = value
-            
-            qbuildings_data[tr] = {'buildings_data': vars()[f"reho_{tr}"].buildings_data}
-            vars()[f"reho_{tr}"].infrastructure = infrastructure.Infrastructure(qbuildings_data[tr], units, grids)
-
-            vars()[f"reho_{tr}"].single_optimization(Pareto_ID = i)
-
-            pi = vars()[f"reho_{tr}"].results_MP[f'S{s+1}'][i][0]["df_Dual_t"]["pi"].xs("Electricity")
-            variables[tr] = {"pi": pi}
-            
-        # Compute the share activity parameter
-        parameters, variables = compute_iterative_parameters(variables, district_parameters,only_prices=True)
-
-        # Iterations for co-optimization
-        for i in range(1, 4):
+            # Initialization RUN
+            i = 0
             for tr in districts:
-                print(f"S{s+1} - iteration {i} : district {tr}")
-                vars()[f"reho_{tr}"].method['external_district'] = True
-                ext_districts = [d for d in districts if d != tr]
-                vars()[f"reho_{tr}"].parameters["share_activity"] = rho_param(ext_districts, df_rho)
-                for p in parameters[tr].keys():
-                    vars()[f"reho_{tr}"].parameters[p] = parameters[tr][p]
+                print(f"S{s+1} - iteration {i} (uncoordinated): district {tr}")
+
+                # Parameters update
+                vars()[f"reho_{tr}"].scenario = scenario
+                for p in mob_param.keys():
+                    vars()[f"reho_{tr}"].parameters[p] = mob_param[p]
+                for k, value in enumerate(sample):
+                    parameter = list(SA.parameter.keys())[k]
+                    if parameter == 'Elec_retail':
+                        grids["Electricity"]["Cost_supply_cst"] = value
+                    elif parameter == 'Elec_feedin':
+                        grids["Electricity"]["Cost_demand_cst"] = value
+                    elif parameter == 'NG_retail':
+                        grids["NaturalGas"]["Cost_supply_cst"] = value
+
+                qbuildings_data[tr] = {'buildings_data': vars()[f"reho_{tr}"].buildings_data}
+                vars()[f"reho_{tr}"].infrastructure = infrastructure.Infrastructure(qbuildings_data[tr], units, grids)
+
                 vars()[f"reho_{tr}"].single_optimization(Pareto_ID = i)
 
                 pi = vars()[f"reho_{tr}"].results_MP[f'S{s+1}'][i][0]["df_Dual_t"]["pi"].xs("Electricity")
-                df_Unit_t = vars()[f"reho_{tr}"].results[f'S{s+1}'][i]['df_Unit_t']
-                df_Grid_t = vars()[f"reho_{tr}"].results[f'S{s+1}'][i]['df_Grid_t']
-                variables[tr] = {"pi": pi, "df_Unit_t" : df_Unit_t, "df_Grid_t" : df_Grid_t}
-            
-            parameters, variables = compute_iterative_parameters(variables,district_parameters)
+                variables[tr] = {"pi": pi}
 
-        # Delete intermediate results
-        for tr in districts:
-            pi_results[f'S{s+1}'][tr] = {}
-            for i in vars()[f"reho_{tr}"].results_MP[f"S{s+1}"]:
-                pi_results[f'S{s+1}'][tr][i] = {}
-                for j in vars()[f"reho_{tr}"].results_MP[f"S{s+1}"][i]:
-                    pi_results[f'S{s+1}'][tr][i][j] = vars()[f"reho_{tr}"].results_MP[f"S{s+1}"][i][j]["df_Dual_t"]["pi"]
-                pi_results[f'S{s+1}'][tr][i] = pd.DataFrame.from_dict(pi_results[f'S{s+1}'][tr][i])
-        for tr in districts:
-            vars()[f"reho_{tr}"].initialize_optimization_tracking_attributes()
-            vars()[f"reho_{tr}"] = filter_data(vars()[f"reho_{tr}"], s)
+            # Compute the share activity parameter
+            parameters, variables = compute_iterative_parameters(variables, district_parameters,only_prices=True)
 
+            # Iterations for co-optimization
+            for i in range(1, 4):
+                for tr in districts:
+                    print(f"S{s+1} - iteration {i} : district {tr}")
+                    vars()[f"reho_{tr}"].method['external_district'] = True
+                    ext_districts = [d for d in districts if d != tr]
+                    vars()[f"reho_{tr}"].parameters["share_activity"] = rho_param(ext_districts, df_rho)
+                    for p in parameters[tr].keys():
+                        vars()[f"reho_{tr}"].parameters[p] = parameters[tr][p]
+                    vars()[f"reho_{tr}"].single_optimization(Pareto_ID = i)
+
+                    pi = vars()[f"reho_{tr}"].results_MP[f'S{s+1}'][i][0]["df_Dual_t"]["pi"].xs("Electricity")
+                    df_Unit_t = vars()[f"reho_{tr}"].results[f'S{s+1}'][i]['df_Unit_t']
+                    df_Grid_t = vars()[f"reho_{tr}"].results[f'S{s+1}'][i]['df_Grid_t']
+                    variables[tr] = {"pi": pi, "df_Unit_t" : df_Unit_t, "df_Grid_t" : df_Grid_t}
+
+                parameters, variables = compute_iterative_parameters(variables,district_parameters)
+
+            # Delete intermediate results
+            for tr in districts:
+                pi_results[f'S{s+1}'][tr] = {}
+                for i in vars()[f"reho_{tr}"].results_MP[f"S{s+1}"]:
+                    pi_results[f'S{s+1}'][tr][i] = {}
+                    for j in vars()[f"reho_{tr}"].results_MP[f"S{s+1}"][i]:
+                        pi_results[f'S{s+1}'][tr][i][j] = vars()[f"reho_{tr}"].results_MP[f"S{s+1}"][i][j]["df_Dual_t"]["pi"]
+                    pi_results[f'S{s+1}'][tr][i] = pd.DataFrame.from_dict(pi_results[f'S{s+1}'][tr][i])
+            for tr in districts:
+                vars()[f"reho_{tr}"].initialize_optimization_tracking_attributes()
+                vars()[f"reho_{tr}"] = filter_data(vars()[f"reho_{tr}"], s)
+        except:
+            vars()[f"reho_{tr}"].results[f'S{s+1}'] = None
 
     # Save results
+    print("End")
     results = {}
     for tr in districts:
         results[tr] = vars()[f"reho_{tr}"].results
     vars()[f"reho_{districts[0]}"].results = results
     vars()[f"reho_{districts[0]}"].save_results(format=['pickle'], filename=f'SA_{date}')
+
     df_sampling.to_csv(f"results/SA_samples_{date}.csv")
 
     f = open(f"results/SA_pi_{date}.pickle", 'wb')

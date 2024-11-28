@@ -1207,14 +1207,14 @@ class MasterProblem:
                 if isinstance(self.parameters[key], (int, float)):
                     parameters_SP[key] = self.parameters[key]
                 else:
-                    try:
-                        timesteps = int(len(self.parameters[key])/len(self.buildings_data))
-                        profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps) # for time series
-                        parameters_SP[key] = profile_building_x[ID]
-                    except:
-                        if len(self.parameters[key]) == len(self.buildings_data):
-                            parameters_SP[key] = self.parameters[key][ID] # one parameter per building
-                        else:
+                    if len(self.parameters[key]) == len(self.buildings_data):
+                        parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
+                    else:
+                        try:
+                            timesteps = int(len(self.parameters[key])/len(self.buildings_data))
+                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps) # for time series
+                            parameters_SP[key] = profile_building_x[ID]
+                        except:
                             parameters_SP[key] = self.parameters[key] # one parameter for all buildings
 
         for key in self.set_indexed:

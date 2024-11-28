@@ -190,17 +190,6 @@ param GWP_Transformer2{l in ResourceBalances} default 0;
 param Transformer_Ext{l in ResourceBalances} default 1e8;
 param Transformer_Lifetime{l in ResourceBalances} default 20;
 
-# Lines additional capacities
-set ReinforcementLineOfLayer{ResourceBalances} default {};
-var LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
-var Use_LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
-param CostLine_inv1{l in ResourceBalances} default 20;
-param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
-param Line_Length{h in House,l in ResourceBalances} default 10;
-param GWP_Line1{l in ResourceBalances} default 0;
-param GWP_Line2{l in ResourceBalances} default 0;
-param Line_Ext{h in House,l in ResourceBalances} default 1e8;
-
 subject to transformer_additional_capacity_c1{l in ResourceBalances}:
 Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
 
@@ -351,14 +340,6 @@ Costs_grid_connection_House[l,h] = 12*Cost_connection[l]*peak_exchange_House[l,h
 subject to grid_connection_total:
 Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];
 
-#--------------------------------------------------------------------------------------------------------------------#
-# Grid capacity constraints
-#--------------------------------------------------------------------------------------------------------------------#
-subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
-
-subject to LineCapacity_demand{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Transformer capacity constraints

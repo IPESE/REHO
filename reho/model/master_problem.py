@@ -381,7 +381,7 @@ class MasterProblem:
             ampl_MP.setOption('solver_msg', 0)
 
         # -SOLVER OPTIONS
-        ampl_MP.setOption('solver', self.solver)
+        ampl_MP.setOption('solver',os.path.join(os.environ["AMPL_PATH"],f"{self.solver}.exe"))
         if self.solver == "gurobi":
             ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5';")
         if self.solver == "cplex":

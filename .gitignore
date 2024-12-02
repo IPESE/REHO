@@ -72,9 +72,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
 # pyenv
 .python-version
 
@@ -311,8 +308,8 @@ reho/data/QBuildings/*
 !reho/data/QBuildings/Suisse.ini
 
 # Documentation
-documentation/_build
-documentation/_autosummary
+docs/_build
+docs/_autosummary
 docs/_build
 docs/sections/_autosummary
 

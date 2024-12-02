@@ -3,4 +3,3 @@ sphinxcontrib-bibtex
 sphinx-design
 pydata_sphinx_theme
 sphinx-copybutton
-nbsphinx

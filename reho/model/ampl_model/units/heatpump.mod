@@ -92,9 +92,9 @@ param HP_Pmax_high{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]
 	
 param HP_Pmax{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p],T in HP_Tsupply} :=
 	if HP_Tsink_high[h,p,t,T] == HP_Tsink_low[h,p,t,T] then
-		HP_Pmax_low[h,u,p,t,T]
+		HP_Pmax_low[h,u,p,t,T] + 0.01
 	else		
-		HP_Pmax_low[h,u,p,t,T] +
+		HP_Pmax_low[h,u,p,t,T] + 0.01 +
 		(T - HP_Tsink_low[h,p,t,T])*(HP_Pmax_high[h,u,p,t,T]-HP_Pmax_low[h,u,p,t,T])/(HP_Tsink_high[h,p,t,T]-HP_Tsink_low[h,p,t,T])
 	;
 
@@ -104,8 +104,7 @@ param HP_COP{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in 
 		HP_Eta[h,u,p,t,T]*(T+273.15)/(T-T_source[u,p,t])
 	else
 		max{Th in HP_Tsink,Tc in HP_Tsource}( HP_Eta_nominal[u,Th,Tc]*(T+273.15)/(T-Tc) )
-	;	
-	#-
+	;
 
 #-GENERAL DATA
 #-Part-load

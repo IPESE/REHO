@@ -20,14 +20,14 @@ REHO exploits the benefits of two programming languages:
 * **AMPL:** the core optimization model with the objectives, constraints, modeling equations (energy balance, mass balance, heating cascade, etc.)
 * **Python:** the data management structure used for initialization of the model, execution of the optimization, and results retrieval). All the input and output data is passed to the AMPL model through `amplpy <https://pypi.org/project/amplpy/>`_, the Python API for AMPL.
 
-.. _software_diagram:
+.. _architecture:
 
-.. figure:: ../images/software_diagram.svg
+.. figure:: ../images/architecture.svg
 
-   Diagram of the REHO architecture
+   Diagram of REHO architecture
 
 
-:ref:`software_diagram` illustrates REHO architecture, which can be distinguished into three parts:
+:ref:`architecture` illustrates REHO architecture, which can be distinguished into three parts:
 
 * **Preprocessing:** generation of end use demand energy profiles + characterization of equipment and resources
 * **Optimization:** MILP Dantzig-Wolfe decomposition algorithm with the master problem (MP) and subproblems (SPs)

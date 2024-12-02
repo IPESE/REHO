@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    qbuildings_data = reader.read_db(transformer=234, nb_buildings=2)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -34,13 +34,11 @@ if __name__ == '__main__':
     scenario['name'] = 'totex_1'
 
     # Set parameters
-    parameters = {  "Population": 9,
+    parameters = {  "Population": 9, # adapter la population en fonction de nbuildings (46m²/habs environ)
                     "DailyDist" : {"long" : 20,
                                    'short' : 10},
-                    "max_share_PT" : 1,
-                    # "max_share_MD" : 1,
-                    "max_share_cars" : 1
                 }
+                    # verifier que le fichier modalshares.csv est consistent avec les labels de DailyDist, dans ce cas les colonnes devraient être max_short, min_short, max_long, min_long
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")

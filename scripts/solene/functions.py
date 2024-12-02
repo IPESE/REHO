@@ -262,6 +262,7 @@ def compute_district_parameters(district_parameters):
             "PopHouse" : df.loc[d,"PopHouse"],
             "f" : df.loc[d,"f"],
             "Scluster" : df.loc[d,"Scluster"],
+            "Sdistrict" : df.loc[d,"Sdistrict"],
         }
 
         rho = df.loc[d,df.columns.str.startswith('rho')]

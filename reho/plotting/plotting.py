@@ -68,7 +68,9 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
 
     sc = list(results.keys())[0]
     id = list(results[sc].keys())[0]
-    era = results[sc][id]['df_Buildings'].ERA.sum()
+    if per_m2:
+        era = results[sc][id]['df_Buildings'].ERA.sum()
+
 
     df_Economics = dict_to_df(results, 'df_Economics')
 

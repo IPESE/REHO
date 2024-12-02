@@ -335,7 +335,8 @@ The *EUDs* profiles to be determined are:
     - The internal heat gains from occupancy,
     - The internal heat gains from electric appliances,
     - The heat exchange with the exterior,
-    - The solar gains from the irradiance.
+    - The solar gains from the irradiance,
+    - The demand profile for mobility. 
 
 .. admonition:: Statistical profiles
 
@@ -445,12 +446,14 @@ In the REHO model, a grid is characterized by the energy carrier it transports a
 Energy layers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Five energy carriers are considered in REHO, namely:
+Seven energy carriers are considered in REHO, namely:
 
 - Electricity,
 - Natural gas,
 - Oil,
 - District heat,
+- Fossil fuel,
+- Mobility (service expressed in pkm),
 - Data (ICT service).
 
 These layers are modeled through parameters that can be changed in the model:
@@ -533,25 +536,34 @@ The units cannot be used at the building-scale.
 .. table:: Overview of district-level units in REHO: Input and output streams, the reference unit of each technology
     :name: tbl-district-units
 
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Technology                      | Input stream              | Output stream     | Reference unit |
-    +=================================+===========================+===================+================+
-    | Energy conversion technologies  |                           |                   |                |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | geothermal heat pump            | ambient heat, electricity | heat              |   $$kW_{e}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | district heating network        | heat                      | heat              |  $$kW_{th}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Electricity storage technologies|                           |                   |                |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | electrical vehicle              | electricity               | electricity       |    $$kWh$$     |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | battery                         | electricity               | electricity       |    $$kWh$$     |
-    +---------------------------------+---------------------------+-------------------+----------------+
++------------------------------------------+---------------------------+-----------------------+----------------+
+| Technology                               | Input stream              | Output stream         | Reference unit |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| Energy conversion technologies           |                           |                       |                |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| gas boiler                               | natural gas               | heat                  |  $$kW_{th}$$   |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| geothermal heat pump                     | ambient heat, electricity | heat                  |   $$kW_{e}$$   |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| district heating network                 | heat                      | heat                  |  $$kW_{th}$$   |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| cogeneration                             | natural gas               | electricity, heat     |   $$kW_{e}$$   |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| Electricity storage technologies         |                           |                       |                |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| EV charger                               | electricity               | electricity           |       kWh      |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| electrical vehicle                       | electricity               | electricity, mobility |       kWh      |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| ICE vehicle (internal combustion engine) | fossil fuel               | mobility              |      unit      |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| bike                                     |                           | mobility              |      unit      |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| electric bike                            | electricity               | mobility              |      unit      |
++------------------------------------------+---------------------------+-----------------------+----------------+
+| battery                                  | electricity               | electricity           |    $$kWh$$     |
++------------------------------------------+---------------------------+-----------------------+----------------+
+
 
 Model
 ===========================
@@ -790,3 +802,16 @@ The KPIs are divided in four subgroups: Environmental, economical, technical and
 For more information on how to calculate the KPIs presented below, please refer to :cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.5 Key performance indicators*.
 
 
+
+Notes on the mobility sector
+===========================
+
+The Layer *Mobility* differs slightly from the other Layers in REHO as this energy carrier is expressed in passenger-kilometers (pkm) rather than kWh. 
+The mobility demand is represented through an hourly passenger-kilometer (pkm) profile for each typical day, similarly to the other end-use demand profiles. 
+The transport units represented in the model include EVs, ICEs, bikes, electric bikes and public transport. 
+
+The model can optimize between the different transport modes. However, it is for now recommended to constrain the modal share using the variables min_share and max_share, as the optimization based on cost does not reflect actual usage of the different transport modes. 
+
+
+Co-optimization
+----------------------------------

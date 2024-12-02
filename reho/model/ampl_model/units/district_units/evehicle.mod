@@ -155,11 +155,11 @@ ExternalEV_Costs_op[p,t] = sum{d in Districts}( Cost_demand_ext[d,p,t] *sum {a i
 
 
 #--Stock constraints
-subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
-n_vehicles[u] <= n_EV_max[u];
+#subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
+#n_vehicles[u] <= n_EV_max[u];
 
-subject to EV_stock_upperbound2:
-sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
+#subject to EV_stock_upperbound2:
+#sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
 
 #--Max share and time of travel
@@ -169,8 +169,8 @@ sum {t in Time[p]}(pkm_supply[u,dist,p,t]) <= max_share[u,dist] * Population * D
 subject to EV_minshare{u in UnitsOfType['EV'],p in PeriodStandard, dist in Distances}:
 sum {t in Time[p]}(pkm_supply[u,dist,p,t]) >= min_share[u,dist] * Population * DailyDist[dist] ; 
 
-subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
-sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 
+#subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
+#sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 
 
 
 #--SoC constraints

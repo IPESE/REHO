@@ -27,11 +27,11 @@ var share_bike{u in UnitsOfType['Bike'],p in Period } >= 0;
 subject to Bikes_c1{u in UnitsOfType['Bike'],p in Period,t in Time[p]}:
 Units_supply['Mobility',u,p,t] <= Mode_Speed[u] * n_bikes[u];
 
-subject to Bikes_c2{u in UnitsOfType['Bike'],p in Period}:
-sum {i in Time[p]}(Units_supply['Mobility',u,p,i]) <= max_distperday * n_bikes[u] ;
+#subject to Bikes_c2{u in UnitsOfType['Bike'],p in Period}:
+#sum {i in Time[p]}(Units_supply['Mobility',u,p,i]) <= max_distperday * n_bikes[u] ;
 
-subject to Bikes_cb1:
-sum{u in UnitsOfType["Bike"]}(n_bikes[u]) <= max_n_bikes;
+#subject to Bikes_cb1:
+#sum{u in UnitsOfType["Bike"]}(n_bikes[u]) <= max_n_bikes;
 
 subject to Bikes_cb2{u in UnitsOfType["Bike"]}:
 n_bikes[u] = Units_Mult[u];

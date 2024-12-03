@@ -1,3 +1,4 @@
+import warnings
 from reho.paths import *
 import reho.model.preprocessing.weather as weather
 import pandas as pd
@@ -65,6 +66,12 @@ def generate_mobility_parameters(cluster, parameters,transportunits):
     share_input = pd.read_csv(os.path.join(path_to_mobility, "modalshares.csv"), index_col=0)
     units = pd.read_csv(os.path.join(path_to_infrastructure, "district_units.csv"),sep = ";")
     units = units[units.Unit.isin(transportunits)]
+
+    # Check that the file modalshares.csv is consistent with DailyDist
+    d = set([x.split('_')[1] for x in share_input.columns])
+    d = d.difference(parameters['DailyDist'].keys())
+    if not(len(d)==0):
+        raise warnings.warn(f"The file modalshare.csv contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(parameters['DailyDist'].keys())}")
 
     # Domestic demand ================================================================================================
     # The labels look like this : demwdy_def, demwdy_long => normalized mobility demand of a weekday 

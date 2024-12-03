@@ -5,8 +5,8 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=234, nb_buildings=2)
+    reader.establish_connection('Geneva')
+    qbuildings_data = reader.read_db(district_id=234, nb_buildings=3)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -34,9 +34,10 @@ if __name__ == '__main__':
     scenario['name'] = 'totex_1'
 
     # Set parameters
-    parameters = {  "Population": 9, # adapter la population en fonction de nbuildings (46m²/habs environ)
-                    "DailyDist" : {"long" : 20,
-                                   'short' : 10},
+    era = np.sum([qbuildings_data["buildings_data"][b]['ERA'] for b in qbuildings_data["buildings_data"]])
+    parameters = {  "Population": era / 46, # here Population is scaled to the number of buildings being optimized (CH : 46m²/cap on average )
+                    "DailyDist" : {"long" : 10,
+                                   'short' : 26},
                 }
                     # verifier que le fichier modalshares.csv est consistent avec les labels de DailyDist, dans ce cas les colonnes devraient être max_short, min_short, max_long, min_long
 

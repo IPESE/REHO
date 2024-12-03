@@ -7,6 +7,9 @@ from scripts.solene.functions import *
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
+    n_samples = 10
+    DailyDist_range = [15,45]
+
     district_parameters = pd.read_csv(os.path.join(path_to_mobility, 'leman.csv'), index_col=0)
     districts = list(district_parameters.index.values)
     districts = [int(x) for x in districts]
@@ -43,14 +46,6 @@ if __name__ == '__main__':
               "print_logs": False, "save_timeseries": False, "save_data_input": False, "include_all_solutions": True}
     DW_params = {"max_iter": 3}
 
-    # SA object used to generate the sampled values
-    reho = REHO(qbuildings_data=qbuildings_data[districts[0]], units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
-    SA = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=2)
-    SA_parameters = {'Elec_retail': [0.15, 0.4], "Elec_feedin": [0.0, 0.149], "NG_retail": [0.1, 0.3],
-                     'DailyDist': [15, 45], "share_cars": [0.0, 1.0], "share_EV_infleet": [0.0, 1.0]}
-    SA.build_SA(SA_parameters=SA_parameters, unit_parameter=[])
-    df_sampling = pd.DataFrame(SA.sampling.T, index=SA.problem['names'])
-
     # Initialization of reho objects - one per district
     for tr in districts:
         ext_districts = [d for d in districts if d != tr]
@@ -68,15 +63,16 @@ if __name__ == '__main__':
         df_rho = df_rho.T.rename(columns={'industry': 'work', 'service': 'leisure'})
 
     pi_results = {}
+
     # RUN the different samples
-    for s in range(len(SA.sampling)):
+    samples = [DailyDist_range[0] + x * (DailyDist_range[1]-DailyDist_range[0])/(n_samples-1) for x in range(n_samples)]
+    for s, dailydist in zip(range(n_samples), samples):
         try:
             pi_results[f'S{s+1}'] = {}
-            print("Co-optimization number", str(s + 1) + "/" + str(len(SA.sampling)))
+            print("Co-optimization number", str(s + 1) + "/" + str(n_samples))
 
             scenario['name'] = f'S{s+1}'
-            sample = SA.sampling[s]
-            mob_param = SA.format_mobilitySA(sample)
+            mob_param = mobility_demand_from_WP1data_modes(dailydist,80,3,0.02,share_EV_infleet=1)
 
             # variables for co-optimisation
             variables = dict()
@@ -90,14 +86,6 @@ if __name__ == '__main__':
                 vars()[f"reho_{tr}"].scenario = scenario
                 for p in mob_param.keys():
                     vars()[f"reho_{tr}"].parameters[p] = mob_param[p]
-                for k, value in enumerate(sample):
-                    parameter = list(SA.parameter.keys())[k]
-                    if parameter == 'Elec_retail':
-                        grids["Electricity"]["Cost_supply_cst"] = value
-                    elif parameter == 'Elec_feedin':
-                        grids["Electricity"]["Cost_demand_cst"] = value
-                    elif parameter == 'NG_retail':
-                        grids["NaturalGas"]["Cost_supply_cst"] = value
 
                 qbuildings_data[tr] = {'buildings_data': vars()[f"reho_{tr}"].buildings_data}
                 vars()[f"reho_{tr}"].infrastructure = infrastructure.Infrastructure(qbuildings_data[tr], units, grids)
@@ -148,10 +136,8 @@ if __name__ == '__main__':
     for tr in districts:
         results[tr] = vars()[f"reho_{tr}"].results
     vars()[f"reho_{districts[0]}"].results = results
-    vars()[f"reho_{districts[0]}"].save_results(format=['pickle'], filename=f'SA_{date}')
+    vars()[f"reho_{districts[0]}"].save_results(format=['pickle'], filename=f'DailyDist_lin_{date}')
 
-    df_sampling.to_csv(f"results/SA_samples_{date}.csv")
-
-    f = open(f"results/SA_pi_{date}.pickle", 'wb')
+    f = open(f"results/DailyDist_lin_pi_{date}.pickle", 'wb')
     pickle.dump(pi_results, f)
     f.close()

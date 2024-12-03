@@ -1,5 +1,8 @@
 import pandas as pd
+
 from reho.paths import *
+from reho.model.reho import *
+
 import matplotlib.pyplot as plt
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -120,7 +123,7 @@ def mobility_demand_from_WP1data_modes(DailyDist,max_dist = 70 ,nbins = 1,modalw
 
         lowerbound = upperbound
 
-    if share_cars:
+    if not(share_cars is None):
         mean_share = sum(modalshares_csv.loc["cars",modalshares_csv.columns.str.startswith("max")].values * list(parameters["DailyDist"].values()))
         mean_share = mean_share/sum(parameters["DailyDist"].values())
         modalshares_custom.loc['cars',:] = modalshares_custom.loc['cars',:].apply(lambda x : x*share_cars/mean_share)
@@ -133,7 +136,7 @@ def mobility_demand_from_WP1data_modes(DailyDist,max_dist = 70 ,nbins = 1,modalw
             modalshares_csv[f"min_{D}"] = modalshares_custom[D].apply(lambda x : max(x-modalwindow,0))
             modalshares_csv[f"max_{D}"] = modalshares_custom[D].apply(lambda x : min(x+modalwindow,1))
 
-    if share_EV_infleet:
+    if not(share_EV_infleet is None):
         modalshares_csv = modalshares_csv.T
         modalshares_csv['EV_district'] = share_EV_infleet * modalshares_csv["cars"]
         modalshares_csv = modalshares_csv.T
@@ -337,3 +340,31 @@ def plot_pkm(results,run_label = ""):
     # plt.show()
     fig.update_layout(title_text=f"{run_label} - Mobility demand [pkm]")
     return df_pkm,fig
+
+
+def remove_nan_QBuilding(buildings_data):
+    for bui in buildings_data["buildings_data"]:
+        bui_class = buildings_data["buildings_data"][bui]["id_class"]
+        buildings_data["buildings_data"][bui]["id_class"] = buildings_data["buildings_data"][bui]["id_class"].replace("nan", "II")
+        buildings_data["buildings_data"][bui]["id_class"] = buildings_data["buildings_data"][bui]["id_class"].replace("VIII", "III")
+        buildings_data["buildings_data"][bui]["ratio"] = buildings_data["buildings_data"][bui]["ratio"].replace("nan", "0.0")
+        if bui_class != buildings_data["buildings_data"][bui]["id_class"]:
+            print(bui, "had nan class and was", bui_class)
+        if math.isnan(buildings_data["buildings_data"][bui]["U_h"]):
+            buildings_data["buildings_data"][bui]["U_h"] = 0.00181
+        if math.isnan(buildings_data["buildings_data"][bui]["HeatCapacity"]):
+            buildings_data["buildings_data"][bui]["HeatCapacity"] = 120
+        if math.isnan(buildings_data["buildings_data"][bui]["T_comfort_min_0"]):
+            buildings_data["buildings_data"][bui]["T_comfort_min_0"] = 20
+    return buildings_data
+
+
+
+def filter_data(reho, s):
+    for i in reho.results[f'S{s + 1}']:
+        df_Unit_t_local = reho.results[f'S{s + 1}'][i]["df_Unit_t"]
+        reho.results[f'S{s + 1}'][i]["df_Unit_t"] = df_Unit_t_local[df_Unit_t_local.index.get_level_values("Unit").str.contains("district")]
+        df_Grid_t_local = reho.results[f'S{s + 1}'][i]["df_Grid_t"]
+        reho.results[f'S{s + 1}'][i]["df_Grid_t"] = df_Grid_t_local[["Grid_demand", "Grid_supply"]]
+        reho.results[f'S{s + 1}'][i]["df_Grid_t_net"] = df_Grid_t_local.xs("Network", level="Hub")
+    return reho

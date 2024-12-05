@@ -4,6 +4,7 @@ from pathlib import Path
 from pandas import read_csv, read_table, read_excel, set_option
 import sys
 from dotenv import load_dotenv, find_dotenv
+import geopandas as gpd
 
 __doc__ = """
 File for managing file paths and configurations.

@@ -336,7 +336,7 @@ The *EUDs* profiles to be determined are:
     - The internal heat gains from electric appliances,
     - The heat exchange with the exterior,
     - The solar gains from the irradiance,
-    - The demand profile for mobility. 
+- The demand profile for mobility. 
 
 .. admonition:: Statistical profiles
 
@@ -536,34 +536,36 @@ The units cannot be used at the building-scale.
 .. table:: Overview of district-level units in REHO: Input and output streams, the reference unit of each technology
     :name: tbl-district-units
 
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| Technology                               | Input stream              | Output stream         | Reference unit |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| Energy conversion technologies           |                           |                       |                |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| gas boiler                               | natural gas               | heat                  |  $$kW_{th}$$   |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| geothermal heat pump                     | ambient heat, electricity | heat                  |   $$kW_{e}$$   |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| district heating network                 | heat                      | heat                  |  $$kW_{th}$$   |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| cogeneration                             | natural gas               | electricity, heat     |   $$kW_{e}$$   |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| Electricity storage technologies         |                           |                       |                |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| EV charger                               | electricity               | electricity           |       kWh      |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| electrical vehicle                       | electricity               | electricity, mobility |       kWh      |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| ICE vehicle (internal combustion engine) | fossil fuel               | mobility              |      unit      |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| bike                                     |                           | mobility              |      unit      |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| electric bike                            | electricity               | mobility              |      unit      |
-+------------------------------------------+---------------------------+-----------------------+----------------+
-| battery                                  | electricity               | electricity           |    $$kWh$$     |
-+------------------------------------------+---------------------------+-----------------------+----------------+
++------------------------------------------+---------------------------+------------------------+----------------+
+| Technology                               | Input stream              | Output stream          | Reference unit |
++------------------------------------------+---------------------------+------------------------+----------------+
+| Energy conversion technologies           |                           |                        |                |
++------------------------------------------+---------------------------+------------------------+----------------+
+| gas boiler                               | natural gas               | heat                   |  $$kW_{th}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| geothermal heat pump                     | ambient heat, electricity | heat                   |   $$kW_{e}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| district heating network                 | heat                      | heat                   |  $$kW_{th}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| cogeneration                             | natural gas               | electricity, heat      |   $$kW_{e}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| Electricity storage technologies         |                           |                        |                |
++------------------------------------------+---------------------------+------------------------+----------------+
+| EV charger                               | electricity*              | electricity*           |     $$kWh$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| electrical vehicle                       | electricity*              | electricity*, mobility |     $$kWh$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| ICE vehicle (internal combustion engine) | fossil fuel               | mobility               |    $$unit$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| bike                                     |                           | mobility               |    $$unit$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| electric bike                            | electricity               | mobility               |    $$unit$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| battery                                  | electricity               | electricity            |    $$kWh$$     |
++------------------------------------------+---------------------------+------------------------+----------------+
 
+.. note::
+    EVs are not directly connected to the Layer *electricity*.  Rather, intermediate variables representing the exchanges between EVs and charging stations are used, and the import of electricity from the Grid to charge the vehicles can be observed through the EV charger demand :math:`\boldsymbol{\sum_{u \in EVcharger}\dot{E}_{u,p,t}^{-}` (see :ref:`fig-mob1`). 
 
 Model
 ===========================
@@ -804,14 +806,21 @@ For more information on how to calculate the KPIs presented below, please refer 
 
 
 Notes on the mobility sector
-===========================
+==============================
 
-The Layer *Mobility* differs slightly from the other Layers in REHO as this energy carrier is expressed in passenger-kilometers (pkm) rather than kWh. 
-The mobility demand is represented through an hourly passenger-kilometer (pkm) profile for each typical day, similarly to the other end-use demand profiles. 
+The Layer *Mobility* differs slightly from the other Layers in REHO as this energy carrier is expressed in passenger-kilometers ($pkm$) rather than $kWh$. 
+The mobility demand is represented through an hourly passenger-kilometer ($pkm$) profile for each typical day, similarly to the other end-use demand profiles. 
 The transport units represented in the model include EVs, ICEs, bikes, electric bikes and public transport. 
 
-The model can optimize between the different transport modes. However, it is for now recommended to constrain the modal share using the variables min_share and max_share, as the optimization based on cost does not reflect actual usage of the different transport modes. 
+The model can optimize between the different transport modes. However, it is for now recommended to constrain the modal share using the variables min_share and max_share, as the optimization based on cost does not reflect typical usage of the different transport modes. The `FSO reports <https://www.are.admin.ch/are/fr/home/mobilite/bases-et-donnees/mrmt.html>`_ can be used to find suitable modal split data. 
 
+Electric vehicles (EVs)
+----------------------------------
+EVs are modelled as a district-level unit (see table :ref:`tbl-district-units`). This conversion unit supplies mobility by transforming electricity, but note that in the model, the unit is not directly connected to the electricity Layer
+TBF
 
 Co-optimization
 ----------------------------------
+Multiple districts can be optimized together in order to calculate EV charging exchanges between districts. 
+This feature can be used to conduct analyses on EV fleets at the city scale.  
+Example 6c demonstrates how to use this feature.

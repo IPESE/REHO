@@ -389,15 +389,19 @@ def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     return share
 
 
-def compute_iterative_parameters(variables,district_parameters,only_prices = False):
+def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters, only_prices=False):
     """"
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
     The load is expressed using the corrective parameter f.
 
     Parameters
     ----------
-    variables : dict of dict
-        Each key of the dict refers to a district and should contain variables extracted from the previous optimisation, namely pi, df_Grid_t and df_Unit_t.
+    reho_models : dict of reho objects
+        Dictionary of reho object, one for each district
+    Scn_ID : str or int
+        label for the scenario
+    iter : int
+        iteration of the city scale optimization
     district_parameters : dict of dict
         Each key of the dict refers to a district d. Used to extract the scale parameter f : district_parameters[d]['f']
     only_prices : bool
@@ -409,123 +413,40 @@ def compute_iterative_parameters(variables,district_parameters,only_prices = Fal
         For each district d, returns a dict of the parameters to be inputted in the next optimisation. Parameters include Cost_demand_ext, Cost_supply_ext, EV_charger_supply_ext. 
 
     """
-
-    df_prices = pd.DataFrame()
-    for d in variables.keys():
-        price = variables[d]['pi'].to_frame().copy()
-        price['district'] = d
-        price = price.set_index('district',append = True).reorder_levels([2,0,1])
-        df_prices = pd.concat([df_prices,price])
-        df_prices = df_prices[df_prices.index.get_level_values("Period").isin(range(0,11))] # TODO : link this with Period and PeriodStandard
-
     parameters = dict()
-    for d in variables.keys():
-        cost_supply_ext = variables[d]['pi'].rename("Cost_supply_ext")
-        cost_supply_ext = cost_supply_ext[cost_supply_ext.index.get_level_values("Period").isin(range(0, 11))]
-        parameters[d] = {   "Cost_demand_ext"    :  df_prices[df_prices.index.get_level_values(level="district") != d].rename(columns = {'pi' : 'Cost_demand_ext'}),
-                            "Cost_supply_ext"    :  cost_supply_ext
-                            }
+    df_prices = pd.DataFrame()
+    for d in district_parameters.keys():
+        parameters[d] = {}
+        pi = reho_models[d].results_MP[Scn_ID][iter][0]["df_Dual_t"]["pi"].xs("Electricity")
+        parameters[d]["Cost_supply_ext"] = pi.rename("Cost_supply_ext").drop([11, 12], level="Period")
+
+        price = pi.to_frame().copy()
+        price['district'] = d
+        price = price.set_index('district', append=True).reorder_levels([2, 0, 1]).drop([11, 12], level="Period")
+        df_prices = pd.concat([df_prices, price])
+
+    for d in district_parameters.keys():
+        parameters[d]["Cost_demand_ext"] = df_prices.drop(d, level="district").rename(columns={'pi': 'Cost_demand_ext'})
 
     if not only_prices:
-        # Format variables
-        for d in variables.keys():
-            EV_demand_ext =  variables[d]["df_Unit_t"].loc[:,variables[d]["df_Unit_t"].columns.str.startswith("EV_demand_ext")][variables[d]["df_Unit_t"].index.get_level_values('Layer') == 'Electricity']
-            EV_demand_ext_agg = EV_demand_ext.reset_index().groupby(['Period','Time']).agg('sum',numeric_only = True)
-            EV_demand_ext_agg.columns = [x.split('[')[1].split(']')[0] for x in EV_demand_ext_agg.columns]
-            EV_demand_ext_agg.columns = pd.MultiIndex.from_tuples([(x.split(',')[0],x.split(',')[1]) for x in EV_demand_ext_agg.columns])
-            EV_demand_ext_agg.columns.names = ('activity','district')
-            EV_demand_ext_agg = EV_demand_ext_agg.stack(level=1).reorder_levels([2,0,1])
-
-            EV_load_ext = variables[d]["df_Grid_t"].loc[:,variables[d]["df_Grid_t"].columns.str.startswith("EV_charger_supply_ext")][(variables[d]["df_Grid_t"].index.get_level_values('Layer') == 'Electricity') & (variables[d]["df_Grid_t"].index.get_level_values('Hub') == 'Network')]
-            EV_load_ext = EV_load_ext.droplevel(['Layer','Hub'])
-            EV_load_ext.columns = [x.split('[')[1].split(']')[0] for x in EV_load_ext.columns]
-
-            variables[d]["EV_demand_ext"] = EV_demand_ext
-            variables[d]["EV_demand_ext_agg"] = EV_demand_ext_agg
-            variables[d]["EV_load_ext"] = EV_load_ext
-
-        # Calculate parameters
+        # scale charging loads asked to external districts
         df_load = pd.DataFrame()
-        for d in variables.keys():
-            df = variables[d]['EV_demand_ext_agg'] * district_parameters[d]['f']
-            df_load = pd.concat([df_load,df])
+        for d in district_parameters.keys():
+            df_unit_t = reho_models[d].results[Scn_ID][iter]["df_Unit_t"]
+            EV_demand_ext = df_unit_t.loc[:, df_unit_t.columns.str.contains("EV_demand_ext")].xs("Electricity").xs("EV_district")
+            activities = [x.split('[')[1].split(",")[0] for x in EV_demand_ext.columns]
+            districts = [x.split('[')[1].split(",")[1].replace("]", "") for x in EV_demand_ext.columns]
+            EV_demand_ext.columns = pd.MultiIndex.from_arrays([activities, districts], names=['activity','district'])
+            EV_demand_ext = EV_demand_ext.stack(level=1).reorder_levels([2, 0, 1]) * district_parameters[d]['f']
+            EV_demand_ext = EV_demand_ext * district_parameters[d]['f']
+            df_load = pd.concat([df_load, EV_demand_ext]) # list of all external loads scaled to city level
 
-        df_load = df_load.groupby(["district" ,"Period", "Time"]).agg('sum').stack()
-        df_load = df_load.unstack(level='district').reorder_levels([2,0,1])
-        df_load.columns = df_load.columns.astype(float).astype(int)
+        df_load = df_load.groupby(["district", "Period", "Time"]).sum()
+        df_load = df_load.stack().unstack(level='district').reorder_levels([2, 0, 1])
+        df_load.columns = df_load.columns.astype(float).astype(int) # load per district and activity at the city level
 
+        for d in district_parameters.keys():
+            parameters[d]["EV_charger_supply_ext"] = df_load[[d]].rename(columns={d: "EV_charger_supply_ext"}) / district_parameters[d]['f']
 
-        for d in variables.keys():
-            parameters[d]["EV_charger_supply_ext"] = df_load[[d]].rename(columns={d :"EV_charger_supply_ext"}) / district_parameters[d]['f']
-
-        
-    return parameters,variables
-
-def check_convergence(deltas,df_delta,variables, district_parameters,iteration,criteria = ('total')):
-    """"
-    This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
-    Parameters
-    ----------
-    criteria : tuple, optional
-        Choose on which indexes to match the load and demand. Default is time matching (p,t). Write 'by_activity' for activity matching (a,p,t)
-
-    Returns
-    --------
-    df_delta : dataframe
-        for each iteration and for each p,t the difference in kWh between the total demand in the city with the total load in the city (city : all the clusters considered)
-    deltas : list of float
-        one number per iteration expressing the percentage of unbalanced energy (demand - load) compared to the total demand for outer district electric charging over the city. 
-    convergence_reached : bool
-        whether the last delta value is below the threshold or not
-    """
-    termination_threshold = 0.1 # 10% TODO : mettre ces tuning parametres somewhere else
-    termination_iter = 3
-    
-    # Compute Delta
-    df_demand = pd.DataFrame()
-    df_load = pd.DataFrame()
-    for k in variables.keys():
-        df = variables[k]['EV_demand_ext_agg'].groupby(["Period","Time"]).agg("sum")
-        if 'by_activity' in criteria:
-            df.columns.name = "Activity"
-            df_demand[k] = df.stack()
-        else:
-            df_demand[k] = df.agg('sum',axis = 1)
-            df_demand[k] *= district_parameters[k]['f']
-
-        
-        df = variables[k]['EV_load_ext']
-        if 'by_activity' in criteria:
-            df.columns.name = "Activity"
-            df_load[k] = df.stack()
-        else:
-            df_load[k] = df.agg('sum',axis = 1)
-            df_load[k] *= district_parameters[k]['f']
-
-    df_delta[f"demand{iteration}"] = df_demand.sum(axis=1)
-    df_delta[f"load{iteration}"] = df_load.sum(axis=1)
-
-    df_delta[f"delta{iteration}"] = df_delta[f"demand{iteration}"] - df_delta[f"load{iteration}"]
-    delta = df_delta[f"delta{iteration}"].apply(lambda x : np.sqrt(x*x)).sum() / df_delta[f"demand{iteration}"].sum()
-    deltas.append(delta)
-
-    # Check no_improvement criteria
-    count = 0
-    convergence_reached = False
-    if len(deltas) > 1:
-        if deltas[-1] < 0.01:
-            convergence_reached = True
-    else:
-        for n in range(len(deltas) - 1, -1, -1):
-            t = abs((deltas[n] - deltas[n-1])/deltas[n])
-            if t < termination_threshold:
-                count += 1
-            else:
-                break
-        if count >= termination_iter:
-            convergence_reached = True
-        else:
-            convergence_reached = False
-
-    return df_delta,convergence_reached
+    return parameters
 

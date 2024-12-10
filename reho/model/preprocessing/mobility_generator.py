@@ -4,8 +4,9 @@ import reho.model.preprocessing.weather as weather
 import pandas as pd
 import numpy as np
 
+# PARAMETERS AND SETS =========================================================================================
 
-def generate_mobility_parameters(cluster, parameters, transportunits):
+def generate_mobility_parameters(cluster, parameters, transportunits,modal_split):
     """
     This reads the input data on the file dailyprofiles.csv and initializes (almost) all the necessary parameters to run the mobility sector in REHO.
 
@@ -56,17 +57,17 @@ def generate_mobility_parameters(cluster, parameters, transportunits):
 
     # Read the profiles and the transportation Units
     profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
-    share_input = pd.read_csv(os.path.join(path_to_mobility, "modalshares.csv"), index_col=0)
     units = pd.read_csv(os.path.join(path_to_infrastructure, "district_units.csv"), sep=";")
     units = units[units.Unit.isin(transportunits)]
 
-    # Check that the file modalshares.csv is consistent with DailyDist
-    d = set([x.split('_')[1] for x in share_input.columns])
-    d = d.difference(parameters['DailyDist'].keys())
-    if not(len(d)==0):
-        raise warnings.warn(f"The file modalshare.csv contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(parameters['DailyDist'].keys())}")
+    # Check that modal_split is consistent with DailyDist
+    if not(modal_split is None):
+        d = set([x.split('_')[1] for x in modal_split.columns])
+        d = d.difference(parameters['DailyDist'].keys())
+        if not(len(d)==0):
+            raise warnings.warn(f"reho.modal_split contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(parameters['DailyDist'].keys())}")
 
-
+    # Compute the parameters
     param_output['Domestic_energy_pkm'], param_output['Domestic_energy'], profile = get_mobility_demand(profiles_input, timestamp, days_mapping, parameters['DailyDist'], parameters['Population'])
     param_output['Daily_Profile'] = get_daily_profile(profiles_input, timestamp, days_mapping, transportunits)
 
@@ -76,8 +77,9 @@ def generate_mobility_parameters(cluster, parameters, transportunits):
     param_output['EBike_charging_profile'] = get_Ebike_charging(units, timestamp, profiles_input, days_mapping)
 
     param_output['Mode_Speed'] = get_mode_speed(units, mode_speed_custom)
-    param_output['min_share'], param_output['min_share_modes'] = get_min_share(share_input, modes, transportunits)
-    param_output['max_share'], param_output['max_share_modes'] = get_max_share(share_input, modes, transportunits)
+    if not(modal_split is None):
+        param_output['min_share'], param_output['min_share_modes'] = get_min_share(modal_split, modes, transportunits)
+        param_output['max_share'], param_output['max_share_modes'] = get_max_share(modal_split, modes, transportunits)
     param_output['DailyDist'] = pd.DataFrame.from_dict(parameters['DailyDist'], orient='index', columns=["DailyDist"])
 
     return param_output
@@ -290,8 +292,8 @@ def get_mode_speed(units, mode_speed_custom):
     return mode_speed.dropna()
 
 
-def get_min_share(share_input, modes, transportunits):
-    minshare = share_input.loc[:,share_input.columns.str.startswith("min")]
+def get_min_share(modal_split, modes, transportunits):
+    minshare = modal_split.loc[:,modal_split.columns.str.startswith("min")]
     minshare.columns = [x.split('_')[1] for x in minshare.columns]
 
     minshare.columns.name = "dist"
@@ -304,8 +306,8 @@ def get_min_share(share_input, modes, transportunits):
     return minshare, minshare_modes
 
 
-def get_max_share(share_input, modes, transportunits):
-    maxshare = share_input.loc[:,share_input.columns.str.startswith("max")]
+def get_max_share(modal_split, modes, transportunits):
+    maxshare = modal_split.loc[:,modal_split.columns.str.startswith("max")]
     maxshare.columns = [x.split('_')[1] for x in maxshare.columns]
 
     maxshare.columns.name = "dist"
@@ -352,6 +354,7 @@ def generate_transport_units_sets(transportunits):
 
     return transport_Units_MD,transport_Units_cars
 
+# FUNCTIONS FOR CO-OPTIMIZATION =========================================================================================
 
 def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     """
@@ -441,4 +444,139 @@ def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters,
             parameters[d]["EV_charger_supply_ext"] = df_load[[d]].rename(columns={d: "EV_charger_supply_ext"}) / district_parameters[d]['f']
 
     return parameters
+
+
+# FUNCTIONS PROCESSING OF WP1 DATA =======================================================================================
+# stored in the files WP1_distributionofdistances.csv and WP1_modalsharesbydistances (work and leisure)
+
+def linear_split_bin_table(df,col,lowerbound = None, upperbound = None):
+    """
+    Cuts off a discrete bin distribution data serie to the desired bounds. First and last bin are calculated proportionnally to the size of the bin. 
+
+    Parameters
+    -------------
+    df : dataframe
+        data
+    col : str
+        the columns of the df on which the split operation is applied
+    lowerbound : float or None
+    upperbound : float or None
+    """
+    if upperbound:
+        if upperbound in df.index:
+            df_up = df.loc[df.index <= upperbound,:].copy()
+        else:
+            df_up = df.loc[df.index < upperbound,:].copy()
+            last_bin = df.loc[df.index > upperbound,:].iloc[0]
+            last_bin[col] = (upperbound - df_up.index[-1]) / (last_bin.name - df_up.index[-1] ) * last_bin[col]
+            last_bin.name = upperbound
+            df_up = pd.concat([df_up,last_bin.to_frame().T])
+    
+    if lowerbound:
+        if upperbound:
+            df_up = df_up.loc[df_up.index > lowerbound,:].copy()
+        else:
+            df_up = df.loc[df.index > lowerbound,:].copy()
+
+        if not lowerbound in df.index:
+            prev_bin = df.loc[df.index < lowerbound,:].iloc[-1]
+            weight = (df_up.index[0] - lowerbound) / (df_up.index[0] - prev_bin.name) * df_up.iloc[0][col]
+            df_up.at[df_up.index[0],col] = weight
+
+    return df_up
+
+
+def mobility_demand_from_WP1data(DailyDist,max_dist = 70 ,nbins = 1,modalwindow = 0.01,  share_cars = None,share_EV_infleet = None ):
+    """
+    This functions computes parameters related to mobility from data tables provided by WP1 (OFS data). Parameters computed include : DailyDist and the modal_split dataframe. 
+
+    Parameters
+    -----------
+    DailyDist : float
+        Total number of km travelled/day/cap
+    max_dist :  float
+        trip length cutoff 
+    nbins : int
+        number of categories of distance
+    modal_window : float
+        delta between max and min share bounds is modal_window*2
+    share_cars : float in [0,1]
+        modifies the modal shares PT and MD in consequence. 
+    share_EV_infleet : Float in [0,1]
+        the share of EVs in the car fleet
+    
+    Returns
+    ---------
+    parameters : dict of parameters
+    modal_split : df for reho.modal_split
+    """
+    parameters = {"DailyDist" : {},
+                }
+    modal_split = pd.DataFrame()
+    modal_split_custom = pd.DataFrame()
+
+    df_dist = pd.read_csv(os.path.join(path_to_mobility, 'WP1_distributionofdistances.csv'), index_col = 0)
+    df_modal_split = pd.read_csv(os.path.join(path_to_mobility, 'WP1_modalsharesbydistances_work.tsv'), sep = "\t",index_col = 0)
+
+    mapping_modesunits = {
+        "Marche"   :  "MD",
+        "Vélo"        : "MD",
+        "moto"        : "cars",
+        "voiture"     : "cars",
+        "tram/bus"    : "PT",
+        "train" : "PT"
+    }
+
+    df_dist_inf = linear_split_bin_table(df_dist,"weight",upperbound=max_dist)
+    df_dist_inf.weight = df_dist_inf.weight /df_dist_inf.weight.sum()
+
+    df_dist_inf['up'] = df_dist_inf.index
+    df_dist_inf['low'] =   df_dist_inf.up.shift(1).fillna(0)
+    df_dist_inf['mean'] = (df_dist_inf.up + df_dist_inf.low)/2
+    df_dist_inf['pkm'] = df_dist_inf['mean'] * df_dist_inf['weight']
+    df_dist_inf.pkm = df_dist_inf.pkm /df_dist_inf.pkm.sum()
+
+    df_dist_inf = df_dist_inf.join(df_modal_split)
+    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].fillna(method = 'bfill').fillna(method = 'ffill')
+
+    lowerbound = 0
+    step = max_dist/nbins
+    for i in range(nbins):
+        upperbound = lowerbound + step
+        df_bin = linear_split_bin_table(df_dist_inf,"pkm",lowerbound,upperbound)
+        parameters['DailyDist'][f"D{i}"] = df_bin.pkm.sum() * DailyDist
+
+        df_ms = df_bin[df_modal_split.columns].mul(df_bin['pkm'],axis = 0).sum()
+        df_ms = df_ms.div(df_ms.sum())
+        df_ms.index = df_ms.index.map(mapping_modesunits)
+        df_ms = df_ms.groupby(df_ms.index).agg("sum")
+        df_ms_min = df_ms.copy()
+
+        modal_split[f"min_D{i}"] = df_ms_min.apply(lambda x : max(x-modalwindow,0))
+        modal_split[f"max_D{i}"] = df_ms.apply(lambda x : min(x+modalwindow,1))
+        modal_split_custom[f"D{i}"] = df_ms
+
+        lowerbound = upperbound
+
+    if not(share_cars is None):
+        mean_share = sum(modal_split.loc["cars",modal_split.columns.str.startswith("max")].values * list(parameters["DailyDist"].values()))
+        mean_share = mean_share/sum(parameters["DailyDist"].values())
+        modal_split_custom.loc['cars',:] = modal_split_custom.loc['cars',:].apply(lambda x : x*share_cars/mean_share)
+        
+        modal_split_custom = modal_split_custom.T
+        modal_split_custom[['MD','PT']] = modal_split_custom.apply(lambda x : (x.MD/(x.MD + x.PT) * (1-x.cars),x.PT/(x.MD + x.PT) * (1-x.cars)),axis = 1,result_type = 'expand')
+        modal_split_custom = modal_split_custom.T
+
+        for D in modal_split_custom.columns:
+            modal_split[f"min_{D}"] = modal_split_custom[D].apply(lambda x : max(x-modalwindow,0))
+            modal_split[f"max_{D}"] = modal_split_custom[D].apply(lambda x : min(x+modalwindow,1))
+
+    if not(share_EV_infleet is None):
+        modal_split = modal_split.T
+        modal_split['EV_district'] = share_EV_infleet * modal_split["cars"]
+        modal_split = modal_split.T
+
+    return parameters, modal_split
+
+
 

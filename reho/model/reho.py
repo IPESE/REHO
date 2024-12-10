@@ -23,9 +23,9 @@ class REHO(MasterProblem):
     reho.model.master_problem.MasterProblem
     """
 
-    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
+    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None,modal_split=None):
 
-        super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
+        super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params,modal_split)
         self.initialize_optimization_tracking_attributes()
 
         # input attributes

@@ -52,7 +52,7 @@ class MasterProblem:
     """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
-                 cluster=None, method=None, solver=None, DW_params=None):
+                 cluster=None, method=None, solver=None, DW_params=None,modal_split=None):
 
         # ampl solver
         self.solver = solver
@@ -105,6 +105,9 @@ class MasterProblem:
             self.set_indexed = {}
         else:
             self.set_indexed = set_indexed
+
+        # prepare mobility data
+        self.modal_split = modal_split
 
         # attributes for the decomposition algorithm
         if DW_params is None:
@@ -486,7 +489,8 @@ class MasterProblem:
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train',"PT_bus"]),self.infrastructure.UnitsOfType["EV_charger"]))
+                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train',"PT_bus"]),self.infrastructure.UnitsOfType["EV_charger"]),
+                                                    self.modal_split)
             MP_parameters.update(p)
 
         if read_DHN:

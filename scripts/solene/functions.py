@@ -8,211 +8,9 @@ from plotly.subplots import make_subplots
 import plotly.express as px
 import plotly.graph_objects as go
 
+# Support file for the scripts related to the mobility paper
+# Ex : SA_1district.py, SA_cooptimisation.py, DailyDist_linearoptim.py, share_carslinearoptim.py
 
-def linear_split_bin_table(df,col,lowerbound = None, upperbound = None):
-    """
-    Parameters
-    col : the columns to apply the change upon
-
-    """
-    if upperbound:
-        if upperbound in df.index:
-            df_up = df.loc[df.index <= upperbound,:].copy()
-        else:
-            df_up = df.loc[df.index < upperbound,:].copy()
-            last_bin = df.loc[df.index > upperbound,:].iloc[0]
-            last_bin[col] = (upperbound - df_up.index[-1]) / (last_bin.name - df_up.index[-1] ) * last_bin[col]
-            last_bin.name = upperbound
-            df_up = pd.concat([df_up,last_bin.to_frame().T])
-    
-    if lowerbound:
-        if upperbound:
-            df_up = df_up.loc[df_up.index > lowerbound,:].copy()
-        else:
-            df_up = df.loc[df.index > lowerbound,:].copy()
-
-        if not lowerbound in df.index:
-            prev_bin = df.loc[df.index < lowerbound,:].iloc[-1]
-            weight = (df_up.index[0] - lowerbound) / (df_up.index[0] - prev_bin.name) * df_up.iloc[0][col]
-            df_up.at[df_up.index[0],col] = weight
-
-    return df_up
-
-
-def mobility_demand_from_WP1data_modes(DailyDist,max_dist = 70 ,nbins = 1,modalwindow = 0.01,  share_cars = None,share_EV_infleet = None ):
-    """
-    Donne les shares pour les modes MD/PT/cars. Voir twin function mobility_demand_from_WP1data_units qui donne pour les units et pas pour les modes
-
-    Parameters
-    -----------
-    DailyDist : DailyDist total
-    max_dist :
-
-    """
-    parameters = {"DailyDist" : {},
-                }
-    modalshares_csv = pd.DataFrame()
-    modalshares_custom = pd.DataFrame()
-
-    df_dist = pd.read_csv(os.path.join(path_to_mobility, 'WP1_distributionofdistances.csv'), index_col = 0)
-    df_modalshares = pd.read_csv(os.path.join(path_to_mobility, 'WP1_modalsharesbydistances_work.tsv'), sep = "\t",index_col = 0)
-    
-    # mapping_modesunits = {
-    #     "Marche"   :  "Bike_district",
-    #     "Vélo"        : "Bike_district",
-    #     "moto"        : "ICE_district",
-    #     "voiture"     : "ICE_district",
-    #     "tram/bus"    : "PT_bus",
-    #     "train" : "PT_train"
-    # }
-
-    mapping_modesunits = {
-        "Marche"   :  "MD",
-        "Vélo"        : "MD",
-        "moto"        : "cars",
-        "voiture"     : "cars",
-        "tram/bus"    : "PT",
-        "train" : "PT"
-    }
-
-    df_dist_inf = linear_split_bin_table(df_dist,"weight",upperbound=max_dist)
-    df_dist_inf.weight = df_dist_inf.weight /df_dist_inf.weight.sum()
-
-    df_dist_inf['up'] = df_dist_inf.index
-    df_dist_inf['low'] =   df_dist_inf.up.shift(1).fillna(0)
-    df_dist_inf['mean'] = (df_dist_inf.up + df_dist_inf.low)/2
-    df_dist_inf['pkm'] = df_dist_inf['mean'] * df_dist_inf['weight']
-    df_dist_inf.pkm = df_dist_inf.pkm /df_dist_inf.pkm.sum()
-
-    df_dist_inf = df_dist_inf.join(df_modalshares)
-    df_dist_inf[df_modalshares.columns] = df_dist_inf[df_modalshares.columns].fillna(method = 'bfill').fillna(method = 'ffill')
-
-    lowerbound = 0
-    step = max_dist/nbins
-    for i in range(nbins):
-        upperbound = lowerbound + step
-        df_bin = linear_split_bin_table(df_dist_inf,"pkm",lowerbound,upperbound)
-        parameters['DailyDist'][f"D{i}"] = df_bin.pkm.sum() * DailyDist
-
-        df_ms = df_bin[df_modalshares.columns].mul(df_bin['pkm'],axis = 0).sum()
-        df_ms = df_ms.div(df_ms.sum())
-        df_ms.index = df_ms.index.map(mapping_modesunits)
-        df_ms = df_ms.groupby(df_ms.index).agg("sum")
-        # df_ms['EV_district'] = df_ms.ICE_district
-        df_ms_min = df_ms.copy()
-        # df_ms_min.values.fill(0)
-
-        # df_ms['cars'] = df_ms.ICE_district 
-        # df_ms_min['cars'] = df_ms.ICE_district
-        # df_ms['MD'] = df_ms.Bike_district 
-        # df_ms_min['MD'] = df_ms.Bike_district
-        # df_ms['PT'] = (df_ms.PT_train + df_ms.PT_bus) 
-        # df_ms_min['PT'] = (df_ms.PT_train + df_ms.PT_bus)      
-        
-
-        # df_ms['cars'] = 1
-        # df_ms_min['cars'] = 0
-        # df_ms['MD'] = 1
-        # df_ms_min['MD'] = 0
-        # df_ms['PT'] = 1
-        # df_ms_min['PT'] = 0
-
-        modalshares_csv[f"min_D{i}"] = df_ms_min.apply(lambda x : max(x-modalwindow,0))
-        modalshares_csv[f"max_D{i}"] = df_ms.apply(lambda x : min(x+modalwindow,1))
-        modalshares_custom[f"D{i}"] = df_ms
-
-        lowerbound = upperbound
-
-    if not(share_cars is None):
-        mean_share = sum(modalshares_csv.loc["cars",modalshares_csv.columns.str.startswith("max")].values * list(parameters["DailyDist"].values()))
-        mean_share = mean_share/sum(parameters["DailyDist"].values())
-        modalshares_custom.loc['cars',:] = modalshares_custom.loc['cars',:].apply(lambda x : x*share_cars/mean_share)
-        
-        modalshares_custom = modalshares_custom.T
-        modalshares_custom[['MD','PT']] = modalshares_custom.apply(lambda x : (x.MD/(x.MD + x.PT) * (1-x.cars),x.PT/(x.MD + x.PT) * (1-x.cars)),axis = 1,result_type = 'expand')
-        modalshares_custom = modalshares_custom.T
-
-        for D in modalshares_custom.columns:
-            modalshares_csv[f"min_{D}"] = modalshares_custom[D].apply(lambda x : max(x-modalwindow,0))
-            modalshares_csv[f"max_{D}"] = modalshares_custom[D].apply(lambda x : min(x+modalwindow,1))
-
-    if not(share_EV_infleet is None):
-        modalshares_csv = modalshares_csv.T
-        modalshares_csv['EV_district'] = share_EV_infleet * modalshares_csv["cars"]
-        modalshares_csv = modalshares_csv.T
-
-    modalshares_csv.to_csv(os.path.join(path_to_mobility, "modalshares.csv"))
-    return parameters
-
-
-def mobility_demand_from_WP1data_units(DailyDist,max_dist = 70 ,nbins = 1,modalwindow = 0.01):
-    """
-    Donne les shares pour les units et les modes MD/PT/cars. Voir twin function mobility_demand_from_WP1data_modes 
-
-    Parameters
-    -----------
-    DailyDist : DailyDist total
-    max_dist :
-
-    """
-    parameters = {"DailyDist" : {},
-                }
-    modalshares_csv = pd.DataFrame()
-    df_dist = pd.read_csv(os.path.join(path_to_mobility, 'WP1_distributionofdistances.csv'), index_col=0)
-    df_modalshares = pd.read_csv(os.path.join(path_to_mobility, 'WP1_modalsharesbydistances_work.tsv'), sep="\t", index_col=0)
-
-    mapping_modesunits = {
-        "Marche"   :  "Bike_district",
-        "Vélo"        : "Bike_district",
-        "moto"        : "ICE_district",
-        "voiture"     : "ICE_district",
-        "tram/bus"    : "PT_bus",
-        "train" : "PT_train"
-    }
-
-
-    df_dist_inf = linear_split_bin_table(df_dist,"weight",upperbound=max_dist)
-    df_dist_inf.weight = df_dist_inf.weight /df_dist_inf.weight.sum()
-
-    df_dist_inf['up'] = df_dist_inf.index
-    df_dist_inf['low'] =   df_dist_inf.up.shift(1).fillna(0)
-    df_dist_inf['mean'] = (df_dist_inf.up + df_dist_inf.low)/2
-    df_dist_inf['pkm'] = df_dist_inf['mean'] * df_dist_inf['weight']
-    df_dist_inf.pkm = df_dist_inf.pkm /df_dist_inf.pkm.sum()
-
-    df_dist_inf = df_dist_inf.join(df_modalshares)
-    df_dist_inf[df_modalshares.columns] = df_dist_inf[df_modalshares.columns].fillna(method = 'bfill').fillna(method = 'ffill')
-
-    lowerbound = 0
-    step = max_dist/nbins
-    for i in range(nbins):
-        upperbound = lowerbound + step
-        df_bin = linear_split_bin_table(df_dist_inf,"pkm",lowerbound,upperbound)
-        parameters['DailyDist'][f"D{i}"] = df_bin.pkm.sum() * DailyDist
-
-        df_ms = df_bin[df_modalshares.columns].mul(df_bin['pkm'],axis = 0).sum()
-        df_ms = df_ms.div(df_ms.sum())
-        df_ms.index = df_ms.index.map(mapping_modesunits)
-        df_ms = df_ms.groupby(df_ms.index).agg("sum")
-        df_ms['EV_district'] = df_ms.ICE_district
-        df_ms_min = df_ms.copy()
-        df_ms_min.values.fill(0)
-
-        df_ms['cars'] = df_ms.ICE_district 
-        df_ms_min['cars'] = df_ms.ICE_district
-        df_ms['MD'] = df_ms.Bike_district 
-        df_ms_min['MD'] = df_ms.Bike_district
-        df_ms['PT'] = (df_ms.PT_train + df_ms.PT_bus) 
-        df_ms_min['PT'] = (df_ms.PT_train + df_ms.PT_bus)      
-        
-
-        modalshares_csv[f"min_D{i}"] = df_ms_min.apply(lambda x : max(x-modalwindow,0))
-        modalshares_csv[f"max_D{i}"] = df_ms.apply(lambda x : min(x+modalwindow,1))
-
-        lowerbound = upperbound
-
-    modalshares_csv.to_csv(os.path.join(path_to_mobility, "modalshares.csv"))
-    return parameters
 
 def compute_district_parameters(district_parameters):
     """
@@ -296,7 +94,6 @@ def calculate_modal_shares(results):
 
     return df_shares
 
-
 def plot_pkm(results,run_label = ""):
     """
     results : reho.results[Scn_ID][Pareto_ID] ex: reho.results['totex'][0]
@@ -341,7 +138,6 @@ def plot_pkm(results,run_label = ""):
     fig.update_layout(title_text=f"{run_label} - Mobility demand [pkm]")
     return df_pkm,fig
 
-
 def remove_nan_QBuilding(buildings_data):
     for bui in buildings_data["buildings_data"]:
         bui_class = buildings_data["buildings_data"][bui]["id_class"]
@@ -357,8 +153,6 @@ def remove_nan_QBuilding(buildings_data):
         if math.isnan(buildings_data["buildings_data"][bui]["T_comfort_min_0"]):
             buildings_data["buildings_data"][bui]["T_comfort_min_0"] = 20
     return buildings_data
-
-
 
 def filter_data(reho, s):
     for i in reho.results[f'S{s + 1}']:

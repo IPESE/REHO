@@ -292,13 +292,6 @@ class SubProblem:
         # Reference temperature
         self.parameters_to_ampl['T_comfort_min'] = buildings_profiles.reference_temperature_profile(self.parameters_to_ampl, self.cluster_sp)
 
-        # Set default EV plug out profile if EVs are allowed
-        if "EV_plugged_out" not in self.parameters_to_ampl:
-            if len(self.infrastructure_sp.UnitsOfDistrict) != 0:
-                if "EV_district" in self.infrastructure_sp.UnitsOfDistrict:
-                    p = EV_gen.generate_mobility_parameters(self.cluster_sp,self.parameters_sp,
-                                                            np.setdiff1d(np.append(self.infrastructure_sp.UnitsOfLayer["Mobility"],'Public_transport'),self.infrastructure_sp.UnitsOfType['EV_charger']))
-                    self.parameters_to_ampl.update(p)
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#

@@ -7,13 +7,13 @@ from scripts.solene.functions import *
 if __name__ == '__main__':
     date = datetime.datetime.now().strftime("%d_%H%M")
 
-    n_samples = 10
+    n_samples = 3
     sharecars_range = [0,1]
 
     district_parameters = pd.read_csv(os.path.join(path_to_mobility, 'leman.csv'), index_col=0)
     districts = list(district_parameters.index.values)
     districts = [int(x) for x in districts]
-    n_buildings = 600
+    n_buildings = 3
 
     reader = QBuildingsReader(load_roofs=True)
     qbuildings_data = {}
@@ -72,7 +72,7 @@ if __name__ == '__main__':
         print("Co-optimization number", str(s + 1) + "/" + str(n_samples))
 
         scenario['name'] = f'S{s+1}'
-        mob_param, modal_split = mobility_demand_from_WP1data(36.8,80,3,0.02,share_cars=share_cars,share_EV_infleet=1)
+        DailyDist, modal_split = mobility_demand_from_WP1data(36.8,80,3,0.02,share_cars=share_cars,share_EV_infleet=1)
 
         # variables for co-optimisation
         variables = dict()
@@ -84,8 +84,7 @@ if __name__ == '__main__':
 
             # Parameters update
             reho_models[tr].scenario = scenario
-            for p in mob_param.keys():
-                reho_models[tr].parameters[p] = mob_param[p]
+            reho_models[tr].parameters['DailyDist'] = DailyDist
             reho_models[tr].modal_split = modal_split
 
             qbuildings_data[tr] = {'buildings_data': reho_models[tr].buildings_data}
@@ -100,7 +99,7 @@ if __name__ == '__main__':
         parameters = compute_iterative_parameters(reho_models, Scn_ID=f'S{s+1}', iter=i, district_parameters=district_parameters, only_prices=True)
 
         # Iterations for co-optimization
-        for i in range(1, 4):
+        for i in range(1, 2):
             for tr in districts:
                 print(f"S{s+1} - iteration {i} : district {tr}")
                 reho_models[tr].method['external_district'] = True

@@ -73,7 +73,7 @@ if __name__ == '__main__':
             print("Co-optimization number", str(s + 1) + "/" + str(n_samples))
 
             scenario['name'] = f'S{s+1}'
-            mob_param, modal_split = mobility_demand_from_WP1data(dailydist,80,3,0.02,share_EV_infleet=1)
+            DailyDist, modal_split = mobility_demand_from_WP1data(dailydist,80,3,0.02,share_EV_infleet=1)
 
             # variables for co-optimisation
             variables = dict()
@@ -85,8 +85,7 @@ if __name__ == '__main__':
 
                 # Parameters update
                 reho_models[tr].scenario = scenario
-                for p in mob_param.keys():
-                    reho_models[tr].parameters[p] = mob_param[p]
+                reho_models[tr].parameters['DailyDist'] = DailyDist
                 reho_models[tr].modal_split = modal_split
 
                 qbuildings_data[tr] = {'buildings_data': reho_models[tr].buildings_data}

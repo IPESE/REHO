@@ -486,13 +486,13 @@ def linear_split_bin_table(df,col,lowerbound = None, upperbound = None):
     return df_up
 
 
-def mobility_demand_from_WP1data(DailyDist,max_dist = 70 ,nbins = 1,modalwindow = 0.01,  share_cars = None,share_EV_infleet = None ):
+def mobility_demand_from_WP1data(pkm_demand,max_dist = 70 ,nbins = 1,modalwindow = 0.01,  share_cars = None,share_EV_infleet = None ):
     """
     This functions computes parameters related to mobility from data tables provided by WP1 (OFS data). Parameters computed include : DailyDist and the modal_split dataframe. 
 
     Parameters
     -----------
-    DailyDist : float
+    pkm_demand : float
         Total number of km travelled/day/cap
     max_dist :  float
         trip length cutoff 
@@ -507,11 +507,10 @@ def mobility_demand_from_WP1data(DailyDist,max_dist = 70 ,nbins = 1,modalwindow 
     
     Returns
     ---------
-    parameters : dict of parameters
+    DailyDist : dict 
     modal_split : df for reho.modal_split
     """
-    parameters = {"DailyDist" : {},
-                }
+    DailyDist = {}
     modal_split = pd.DataFrame()
     modal_split_custom = pd.DataFrame()
 
@@ -544,7 +543,7 @@ def mobility_demand_from_WP1data(DailyDist,max_dist = 70 ,nbins = 1,modalwindow 
     for i in range(nbins):
         upperbound = lowerbound + step
         df_bin = linear_split_bin_table(df_dist_inf,"pkm",lowerbound,upperbound)
-        parameters['DailyDist'][f"D{i}"] = df_bin.pkm.sum() * DailyDist
+        DailyDist[f"D{i}"] = df_bin.pkm.sum() * pkm_demand
 
         df_ms = df_bin[df_modal_split.columns].mul(df_bin['pkm'],axis = 0).sum()
         df_ms = df_ms.div(df_ms.sum())
@@ -559,8 +558,8 @@ def mobility_demand_from_WP1data(DailyDist,max_dist = 70 ,nbins = 1,modalwindow 
         lowerbound = upperbound
 
     if not(share_cars is None):
-        mean_share = sum(modal_split.loc["cars",modal_split.columns.str.startswith("max")].values * list(parameters["DailyDist"].values()))
-        mean_share = mean_share/sum(parameters["DailyDist"].values())
+        mean_share = sum(modal_split.loc["cars",modal_split.columns.str.startswith("max")].values * list(DailyDist.values()))
+        mean_share = mean_share/sum(DailyDist.values())
         modal_split_custom.loc['cars',:] = modal_split_custom.loc['cars',:].apply(lambda x : x*share_cars/mean_share)
         
         modal_split_custom = modal_split_custom.T
@@ -576,7 +575,7 @@ def mobility_demand_from_WP1data(DailyDist,max_dist = 70 ,nbins = 1,modalwindow 
         modal_split['EV_district'] = share_EV_infleet * modal_split["cars"]
         modal_split = modal_split.T
 
-    return parameters, modal_split
+    return DailyDist, modal_split
 
 
 

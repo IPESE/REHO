@@ -78,19 +78,12 @@ if __name__ == '__main__':
 
     # ITERATION INIT ====================================================================================================================
     # Iteration 0 is computed to initialize the selling and retail prices. 
-    variables = {}
 
     i = 0 
     for tr in districts:
         print(f"Iteration {i} : district {tr}")
-
         reho_models[tr].single_optimization(Pareto_ID = i)
 
-        # Price parameter
-        pi = reho_models[tr].results_MP["totex"][i][0]["df_Dual_t"]["pi"].xs("Electricity")
-        variables[tr] = {"pi": pi}
-    
-    # Compute the share activity parameter
     parameters = compute_iterative_parameters(reho_models, Scn_ID='totex', iter=i, district_parameters=district_parameters, only_prices=True)
 
 
@@ -106,12 +99,6 @@ if __name__ == '__main__':
                 reho_models[tr].parameters[p] = parameters[tr][p]
 
             reho_models[tr].single_optimization(Pareto_ID = i)
-
-            # Extract exchanges between districts
-            pi = reho_models[tr].results_MP['totex'][i][0]["df_Dual_t"]["pi"].xs("Electricity")
-            df_Unit_t = reho_models[tr].results['totex'][i]['df_Unit_t']
-            df_Grid_t = reho_models[tr].results['totex'][i]['df_Grid_t']
-            variables[tr] = {"pi": pi, "df_Unit_t" : df_Unit_t, "df_Grid_t" : df_Grid_t}
 
         parameters = compute_iterative_parameters(reho_models, Scn_ID=f'totex', iter=i, district_parameters=district_parameters)
 

@@ -23,9 +23,9 @@ class REHO(MasterProblem):
     reho.model.master_problem.MasterProblem
     """
 
-    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
+    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None,modal_split=None):
 
-        super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
+        super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params,modal_split)
         self.initialize_optimization_tracking_attributes()
 
         # input attributes
@@ -694,8 +694,9 @@ class REHO(MasterProblem):
         # df_Unit_t
         df_Unit_t = self.get_final_SPs_results(MP_selection, 'df_Unit_t')
         df_Unit_t = df_Unit_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-        df_district_units = last_results["df_Unit_t"]
-        df_Unit_t = pd.concat([df_Unit_t, df_district_units])
+        if "df_Unit_t" in last_results.keys():
+            df_district_units = last_results["df_Unit_t"]
+            df_Unit_t = pd.concat([df_Unit_t, df_district_units])
         df_Results["df_Unit_t"] = df_Unit_t
 
         if self.method["save_streams"]:

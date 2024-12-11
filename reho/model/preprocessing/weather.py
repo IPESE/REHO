@@ -163,13 +163,6 @@ def generate_weather_data(cluster, qbuildings_data):
     new_index_max = len(data_cls) + 1
     data_cls = pd.concat([data_cls, T_min.rename({T_idx[0]: new_index_min}), T_max.rename({T_idx[1]: new_index_max})])
 
-    # Apply a 10% margin for the extreme temperature
-    data_cls.loc[new_index_max, 'Text'] *= 1.1  # max gets increased by 10%
-    if data_cls.loc[new_index_min, 'Text'] > 0:
-        data_cls.loc[new_index_min, 'Text'] *= 0.9  # min gets decreased by 10% if positive
-    else:
-        data_cls.loc[new_index_min, 'Text'] *= 1.1  # min gets increased by 10% if negative
-
     # Construct inter-period data
     data_idy = pd.DataFrame(
         np.stack((np.arange(1, data_idx.loc[:, cl.nbr_opt].shape[0] + 1, 1), data_idx.loc[:, cl.nbr_opt].values), axis=1), columns=["IndexYr", "inter_t"])

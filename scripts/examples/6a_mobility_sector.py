@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(transformer=3658, nb_buildings=2)
+    qbuildings_data = reader.read_db(district_id=234, nb_buildings=2)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -34,14 +34,13 @@ if __name__ == '__main__':
     scenario['name'] = 'totex_1'
 
     # Set parameters
-    parameters = {  "Population": 9,
-                    "max_share_EV": 0.7,
-                    "min_share_EV": 0.4,
-                    "DailyDist" : 29
-                }
+    era = np.sum([qbuildings_data["buildings_data"][b]['ERA'] for b in qbuildings_data["buildings_data"]])
+    parameters = {  "Population": era / 46, # here Population is scaled to the number of buildings being optimized (CH : 46m²/cap on average )
+    }
+    parameters['DailyDist'], modal_split = EV_gen.mobility_demand_from_WP1data(36,nbins=2) # 36 km/cap/day, 2 categories of distance (D0 : short and D1 : long)
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters,modal_split=modal_split, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
     reho.single_optimization()
 
     # SCENARIO 2

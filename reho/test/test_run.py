@@ -3,13 +3,13 @@ from reho.model.reho import *
 from reho.plotting import plotting
 
 
-def test_run(save_results=False):
+def test_run(save_results=True):
 
     try:
         # Set building parameters
         reader = QBuildingsReader()
         reader.establish_connection('Geneva')
-        qbuildings_data = reader.read_db(71, egid=['1009515'])
+        qbuildings_data = reader.read_db(district_id=71, egid=['1009515'])
 
         # Select clustering options for weather data
         cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -38,7 +38,7 @@ def test_run(save_results=False):
             reho.save_results(format=['xlsx', 'pickle'], filename='test_results')
 
         # Plot results
-        plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()
+        plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram", filename="figures/Sankey").show()
 
     except ImportError as e:
         pytest.fail(f"Running REHO failed: {e}")

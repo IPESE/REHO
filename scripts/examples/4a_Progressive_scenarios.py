@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(transformer=234, nb_buildings=1)
+    qbuildings_data = reader.read_db(district_id=234, nb_buildings=1)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -47,19 +47,7 @@ if __name__ == '__main__':
     reho.buildings_data['Building1']['temperature_heating_return_C'] = 34
     reho.single_optimization()
 
-    # Scenario 3 EV
-    scenario['name'] = 'EV'
-    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat']
-    scenario['enforce_units'] = ['EV_district']
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
-    reho.parameters['n_vehicles'] = 6
-
-    reho.scenario = scenario
-    reho.units = units
-    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
-    reho.single_optimization()
-
-    # Scenario 4 ICT
+    # Scenario 3 ICT
     scenario['name'] = 'ICT'
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_SH']
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
@@ -69,7 +57,7 @@ if __name__ == '__main__':
     reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.single_optimization()
 
-    # Scenario 5 Isolation
+    # Scenario 4 Isolation
     scenario['name'] = 'Isolation'
     reho.buildings_data['Building1']['U_h'] = 0.5 * qbuildings_data['buildings_data']['Building1']['U_h']
 

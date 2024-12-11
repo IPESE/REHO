@@ -3,7 +3,7 @@ import logging
 
 from amplpy import AMPL, Environment
 
-import reho.model.preprocessing.EV_profile_generator as EV_gen
+import reho.model.preprocessing.mobility_generator as EV_gen
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as weather
@@ -108,15 +108,19 @@ class SubProblem:
                     self.parameters_to_ampl[parameter][b] = self.parameters_sp[parameter]
 
     def init_ampl_model(self):
-        if os.getenv('USE_AMPL_MODULES', False):
-            from amplpy import modules
-            modules.load()
-            ampl = AMPL()
-        else:
+
+        if "AMPL_PATH" in os.environ:
             try:
                 ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
-                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+        else:
+            try:
+                from amplpy import modules
+                modules.load()
+                ampl = AMPL()
+            except:
+                raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license.")
 
         # -AMPL (GNU) OPTIONS
         ampl.setOption('solution_round', 11)
@@ -288,13 +292,6 @@ class SubProblem:
         # Reference temperature
         self.parameters_to_ampl['T_comfort_min'] = buildings_profiles.reference_temperature_profile(self.parameters_to_ampl, self.cluster_sp)
 
-        # Set default EV plug out profile if EVs are allowed
-        if "EV_plugged_out" not in self.parameters_to_ampl:
-            if len(self.infrastructure_sp.UnitsOfDistrict) != 0:
-                if "EV_district" in self.infrastructure_sp.UnitsOfDistrict:
-                    p = EV_gen.generate_mobility_parameters(self.cluster_sp,self.parameters_sp,
-                                                            np.append(self.infrastructure_sp.UnitsOfLayer["Mobility"],'Public_transport'))
-                    self.parameters_to_ampl.update(p)
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#

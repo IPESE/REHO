@@ -52,7 +52,7 @@ class MasterProblem:
     """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
-                 cluster=None, method=None, solver=None, DW_params=None):
+                 cluster=None, method=None, solver=None, DW_params=None,modal_split=None):
 
         # ampl solver
         self.solver = solver
@@ -106,6 +106,9 @@ class MasterProblem:
         else:
             self.set_indexed = set_indexed
 
+        # prepare mobility data
+        self.modal_split = modal_split
+
         # attributes for the decomposition algorithm
         if DW_params is None:
             self.DW_params = {}  # init of values in initiate_decomposition method
@@ -119,11 +122,10 @@ class MasterProblem:
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
                                                 "DailyDist","Mode_Speed","Cost_demand_ext","EV_charger_supply_ext","share_activity","Cost_supply_ext",
-                                                "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes", "min_share_EBikes" ,"max_share_bikes", "min_share_bikes", "n_ICEperhab",
+                                                "max_share", "min_share","max_share_modes", "min_share_modes" ,  "n_ICEperhab",
                                                  "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
                          "list_constraints_MP": [],
-                         "list_set_indexed_MP" : ["Districts"]
+                         "list_set_indexed_MP" : ["Districts","Distances"]
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -358,16 +360,18 @@ class MasterProblem:
         ValueError: If the sets are not arrays or if the parameters are not arrays or floats or dataframes. Or if the MP optimization did not converge
         """
 
-        # Create the ampl Master Problem (MP)
-        if os.getenv('USE_AMPL_MODULES', False):
-            from amplpy import modules
-            modules.load()
-            ampl_MP = AMPL()
-        else:
+        if "AMPL_PATH" in os.environ:
             try:
                 ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
-                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+        else:
+            try:
+                from amplpy import modules
+                modules.load()
+                ampl_MP = AMPL()
+            except:
+                raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license: https://reho.readthedocs.io/en/main/sections/5_Getting_started.html#ampl-license")
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('solution_round', 11)
@@ -402,7 +406,7 @@ class MasterProblem:
                 ampl_MP.read('mobility.mod')
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
-                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_supplyprofile1", "EV_supplyprofile2", 'ExternalEV_Costs_positive']
+                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
                 self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + mobility_cst
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
@@ -485,7 +489,8 @@ class MasterProblem:
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                    np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
+                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train',"PT_bus"]),self.infrastructure.UnitsOfType["EV_charger"]),
+                                                    self.modal_split)
             MP_parameters.update(p)
 
         if read_DHN:
@@ -542,8 +547,9 @@ class MasterProblem:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EVcharging_district"]), ['PT_train', 'PT_bus'])
+            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]), ['PT_train', 'PT_bus'])
             MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['Distances'] = np.array(MP_parameters['DailyDist'].index)
 
         if self.method['external_district']:
             MP_set_indexed['Districts'] = np.array(self.set_indexed["Districts"])

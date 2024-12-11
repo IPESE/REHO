@@ -15,14 +15,14 @@ They are reported in Tables :ref:`tbl-building-units` and :ref:`tbl-district-uni
    :header-rows: 1
    :delim: ;
    :class: longtable
-   :name: tbl-building-units
+   :name: tbl-building-units-csv
 
 .. csv-table:: District units default costs and LCA values
    :file: ../../reho/data/infrastructure/district_units.csv
    :header-rows: 1
    :delim: ;
    :class: longtable
-   :name: tbl-district-units
+   :name: tbl-district-units-csv
 
 
 Grids
@@ -34,3 +34,12 @@ Grids
    :delim: ;
    :class: longtable
    :name: tbl-grid
+
+Mobility
+=========
+
+.. figure:: ../images/externalexchanges.svg
+   :align: center
+   :name: fig-mob1
+
+   A focus on mobility units and streams at the district-level 

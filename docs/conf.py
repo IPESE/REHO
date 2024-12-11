@@ -8,16 +8,26 @@
 
 import os
 import sys
+import requests
 from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../'))
 
 # -- Project information -----------------------------------------------------
 
+try:
+    response = requests.get("https://pypi.org/pypi/REHO/json")
+    if response.status_code == 200:
+        data = response.json()
+        latest_version = data["info"]["version"]
+    else:
+        latest_version = ">1.1.5"
+except Exception as e:
+    f"error: {str(e)}"
+
 project = 'REHO'
 copyright = '2021, IPESE, EPFL'
 author = 'D. Lepour, J. Loustau, C. Terrier'
-release = '1.1.0'
-
+version = latest_version
 
 # -- General configuration ---------------------------------------------------
 
@@ -26,8 +36,7 @@ extensions = ['sphinxcontrib.bibtex',
               'sphinx.ext.napoleon',
               'sphinx.ext.autosummary',
               'sphinx_design',
-              'sphinx_copybutton',
-              'nbsphinx']
+              'sphinx_copybutton']
 source_suffix = [".rst", ".md"]
 exclude_patterns = ['LICENSE']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
@@ -53,10 +62,10 @@ html_theme_options = {
   # "external_links": [{"name": "REHO-fm", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
-                  "icon": "https://github.com/IPESE/REHO/blob/documentation/documentation/images/logos/ipese_square.png?raw=true",
+                  "icon": "https://github.com/IPESE/REHO/blob/main/docs/images/logos/ipese_square.png?raw=true",
                   "type": "url"}],
-  "logo": {"image_light": 'images/logos/logo_reho.png',
-           "image_dark": "images/logos/logo_reho_light.png",
+  "logo": {"image_light": 'images/logos/logo-reho-black.png',
+           "image_dark": "images/logos/logo-reho-white.png",
            "alt_text": "REHO documentation - Home"},
   "navigation_depth": 6
 }
@@ -68,6 +77,8 @@ toc_object_entries_show_parents = 'all'
 
 # ------------ Autodoc ------------------------------------
 autodoc_member_order = 'bysource'
+
+# From REHO requirements.txt
 autodoc_mock_imports = [
     "amplpy",
     "ampl_module_base",
@@ -95,5 +106,12 @@ autodoc_mock_imports = [
     "sqlalchemy",
     "urllib3",
 ]
-sys.modules['sqlalchemy.dialects'] = MagicMock()
-sys.modules['sqlalchemy.exc'] = MagicMock()
+
+# Handling specific imports
+sys.modules['pyclustering.cluster.kmedoids'] = MagicMock()
+sys.modules['pyclustering.utils.metric'] = MagicMock()
+sys.modules['pyclustering.utils'] = MagicMock()
+
+sys.modules['dotenv'] = MagicMock()
+
+sys.modules['pyproj'] = MagicMock()

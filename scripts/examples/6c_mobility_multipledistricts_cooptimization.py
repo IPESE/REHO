@@ -61,8 +61,10 @@ if __name__ == '__main__':
 
         ext_districts = [d for d in districts if d != tr]
         set_indexed = {"Districts": ext_districts}
-        parameters = {"Population": district_parameters[tr]['Population']}
-        parameters['DailyDist'], modal_split = EV_gen.mobility_demand_from_WP1data(36,nbins=2) # 36 km/cap/day, 2 categories of distance (D0 : short and D1 : long)      
+        parameters = {"Population": district_parameters[tr]['Population'],
+                      "DailyDist" : {'D0': 25, 'D1': 10}
+                      }
+        modal_split = pd.DataFrame({"min_D0" : [0,0,0.4,0.4], "max_D0" : [0.1,0.3,0.7,0.7],"min_D1" : [0,0.2,0.4,0.4], "max_D1" : [0,0.4,0.7,0.7]}, index = ['MD','PT','cars','EV_district'])
         
         reho_models[tr] = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
                     method=method, parameters=parameters, modal_split=modal_split,set_indexed=set_indexed, solver="gurobiasl")

@@ -35,12 +35,15 @@ if __name__ == '__main__':
 
     # Set parameters
     era = np.sum([qbuildings_data["buildings_data"][b]['ERA'] for b in qbuildings_data["buildings_data"]])
-    parameters = {  "Population": era / 46, # here Population is scaled to the number of buildings being optimized (CH : 46m²/cap on average )
-    }
-    parameters['DailyDist'], modal_split = EV_gen.mobility_demand_from_WP1data(36,nbins=2) # 36 km/cap/day, 2 categories of distance (D0 : short and D1 : long)
+    parameters = {  "Population": era / 46,  # here Population is scaled to the number of buildings being optimized (CH : 46m²/cap on average )
+                    "DailyDist" : {'D0': 25, 'D1': 10}, # 36 km/cap/day, 2 categories of distance (D0 : short and D1 : long)
+
+        }
+    modal_split = pd.DataFrame({"min_D0" : [0,0,0.4,0.1], "max_D0" : [0.1,0.3,0.7,0.7],"min_D1" : [0,0.2,0.4,0.2], "max_D1" : [0,0.4,0.7,0.7]}, index = ['MD','PT','cars','EV_district'])
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters,modal_split=modal_split, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho.modal_split = modal_split
     reho.single_optimization()
 
     # SCENARIO 2

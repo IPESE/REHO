@@ -43,21 +43,38 @@ if __name__ == '__main__':
     reho.scenario = scenario
     reho.units = units
     reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+    reho.build_infrastructure_SP()
     reho.buildings_data['Building1']['temperature_heating_supply_C'] = 42
     reho.buildings_data['Building1']['temperature_heating_return_C'] = 34
     reho.single_optimization()
 
-    # Scenario 3 ICT
-    scenario['name'] = 'ICT'
-    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_SH']
+    # Scenario 3 EV
+    scenario['name'] = 'EV'
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'Bike_district', 'ICE_district', 'ElectricBike_district']
+    scenario['enforce_units'] = ['EV_district']
+
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'FossilFuel': {}, 'Mobility': {}})
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     reho.scenario = scenario
     reho.units = units
     reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+    reho.build_infrastructure_SP()
     reho.single_optimization()
 
-    # Scenario 4 Isolation
+    # Scenario 4 ICT
+    scenario['name'] = 'ICT'
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_SH']
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Data': {}})
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
+
+    reho.scenario = scenario
+    reho.units = units
+    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+    reho.build_infrastructure_SP()
+    reho.single_optimization()
+
+    # Scenario 5 Isolation
     scenario['name'] = 'Isolation'
     reho.buildings_data['Building1']['U_h'] = 0.5 * qbuildings_data['buildings_data']['Building1']['U_h']
 

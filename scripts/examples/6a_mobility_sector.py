@@ -40,7 +40,8 @@ if __name__ == '__main__':
     parameters['DailyDist'], modal_split = EV_gen.mobility_demand_from_WP1data(36,nbins=2) # 36 km/cap/day, 2 categories of distance (D0 : short and D1 : long)
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters,modal_split=modal_split, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho.modal_split = modal_split
     reho.single_optimization()
 
     # SCENARIO 2

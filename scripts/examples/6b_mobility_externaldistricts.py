@@ -51,7 +51,8 @@ if __name__ == '__main__':
         parameters[param] = parameters_extdistrict[param]
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters,modal_split=modal_split, cluster=cluster,set_indexed=set_indexed, scenario=scenario, method=method, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster,set_indexed=set_indexed, scenario=scenario, method=method, solver="gurobiasl")
+    reho.modal_split = modal_split
     reho.single_optimization()
 
     # Save results

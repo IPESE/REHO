@@ -5,7 +5,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(transformer=234, nb_buildings=6)
+    qbuildings_data = reader.read_db(district_id=234, nb_buildings=6)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -21,8 +21,8 @@ if __name__ == '__main__':
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    grids["Electricity"]["ReinforcementTrOfLayer"] = np.array([30, 100]) # available capacities of transformer
-    parameters = {'Transformer_Ext': np.array([30, 1e6]), # available capacities of grids (Electricity, NaturalGas)
+    grids["Electricity"]["ReinforcementTrOfLayer"] = np.array([100, 1000]) # available capacities of transformer
+    parameters = {'Transformer_Ext': np.array([100, 1e6]), # available capacities of grids (Electricity, NaturalGas)
                   "CostTransformer_inv1": np.array([100, 0]), # fixed cost of grids reinforcement (Electricity, NaturalGas)
                   "CostTransformer_inv2": np.array([10, 0])} # variable cost of grids reinforcement (Electricity, NaturalGas)
 

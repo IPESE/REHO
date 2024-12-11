@@ -3,10 +3,11 @@ from reho.paths import *
 import reho.model.preprocessing.weather as weather
 import pandas as pd
 import numpy as np
+import copy
 
 # PARAMETERS AND SETS =========================================================================================
 
-def generate_mobility_parameters(cluster, parameters, transportunits,modal_split):
+def generate_mobility_parameters(cluster, parameters, infrastructure, modal_split):
     """
     This reads the input data on the file dailyprofiles.csv and initializes (almost) all the necessary parameters to run the mobility sector in REHO.
 
@@ -27,14 +28,18 @@ def generate_mobility_parameters(cluster, parameters, transportunits,modal_split
     The default values in this function are a hardcoded copy of parameters DailyDist and Population in mobility.mod.
     """
     param_output = dict()
-    
-    if not "DailyDist" in parameters:
-        parameters['DailyDist'] = {"all" : 36.8} # km per day
-    if not "Population" in parameters:
-        parameters['Population'] = 10 # km per day  
+    if "DailyDist" in parameters:
+        if isinstance(parameters['DailyDist'], dict):
+            parameters['DailyDist'] = pd.DataFrame.from_dict(parameters['DailyDist'], orient='index', columns=["DailyDist"])
+        DailyDist = parameters['DailyDist']
     else:
-        if isinstance(parameters['Population'], np.ndarray):
-            parameters['Population'] = parameters['Population'][0]
+        DailyDist = pd.DataFrame([36.8], index=["all"], columns=["DailyDist"]) # km per day
+
+    if "Population" in parameters:
+        Population = parameters['Population']
+    else:
+        Population = 10 # km per day
+
     if "Mode_Speed" in parameters:
         mode_speed_custom = parameters['Mode_Speed']
     else:
@@ -58,17 +63,19 @@ def generate_mobility_parameters(cluster, parameters, transportunits,modal_split
     # Read the profiles and the transportation Units
     profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
     units = pd.read_csv(os.path.join(path_to_infrastructure, "district_units.csv"), sep=";")
+
+    transportunits = np.setdiff1d(np.append(infrastructure.UnitsOfLayer["Mobility"], ['PT_train', "PT_bus"]), infrastructure.UnitsOfType["EV_charger"])
     units = units[units.Unit.isin(transportunits)]
 
     # Check that modal_split is consistent with DailyDist
-    if not(modal_split is None):
+    if modal_split is not None:
         d = set([x.split('_')[1] for x in modal_split.columns])
-        d = d.difference(parameters['DailyDist'].keys())
+        d = d.difference(DailyDist.index)
         if not(len(d)==0):
-            raise warnings.warn(f"reho.modal_split contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(parameters['DailyDist'].keys())}")
+            raise warnings.warn(f"reho.modal_split contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(DailyDist.index)}")
 
     # Compute the parameters
-    param_output['Domestic_energy_pkm'], param_output['Domestic_energy'], profile = get_mobility_demand(profiles_input, timestamp, days_mapping, parameters['DailyDist'], parameters['Population'])
+    param_output['Domestic_energy_pkm'], param_output['Domestic_energy'], profile = get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Population)
     param_output['Daily_Profile'] = get_daily_profile(profiles_input, timestamp, days_mapping, transportunits)
 
     param_output['EV_charging_profile'] = get_EV_charging(units, timestamp, profiles_input, days_mapping)
@@ -77,10 +84,11 @@ def generate_mobility_parameters(cluster, parameters, transportunits,modal_split
     param_output['EBike_charging_profile'] = get_Ebike_charging(units, timestamp, profiles_input, days_mapping)
 
     param_output['Mode_Speed'] = get_mode_speed(units, mode_speed_custom)
-    if not(modal_split is None):
+    if modal_split is not None:
         param_output['min_share'], param_output['min_share_modes'] = get_min_share(modal_split, modes, transportunits)
         param_output['max_share'], param_output['max_share_modes'] = get_max_share(modal_split, modes, transportunits)
-    param_output['DailyDist'] = pd.DataFrame.from_dict(parameters['DailyDist'], orient='index', columns=["DailyDist"])
+    param_output['DailyDist'] = DailyDist
+    param_output['Population'] = Population
 
     return param_output
 
@@ -90,7 +98,7 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
     profiles_demand = profiles_input.loc[:, profiles_input.columns.str.startswith("dem")]
     profiles_demand = profiles_demand * Population
 
-    distances = DailyDist.keys()
+    distances = DailyDist.index
     demand_pkm = pd.DataFrame(columns=['dist', 'p', 't', 'Domestic_energy_pkm'])
 
     for dist in distances:
@@ -108,13 +116,13 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
             profile.reset_index(inplace=True)
             profile['p'] = j + 1
 
-            profile["Domestic_energy_pkm"] *= DailyDist[dist]
+            profile["Domestic_energy_pkm"] *= DailyDist.loc[dist].values[0]
             profile['dist'] = dist
 
             demand_pkm = pd.concat([demand_pkm, profile])
 
-    extreme_hours = pd.concat([pd.DataFrame({"p": 11, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.keys()),
-                               pd.DataFrame({"p": 12, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.keys())])
+    extreme_hours = pd.concat([pd.DataFrame({"p": 11, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index),
+                               pd.DataFrame({"p": 12, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index)])
 
     extreme_hours.index.name = 'dist'
     extreme_hours.reset_index(inplace = True)

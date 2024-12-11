@@ -65,8 +65,9 @@ if __name__ == '__main__':
         parameters['DailyDist'], modal_split = EV_gen.mobility_demand_from_WP1data(36,nbins=2) # 36 km/cap/day, 2 categories of distance (D0 : short and D1 : long)      
         
         reho_models[tr] = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario,
-                    method=method, parameters=parameters, modal_split=modal_split,set_indexed=set_indexed, solver="gurobiasl")
-        
+                    method=method, parameters=parameters, set_indexed=set_indexed, solver="gurobiasl")
+        reho_models[tr].modal_split = modal_split
+
         # Compute f and share_activity parameters
         district_parameters[tr]['f'] = district_parameters[tr]['Scluster'] / reho_models[tr].ERA
         df_rho = pd.DataFrame()

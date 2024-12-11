@@ -1,3 +1,4 @@
+import copy
 import gc
 import time
 import warnings
@@ -52,7 +53,7 @@ class MasterProblem:
     """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
-                 cluster=None, method=None, solver=None, DW_params=None,modal_split=None):
+                 cluster=None, method=None, solver=None, DW_params=None):
 
         # ampl solver
         self.solver = solver
@@ -77,7 +78,7 @@ class MasterProblem:
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
         else:
-            self.cluster = cluster
+            self.cluster = copy.deepcopy(cluster)
 
         # load SIA norms
         sia_data = dict()
@@ -91,7 +92,7 @@ class MasterProblem:
         if parameters is None:
             self.parameters = {}
         else:
-            self.parameters = parameters
+            self.parameters = copy.deepcopy(parameters)
 
         # build end use demands profile
         self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
@@ -104,16 +105,16 @@ class MasterProblem:
         if set_indexed is None:
             self.set_indexed = {}
         else:
-            self.set_indexed = set_indexed
+            self.set_indexed = copy.deepcopy(set_indexed)
 
         # prepare mobility data
-        self.modal_split = modal_split
+        self.modal_split = None
 
         # attributes for the decomposition algorithm
         if DW_params is None:
             self.DW_params = {}  # init of values in initiate_decomposition method
         else:
-            self.DW_params = DW_params
+            self.DW_params = copy.deepcopy(DW_params)
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
 
@@ -406,8 +407,6 @@ class MasterProblem:
                 ampl_MP.read('mobility.mod')
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
-                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
-                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + mobility_cst
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
@@ -475,23 +474,14 @@ class MasterProblem:
             MP_parameters['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
             MP_parameters['GWP_demand'] = MP_parameters["GWP_supply"] * (1-1e-9)
 
-        for key in self.lists_MP['list_parameters_MP']:
-            if key in self.parameters.keys():
-                if key == "Units_Ext_district":
-                    key2 = "Units_Ext"
-                    MP_parameters[key2] = self.parameters[key]
-                else:
-                    MP_parameters[key] = self.parameters[key]
-
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],['PT_train',"PT_bus"]),self.infrastructure.UnitsOfType["EV_charger"]),
-                                                    self.modal_split)
-            MP_parameters.update(p)
+            mobility_parameters = EV_gen.generate_mobility_parameters(self.cluster, self.parameters, self.infrastructure, self.modal_split)
+            for param in mobility_parameters:
+                MP_parameters[param] = mobility_parameters[param]
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -506,6 +496,13 @@ class MasterProblem:
         else:
             if "area_district" in MP_parameters:
                 del MP_parameters["area_district"]
+
+        for key in self.lists_MP['list_parameters_MP']:
+            if key in self.parameters.keys():
+                if key == "Units_Ext_district":
+                    MP_parameters["Units_Ext"] = self.parameters[key]
+                else:
+                    MP_parameters[key] = self.parameters[key]
 
         # -------------------------------------------------------------------------------------------------------------
         # Set Sets
@@ -548,7 +545,7 @@ class MasterProblem:
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]), ['PT_train', 'PT_bus'])
-            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars'] = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
             MP_set_indexed['Distances'] = np.array(MP_parameters['DailyDist'].index)
 
         if self.method['external_district']:
@@ -973,6 +970,9 @@ class MasterProblem:
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
                             'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
+        if "EV_district" in self.infrastructure.UnitsOfDistrict:
+            list_constraints = list_constraints + ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
+
         for cst in list_constraints:
             ampl.getConstraint(cst).drop()
 

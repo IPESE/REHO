@@ -30,25 +30,25 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
 
-    # SCENARIO 1
-    scenario['name'] = 'totex_1'
+    # SCENARIO 1: Flexible charging profile
+    scenario['name'] = 'totex'
 
     # Set parameters
     era = np.sum([qbuildings_data["buildings_data"][b]['ERA'] for b in qbuildings_data["buildings_data"]])
-    parameters = {  "Population": era / 46, # here Population is scaled to the number of buildings being optimized (CH : 46m²/cap on average )
-    }
-    parameters['DailyDist'], modal_split = EV_gen.mobility_demand_from_WP1data(36,nbins=2) # 36 km/cap/day, 2 categories of distance (D0 : short and D1 : long)
+    parameters = {"Population": era / 46} # 46m²/person on average
+
+    parameters['DailyDist'], modal_split = EV_gen.mobility_demand_from_WP1data(36, nbins=2) # 36 km/day/person, 2 categories of distance (D0 : short and D1 : long)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
     reho.modal_split = modal_split
     reho.single_optimization()
 
-    # SCENARIO 2
-    scenario['name'] = 'totex_EVchargingprofile'
+    # SCENARIO 2: Fixed charging profile
+    scenario['name'] = 'totex_profile'
 
     # Activate the constraint forcing the charging profile of electric vehicles. 
-    scenario['specific'] = ['EV_chargingprofile1',"EV_chargingprofile2"]
+    scenario['specific'] = ['EV_chargingprofile1', "EV_chargingprofile2"]
 
     # Run optimization
     reho.scenario = scenario

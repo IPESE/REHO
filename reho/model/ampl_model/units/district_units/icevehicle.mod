@@ -15,8 +15,6 @@
 param n_ICEperhab default 1; # [1] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling )
 param max_n_ICE := n_ICEperhab * Population;
 param ff_ICE default 1.56; # [1]
-param max_share_ICE default 1; # [4] G 3.3.1.6 : share of cars is 66 %
-param min_share_ICE default 0.0; 
 param max_daily_time_spend_travellingICE{u in UnitsOfType['ICE']} default 1; # source : sociological studies (insight from Timo :) )
 
 # Technical characteristics
@@ -47,11 +45,11 @@ n_ICE[u] <= max_n_ICE;
 # subject to ICE_cb2{u in UnitsOfType['ICE'],p in Period,t in Time[p]}:
 # ICE_E_tank[u,p,t] <= ICE_capacity[u] * n_ICE[u];
 
-subject to ICE_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) <= max_share_ICE * Population * DailyDist;
+subject to ICE_maxshare{u in UnitsOfType['ICE'],p in PeriodStandard, dist in Distances}:
+sum { t in Time[p]} (pkm_supply[u,dist,p,t]) <= max_share[u, dist] * Population *  DailyDist[dist] ;
 
-subject to ICE_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['ICE'], t in Time[p]} (Units_supply['Mobility',u,p,t]) >= min_share_ICE * Population * DailyDist;
+subject to ICE_minshare{u in UnitsOfType['ICE'],p in PeriodStandard, dist in Distances}:
+sum { t in Time[p]} (pkm_supply[u,dist,p,t]) >= min_share[u, dist] * Population *  DailyDist[dist] ;
 
 
 subject to ICE_timeoftravel{p in Period,u in UnitsOfType['ICE']}:

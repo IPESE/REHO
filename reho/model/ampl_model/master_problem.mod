@@ -157,16 +157,16 @@ param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} defau
 
 var Costs_op;
 var Costs_House_op{h in House};
-var ExternalEV_Costs_op{p in Period,t in Time[p]};  # TODO : to be put >= 0  if no mobility ? 
+var ExternalEV_Costs_op{p in Period,t in Time[p]};  # TODO : to be put >= 0  if no mobility ?
 
 subject to Costs_opex_house{h in House}:
 Costs_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in PeriodStandard, t in Time[p]} lambda[f,h]*(Cost_supply_network[l,p,t]*Grid_supply[l,f,h,p,t] - Cost_demand_network[l,p,t]*Grid_demand[l,f,h,p,t])* dp[p] * dt[p]; 
 
 subject to Costs_opex:
-Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]); 
+Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]);
 
 subject to ExternalEV_Costs_positive{p in Period,t in Time[p]}:
-ExternalEV_Costs_op[p,t] >=0 ; # TODO : add the functionnality that this constraint can be disabled if we allow the district to sell more energy than it imports 
+ExternalEV_Costs_op[p,t] >=0 ; # TODO : add the functionnality that this constraint can be disabled if we allow the district to sell more energy than it imports
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES
@@ -194,17 +194,6 @@ param GWP_Transformer1{l in ResourceBalances} default 0;
 param GWP_Transformer2{l in ResourceBalances} default 0;
 param Transformer_Ext{l in ResourceBalances} default 1e8;
 param Transformer_Lifetime{l in ResourceBalances} default 20;
-
-# Lines additional capacities
-set ReinforcementLineOfLayer{ResourceBalances} default {};
-var LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
-var Use_LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
-param CostLine_inv1{l in ResourceBalances} default 20;
-param CostLine_inv2{l in ResourceBalances} default 70; # [CHF/kW/m]
-param Line_Length{h in House,l in ResourceBalances} default 10;
-param GWP_Line1{l in ResourceBalances} default 0;
-param GWP_Line2{l in ResourceBalances} default 0;
-param Line_Ext{h in House,l in ResourceBalances} default 1e8;
 
 subject to transformer_additional_capacity_c1{l in ResourceBalances}:
 Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
@@ -356,14 +345,6 @@ Costs_grid_connection_House[l,h] = 12*Cost_connection[l]*peak_exchange_House[l,h
 subject to grid_connection_total:
 Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_grid_connection_House[l,h];
 
-#--------------------------------------------------------------------------------------------------------------------#
-# Grid capacity constraints
-#--------------------------------------------------------------------------------------------------------------------#
-subject to LineCapacity_supply{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_supply[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
-
-subject to LineCapacity_demand{l in ResourceBalances, f in FeasibleSolutions,h in HousesOfLayer[l],p in Period,t in Time[p]}:
-Grid_demand[l,f,h,p,t] * lambda[f,h] <= LineCapacity[l,h];
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Transformer capacity constraints

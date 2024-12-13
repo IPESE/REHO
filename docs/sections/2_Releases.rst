@@ -7,9 +7,9 @@ How to cite
 .. image:: https://joss.theoj.org/papers/10.21105/joss.06734/status.svg
    :target: https://doi.org/10.21105/joss.06734
 
-REHO has been published into the `Journal of Open Source Software <https://joss.theoj.org/>`_. If you use REHO in your research, please cite it using the following reference:
+REHO has been published in the `Journal of Open Source Software <https://joss.theoj.org/>`_. If you use REHO in your research, please cite it using the following reference:
 
-**Citation**
+**APA**
 
 .. code-block:: bash
 

@@ -1,3 +1,4 @@
+import copy
 import gc
 import time
 import warnings
@@ -77,7 +78,7 @@ class MasterProblem:
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
         else:
-            self.cluster = cluster
+            self.cluster = copy.deepcopy(cluster)
 
         # load SIA norms
         sia_data = dict()
@@ -91,7 +92,7 @@ class MasterProblem:
         if parameters is None:
             self.parameters = {}
         else:
-            self.parameters = parameters
+            self.parameters = copy.deepcopy(parameters)
 
         # build end use demands profile
         self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
@@ -104,13 +105,16 @@ class MasterProblem:
         if set_indexed is None:
             self.set_indexed = {}
         else:
-            self.set_indexed = set_indexed
+            self.set_indexed = copy.deepcopy(set_indexed)
+
+        # prepare mobility data
+        self.modal_split = None
 
         # attributes for the decomposition algorithm
         if DW_params is None:
             self.DW_params = {}  # init of values in initiate_decomposition method
         else:
-            self.DW_params = DW_params
+            self.DW_params = copy.deepcopy(DW_params)
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
 
@@ -119,11 +123,10 @@ class MasterProblem:
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
                                                 "DailyDist","Mode_Speed","Cost_demand_ext","EV_charger_supply_ext","share_activity","Cost_supply_ext",
-                                                "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes", "min_share_EBikes" ,"max_share_bikes", "min_share_bikes", "n_ICEperhab",
+                                                "max_share", "min_share","max_share_modes", "min_share_modes" ,  "n_ICEperhab",
                                                  "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
                          "list_constraints_MP": [],
-                         "list_set_indexed_MP" : ["Districts"]
+                         "list_set_indexed_MP" : ["Districts","Distances"]
                          }
 
         self.df_fix_Units = pd.DataFrame()
@@ -411,12 +414,10 @@ class MasterProblem:
                 ampl_MP.read('mobility.mod')
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
-                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_supplyprofile1", "EV_supplyprofile2", 'ExternalEV_Costs_positive']
-                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + mobility_cst
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ebike.mod')
+                ampl_MP.read('electricbike.mod')
             if "ICE_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('icevehicle.mod')
             if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
@@ -492,22 +493,14 @@ class MasterProblem:
             MP_parameters['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
             MP_parameters['GWP_demand'] = MP_parameters["GWP_supply"] * (1-1e-9)
 
-        for key in self.lists_MP['list_parameters_MP']:
-            if key in self.parameters.keys():
-                if key == "Units_Ext_district":
-                    key2 = "Units_Ext"
-                    MP_parameters[key2] = self.parameters[key]
-                else:
-                    MP_parameters[key] = self.parameters[key]
-
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                    np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'))
-            MP_parameters.update(p)
+            mobility_parameters = EV_gen.generate_mobility_parameters(self.cluster, self.parameters, self.infrastructure, self.modal_split)
+            for param in mobility_parameters:
+                MP_parameters[param] = mobility_parameters[param]
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -522,6 +515,13 @@ class MasterProblem:
         else:
             if "area_district" in MP_parameters:
                 del MP_parameters["area_district"]
+
+        for key in self.lists_MP['list_parameters_MP']:
+            if key in self.parameters.keys():
+                if key == "Units_Ext_district":
+                    MP_parameters["Units_Ext"] = self.parameters[key]
+                else:
+                    MP_parameters[key] = self.parameters[key]
 
         # -------------------------------------------------------------------------------------------------------------
         # Set Sets
@@ -563,8 +563,9 @@ class MasterProblem:
             MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EVcharging_district"]), ['PT_train', 'PT_bus'])
-            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]), ['PT_train', 'PT_bus'])
+            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars'] = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['Distances'] = np.array(MP_parameters['DailyDist'].index)
 
         if self.method['external_district']:
             MP_set_indexed['Districts'] = np.array(self.set_indexed["Districts"])
@@ -988,6 +989,9 @@ class MasterProblem:
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
                             'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
+        if "EV_district" in self.infrastructure.UnitsOfDistrict:
+            list_constraints = list_constraints + ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
+
         for cst in list_constraints:
             ampl.getConstraint(cst).drop()
 
@@ -1197,7 +1201,7 @@ class MasterProblem:
         col = self.number_SP_solutions.columns.difference(["House"])
         self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean(numeric_only=True)
 
-    def split_parameter_sets_per_building(self, h, parameters_SP=None, set_indexed_SP=None):
+    def split_parameter_sets_per_building(self, h, parameters_SP=dict({}),set_indexed_SP=dict({})):
         """
         Some inputs are for the district and some other for the houses. This function fuses the two
         and gives the parameters per house. This is important to run an optimization on a single building
@@ -1222,10 +1226,6 @@ class MasterProblem:
         set_indexed_SP: dict
             The set_indexed variable without the values concerning only the master problem (district scale)
         """
-        if set_indexed_SP is None:
-            set_indexed_SP = dict({})
-        if parameters_SP is None:
-            parameters_SP = dict({})
         ID = np.where(h == self.infrastructure.House)[0][0]
         buildings_data_SP = {h: self.buildings_data[h]}
 
@@ -1234,15 +1234,15 @@ class MasterProblem:
                 if isinstance(self.parameters[key], (int, float)):
                     parameters_SP[key] = self.parameters[key]
                 else:
-                    try:
-                        timesteps = int(len(self.parameters[key]) / len(self.buildings_data))
-                        profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps)  # for time series
-                        parameters_SP[key] = profile_building_x[ID]
-                    except:
-                        if len(self.parameters[key]) == len(self.buildings_data):
-                            parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
-                        else:
-                            parameters_SP[key] = self.parameters[key]  # one parameter for all buildings
+                    if len(self.parameters[key]) == len(self.buildings_data):
+                        parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
+                    else:
+                        try:
+                            timesteps = int(len(self.parameters[key])/len(self.buildings_data))
+                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps) # for time series
+                            parameters_SP[key] = profile_building_x[ID]
+                        except:
+                            parameters_SP[key] = self.parameters[key] # one parameter for all buildings
 
         for key in self.set_indexed:
             if key not in self.lists_MP["list_set_indexed_MP"]:

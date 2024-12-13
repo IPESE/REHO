@@ -259,7 +259,8 @@ def add_label_value(df_label, df_stv, precision, units):
 
     Returns
     _______
-    df_stv and df_label updated
+    pd.DataFrame
+        df_label pdated with the label values
     """
     df_source_value = pd.DataFrame()
     df_source_value.index = df_label.pos

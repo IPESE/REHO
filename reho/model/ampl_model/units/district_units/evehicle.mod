@@ -21,34 +21,32 @@
 # Usage
 param n_EVperhab{u in UnitsOfType['EV']} default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
 param n_EVtotperhab default 1.5; #1.5; # 1.1;
-param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population; 
-param n_EVtot_max := n_EVtotperhab * Population; 
+param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population;
+param n_EVtot_max := n_EVtotperhab * Population;
 param ff_EV{u in UnitsOfType['EV']} default 1.56; # [4]
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
 param EV_charging_profile{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
 param tau_relaxation_charging_profile default 0.03;
 param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}; # initialized through the function generate_mobility_parameters
-param min_share_EV default 0;
-param max_share_EV default 1; # [4] G 3.3.1.6 : share of cars is 66 %
 param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # usually a car spends 1h per day on the move - source : Timo
 
 # Computed parameters to calculate the variation between EV_E_stored (plug_in and plug_out) depending on EV_plugged_out at each interval of time
-param storedOut2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedOut2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} :=
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 0 then
-		1 
+		1
 	else
 		min(1,EV_plugged_out[u,p,t]/EV_plugged_out[u,p,prev(t,Time[p])]);
-param storedIn2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedIn2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} :=
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 1 then
 		1
 	else
 		min(1,(1-EV_plugged_out[u,p,t])/(1-EV_plugged_out[u,p,prev(t,Time[p])]));
-param storedIn2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedIn2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} :=
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 1 then
 		0
 	else
 		max(0,1-(1-EV_plugged_out[u,p,t])/(1-EV_plugged_out[u,p,prev(t,Time[p])]));
-param storedOut2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedOut2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} :=
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 0 then
 		0
 	else
@@ -132,47 +130,47 @@ EV_V2V[u,p,t] = 0;
 
 # mobility and outside-the-district charging
 subject to EV_EB_mobility1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u]; 
+Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u];
 
 subject to EV_EB_mobility2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
 EV_supply_travel[u,p,t] = Units_supply['Mobility',u,p,t]/ ff_EV[u] / EV_eff_travel  - sum{d in Districts}(sum{a in Activities}(EV_demand_ext[a,d,u,p,t]));
 
 subject to EV_chargingprofile1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-EV_demand[u,p,t] <= coeff_charging_profile[u,p] * EV_charging_profile[u,p,t] * (1 + tau_relaxation_charging_profile); 
+EV_demand[u,p,t] <= coeff_charging_profile[u,p] * EV_charging_profile[u,p,t] * (1 + tau_relaxation_charging_profile);
 
 subject to EV_chargingprofile2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-EV_demand[u,p,t] >= coeff_charging_profile[u,p] * EV_charging_profile[u,p,t] * (1 - tau_relaxation_charging_profile); 
+EV_demand[u,p,t] >= coeff_charging_profile[u,p] * EV_charging_profile[u,p,t] * (1 - tau_relaxation_charging_profile);
 
 subject to external_charging_c1{a in Activities,d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
 EV_demand_ext[a,d,u,p,t] <= EV_activity[a,u,p,t]* share_activity[a,d]  * n_vehicles[u] * EV_charger_Power_ext[d];
 
 subject to external_charging_c2{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
-EV_demand_ext["travel",d,u,p,t] <=0; # During the travel activity, EV can provide pkm, but they do not have charging opportunities. 
+EV_demand_ext["travel",d,u,p,t] <=0; # During the travel activity, EV can provide pkm, but they do not have charging opportunities.
 
 
 subject to external_charging_costs{ p in PeriodStandard, t in Time[p]}:
-ExternalEV_Costs_op[p,t] = sum{d in Districts}( Cost_demand_ext[d,p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_demand_ext[a,d,u,p,t]))) # 
+ExternalEV_Costs_op[p,t] = sum{d in Districts}( Cost_demand_ext[d,p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_demand_ext[a,d,u,p,t]))) #
 							- Cost_supply_ext[p,t] *sum {a in Activities}(EV_charger_supply_ext[a,p,t] ) ;
 
 
 
 #--Stock constraints
-subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
-n_vehicles[u] <= n_EV_max[u];
+#subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
+#n_vehicles[u] <= n_EV_max[u];
 
-subject to EV_stock_upperbound2:
-sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
+#subject to EV_stock_upperbound2:
+#sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
 
 #--Max share and time of travel
-subject to EV_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_EV * Population * DailyDist; 
+subject to EV_maxshare{u in UnitsOfType['EV'],p in PeriodStandard, dist in Distances}:
+sum {t in Time[p]}(pkm_supply[u,dist,p,t]) <= max_share[u,dist] * Population * DailyDist[dist] ;
 
-subject to EV_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) >= min_share_EV * Population * DailyDist; 
+subject to EV_minshare{u in UnitsOfType['EV'],p in PeriodStandard, dist in Distances}:
+sum {t in Time[p]}(pkm_supply[u,dist,p,t]) >= min_share[u,dist] * Population * DailyDist[dist] ;
 
-subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
-sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 
+#subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
+#sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ;
 
 
 #--SoC constraints
@@ -212,16 +210,16 @@ subject to chargingstation_c2{uc in UnitsOfType['EV_charger'],p in Period,t in T
 Units_demand['Electricity',uc,p,t] * EV_eff_ch  = sum {u in UnitsOfType['EV']}(C2V[uc,u,p,t])+ sum{a in Activities} (C2A[uc,a,p,t] );
 
 subject to chargingstation_c3{uc in UnitsOfType['EV_charger'],p in Period,t in Time[p]}:
-Units_supply['Electricity',uc,p,t] * (1/EV_eff_di)  = sum {u in UnitsOfType['EV']}(V2C[uc,u,p,t] );			
+Units_supply['Electricity',uc,p,t] * (1/EV_eff_di)  = sum {u in UnitsOfType['EV']}(V2C[uc,u,p,t] );
 
 subject to chargingstation_c4{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-EV_demand[u,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2V[uc,u,p,t] );	
+EV_demand[u,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2V[uc,u,p,t] );
 
 subject to chargingstation_c5{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-EV_supply[u,p,t]  = sum {uc in UnitsOfType['EV_charger']}(V2C[uc,u,p,t] );	
+EV_supply[u,p,t]  = sum {uc in UnitsOfType['EV_charger']}(V2C[uc,u,p,t] );
 
 subject to chargingstation_c6{a in Activities,p in Period,t in Time[p]}:
-EV_charger_supply_ext[a,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2A[uc,a,p,t] );	
+EV_charger_supply_ext[a,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2A[uc,a,p,t] );
 
 subject to chargingstation_capacity{uc in UnitsOfType['EV_charger']}:
 Units_Mult[uc] = EV_charger_Power[uc] * n_chargers[uc];  #kWh
@@ -236,5 +234,5 @@ EV_E_stored_plug_in[u,p,t] = EV_efficiency*EV_E_stored[u,p,last(Time[p])] * (1-E
 											(EV_demand[u,p,t] - EV_supply[u,p,t])*dt[p];
 
 
-#-----------------------------------------------------------------------------------------------------------------------	
-	
+#-----------------------------------------------------------------------------------------------------------------------
+

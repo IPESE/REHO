@@ -152,7 +152,7 @@ param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} defau
 
 var Costs_op;
 var Costs_House_op{h in House};
-var ExternalEV_Costs_op{p in Period,t in Time[p]};  # TODO : to be put >= 0  if no mobility ? 
+var ExternalEV_Costs_op{p in Period,t in Time[p]};
 
 subject to Costs_opex_house{h in House}:
 Costs_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in PeriodStandard, t in Time[p]} lambda[f,h]*(Cost_supply_network[l,p,t]*Grid_supply[l,f,h,p,t] - Cost_demand_network[l,p,t]*Grid_demand[l,f,h,p,t])* dp[p] * dt[p]; 
@@ -161,7 +161,7 @@ subject to Costs_opex:
 Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]); 
 
 subject to ExternalEV_Costs_positive{p in Period,t in Time[p]}:
-ExternalEV_Costs_op[p,t] >=0 ; # TODO : add the functionnality that this constraint can be disabled if we allow the district to sell more energy than it imports 
+ExternalEV_Costs_op[p,t] >=0 ; 
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES

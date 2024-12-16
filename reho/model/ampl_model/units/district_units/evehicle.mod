@@ -63,7 +63,7 @@ param EV_eff_travel default 6; 					#km/kWh
 param EV_charger_Power{uc in UnitsOfType['EV_charger']} default 7;			#kW	 	[5] and [7]
 param EV_eff_ch default 0.9;				#-		[1] both charging station efficiency and battery efficiency
 param EV_eff_di default 0.9;				#-		[1]
-param EV_charger_supply_ext{a in Activities, p in Period, t in Time[p]} default 0; #kWh
+param EV_supply_ext{a in Activities, p in Period, t in Time[p]} default 0; #kWh
 param Cost_supply_ext{ p in PeriodStandard, t in Time[p]} default 0;
 
 # EV batteries charging outside the district
@@ -89,8 +89,10 @@ var V2C{uc in UnitsOfType['EV_charger'],u in UnitsOfType['EV'],p in Period,t in 
 
 # EV batteries charging outside the district
 var EV_demand_ext{a in Activities, d in Districts, u in UnitsOfType['EV'], p in Period, t in Time[p]} >= 0; # kWh
-var C2A{uc in UnitsOfType['EV_charger'],a in Activities,p in Period,t in Time[p]}>= 0 ; # Charger to Activity (i.e. the external load EV_charger_supply_ext)
+var C2A{uc in UnitsOfType['EV_charger'],a in Activities,p in Period,t in Time[p]}>= 0 ; # Charger to Activity (i.e. the external load EV_supply_ext)
 
+var EV_revenue_ext{p in Period,t in Time[p]};
+var EV_cost_ext{p in Period,t in Time[p]};
 
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 #--Energy balance
@@ -147,11 +149,15 @@ EV_demand_ext[a,d,u,p,t] <= EV_activity[a,u,p,t]* share_activity[a,d]  * n_vehic
 subject to external_charging_c2{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
 EV_demand_ext["travel",d,u,p,t] <=0; # During the travel activity, EV can provide pkm, but they do not have charging opportunities. 
 
+# costs and revenues of external charging
+subject to external_charging_costs1{ p in PeriodStandard, t in Time[p]}:
+EV_revenue_ext[p,t] = Cost_supply_ext[p,t] *sum {a in Activities} EV_supply_ext[a,p,t];
 
-subject to external_charging_costs{ p in PeriodStandard, t in Time[p]}:
-ExternalEV_Costs_op[p,t] = sum{d in Districts}( Cost_demand_ext[d,p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_demand_ext[a,d,u,p,t]))) # 
-							- Cost_supply_ext[p,t] *sum {a in Activities}(EV_charger_supply_ext[a,p,t] ) ;
+subject to external_charging_costs2{ p in PeriodStandard, t in Time[p]}:
+EV_cost_ext[p,t] = sum{d in Districts, a in Activities, u in UnitsOfType['EV']} Cost_demand_ext[d,p,t] * EV_demand_ext[a,d,u,p,t];
 
+subject to external_charging_costs3{ p in PeriodStandard, t in Time[p]}:
+ExternalEV_Costs_op[p,t] = (EV_cost_ext[p,t] - EV_revenue_ext[p,t])* dp[p] * dt[p];
 
 
 #--Stock constraints
@@ -219,7 +225,7 @@ subject to chargingstation_c5{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_supply[u,p,t]  = sum {uc in UnitsOfType['EV_charger']}(V2C[uc,u,p,t] );	
 
 subject to chargingstation_c6{a in Activities,p in Period,t in Time[p]}:
-EV_charger_supply_ext[a,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2A[uc,a,p,t] );	
+EV_supply_ext[a,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2A[uc,a,p,t] );
 
 subject to chargingstation_capacity{uc in UnitsOfType['EV_charger']}:
 Units_Mult[uc] = EV_charger_Power[uc] * n_chargers[uc];  #kWh

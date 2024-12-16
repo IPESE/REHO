@@ -550,12 +550,13 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     else:
         df_District_t = pd.concat([df5, df6], axis=1)
     if "EV_district" in district.UnitsOfDistrict:
-        df8 = get_ampl_data(ampl,"EV_charger_supply_ext",multi_index = True)
-        df8 = df8[['EV_charger_supply_ext']].unstack(level = 0)
-        df8.columns = [f'{i}[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
+        df8 = get_ampl_data(ampl,"EV_supply_ext", multi_index = True)
+        df8 = df8[['EV_supply_ext']].unstack(level = 0)
+        df8.columns = [f'EV_supply_ext[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
         df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
-        if binary:
-            df_District_t = pd.concat([df_District_t,df8], axis=1).sort_index()
+        df8["EV_revenue_ext"] = get_ampl_data(ampl, 'EV_revenue_ext').values
+        df8["EV_cost_ext"] = get_ampl_data(ampl, 'EV_cost_ext').values
+        df_District_t = pd.concat([df_District_t, df8], axis=1).sort_index()
 
     df_District_t.index.names = ['Layer', 'Period', 'Time']
     df_Results["df_District_t"] = df_District_t.sort_index()

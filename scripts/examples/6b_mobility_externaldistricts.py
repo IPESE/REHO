@@ -1,6 +1,6 @@
 from reho.model.reho import *
 from reho.model.preprocessing.mobility_generator import *
-
+from reho.plotting import plotting
 
 if __name__ == '__main__':
 
@@ -26,51 +26,53 @@ if __name__ == '__main__':
                                              'FossilFuel': {},
                                              'Mobility': {},
                                              })
-    units = infrastructure.initialize_units(scenario, grids,district_data=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
-    method = {'building-scale': True,
-              'external_district' : True
-              }
+    method = {'building-scale': True, 'external_district': True}
     
     # Set parameters
-    ext_districts = [13219 ,13228]
-    set_indexed = {"Districts": ext_districts }
+    ext_districts = ["district_1", "district_2"]
+    set_indexed = {"Districts": ext_districts}
 
-    # parameters representing external district demands and supply
-    df_rho = pd.DataFrame(columns=['work','travel','leisure'],index=ext_districts).fillna(0.5)
-    cost_supply_ext = pd.Series( [0.21, 0.21, 0.21, 0.21, 0.21, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.17, 0.21, 0.21, 0.21, 0.21, 0.21],index = range(1,25))
-    cost_demand_ext = pd.DataFrame( {13219 : [0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.17, 0.33, 0.33, 0.17, 0.17, 0.17, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33, 0.33],
-                                     13228 : [0.363, 0.363, 0.363, 0.363, 0.363, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.187, 0.363, 0.363, 0.363, 0.363, 0.363, 0.363]},index = range(1,25))
-    ev_charger_supply_ext = pd.DataFrame({ "leisure" : [0, 0, 0, 0, 0, 0, 0, 0, 0, 47, 51, 0, 203, 79, 78, 146, 123, 0, 22, 0, 0, 0, 0, 0],
-                                           "work"    : [0, 11, 12, 0, 0, 46, 859, 1481, 0, 3529, 3729, 0, 0, 0, 0, 0, 2084, 0, 414, 0, 0, 0, 0, 0]},index = range(1,25))
-    df_cost_supply_ext = pd.DataFrame()
-    df_cost_demand_ext = pd.DataFrame()
-    df_ev_charger_supply_ext = pd.DataFrame()
-    for p in range(cluster['Periods']):
-        df_cost_supply_ext[p+1] = cost_supply_ext
-        df_cost_demand_ext[p+1] = cost_demand_ext.stack()
-        df_ev_charger_supply_ext[p+1] = ev_charger_supply_ext.stack()
-    df_cost_supply_ext = df_cost_supply_ext.stack().reorder_levels((1,0))
-    df_cost_demand_ext = df_cost_demand_ext.stack().reorder_levels((1,2,0))
-    df_ev_charger_supply_ext = df_ev_charger_supply_ext.stack().reorder_levels((1,2,0))
-
-
-
+    # 46m²/person on average, 2 categories of distance (D0 : short and D1 : long)
     era = np.sum([qbuildings_data["buildings_data"][b]['ERA'] for b in qbuildings_data["buildings_data"]])
-    parameters = {  "Population": era / 46,
-                    "share_activity": rho_param(ext_districts,df_rho),
-                    "DailyDist" : {'D0': 25, 'D1': 10},
-                    "Cost_supply_ext" : df_cost_supply_ext,
-                    "Cost_demand_ext" : df_cost_demand_ext,
-                    "EV_charger_supply_ext" : df_ev_charger_supply_ext
-                    }
-    modal_split = pd.DataFrame({"min_D0" : [0,0,0.4,0.3], "max_D0" : [0.1,0.3,0.7,0.7],"min_D1" : [0,0.2,0.4,0.3], "max_D1" : [0,0.4,0.7,0.7]}, index = ['MD','PT','cars','EV_district'])
+    parameters = {"Population": era / 46, "DailyDist": {'D0': 25, 'D1': 10}}
 
-    # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster,set_indexed=set_indexed, scenario=scenario, method=method, solver="gurobiasl")
+    # min max share for each mobility mode and each distance
+    modal_split = pd.DataFrame({"min_D0": [0, 0, 0.4, 0.3], "max_D0": [0.1, 0.3, 0.7, 0.7],
+                                "min_D1": [0, 0.2, 0.4, 0.3], "max_D1": [0, 0.4, 0.7, 0.7]},
+                               index=['MD', 'PT', 'cars', 'EV_district'])
+
+    # Scenario 1: no external charging demands
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, set_indexed=set_indexed, scenario=scenario, method=method, solver="gurobiasl")
     reho.modal_split = modal_split
     reho.single_optimization()
 
+    # Scenario 2: with charging demands from external districts
+    df_rho = pd.DataFrame(columns=['work', 'travel', 'leisure'], index=ext_districts).fillna(0.33)
+    id_days = list(range(1, 11))
+    id_hours = list(range(1, 25))
+
+    # ratio of each building category in external districts
+    reho.parameters["share_activity"] = rho_param(ext_districts, df_rho)
+
+    # Charging tariff for external districts (revenue to the district): 0.2 CHF/kWh
+    reho.parameters["Cost_supply_ext"] = pd.Series([0.2]*240, index=pd.MultiIndex.from_product([id_days, id_hours]))
+
+    # Charging tariff in external districts (expense to the district): 0.3 CHF/kWh
+    reho.parameters["Cost_demand_ext"] = pd.Series([0.3]*480, index=pd.MultiIndex.from_product([ext_districts, id_days, id_hours]))
+
+    # The external districts have a charging demand for 1.5 kWh_el each hour to the district
+    reho.parameters["EV_supply_ext"] = pd.Series([1.5]*480, index=pd.MultiIndex.from_product([["leisure", "work"], id_days, id_hours]))
+
+    reho.scenario['name'] = 'totex_external_load'
+    reho.single_optimization()
+
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
+   # plotting.plot_sankey(reho.results['totex_external_load'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='6b')
+
+   # Plot results
+

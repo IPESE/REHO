@@ -122,7 +122,7 @@ class MasterProblem:
         self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
-                                                "DailyDist","Mode_Speed","Cost_demand_ext","EV_charger_supply_ext","share_activity","Cost_supply_ext",
+                                                "DailyDist","Mode_Speed","Cost_demand_ext","EV_supply_ext","share_activity","Cost_supply_ext",
                                                 "max_share", "min_share","max_share_modes", "min_share_modes" ,  "n_ICEperhab",
                                                  "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
                          "list_constraints_MP": [],
@@ -331,7 +331,7 @@ class MasterProblem:
         if exitcode != 0:
             # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
             if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
-                raise Exception('Sub problem did not converge')
+                raise Exception('Sub problem did not converge with building', h)
 
         return df_Results, attr
 
@@ -758,7 +758,7 @@ class MasterProblem:
         if exitcode != 0:
             # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
             if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
-                raise Exception('Sub problem did not converge')
+                raise Exception('Sub problem did not converge with building', h)
 
         return df_Results, attr
 

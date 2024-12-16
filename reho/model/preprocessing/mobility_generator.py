@@ -291,7 +291,7 @@ def get_mode_speed(units, mode_speed_custom):
                                   "Mode_Speed": [13.3, 37, 37, 60, 18, 17]})
 
     mode_speed = units[['Unit', 'UnitOfType']].copy()
-    mode_speed = mode_speed.merge(default_speed, how='outer')
+    mode_speed = mode_speed.merge(default_speed, how='left')
     mode_speed['Unit'].fillna(mode_speed['UnitOfType'], axis=0, inplace=True)
     mode_speed = mode_speed.set_index(['Unit'])[['Mode_Speed']]
 
@@ -409,11 +409,11 @@ def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters,
         Each key of the dict refers to a district d. Used to extract the scale parameter f : district_parameters[d]['f']
     only_prices : bool
         if False, only returns the parameters Cost_demand_ext and Cost_supply_ext
-        if True, additionally returns the parameter EV_charger_supply_ext
+        if True, additionally returns the parameter EV_supply_ext
     Returns
     -------
     parameters : dict of dict
-        For each district d, returns a dict of the parameters to be inputted in the next optimisation. Parameters include Cost_demand_ext, Cost_supply_ext, EV_charger_supply_ext. 
+        For each district d, returns a dict of the parameters to be inputted in the next optimisation. Parameters include Cost_demand_ext, Cost_supply_ext, EV_supply_ext. 
 
     """
     parameters = dict()
@@ -449,7 +449,7 @@ def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters,
         df_load.columns = df_load.columns.astype(float).astype(int) # load per district and activity at the city level
 
         for d in district_parameters.keys():
-            parameters[d]["EV_charger_supply_ext"] = df_load[[d]].rename(columns={d: "EV_charger_supply_ext"}) / district_parameters[d]['f']
+            parameters[d]["EV_supply_ext"] = df_load[[d]].rename(columns={d: "EV_supply_ext"}) / district_parameters[d]['f']
 
     return parameters
 

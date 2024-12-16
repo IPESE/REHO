@@ -129,10 +129,11 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df2 = get_ampl_data(ampl, 'Units_Mult')
 
         df3 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_inv')
-        df4 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
-        df5 = get_ampl_data(ampl, 'lifetime')
-        df6 = get_ampl_data(ampl, 'Units_Ext', multi_index=False)
-        df_Unit = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
+        df4 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_rep')
+        df5 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
+        df6 = get_ampl_data(ampl, 'lifetime')
+        df7 = get_ampl_data(ampl, 'Units_Ext', multi_index=False)
+        df_Unit = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
         if method['print_logs']:
@@ -585,9 +586,10 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df1 = get_ampl_data(ampl, 'Units_Use')
     df2 = get_ampl_data(ampl, 'Units_Mult')
     df3 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_inv')
-    df4 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total - multiply with lifetime
-    df5 = get_ampl_data(ampl, 'lifetime')
-    df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
+    df4 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_rep')  # per year! For total - multiply with lifetime
+    df5 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total - multiply with lifetime
+    df6 = get_ampl_data(ampl, 'lifetime')
+    df_Unit = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
     if read_DHN:
         df_Unit.at["DHN_pipes_district", ("Units_Use", "Units_Mult", "Costs_Unit_inv")] = [1, 1, get_ampl_data(ampl, 'DHN_inv')["DHN_inv"][0]]
     df_Results["df_Unit"] = df_Unit.sort_index()

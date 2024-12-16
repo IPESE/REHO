@@ -326,6 +326,7 @@ param i_rate default 0.02;
 param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
 
 var Costs_Unit_inv{u in Units} >= 0;
+var Costs_Unit_rep{u in Units} >= 0;
 var Costs_House_inv{h in House} >= Costs_House_limit[h];
 var Costs_House_rep{h in House} >= Costs_House_limit[h];
 var Costs_inv >= 0;
@@ -343,6 +344,9 @@ Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cos
 subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacity[l,h]+CostLine_inv2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);
 
+subject to Costs_Unit_replacement{u in Units}:
+Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
+
 subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
@@ -350,7 +354,7 @@ subject to Costs_Grid_supply:
 Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{l in ResourceBalances, h in HousesOfLayer[l]} (CostLine_inv1[l]*Use_LineCapacity[l,h]+CostLine_inv2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacity[l]+CostTransformer_inv2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l]));
 
 subject to Costs_replacement:
-Costs_rep =  sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
+Costs_rep =  sum{u in Units} Costs_Unit_rep[u];
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-OPERATING EXPENSES

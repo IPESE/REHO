@@ -69,10 +69,9 @@ if __name__ == '__main__':
     reho.scenario['name'] = 'totex_external_load'
     reho.single_optimization()
 
-    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
-   # plotting.plot_sankey(reho.results['totex_external_load'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='6b')
 
    # Plot results
+    plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
 

@@ -682,8 +682,8 @@ def build_df_Economics(df_Results, df_profiles):
 
     # Unit
     df_unit = df_unit.groupby(level=['Unit', 'Hub']).sum()
-    df_unit["Costs_Unit_inv"] = df_unit["Costs_Unit_inv"] * 20 / df_unit["lifetime"] # to consider replacement costs: TODO record Costs_rep per unit in df_Unit
     df_unit_cost = df_unit.reset_index().pivot(index='Hub', values='Costs_Unit_inv', columns='Unit')
+    df_unit_cost += df_unit.reset_index().pivot(index='Hub', values='Costs_Unit_rep', columns='Unit')
     df_unit_impact = df_unit.reset_index().pivot(index='Hub', values='GWP_Unit_constr', columns='Unit')
     df_unit_cost.loc['Network', :] = df_unit_cost.sum()
     df_unit_impact.loc['Network', :] = df_unit_impact.sum()

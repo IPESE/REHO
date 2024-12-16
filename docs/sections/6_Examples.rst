@@ -52,11 +52,6 @@ Change heat pump temperature
 .. literalinclude:: ../../scripts/examples/3c_HP_T_source.py
    :language: python
 
-Include electric vehicles
-====================================
-.. literalinclude:: ../../scripts/examples/3d_EVs.py
-   :language: python
-
 Integrate a district heating network
 ====================================
 .. literalinclude:: ../../scripts/examples/3e_DHN.py
@@ -107,3 +102,21 @@ Include photovoltaics on facades
 ====================================
 .. literalinclude:: ../../scripts/examples/5b_PV_facades.py
    :language: python
+
+6. Mobility
+--------------------
+
+Add Mobility Layer
+====================================
+The Layer *Mobility* differs slightly from the other Layers in REHO as this energy carrier is expressed in passenger-kilometers (:math:`pkm`) rather than :math:`kWh`. 
+The mobility demand is represented through an hourly passenger-kilometer (:math:`pkm`) profile for each typical day, similarly to the other end-use demand profiles. 
+The transport units represented in the model include EVs, ICEs, bikes, electric bikes and public transport. The model can optimize between the different transport modes. However, it is for now recommended to constrain the modal split, as the optimization based on cost does not reflect typical usage of the different transport modes. The `FSO reports <https://www.are.admin.ch/are/fr/home/mobilite/bases-et-donnees/mrmt.html>`_ can be used to find suitable modal split data. 
+
+.. literalinclude:: ../../scripts/examples/6a_mobility_sector.py
+   :language: python
+
+Co-optimization
+====================================
+Multiple districts can be optimized together in order to calculate EV charging exchanges between districts. 
+This feature can be used to conduct analyses on EV fleets at the city scale.  
+Examples 6b and 6c demonstrate how to use this feature step by step. 

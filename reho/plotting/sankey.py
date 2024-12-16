@@ -108,22 +108,6 @@ def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, e
 
             energy_stored_loop += dev_stor_out
 
-            """
-            # Doesn't work if many storage units: Since we don't know which unit would contribute to export and which to local consumption.
-            if (storage_to_Network <= dev_flow_in) and (dev_flow_in > 0):
-                df_label = update_label(elec_storage, "Electrical_grid_feed_in", df_label)
-                df_stv[flow_name] = [df_label.loc[elec_storage, 'pos'],  # source, create a source to target column
-                                                df_label.loc['Electrical_grid_feed_in', 'pos'],  # target
-                                                float(storage_to_Network)]  # value
-            else:
-                df_label = update_label(elec_storage, "Electrical_grid_feed_in", df_label)
-                df_stv[flow_name] = [df_label.loc[elec_storage, 'pos'], # source, create a source to target column
-                                                df_label.loc['Electrical_grid_feed_in', 'pos'],  # target
-                                                float(dev_flow_in)]  # value
-
-            storage_to_Network -= dev_flow_in
-            """
-
         # 10 Electrical cons after elec storage to Electr cons
         rSOC_to_elec_onsite = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "rSOC")][
             "Supply_MWh"].sum()  # elec_tot_onsite - df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "Network")]["Supply_MWh"].sum()
@@ -382,10 +366,10 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         'ElectricalHeater_DHW', 'ElectricalHeater_SH',
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'Air_Conditioner',
         'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC','rSOC_district',
-        'MTR_district', 'NG_Boiler_district'
+        'MTR_district', 'NG_Boiler_district', 'HeatPump_Geothermal_district'
     ]
 
-    DHN_units = ["HeatPump_Geothermal", "rSOC_district", "NG_Boiler_district", "MTR_district"]
+    DHN_units = ["HeatPump_Geothermal_district", "rSOC_district", "NG_Boiler_district", "MTR_district"]
 
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 

@@ -144,7 +144,7 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
         ampl.cd(path_to_ampl_model)
         ampl.read('sub_problem.mod')
-
+        ampl.read('scenario.mod')
         # Energy conversion Units
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_sp.UnitTypes:

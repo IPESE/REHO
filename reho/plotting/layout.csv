@@ -25,7 +25,7 @@ Electrical_grid_feed_in,Electricity export,Elec out,Électricité (vente),#4d9ea
 Electrical_grid_Cogeneration,Electricity (cogen),Elec COGEN,Électricité (cogénération),#413D3A,ardoise,#413D3A,ardoise
 PV_SC,Electricity (self-consumption),Elec SC,Électricité (auto-consommation),#ffd980,yellow_light,#EEAD0E,darkyellow
 Electrical_appliances,Electrical appliances,EL,Électricité domestique,#007480,canard,#76EEC6,turquoise
-Electrical_consumption,Electrical consumption,EL,Électricité consommée,#007480,canard,#0000FF,royalblue
+Electrical_consumption,Electrical distribution board,EL,Électricité consommée,#007480,canard,#0000FF,royalblue
 Electrical_consumption_bp,Electrical distribution board,EL,Électricité consommée + stockage,#007480,canard,#0000FF,royalblue
 ,,,,,,,
 ElectricalHeater,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light,#9A32CD,purple
@@ -64,7 +64,6 @@ PV_facades,PV facade,PV,PV façade,#ffc94d,yellow_medium,#EEAD0E,darkyellow
 solar_value,Solar value,Solar,Électricité solaire,#4d9ea6,canard_light,#00008B,darkblue
 solar_premium,Solar premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light,#EEAD0E,darkyellow
 Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark,#EEAD0E,darkyellow
-Battery,Battery,Bat,Batterie,#A57300,darkyellow,#76EEC6,turquoise
 Air_Conditioner,Air conditioner,AC,Climatiseur,#00008B,darkblue,#9AC0CD,bluegrey
 Cooling,Fossil-fuel boiler,BO,Chaudière fossile,#00008B,darkblue,#9AC0CD,bluegrey
 ,,,,,,,

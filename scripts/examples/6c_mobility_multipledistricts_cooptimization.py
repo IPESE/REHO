@@ -1,5 +1,6 @@
 from reho.model.reho import *
 from reho.model.preprocessing.mobility_generator import *
+from reho.plotting import plotting
 
 
 if __name__ == '__main__':
@@ -105,8 +106,20 @@ if __name__ == '__main__':
         parameters = compute_iterative_parameters(reho_models, Scn_ID=f'totex', iter=i, district_parameters=district_parameters)
 
     print('End')
+
+    # agregation of results of each district in one results object
     results = {}
     for tr in districts:
         results[tr] = reho_models[tr].results
     reho_models[districts[0]].results = results
     reho_models[districts[0]].save_results(format=['pickle'], filename=f'6c')
+
+    # plot city's results for totex scenario
+    for tr in districts:
+        results[tr] = results[tr]['totex']
+        for i in range(3):
+            df = results[tr][i]['df_Economics'].copy()
+            df = df.mul(district_parameters[tr]['f'])
+            results[tr][i]['df_Economics'] = df
+
+    plotting.plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long' ).show()

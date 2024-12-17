@@ -4,6 +4,10 @@ import reho.model.preprocessing.weather as weather
 import pandas as pd
 import numpy as np
 
+__doc__ = """
+Processes data for parameters related to the Mobility Layer. 
+"""
+
 # PARAMETERS AND SETS =========================================================================================
 
 def generate_mobility_parameters(cluster, parameters, transportunits,modal_split):
@@ -11,23 +15,25 @@ def generate_mobility_parameters(cluster, parameters, transportunits,modal_split
     This function initializes (almost) all the necessary parameters to run the mobility sector in REHO.
     Additionally to the parameters given, this function reads data in the file dailyprofiles.csv
 
-    Parameters:
+    Parameters
     ----------
-    cluster : 
+    cluster : dict
         to get periods characterisations (p,t)
-    parameters :
+    parameters : dictionary
         From the parameters will be extracted values related to the mobility namely DailyDist, Mode_Speed and Population. Population is a float, DailyDist a dict of float, Mode_Speed is a dictionnary given by the user in the scenario initialisation. It can contain customed values for only some modes while the other remain default. 
     transportunits : list
         a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network_supply['Mobility']
     modal_split : df
         a dataframe of the modal split for each categories of distance
 
-    Returns:
+    Returns
     -------
-    param_output : a dict of dataframes containing the profiles for each param. 
+    param_output : dict
+        a dict of dataframes containing the profiles for each param. 
 
-    ..caution:
-    The default values in this function are a hardcoded copy of parameters DailyDist and Population in mobility.mod.
+    .. caution::
+
+        The default values in this function are a hardcoded copy of parameters DailyDist and Population in mobility.mod.
     """
     param_output = dict()
     
@@ -92,7 +98,7 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
     """
     Formatting of the parameters Domestic_energy_pkm and Domestic_energy
 
-    Parameters:
+    Parameters
     ----------
     profiles_input : df
         a dataframe of 24h profile data. 
@@ -103,7 +109,7 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
     DailyDist : float
     Population : float
 
-    Returns:
+    Returns
     -------
     demand_pkm : df
         the param Domestic_energy_pkm[dist,p,t] by categories of distance
@@ -159,7 +165,7 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
     """
     Formatting of the parameters Daily_Profile[u,p,t], used for example for the Bikes and ICE transport units. Either a profile is declared in the file dailyprofiles.csv, or the default profile taken is equal to the daily demand profile of a given day (demwdy_def and demwnd_def). 
 
-    Parameters:
+    Parameters
     ----------
     profiles_input : df
         a dataframe of 24h profile data. 
@@ -169,7 +175,7 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
         mapping between the labels of profile_input and timestamp
     transportunits : list
 
-    Returns:
+    Returns
     -------
     daily_profile : df
        the parameter Daily_Profile[u,p,t] 
@@ -209,7 +215,7 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
     """
     Formatting of the parameter EV_charging_profile[u,p,t]. Data is taken from dailyprofiles.csv (columns EV_cpfwnd and EV_cpfwdy). Each Unit (from UnitOfType[EV]) can be provided with a personnalized profile, otherwise the default value EV_cpfxxx is taken. 
 
-    Parameters:
+    Parameters
     ----------
     profiles_input : df
         a dataframe of 24h profile data. 
@@ -220,7 +226,7 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
     units : df
         dataframe from district_units.csv
 
-    Returns:
+    Returns
     -------
     EV_charging_profile : df
        the parameter EV_charging_profile[u,p,t] 
@@ -260,7 +266,7 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping, profile):
     """
     Formatting of the parameter EV_plugged_out[u,p,t]. Data is taken from dailyprofiles.csv (columns EV_outwnd and EV_outwdy). Each Unit (from UnitOfType[EV]) can be provided with a personnalized profile, otherwise the default value EV_outxxx is taken. 
 
-    Parameters:
+    Parameters
     ----------
     profiles_input : df
         a dataframe of 24h profile data. 
@@ -272,7 +278,7 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping, profile):
         dataframe from district_units.csv
     profile : df
 
-    Returns:
+    Returns
     -------
     EV_plugged_out : df
        the parameter EV_plugged_out[u,p,t] 
@@ -288,7 +294,7 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping, profile):
 
         out = EV_profiles.loc[:, EV_profiles.columns.str.contains("out")].copy()
         out['default'] = out['EV_out' + days_mapping[day]]
-        missing_units = set(EV_units) - set(profile.columns)
+        missing_units = set(EV_units) - set(profile.columns) # TODO : à revoir
         for unit in missing_units:
             out[unit] = out['default']
         out = out[EV_units]
@@ -308,7 +314,7 @@ def get_activity_profile(units, timestamp, profiles_input, days_mapping):
     """
     Formatting of the parameter EV_activity[a,u,p,t]. Data is taken from dailyprofiles.csv (columns EV_aAAddd, with AA the activity label and ddd the type of day).
 
-    Parameters:
+    Parameters
     ----------
     units : df
         dataframe from district_units.csv
@@ -319,7 +325,7 @@ def get_activity_profile(units, timestamp, profiles_input, days_mapping):
     days_mapping : dict
         mapping between the labels of profile_input and timestamp
 
-    Returns:
+    Returns
     -------
     activity_profile : df
        the parameter EV_activity[a,u,p,t] 
@@ -358,7 +364,7 @@ def get_Ebike_charging(units, timestamp, profiles_input, days_mapping):
     """
     Formatting of the parameter EBike_charging_profile[u,p,t]. Data is taken from dailyprofiles.csv (columns EBike_cpfddd, with ddd the type of day).
 
-    Parameters:
+    Parameters
     ----------
     units : df
         dataframe from district_units.csv
@@ -369,7 +375,7 @@ def get_Ebike_charging(units, timestamp, profiles_input, days_mapping):
     days_mapping : dict
         mapping between the labels of profile_input and timestamp
 
-    Returns:
+    Returns
     -------
     EBike_charging_profile : df
        the parameter EBike_charging_profile[u,p,t] 
@@ -405,14 +411,14 @@ def get_mode_speed(units, mode_speed_custom):
     """
     Formatting of the parameter Mode_speed[u]. Default values are taken from OFS microcensus report. 
 
-    Parameters:
+    Parameters
     ----------
     units : df
         dataframe from district_units.csv
     mode_speed_custom : df or dict
         customized speed given by the user. 
 
-    Returns:
+    Returns
     -------
     mode_speed : df
        the parameter Mode_Speed[u] 
@@ -433,7 +439,8 @@ def get_mode_speed(units, mode_speed_custom):
 def get_min_share(modal_split, modes, transportunits):
     """
     Formatting of the parameters min_share[u,dist] and min_share_modes[u,dist]. 
-    Parameters:
+
+    Parameters
     ----------
     modal_split : df
         dataframe with columns for the categories of distance and rows for the units and modes.
@@ -442,7 +449,7 @@ def get_min_share(modal_split, modes, transportunits):
     transportunits : list
         list of transport units. 
 
-    Returns:
+    Returns
     -------
     minshare : df
        the parameter min_share[u,dist] 
@@ -465,7 +472,8 @@ def get_min_share(modal_split, modes, transportunits):
 def get_max_share(modal_split, modes, transportunits):
     """
     Formatting of the parameters max_share[u,dist] and max_share_modes[u,dist]. 
-    Parameters:
+
+    Parameters
     ----------
     modal_split : df
         dataframe with columns for the categories of distance and rows for the units and modes.
@@ -474,7 +482,7 @@ def get_max_share(modal_split, modes, transportunits):
     transportunits : list
         list of transport units. 
 
-    Returns:
+    Returns
     -------
     maxshare : df
        the parameter max_share[u,dist] 

@@ -244,8 +244,7 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
 
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
-        self.parameters_to_ampl['Grids_flowrate'] = self.infrastructure_sp.Grids_flowrate
-        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters
+        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"], axis=1)
         self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_sp.Grids_Parameters_lca
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
         self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_sp.Units_Parameters_lca
@@ -284,8 +283,7 @@ class SubProblem:
         if self.method_sp['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
             self.parameters_to_ampl['GWP_demand'] = self.parameters_to_ampl['GWP_supply']
-            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity').drop(
-                columns=['Cost_demand_cst', 'Cost_supply_cst'])
+            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity')[["GWP_demand_cst", "GWP_supply_cst"]]
 
     def set_temperature_and_EVs_profiles(self):
 

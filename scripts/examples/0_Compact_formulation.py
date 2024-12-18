@@ -24,7 +24,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []  # specify some units to be enforced
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/grids.csv
+    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv
     units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Set method options (as defined in sub_problem.py > initialize_default_methods)

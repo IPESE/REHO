@@ -120,20 +120,17 @@ set MB_links:= {l in ResourceBalances,h in HousesOfLayer[l],i in MB_Units[l,h],j
 #-Each unit can have an input and an output flowrate
 param Units_flowrate_in{l in ResourceBalances, u in UnitsOfLayer[l]}  >=0 default 0;
 param Units_flowrate_out{l in ResourceBalances, u in UnitsOfLayer[l]} >=0 default 0;
-param Grids_flowrate_in{l in ResourceBalances, h in HousesOfLayer[l]} >=0 default 0;
-param Grids_flowrate_out{l in ResourceBalances, h in HousesOfLayer[l]}>=0 default 0;
-
 param Domestic_electricity{h in House, p in Period, t in Time[p]} >= 0 default 0;
 
 var Units_supply{l in ResourceBalances, u in UnitsOfLayer[l], p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u]; 
 var Units_demand{l in ResourceBalances, u in UnitsOfLayer[l], p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
 var Units_curtailment{l in ResourceBalances, u in UnitsOfLayer[l] , p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u]; 
 
-var Grid_supply{l in ResourceBalances, h in HousesOfLayer[l], p in Period, t in Time[p]} >= 0, <= Grids_flowrate_out[l,h]; 
-var Grid_demand{l in ResourceBalances, h in HousesOfLayer[l], p in Period, t in Time[p]} >= 0, <= Grids_flowrate_in[l,h];
+var Grid_supply{l in ResourceBalances, h in HousesOfLayer[l], p in Period, t in Time[p]} >= 0, <= 1e8; 
+var Grid_demand{l in ResourceBalances, h in HousesOfLayer[l], p in Period, t in Time[p]} >= 0, <= 1e8;
 
-var Network_supply{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= sum{h in HousesOfLayer[l]} Grids_flowrate_out[l,h]; 
-var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= sum{h in HousesOfLayer[l]} Grids_flowrate_in[l,h]; 
+var Network_supply{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= 1e8; 
+var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= 1e8; 
 
 subject to MB_electricity{h in House, p in Period, t in Time[p]}:
 	Grid_supply['Electricity',h,p,t] + sum {i in MB_Units['Electricity',h]} Units_supply['Electricity',i,p,t] = Grid_demand['Electricity',h,p,t] + Domestic_electricity[h,p,t] + sum {j in MB_Units['Electricity',h]} Units_demand['Electricity',j,p,t];
@@ -222,27 +219,27 @@ subject to HC_upperbound_Balance{h in House,sq in Services,p in Period,t in Time
 sum{st in HC_Cold_loc_SQ[h,sq]: Streams_Tout_corr[st,p,t]>=k+epsilon} (Streams_Mcp[st,p,t]*HC_Streams_Mult[st,sq,p,t]*(Streams_Tout_corr[st,p,t] - k)) = 0;
 
 # Transformer additional capacity
-set ReinforcementTrOfLayer{ResourceBalances} default {};
-var TransformerCapacity{l in ResourceBalances} in ReinforcementTrOfLayer[l];
-var Use_TransformerCapacity{l in ResourceBalances} binary;
-param CostTransformer_inv1{l in ResourceBalances}>=0 default 0;
-param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
-param GWP_Transformer1{l in ResourceBalances} default 0;
-param GWP_Transformer2{l in ResourceBalances} default 0;
-param Transformer_Ext{l in ResourceBalances} default 1e8;
-param Transformer_Lifetime{l in ResourceBalances} default 20;
+set ReinforcementOfNetwork{ResourceBalances} default {};
+var Network_capacity{l in ResourceBalances} in ReinforcementOfNetwork[l];
+var Use_Network_capacity{l in ResourceBalances} binary;
+param Cost_network_inv1{l in ResourceBalances}>=0 default 0;
+param Cost_network_inv2{l in ResourceBalances}>=0 default 0;
+param GWP_network_1{l in ResourceBalances} default 0;
+param GWP_network_2{l in ResourceBalances} default 0;
+param Network_ext{l in ResourceBalances} default 1e8;
+param Network_lifetime{l in ResourceBalances} default 20;
 
 # Lines additional capacities
-set ReinforcementLineOfLayer{ResourceBalances} default {};
-var LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementLineOfLayer[l];
-var Use_LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
-param CostLine_inv1{l in ResourceBalances} default 0;
-param CostLine_inv2{l in ResourceBalances} default 0; # [CHF/kW/m]
+set ReinforcementOfLine{ResourceBalances} default {};
+var LineCapacity{l in ResourceBalances, hl in HousesOfLayer[l]} in ReinforcementOfLine[l];
+var Use_Line_capacity{l in ResourceBalances, hl in HousesOfLayer[l]} binary;
+param Cost_line_inv1{l in ResourceBalances} default 0;
+param Cost_line_inv2{l in ResourceBalances} default 0; # [CHF/kW/m]
 param Line_Length{h in House,l in ResourceBalances} default 10;
-param GWP_Line1{l in ResourceBalances} default 0;
-param GWP_Line2{l in ResourceBalances} default 0;
-param Line_Ext{h in House, l in ResourceBalances} default 1e8;
-param Line_Lifetime{h in House, l in ResourceBalances} default 20;
+param GWP_line_1{l in ResourceBalances} default 0;
+param GWP_line_2{l in ResourceBalances} default 0;
+param Line_ext{h in House, l in ResourceBalances} default 1e8;
+param Line_lifetime{h in House, l in ResourceBalances} default 20;
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -278,10 +275,10 @@ subject to Annual_CO2_construction_unit{u in Units}:
 GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
-GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]/Line_Lifetime[h,l]);
+GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]);
 
 subject to Annual_CO2_construction:
-GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_Line1[l]*Use_LineCapacity[l,h]+GWP_Line2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]/Line_Lifetime[h,l]);
+GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]);
 
 
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
@@ -333,16 +330,16 @@ var Costs_inv >= 0;
 var Costs_rep >= 0;
 
 subject to line_additional_capacity_c1{l in ResourceBalances,hl in HousesOfLayer[l]}:
-Use_LineCapacity[l,hl] * (max {i in ReinforcementLineOfLayer[l]} i)>= LineCapacity[l,hl]-Line_Ext[hl,l];
+Use_Line_capacity[l,hl] * (max {i in ReinforcementOfLine[l]} i)>= LineCapacity[l,hl]-Line_ext[hl,l];
 
 subject to line_additional_capacity_c2{l in ResourceBalances,hl in HousesOfLayer[l]}:
-LineCapacity[l,hl]>=Line_Ext[hl,l];
+LineCapacity[l,hl]>=Line_ext[hl,l];
 
 subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(CostLine_inv1[l]*Use_LineCapacity[l,h]+CostLine_inv2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);
 
 subject to Costs_Unit_replacement{u in Units}:
 Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
@@ -351,7 +348,7 @@ subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 subject to Costs_Grid_supply:
-Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{l in ResourceBalances, h in HousesOfLayer[l]} (CostLine_inv1[l]*Use_LineCapacity[l,h]+CostLine_inv2[l]*(LineCapacity[l,h]-Line_Ext[h,l] * (1-Use_LineCapacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacity[l]+CostTransformer_inv2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l]));
+Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{l in ResourceBalances, h in HousesOfLayer[l]} (Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (Cost_network_inv1[l]*Use_Network_capacity[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l]));
 
 subject to Costs_replacement:
 Costs_rep =  sum{u in Units} Costs_Unit_rep[u];
@@ -518,11 +515,11 @@ Grid_demand[l,hl,p,t] <= LineCapacity[l,hl];
 # Transformer capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
 
-subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_supply[l,p,t] <= TransformerCapacity[l];
+subject to Network_capacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
+Network_supply[l,p,t] <= Network_capacity[l];
 
-subject to TransformerCapacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_demand[l,p,t] <= TransformerCapacity[l];
+subject to Network_capacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
+Network_demand[l,p,t] <= Network_capacity[l];
 
 #--------------------------------------------------------------------------------------------------------------------#
 # No exchanges between buildings

@@ -164,12 +164,12 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
     def set_df_grid_SP(ampl):
         df1 = get_ampl_data(ampl, 'LineCapacity', multi_index=True)
-        df2 = get_ampl_data(ampl, 'Use_LineCapacity', multi_index=True)
-        df3 = get_ampl_data(ampl, 'CostLine_inv1')
-        df4 = get_ampl_data(ampl, 'CostLine_inv2')
-        df5 = get_ampl_data(ampl, 'GWP_Line1')
-        df6 = get_ampl_data(ampl, 'GWP_Line2')
-        df7 = get_ampl_data(ampl, 'Line_Ext', multi_index=True)
+        df2 = get_ampl_data(ampl, 'Use_Line_capacity', multi_index=True)
+        df3 = get_ampl_data(ampl, 'Cost_line_inv1')
+        df4 = get_ampl_data(ampl, 'Cost_line_inv2')
+        df5 = get_ampl_data(ampl, 'GWP_line_1')
+        df6 = get_ampl_data(ampl, 'GWP_line_2')
+        df7 = get_ampl_data(ampl, 'Line_ext', multi_index=True)
         df8 = get_ampl_data(ampl, 'Line_Length', multi_index=True)
 
         df3.index.names = ['Layer']
@@ -182,8 +182,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_12.columns = ['Capacity', 'UseCapacity']
         df_12.index.names = ['Layer', 'Hub']
         df_Grid = df_12.swaplevel().sort_index()
-        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostLine_inv1']+(df_Grid['Capacity'] -df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df4['CostLine_inv2']*df8['Line_Length']
-        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Line1'] + (df_Grid['Capacity']-df7['Line_Ext']*(1-df_Grid['UseCapacity']))*df6['GWP_Line2']*df8['Line_Length']
+        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_line_inv1']+(df_Grid['Capacity'] -df7['Line_ext']*(1-df_Grid['UseCapacity']))*df4['Cost_line_inv2']*df8['Line_Length']
+        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_line_1'] + (df_Grid['Capacity']-df7['Line_ext']*(1-df_Grid['UseCapacity']))*df6['GWP_line_2']*df8['Line_Length']
         return df_Grid
 
     def set_df_grid(ampl, method):
@@ -456,13 +456,13 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Buildings"] = df_Buildings.sort_index()
 
     # Grid
-    df1 = get_ampl_data(ampl, 'TransformerCapacity')
-    df2 = get_ampl_data(ampl, 'Use_TransformerCapacity')
-    df3 = get_ampl_data(ampl, 'CostTransformer_inv1', multi_index=False)
-    df4 = get_ampl_data(ampl, 'CostTransformer_inv2', multi_index=False)
-    df5 = get_ampl_data(ampl, 'GWP_Transformer1', multi_index=False)
-    df6 = get_ampl_data(ampl, 'GWP_Transformer2', multi_index=False)
-    df7 = get_ampl_data(ampl,'Transformer_Ext', multi_index=False)
+    df1 = get_ampl_data(ampl, 'Network_capacity')
+    df2 = get_ampl_data(ampl, 'Use_Network_capacity')
+    df3 = get_ampl_data(ampl, 'Cost_network_inv1', multi_index=False)
+    df4 = get_ampl_data(ampl, 'Cost_network_inv2', multi_index=False)
+    df5 = get_ampl_data(ampl, 'GWP_network_1', multi_index=False)
+    df6 = get_ampl_data(ampl, 'GWP_network_2', multi_index=False)
+    df7 = get_ampl_data(ampl,'Network_ext', multi_index=False)
 
     df3.index.names = ['Layer']
     df4.index.names = ['Layer']
@@ -476,8 +476,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df12['Hub']='Network'
     df12.set_index('Hub', append=True, inplace=True)
     df_Grid=df12.swaplevel().sort_index()
-    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['CostTransformer_inv1'] + (df_Grid['Capacity']-df7['Transformer_Ext']*(1-df_Grid['UseCapacity'])) * df4['CostTransformer_inv2']
-    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_Transformer1'] + (df_Grid['Capacity']-df7['Transformer_Ext']*(1-df_Grid['UseCapacity'])) * df6['GWP_Transformer2']
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_network_inv1'] + (df_Grid['Capacity']-df7['Network_ext']*(1-df_Grid['UseCapacity'])) * df4['Cost_network_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_network_1'] + (df_Grid['Capacity']-df7['Network_ext']*(1-df_Grid['UseCapacity'])) * df6['GWP_network_2']
 
     df_Results['df_Grid'] = df_Grid
 

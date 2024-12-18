@@ -21,10 +21,10 @@ if __name__ == '__main__':
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    grids["Electricity"]["ReinforcementTrOfLayer"] = np.array([100, 1000]) # available capacities of transformer
-    parameters = {'Transformer_Ext': np.array([100, 1e6]), # available capacities of grids (Electricity, NaturalGas)
-                  "CostTransformer_inv1": np.array([100, 0]), # fixed cost of grids reinforcement (Electricity, NaturalGas)
-                  "CostTransformer_inv2": np.array([10, 0])} # variable cost of grids reinforcement (Electricity, NaturalGas)
+    grids["Electricity"]["ReinforcementOfNetwork"] = np.array([100, 1000]) # available capacities of transformer
+    parameters = {'Network_ext': np.array([100, 1000]), # available capacities of grids (Electricity, NaturalGas)
+                  "Cost_network_inv1": np.array([100, 0]), # fixed cost of grids reinforcement (Electricity, NaturalGas)
+                  "Cost_network_inv2": np.array([10, 0])} # variable cost of grids reinforcement (Electricity, NaturalGas)
 
     # Set method options
     method = {'district-scale': True}

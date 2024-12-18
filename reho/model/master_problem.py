@@ -119,12 +119,12 @@ class MasterProblem:
 
 
         # TODO : un jour, peut-être changer la nomenclature de ces parametres pour semi-automatiser la separation entre MP et SP : (ex : tous les param MP finissent pas _MP)
-        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
+        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Network_ext',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
                                                 "DailyDist","Mode_Speed","Cost_demand_ext","EV_supply_ext","share_activity","Cost_supply_ext",
                                                 "max_share", "min_share","max_share_modes", "min_share_modes" ,  "n_ICEperhab",
-                                                 "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
+                                                 "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2","Units_Ext_district","Network_lifetime"],
                          "list_constraints_MP": [],
                          "list_set_indexed_MP" : ["Districts","Distances"]
                          }
@@ -192,12 +192,12 @@ class MasterProblem:
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
-        if "Transformer_Ext" in self.parameters:
+        if "Network_ext" in self.parameters:
             nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
             profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
             max_DEL = profile_building_x.max(axis=1).sum()
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Network_ext"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Network_ext"][0] * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -509,8 +509,8 @@ class MasterProblem:
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
         additional = []
-        if 'ReinforcementTrOfLayer' in self.infrastructure.Set.keys():
-             additional = additional + ["ReinforcementTrOfLayer"]
+        if 'ReinforcementOfNetwork' in self.infrastructure.Set.keys():
+             additional = additional + ["ReinforcementOfNetwork"]
 
         for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']+additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]

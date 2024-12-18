@@ -11,8 +11,8 @@
 
 # ----------------------------------------- PARAMETERS ---------------------------------------
 param Population default 10; # will multiply the domestic demand. Caution : unlinked default value duplicata in generate_mobility_parameters
-set Distances default {"long","short"};
-param DailyDist{dist in Distances} default 36.8; # [1] Caution : unlinked default value duplicata in generate_mobility_parameters
+set Distances default {"long","short"}; 
+param DailyDist{dist in Distances} default 36.8; # km - [1] Caution : unlinked default value duplicata in generate_mobility_parameters
 param max_travel_time default 3; # 1.3 hours national mean, by default the constraint is relaxed
 
 set transport_Units; # TODO : check if dynamic to the rest of the code
@@ -21,27 +21,27 @@ set transport_Units_cars;
 set transport_Units_PT :={'PT_train','PT_bus'};
 set Activities := {"work","leisure","travel"}; 
 set Districts default {};
-param Mode_Speed{u in transport_Units} default 37.1; # [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
-param Daily_Profile{u in transport_Units,p in Period,t in Time[p]} default 1; # initialized through the function generate_mobility_parameters
-param Domestic_energy_pkm{dist in Distances ,p in Period ,t in Time[p]} >= 0;
+param Mode_Speed{u in transport_Units} default 37.1; # km/h - [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
+param Daily_Profile{u in transport_Units,p in Period,t in Time[p]} default 1; # [-] initialized through the function generate_mobility_parameters
+param Domestic_energy_pkm{dist in Distances ,p in Period ,t in Time[p]} >= 0; # pkm
 
-param max_share{u in transport_Units, dist in Distances} default 1;
-param min_share{u in transport_Units, dist in Distances} default 0;
+param max_share{u in transport_Units, dist in Distances} default 1; # [-]
+param min_share{u in transport_Units, dist in Distances} default 0; # [-]
 
 set Modes := {"cars","MD","PT"};
-param max_share_modes{m in Modes, dist in Distances} default 1; # [1] G 3.3.1.6 
-param min_share_modes{m in Modes, dist in Distances} default 0;
+param max_share_modes{m in Modes, dist in Distances} default 1; # [-] - [1] G 3.3.1.6 
+param min_share_modes{m in Modes, dist in Distances} default 0; # [-] - 
 
 # ----------------------------------------- VARIABLES ---------------------------------------
-var travel_time{p in Period,t in Time[p]} >= 0 ; #pkm
+var travel_time{p in Period,t in Time[p]} >= 0 ; # hours
 
 # Categories of distance
-var pkm_supply{u in transport_Units,dist in Distances ,p in Period ,t in Time[p]} >= 0;
+var pkm_supply{u in transport_Units,dist in Distances ,p in Period ,t in Time[p]} >= 0; # pkm
 
 
 #-VARIABLES (for public transport)
-var pkm_PT_train{p in Period,t in Time[p]} >= 0 ;
-var pkm_PT_bus{p in Period,t in Time[p]} >= 0 ;
+var pkm_PT_train{p in Period,t in Time[p]} >= 0 ; # pkm
+var pkm_PT_bus{p in Period,t in Time[p]} >= 0 ; # pkm
 
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 

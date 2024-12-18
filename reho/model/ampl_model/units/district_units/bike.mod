@@ -10,18 +10,18 @@
 
 # ----------------------------------------- PARAMETERS ---------------------------------------
 # param max_speed default 13.3; # pkm per hour [1] Fig G 3.3.1.3 : Vitesse moyenne des utilisateurs des moyens de transport terrestres, en 2015
-param max_distperday default 10; # pkm moyenne mobilité douce : 2.8km per day [1] T 3.3.1.1
-param n_bikesperhab default 1;
+param max_distperday default 10; # pkm (per bike) - moyenne mobilité douce : 2.8km per day [1] T 3.3.1.1
+param n_bikesperhab default 1; # number
 param max_n_bikes := n_bikesperhab * Population;
 
 # [1] G 3.3.1.6 : share of bikes and walking amounts to ~ 8%
 
 # param max_modal_share default 1; # 8 % de mobilité douce - [1] Fig G 3.3.1.1 : Choix du moyen de transport, en 2015
-param tau_relaxation default 0.03; # relaxation of the daily profile constraint by 3%. 
+param tau_relaxation default 0.03; # [-] relaxation of the daily profile constraint by 3%. 
 
 # ----------------------------------------- VARIABLES ---------------------------------------
-var n_bikes{u in UnitsOfType['Bike']} integer >= 0;
-var share_bike{u in UnitsOfType['Bike'],p in Period } >= 0;
+var n_bikes{u in UnitsOfType['Bike']} integer >= 0; # number
+var share_bike{u in UnitsOfType['Bike'],p in Period } >= 0; # %
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
 subject to Bikes_c1{u in UnitsOfType['Bike'],p in Period,t in Time[p]}:

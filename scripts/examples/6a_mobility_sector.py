@@ -35,7 +35,8 @@ if __name__ == '__main__':
     # Set parameters
     era = np.sum([qbuildings_data["buildings_data"][b]['ERA'] for b in qbuildings_data["buildings_data"]])
 
-    # 46m²/person on average, 2 categories of distance (D0 : short and D1 : long)
+    # here Population is scaled to the number of buildings being optimized (CH : 46m²/cap on average )
+    # 35 km/cap/day, 2 categories of distance (D0 : short and D1 : long)
     parameters = {"Population": era / 46, "DailyDist": {'D0': 25, 'D1': 10}}
 
     # min max share for each mobility mode and each distance

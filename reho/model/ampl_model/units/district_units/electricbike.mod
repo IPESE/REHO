@@ -31,11 +31,11 @@ param EBike_charging_power default 0.07; # kW [3]
 param tau_relaxation_demand_EBike default 0.07;  # relaxation of the charging profile constraint by 7%.
 
 # ----------------------------------------- VARIABLES ---------------------------------------
-var n_EBikes{u in UnitsOfType['EBike']} integer >= 0;
-var coeff_supply_EBike{u in UnitsOfType['EBike'],p in Period } >= 0;
-var coeff_demand_EBike{u in UnitsOfType['EBike'],p in Period } >= 0;
+var n_EBikes{u in UnitsOfType['EBike']} integer >= 0; # number 
+var coeff_supply_EBike{u in UnitsOfType['EBike'],p in Period } >= 0; # [-]
+var coeff_demand_EBike{u in UnitsOfType['EBike'],p in Period } >= 0; # [-]
 
-var EBike_SOC{u in UnitsOfType['EBike'],p in Period,t in Time[p]}  >= 0;
+var EBike_SOC{u in UnitsOfType['EBike'],p in Period,t in Time[p]}  >= 0; # kWh
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
 # Constraints related to bike usage

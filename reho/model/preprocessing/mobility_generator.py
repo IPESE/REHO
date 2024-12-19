@@ -84,11 +84,11 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
             raise warnings.warn(f"reho.modal_split contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(DailyDist.index)}")
 
     # Compute the parameters
-    param_output['Domestic_energy_pkm'], param_output['Domestic_energy'], profile = get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Population)
+    param_output['Domestic_energy_pkm'], param_output['Domestic_energy'] = get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Population)
     param_output['Daily_Profile'] = get_daily_profile(profiles_input, timestamp, days_mapping, transportunits)
 
     param_output['EV_charging_profile'] = get_EV_charging(units, timestamp, profiles_input, days_mapping)
-    param_output['EV_plugged_out'] = get_EV_plugged_out(units, timestamp, profiles_input, days_mapping, profile)
+    param_output['EV_plugged_out'] = get_EV_plugged_out(units, timestamp, profiles_input, days_mapping)
     param_output['EV_activity'] = get_activity_profile(units, timestamp, profiles_input, days_mapping)
     param_output['EBike_charging_profile'] = get_Ebike_charging(units, timestamp, profiles_input, days_mapping)
 
@@ -123,8 +123,6 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
         the param Domestic_energy_pkm[dist,p,t] by categories of distance
     mobility_demand : df
         the param Domestic_energy[Mobility,p,t]
-    profile : df
-        for further processing, the last Period and category of dist of Domestic_energy_pkm
     """
     # The labels look like this : demwdy_def, demwdy_long => normalized mobility demand of a weekday
     profiles_demand = profiles_input.loc[:, profiles_input.columns.str.startswith("dem")]
@@ -166,7 +164,7 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
     mobility_demand['l'] = "Mobility"
     mobility_demand.set_index(['l', 'p', 't'], inplace=True)
     mobility_demand.rename(columns={"Domestic_energy_pkm" : "Domestic_energy"},inplace=True)
-    return demand_pkm, mobility_demand, profile
+    return demand_pkm, mobility_demand
 
 
 def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
@@ -270,7 +268,7 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
     return EV_charging_profile.set_index(['u', 'p', 't'])
 
 
-def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping, profile):
+def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping):
     """
     Formatting of the parameter EV_plugged_out[u,p,t]. Data is taken from dailyprofiles.csv (columns EV_outwnd and EV_outwdy). Each Unit (from UnitOfType[EV]) can be provided with a personnalized profile, otherwise the default value EV_outxxx is taken. 
 
@@ -284,7 +282,6 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping, profile):
         mapping between the labels of profile_input and timestamp
     units : df
         dataframe from district_units.csv
-    profile : df
 
     Returns
     -------
@@ -302,8 +299,7 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping, profile):
 
         out = EV_profiles.loc[:, EV_profiles.columns.str.contains("out")].copy()
         out['default'] = out['EV_out' + days_mapping[day]]
-        missing_units = set(EV_units) - set(profile.columns) # TODO : à revoir
-        for unit in missing_units:
+        for unit in set(EV_units):
             out[unit] = out['default']
         out = out[EV_units]
         out.index.name = 't'

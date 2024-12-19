@@ -129,6 +129,9 @@ class MasterProblem:
                          "list_set_indexed_MP" : ["Districts","Distances"]
                          }
 
+        if "EV_district" in self.infrastructure.UnitsOfDistrict:
+            self.lists_MP["list_constraints_MP"] += ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
+
         self.df_fix_Units = pd.DataFrame()
         self.fix_units_list = []
 
@@ -970,11 +973,12 @@ class MasterProblem:
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
                             'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
-        if "EV_district" in self.infrastructure.UnitsOfDistrict:
-            list_constraints = list_constraints + ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
 
         for cst in list_constraints:
-            ampl.getConstraint(cst).drop()
+            try:
+                ampl.getConstraint(cst).drop()
+            except:
+                pass
 
         if 'EMOO' in scenario:
             emoo = scenario['EMOO'].copy()

@@ -29,7 +29,7 @@ Grids
 ======
 
 .. csv-table:: Grid costs and LCA values
-   :file: ../../reho/data/infrastructure/grids.csv
+   :file: ../../reho/data/infrastructure/layers.csv
    :header-rows: 1
    :delim: ;
    :class: longtable

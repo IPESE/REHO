@@ -3,7 +3,6 @@ from reho.model.preprocessing.mobility_generator import *
 from reho.plotting import plotting
 
 if __name__ == '__main__':
-
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
@@ -30,7 +29,7 @@ if __name__ == '__main__':
 
     # Set method options
     method = {'building-scale': True, 'external_district': True}
-    
+
     # Set parameters
     ext_districts = ["district_1", "district_2"]
     set_indexed = {"Districts": ext_districts}
@@ -45,7 +44,7 @@ if __name__ == '__main__':
                                index=['MD', 'PT', 'cars', 'EV_district'])
 
     # Scenario 1: no external charging demands
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,parameters=parameters, cluster=cluster, set_indexed=set_indexed, scenario=scenario, method=method, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, set_indexed=set_indexed, scenario=scenario, method=method, solver="gurobi")
     reho.modal_split = modal_split
     reho.single_optimization()
 
@@ -58,13 +57,13 @@ if __name__ == '__main__':
     reho.parameters["share_activity"] = rho_param(ext_districts, df_rho)
 
     # Charging tariff for external districts (revenue to the district): 0.2 CHF/kWh
-    reho.parameters["Cost_supply_ext"] = pd.Series([0.2]*240, index=pd.MultiIndex.from_product([id_days, id_hours]))
+    reho.parameters["Cost_supply_ext"] = pd.Series([0.2] * 240, index=pd.MultiIndex.from_product([id_days, id_hours]))
 
     # Charging tariff in external districts (expense to the district): 0.3 CHF/kWh
-    reho.parameters["Cost_demand_ext"] = pd.Series([0.3]*480, index=pd.MultiIndex.from_product([ext_districts, id_days, id_hours]))
+    reho.parameters["Cost_demand_ext"] = pd.Series([0.3] * 480, index=pd.MultiIndex.from_product([ext_districts, id_days, id_hours]))
 
     # The external districts have a charging demand for 1.5 kWh_el each hour to the district
-    reho.parameters["EV_supply_ext"] = pd.Series([1.5]*480, index=pd.MultiIndex.from_product([["leisure", "work"], id_days, id_hours]))
+    reho.parameters["EV_supply_ext"] = pd.Series([1.5] * 480, index=pd.MultiIndex.from_product([["leisure", "work"], id_days, id_hours]))
 
     reho.scenario['name'] = 'totex_external_load'
     reho.single_optimization()
@@ -72,6 +71,5 @@ if __name__ == '__main__':
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='6b')
 
-   # Plot results
+    # Plot results
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
-

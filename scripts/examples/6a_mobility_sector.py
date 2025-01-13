@@ -45,7 +45,7 @@ if __name__ == '__main__':
                                index=['MD', 'PT', 'cars', 'EV_district'])
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.modal_split = modal_split # give modal_split as attribute
     reho.single_optimization()
 

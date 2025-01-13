@@ -331,7 +331,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     exclude_units : list of str
         The units you want to exclude, given through ``initialize_units``.
     grids : dict
-        Grids given through ``initialize_units``.
+        Grids given through ``initialize_grids``.
 
     Returns
     -------
@@ -444,7 +444,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 
     Notes
     -----
-    - The default files are located in ``reho/data/parameters``.
+    - The default files are located in ``reho/data/infrastructure/``.
     - The custom files can be given as absolute or relative path.
 
     Examples
@@ -495,7 +495,7 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
         and the values are dictionaries containing optional parameters ['Cost_demand_cst',
         'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst'].
     file : str, optional
-        Path to the CSV file containing grid data. Default is 'layers.csv' in the parameters folder.
+        Path to the CSV file containing grid data. Default is 'layers.csv' in the data/infrastructure/ folder.
 
     Returns
     -------
@@ -508,14 +508,13 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
 
     Notes
     -----
-    - If one wants to use its one custom grid file, he should pay attention that the name of the layer and
-      the parameters correspond.
+    - If one wants to use its one custom grid file, he should pay attention that the name of the layer and the parameters correspond.
     - Adding a layer in a custom file will not add it to the model as it is not modelized.
 
     Examples
     --------
     >>> available_grids = {'Electricity': {'Cost_demand_cst': 0.1, 'GWP_supply_cst': 0.05}, 'NaturalGas': {'Cost_supply_cst': 0.15}}
-    >>> grids = initialize_grids(available_grids, file="custom_grids.csv")
+    >>> grids = initialize_grids(available_grids, file="custom_layers.csv")
     """
 
     grid_data = file_reader(file)

@@ -319,3 +319,7 @@ reho/test/results/*
 # Scripts
 scripts/*
 !scripts/examples/
+*.json
+*.dat
+*.txt
+*.pickle

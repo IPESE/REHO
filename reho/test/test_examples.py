@@ -133,3 +133,13 @@ def test_example_5a():
 def test_example_5b():
     script_path = Path(EXAMPLES_DIR) / "5b_PV_facades.py"
     execute_script(script_path)
+
+
+def test_example_6a():
+    script_path = Path(EXAMPLES_DIR) / "6a_mobility_sector.py"
+    execute_script(script_path)
+
+
+def test_example_6b():
+    script_path = Path(EXAMPLES_DIR) / "6b_mobility_externaldistricts.py"
+    execute_script(script_path)

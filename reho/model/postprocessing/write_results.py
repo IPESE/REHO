@@ -129,9 +129,11 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df2 = get_ampl_data(ampl, 'Units_Mult')
 
         df3 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_inv')
-        df4 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
-        df5 = get_ampl_data(ampl, 'lifetime')
-        df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
+        df4 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_rep')
+        df5 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
+        df6 = get_ampl_data(ampl, 'lifetime')
+        df7 = get_ampl_data(ampl, 'Units_Ext', multi_index=False)
+        df_Unit = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
         if method['print_logs']:
@@ -146,15 +148,43 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         if "EV_district" in [unit for unit, value in ampl.getVariable('Units_Use').instances()]:
             df5 = get_ampl_data(ampl, 'EV_E_stored', multi_index=True)
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-            df6 = get_ampl_data(ampl, "EV_displacement", multi_index=True)
+            df6 = get_ampl_data(ampl, "EV_supply_travel", multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
+            if len(ampl.getSet('Districts').getValues().toList()) > 0:
+                df7 = get_ampl_data(df, 'EV_demand_ext', multi_index=True)
+            else:
+                df7 = pd.DataFrame()
+            df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         else:
             df_Unit_t = pd.concat([df1, df2, df3, df4], axis=1)
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
         df_Unit_t = df_Unit_t.sort_index()
 
         return df_Unit, df_Unit_t
+
+    def set_df_grid_SP(ampl):
+        df1 = get_ampl_data(ampl, 'LineCapacity', multi_index=True)
+        df2 = get_ampl_data(ampl, 'Use_Line_capacity', multi_index=True)
+        df3 = get_ampl_data(ampl, 'Cost_line_inv1')
+        df4 = get_ampl_data(ampl, 'Cost_line_inv2')
+        df5 = get_ampl_data(ampl, 'GWP_line_1')
+        df6 = get_ampl_data(ampl, 'GWP_line_2')
+        df7 = get_ampl_data(ampl, 'Line_ext', multi_index=True)
+        df8 = get_ampl_data(ampl, 'Line_Length', multi_index=True)
+
+        df3.index.names = ['Layer']
+        df4.index.names = ['Layer']
+        df5.index.names = ['Layer']
+        df6.index.names = ['Layer']
+        df7.index.names = ['Hub', 'Layer']
+        df8.index.names = ['Hub', 'Layer']
+        df_12 = pd.concat([df1, df2], axis=1, sort=True)
+        df_12.columns = ['Capacity', 'UseCapacity']
+        df_12.index.names = ['Layer', 'Hub']
+        df_Grid = df_12.swaplevel().sort_index()
+        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_line_inv1']+(df_Grid['Capacity'] -df7['Line_ext']*(1-df_Grid['UseCapacity']))*df4['Cost_line_inv2']*df8['Line_Length']
+        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_line_1'] + (df_Grid['Capacity']-df7['Line_ext']*(1-df_Grid['UseCapacity']))*df6['GWP_line_2']*df8['Line_Length']
+        return df_Grid
 
     def set_df_grid(ampl, method):
         # Grid_t
@@ -271,18 +301,18 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
     def set_dfs_lca(ampl):
 
-        LCA_units = get_ampl_data(ampl, 'lca_units')
+        LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)
         LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
 
         LCA_tot = get_ampl_data(ampl, 'lca_tot')
         LCA_tot = LCA_tot.stack().unstack(level=0)
         LCA_tot.index = ["Network"]
-        LCA_tot_house = get_ampl_data(ampl, 'lca_tot_house')
+        LCA_tot_house = get_ampl_data(ampl, 'lca_tot_house', multi_index=True)
         LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
         LCA_tot = pd.concat([LCA_tot_house, LCA_tot], axis=0)
         LCA_tot.index.names = ['Hub']
 
-        LCA_op = get_ampl_data(ampl, 'lca_op')
+        LCA_op = get_ampl_data(ampl, 'lca_op', multi_index=True)
         LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
 
         return LCA_units, LCA_tot, LCA_op
@@ -351,6 +381,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     df_Results["df_Performance"] = set_df_performance(ampl, scenario)
     df_Results["df_Annuals"] = set_df_annuals(ampl)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
+    df_Results["df_Grid"] = set_df_grid_SP(ampl)
     df_Results["df_Grid_t"] = set_df_grid(ampl, method)
     df_Results["df_Time"], df_Weather, df_Index = set_dfs_other(ampl)
 
@@ -366,7 +397,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_Results["df_Buildings_t"] = set_df_buildings_t(ampl)[["House_Q_heating", "T_in", "House_Q_DHW"]]
         bat = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("Battery")][['Units_demand', 'Units_supply']]
         pv = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("PV")][['Units_supply', 'Units_curtailment']]
-        df_Results["df_Unit_t"] = pd.concat([pv, bat])
+        cogen = df_Unit_t[df_Unit_t.index.get_level_values("Unit").str.contains("Cogeneration")][['Units_supply', 'Units_curtailment']]
+        df_Results["df_Unit_t"] = pd.concat([pv, bat, cogen])
 
     if method["save_streams"]:
         df_Results["df_Streams_t"] = set_df_streams_t(ampl)
@@ -422,6 +454,32 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Buildings = pd.concat([df1, df2], axis=1)
         df_Buildings.index.names = ['FeasibleSolution', 'Hub']
         df_Results["df_Buildings"] = df_Buildings.sort_index()
+
+    # Grid
+    df1 = get_ampl_data(ampl, 'Network_capacity')
+    df2 = get_ampl_data(ampl, 'Use_Network_capacity')
+    df3 = get_ampl_data(ampl, 'Cost_network_inv1', multi_index=False)
+    df4 = get_ampl_data(ampl, 'Cost_network_inv2', multi_index=False)
+    df5 = get_ampl_data(ampl, 'GWP_network_1', multi_index=False)
+    df6 = get_ampl_data(ampl, 'GWP_network_2', multi_index=False)
+    df7 = get_ampl_data(ampl,'Network_ext', multi_index=False)
+
+    df3.index.names = ['Layer']
+    df4.index.names = ['Layer']
+    df5.index.names = ['Layer']
+    df6.index.names = ['Layer']
+    df7.index.names = ['Layer']
+
+    df12 = pd.concat([df1, df2], axis=1)
+    df12.columns=['Capacity', 'UseCapacity']
+    df12.index.names = ['Layer']
+    df12['Hub']='Network'
+    df12.set_index('Hub', append=True, inplace=True)
+    df_Grid=df12.swaplevel().sort_index()
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_network_inv1'] + (df_Grid['Capacity']-df7['Network_ext']*(1-df_Grid['UseCapacity'])) * df4['Cost_network_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_network_1'] + (df_Grid['Capacity']-df7['Network_ext']*(1-df_Grid['UseCapacity'])) * df6['GWP_network_2']
+
+    df_Results['df_Grid'] = df_Grid
 
     # District
     df1 = get_ampl_data(ampl, 'Costs_House_op')
@@ -486,11 +544,21 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df4 = get_ampl_data(ampl, 'GWP_supply', multi_index=True)
     df5 = get_ampl_data(ampl, 'Network_supply', multi_index=True)
     df6 = get_ampl_data(ampl, 'Network_demand', multi_index=True)
+    df7 = get_ampl_data(ampl,"Domestic_energy",multi_index = True)
 
     if binary:
-        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6], axis=1).sort_index()
+        df_District_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1).sort_index()
     else:
         df_District_t = pd.concat([df5, df6], axis=1)
+    if "EV_district" in district.UnitsOfDistrict:
+        df8 = get_ampl_data(ampl,"EV_supply_ext", multi_index = True)
+        df8 = df8[['EV_supply_ext']].unstack(level = 0)
+        df8.columns = [f'EV_supply_ext[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
+        df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
+        df8["EV_revenue_ext"] = get_ampl_data(ampl, 'EV_revenue_ext').values
+        df8["EV_cost_ext"] = get_ampl_data(ampl, 'EV_cost_ext').values
+        df_District_t = pd.concat([df_District_t, df8], axis=1).sort_index()
+
     df_District_t.index.names = ['Layer', 'Period', 'Time']
     df_Results["df_District_t"] = df_District_t.sort_index()
 
@@ -518,9 +586,10 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df1 = get_ampl_data(ampl, 'Units_Use')
     df2 = get_ampl_data(ampl, 'Units_Mult')
     df3 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_inv')
-    df4 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total - multiply with lifetime
-    df5 = get_ampl_data(ampl, 'lifetime')
-    df_Unit = pd.concat([df1, df2, df3, df4, df5], axis=1)
+    df4 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_rep')  # per year! For total - multiply with lifetime
+    df5 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total - multiply with lifetime
+    df6 = get_ampl_data(ampl, 'lifetime')
+    df_Unit = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
     if read_DHN:
         df_Unit.at["DHN_pipes_district", ("Units_Use", "Units_Mult", "Costs_Unit_inv")] = [1, 1, get_ampl_data(ampl, 'DHN_inv')["DHN_inv"][0]]
     df_Results["df_Unit"] = df_Unit.sort_index()
@@ -539,22 +608,25 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         if "EV_district" in district.UnitsOfDistrict:
             df4 = get_ampl_data(ampl, 'EV_E_stored', multi_index=True)
             df4 = pd.concat([df4], keys=['Electricity'], names=['Layer'])
-            df5 = get_ampl_data(ampl, 'EV_displacement', multi_index=True)
+            df5 = get_ampl_data(ampl, 'EV_V2V', multi_index=True)
             df5 = pd.concat([df5], keys=['Electricity'], names=['Layer'])
-            df6 = get_ampl_data(ampl, 'EV_V2V', multi_index=True)
+            df6 = get_ampl_data(ampl, 'EV_demand', multi_index=True) 
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
-            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6], axis=1)
+            if len(ampl.getSet('Districts').getValues().toList()) > 0:
+                df7 = get_ampl_data(ampl, 'EV_demand_ext', multi_index=True)
+                df7 = df7[['EV_demand_ext']].unstack(level = [0,1])
+                df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j,k in df7.columns]
+                df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
+            else:
+                df7 = pd.DataFrame()
+            df8 = get_ampl_data(ampl, 'EV_supply_travel', multi_index=True)
+            df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
+            df_Unit_t = pd.concat([df_Unit_t, df4, df5, df6, df7, df8], axis=1)
 
         df_Unit_t.index.names = ['Layer', 'Unit', 'Period', 'Time']
 
-        units_districts = district.UnitsOfDistrict
-        district_l_u = []
-        for layer, units in district.UnitsOfLayer.items():
-            [district_l_u.append((layer, unit)) for unit in units if unit in units_districts]
-        df_Unit_t = df_Unit_t.reset_index(level=['Period', 'Time']).loc[district_l_u, :]
-        df_Results["df_Unit_t"] = df_Unit_t.reset_index().set_index(['Layer', 'Unit', 'Period', 'Time']).sort_index()
-    else:
-        df_Results["df_Unit_t"] = pd.DataFrame()
+        df_Results["df_Unit_t"] = df_Unit_t.sort_index()
+
 
     # LCA
     if method["save_lca"]:

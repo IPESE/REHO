@@ -68,12 +68,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.model.postprocessing
 
-`building_scale_network_builder.py`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: reho.model.postprocessing.building_scale_network_builder
-    :members:
-
 `KPIs.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -123,10 +117,10 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.preprocessing.emissions_parser
     :members:
 
-`EV_profile_generator.py`
+`mobility_generator.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: reho.model.preprocessing.EV_profile_generator
+.. automodule:: reho.model.preprocessing.mobility_generator
     :members:
 
 `local_data.py`

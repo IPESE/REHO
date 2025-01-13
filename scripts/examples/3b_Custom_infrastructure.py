@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     # You can add more resources layers besides electricity and natural gas, and adapt their prices
     # - directly within the script
-    # - or through a custom csv file based on the default values from data/infrastructure/grids.csv
+    # - or through a custom csv file based on the default values from data/infrastructure/layers.csv
     grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              'Wood': {},

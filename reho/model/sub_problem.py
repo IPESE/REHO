@@ -3,7 +3,7 @@ import logging
 
 from amplpy import AMPL, Environment
 
-import reho.model.preprocessing.EV_profile_generator as EV_gen
+import reho.model.preprocessing.mobility_generator as EV_gen
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as weather
@@ -174,10 +174,6 @@ class SubProblem:
             else:
                 ampl.read('pv.mod')
 
-        # district Units
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.cd(path_to_district_units)
-            ampl.read('evehicle.mod')
         # Storage Units
         ampl.cd(path_to_units_storage)
         if 'WaterTankSH' in self.infrastructure_sp.UnitTypes:
@@ -248,8 +244,7 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
 
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
-        self.parameters_to_ampl['Grids_flowrate'] = self.infrastructure_sp.Grids_flowrate
-        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters
+        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"], axis=1)
         self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_sp.Grids_Parameters_lca
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
         self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_sp.Units_Parameters_lca
@@ -288,20 +283,13 @@ class SubProblem:
         if self.method_sp['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
             self.parameters_to_ampl['GWP_demand'] = self.parameters_to_ampl['GWP_supply']
-            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity').drop(
-                columns=['Cost_demand_cst', 'Cost_supply_cst'])
+            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity')[["GWP_demand_cst", "GWP_supply_cst"]]
 
     def set_temperature_and_EVs_profiles(self):
 
         # Reference temperature
         self.parameters_to_ampl['T_comfort_min'] = buildings_profiles.reference_temperature_profile(self.parameters_to_ampl, self.cluster_sp)
 
-        # Set default EV plug out profile if EVs are allowed
-        if "EV_plugged_out" not in self.parameters_to_ampl:
-            if len(self.infrastructure_sp.UnitsOfDistrict) != 0:
-                if "EV_district" in self.infrastructure_sp.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(
-                        self.cluster_sp, self.local_data["df_Timestamp"])
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -595,6 +583,8 @@ class SubProblem:
         ampl.getConstraint('EMOO_GWP_constraint').drop()
         ampl.getConstraint('EMOO_lca_constraint').drop()
 
+        ampl.getConstraint('EMOO_elec_export_constraint').drop()
+
         ampl.getConstraint('EMOO_GU_demand_constraint').drop()
         ampl.getConstraint('EMOO_GU_supply_constraint').drop()
         ampl.getConstraint('EMOO_grid_constraint').drop()
@@ -626,8 +616,6 @@ class SubProblem:
                 ampl.getConstraint('DHN_heat').drop()
         if 'Air_Conditioner' in self.infrastructure_sp.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_sp.units]:
             ampl.getConstraint('AC_c3').drop()
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.getConstraint('unidirectional_service').drop()
 
         if self.method_sp['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()
@@ -723,6 +711,9 @@ def initialize_default_methods(method):
         method["include_all_solutions"] = True
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False
+
+    if "external_district" not in method:
+        method['external_district'] = False
 
     if 'use_Storage_Interperiod' not in method:
         method['use_Storage_Interperiod'] = False

@@ -21,8 +21,8 @@
 # Usage
 param n_EVperhab{u in UnitsOfType['EV']} default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
 param n_EVtotperhab default 1.5; # number
-param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population; 
-param n_EVtot_max := n_EVtotperhab * Population; 
+param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population;
+param n_EVtot_max := n_EVtotperhab * Population;
 param ff_EV{u in UnitsOfType['EV']} default 1.56; # person/vehicle [4]
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
 param EV_charging_profile{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
@@ -33,7 +33,7 @@ param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # hou
 # Computed parameters to calculate the variation between EV_E_stored (plug_in and plug_out) depending on EV_plugged_out at each interval of time
 param storedOut2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} :=  # [-]
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 0 then
-		1 
+		1
 	else
 		min(1,EV_plugged_out[u,p,t]/EV_plugged_out[u,p,prev(t,Time[p])]);
 param storedIn2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := # [-]
@@ -72,7 +72,7 @@ param share_activity{a in Activities, d in Districts} default 0; # [-] to descri
 param Cost_demand_ext{d in Districts, p in PeriodStandard, t in Time[p]} default Cost_supply_network["Electricity",p,t]; #CHF/kWh
 
 # ----------------------------------------- VARIABLES ---------------------------------------
-var n_vehicles{u in UnitsOfType['EV']} integer >= 0; # number 
+var n_vehicles{u in UnitsOfType['EV']} integer >= 0; # number
 var EV_E_stored{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh
 var EV_E_stored_plug_out{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh
 var EV_E_stored_plug_in{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh

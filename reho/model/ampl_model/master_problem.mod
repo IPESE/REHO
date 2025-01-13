@@ -27,7 +27,12 @@ param TimeStart default 1;
 param TimeEnd{p in Period};
 set Time{p in Period} := {TimeStart .. TimeEnd[p]} ordered;
 
-param dt{p in Period} default 1;       # h
+#-INDEX SETS (useful for inter-period energy balance appart from the extreme periods)
+set Year := {1..8760} circular;
+param PeriodOfYear{y in Year} default 1;
+param TimeOfYear{y in Year} default 1;
+
+param dt{p in Period} default 1;            # h
 param dp{p in Period} default 1;			# days
 
 param Area_tot default 100;
@@ -148,10 +153,10 @@ subject to Costs_opex_house{h in House}:
 Costs_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in PeriodStandard, t in Time[p]} lambda[f,h]*(Cost_supply_network[l,p,t]*Grid_supply[l,f,h,p,t] - Cost_demand_network[l,p,t]*Grid_demand[l,f,h,p,t])* dp[p] * dt[p]; 
 
 subject to Costs_opex:
-Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]); 
+Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]);
 
 subject to ExternalEV_Costs_positive{p in Period,t in Time[p]}:
-ExternalEV_Costs_op[p,t] >=0 ; 
+ExternalEV_Costs_op[p,t] >=0 ;
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES

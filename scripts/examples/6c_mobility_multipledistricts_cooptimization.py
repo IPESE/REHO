@@ -50,8 +50,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
-    method = {'building-scale': True,
-              }
+    method = {'building-scale': True}
 
     # Initialisation of REHO objects =======================================================================
     reho_models = {}

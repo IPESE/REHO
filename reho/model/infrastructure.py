@@ -413,8 +413,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     return units
 
 
-def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"),
-                     district_data=None, storage_data=None):
+def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"), district_data=None, interperiod_data=None):
     """
     Initializes the available units for the energy system.
 
@@ -429,8 +428,8 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     district_data : str or bool or None, optional
         Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
         If None, district units will not be considered. Default is None.
-    storage_data :  str or bool or None, optional
-        Path to the CSV file containing storage unit data. If True, storage units are initialized with 'storage_units.csv'.
+    interperiod_data : dict or bool or None, optional
+        Paths to the CSV file(s) containing inter-period storage units data. If True, units are initialized with 'building_units_IP.csv' and 'district_units_IP.csv'.
         If None, storage units won't be considered. Default is None.
 
     Returns
@@ -450,10 +449,10 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     Examples
     --------
     >>> units = infrastructure.initialize_units(scenario, grids, building_data="custom_building_units.csv",
-    ...                                         district_data="custom_district_units.csv", storage_data=True)
+    ...                                         district_data="custom_district_units.csv", interperiod_data=True)
     """
 
-    default_units_to_exclude = ['HeatPump_Anergy', 'HeatPump_Lake']
+    default_units_to_exclude = ["Air_Conditioner", 'HeatPump_Anergy', 'HeatPump_Lake', 'DataHeat_SH', 'NG_Cogeneration']
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:
@@ -461,22 +460,23 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 
     building_units = prepare_units_array(building_data, exclude_units, grids)
 
-    # TODO: these storage units are not fully working
-    storage_units_to_exclude = ['BESS_IP', 'PTES_S_IP', 'PTES_C_IP', 'H2S_storage', 'H2_compression', 'SOEFC', 'FC']
-
-    exclude_units = exclude_units + storage_units_to_exclude
-    if storage_data is True:
-        default_storage_units = os.path.join(path_to_infrastructure, "storage_units.csv")
-        building_units = np.concatenate([building_units, prepare_units_array(default_storage_units, exclude_units=exclude_units)])
-    elif storage_data:
-        building_units = np.concatenate([building_units, prepare_units_array(storage_data, exclude_units=exclude_units)])
+    if interperiod_data is True:
+        building_units = np.concatenate([building_units, prepare_units_array(os.path.join(path_to_infrastructure, "building_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
+    elif isinstance(interperiod_data, dict):
+        building_units = np.concatenate([building_units, prepare_units_array(interperiod_data["building_units_IP"], exclude_units=exclude_units, grids=grids)])
 
     if district_data is True:
-        district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids)
-    elif district_data:
-        district_units = prepare_units_array(district_data, exclude_units, grids)
+        district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids)
+    elif isinstance(district_data, str):
+        district_units = prepare_units_array(district_data, exclude_units, grids=grids)
     else:
         district_units = []
+
+    if district_data is not None:
+        if interperiod_data is True:
+            district_units = np.concatenate([district_units, prepare_units_array(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
+        elif isinstance(interperiod_data, dict):
+            district_units = np.concatenate([district_units, prepare_units_array(interperiod_data["district_units_IP"], exclude_units=exclude_units, grids=grids)])
 
     units = {"building_units": building_units, "district_units": district_units}
 

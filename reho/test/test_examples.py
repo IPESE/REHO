@@ -136,10 +136,10 @@ def test_example_5b():
 
 
 def test_example_6a():
-    script_path = Path(EXAMPLES_DIR) / "6a_mobility_sector.py"
+    script_path = Path(EXAMPLES_DIR) / "6a_Mobility_sector.py"
     execute_script(script_path)
 
 
 def test_example_6b():
-    script_path = Path(EXAMPLES_DIR) / "6b_mobility_externaldistricts.py"
+    script_path = Path(EXAMPLES_DIR) / "6b_Mobility_externaldistricts.py"
     execute_script(script_path)

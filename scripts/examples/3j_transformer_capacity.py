@@ -1,7 +1,6 @@
 from reho.model.reho import *
 
 if __name__ == '__main__':
-
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
@@ -21,15 +20,15 @@ if __name__ == '__main__':
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    grids["Electricity"]["ReinforcementOfNetwork"] = np.array([100, 1000]) # available capacities of networks [Electricity, NaturalGas]
-    parameters = {'Network_ext': np.array([100, 1000])} # existing capacities of networks [Electricity, NaturalGas]
+    grids["Electricity"]["ReinforcementOfNetwork"] = np.array([100, 1000])  # available capacities of networks [Electricity, NaturalGas]
+    parameters = {'Network_ext': np.array([100, 1000])}  # existing capacities of networks [Electricity, NaturalGas]
 
     # Set method options
     method = {'district-scale': True}
     DW_params = {'max_iter': 4}
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, parameters=parameters, method=method, DW_params=DW_params, solver="gurobiasl")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, parameters=parameters, method=method, DW_params=DW_params, solver="gurobi")
     reho.single_optimization()
 
     # Save results

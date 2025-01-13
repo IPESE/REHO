@@ -451,6 +451,7 @@ Several energy carriers are considered in REHO, namely:
 - Electricity,
 - Natural gas,
 - Oil,
+- Wood,
 - District heat,
 - Biomethane,
 - Hydrogen,

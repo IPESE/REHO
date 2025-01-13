@@ -19,6 +19,9 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
+    # Set method options
+    method = {'building-scale': True}
+
     # Initialize available units and grids
     # You can use prices coming from the ELCOM public database
     prices = electricity_prices.get_prices_from_elcom_by_city(city=reader, category='H4')
@@ -26,9 +29,6 @@ if __name__ == '__main__':
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              })
     units = infrastructure.initialize_units(scenario, grids)
-
-    # Set method options
-    method = {'building-scale': True}
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

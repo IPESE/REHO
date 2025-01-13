@@ -1,5 +1,5 @@
 from reho.model.reho import *
-
+from reho.plotting import plotting
 
 if __name__ == '__main__':
 
@@ -18,16 +18,18 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
+    # Set method options
+    method = {'building-scale': True}
+
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
-    # Set method options
-    method = {'building-scale': True}
-
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
+
+    plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='1a')

@@ -117,7 +117,7 @@ The Layer *Mobility* differs slightly from the other Layers in REHO as this ener
 The mobility demand is represented through an hourly passenger-kilometer (:math:`pkm`) profile for each typical day, similarly to the other end-use demand profiles. 
 The transport units represented in the model include EVs, ICEs, bikes, electric bikes and public transport. The model can optimize between the different transport modes. However, it is for now recommended to constrain the modal split, as the optimization based on cost does not reflect typical usage of the different transport modes. The `FSO reports <https://www.are.admin.ch/are/fr/home/mobilite/bases-et-donnees/mrmt.html>`_ can be used to find suitable modal split data. 
 
-.. literalinclude:: ../../scripts/examples/6a_mobility_sector.py
+.. literalinclude:: ../../scripts/examples/6a_Mobility_sector.py
    :language: python
 
 Co-optimization

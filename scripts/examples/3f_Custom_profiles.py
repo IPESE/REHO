@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids=grids, method=method)
+    units = infrastructure.initialize_units(scenario, grids=grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

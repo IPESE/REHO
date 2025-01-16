@@ -69,18 +69,18 @@ class Infrastructure:
         self.HousesOfLayer = {}
         for l in self.Layers:
             self.HousesOfLayer[l] = np.array([])
-            self.ReinforcementTrOfLayer={}
-            self.ReinforcementLineOfLayer = {}
+            self.ReinforcementOfNetwork = {}
+            self.ReinforcementOfLine = {}
             for l in grids.keys():
-                if 'ReinforcementTrOfLayer' in grids[l].keys():
-                    self.ReinforcementTrOfLayer[l] = grids[l]['ReinforcementTrOfLayer']
+                if 'ReinforcementOfNetwork' in grids[l].keys():
+                    self.ReinforcementOfNetwork[l] = grids[l]['ReinforcementOfNetwork']
                 else:
-                    self.ReinforcementTrOfLayer[l] = np.array([1e8])
+                    self.ReinforcementOfNetwork[l] = np.array([1e8])
 
-                if 'ReinforcementLineOfLayer' in grids[l].keys():
-                    self.ReinforcementLineOfLayer[l] = grids[l]['ReinforcementLineOfLayer']
+                if 'ReinforcementOfLine' in grids[l].keys():
+                    self.ReinforcementOfLine[l] = grids[l]['ReinforcementOfLine']
                 else:
-                    self.ReinforcementLineOfLayer[l] = np.array([1e8])
+                    self.ReinforcementOfLine[l] = np.array([1e8])
 
         self.StreamsOfBuilding = {}
         self.StreamsOfUnit = {}
@@ -90,7 +90,6 @@ class Infrastructure:
 
         # Parameter --------------------------------
         self.Units_flowrate = pd.DataFrame()
-        self.Grids_flowrate = pd.DataFrame()
         self.Grids_Parameters = pd.DataFrame()
         self.Grids_Parameters_lca = pd.DataFrame()
         self.Units_Parameters = pd.DataFrame()
@@ -174,11 +173,11 @@ class Infrastructure:
         self.Set['StreamsOfUnit'] = self.StreamsOfUnit
         self.Set['Lca_kpi'] = self.lca_kpis
 
-        if 'ReinforcementTrOfLayer' in self.__dict__.keys():
-            self.Set['ReinforcementTrOfLayer']=self.ReinforcementTrOfLayer
+        if 'ReinforcementOfNetwork' in self.__dict__.keys():
+            self.Set['ReinforcementOfNetwork'] = self.ReinforcementOfNetwork
 
-        if 'ReinforcementLineOfLayer' in self.__dict__.keys():
-            self.Set['ReinforcementLineOfLayer']=self.ReinforcementLineOfLayer
+        if 'ReinforcementOfLine' in self.__dict__.keys():
+            self.Set['ReinforcementOfLine'] = self.ReinforcementOfLine
 
     def generate_parameter(self):
         # Units Flows -----------------------------------------------------------
@@ -235,16 +234,11 @@ class Infrastructure:
         self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
         # Grids
-        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection']
         lca_impact_demand = [key + "_demand_cst" for key in self.lca_kpis]
         lca_impact_supply = [key + "_supply_cst" for key in self.lca_kpis]
-        for g in self.grids:
-            for h in self.House:
-                idx = pd.MultiIndex.from_tuples([(g, h)], names=['Layer', 'House'])
-                df = pd.DataFrame([[self.grids[g]['Grids_flowrate_out'], self.grids[g]['Grids_flowrate_in']]],
-                                  index=idx, columns=['Grids_flowrate_out', 'Grids_flowrate_in'])
-                self.Grids_flowrate = pd.concat([self.Grids_flowrate, df])
+        keys = [key for key in self.grids["Electricity"] if key not in lca_impact_supply + lca_impact_demand + ["ref_unit", "name", "ReinforcementOfNetwork"]]
 
+        for g in self.grids:
             df = pd.DataFrame([[self.grids[g][key] for key in keys]], index=[g], columns=keys)
             self.Grids_Parameters = pd.concat([self.Grids_Parameters, df])
 
@@ -284,10 +278,6 @@ class Infrastructure:
 
         for key in self.TemperatureSets:  # add additional sets from units to total set
             self.Set[key] = self.TemperatureSets[key]
-
-        # TODO select the AC and HP units without number place in the self.units array
-        # self.Set['AC_Tsupply'] = np.array(self.units[2]['stream_Tin'])
-        # self.Set['HP_Tsupply'] = np.array(self.units[0]['stream_Tin'])
 
         # Streams
 
@@ -341,7 +331,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     exclude_units : list of str
         The units you want to exclude, given through ``initialize_units``.
     grids : dict
-        Grids given through ``initialize_units``.
+        Grids given through ``initialize_grids``.
 
     Returns
     -------
@@ -423,7 +413,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     return units
 
 
-def initialize_units(scenario, grids=None, method={}, building_data=os.path.join(path_to_infrastructure, "building_units.csv"), district_data=None, interperiod_data=None):
+def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"), district_data=None, interperiod_data=None):
     """
     Initializes the available units for the energy system.
 
@@ -431,9 +421,6 @@ def initialize_units(scenario, grids=None, method={}, building_data=os.path.join
     ----------
     scenario : dict or None
         A dictionary containing information about the scenario.
-    method  : dict, (can be empty)
-        A dictionary containing information about the method to be used. Particularly useful for inter-period storage and district units.
-        If not specified, none of building_units_IP, district_units or district_units_IP will be considered.
     grids : dict or None, optional
         Information about the energy layers considered. If None, ``['Electricity', 'NaturalGas', 'Oil', 'Wood', 'Data', 'Heat']``.
     building_data : str, optional
@@ -441,8 +428,8 @@ def initialize_units(scenario, grids=None, method={}, building_data=os.path.join
     district_data : str or bool or None, optional
         Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
         If None, district units will not be considered. Default is None.
-    interperiod_data :  str or bool or None, optional
-        Path to the CSV file containing storage unit data. If True, storage units are initialized with 'development.csv'.
+    interperiod_data : dict or bool or None, optional
+        Paths to the CSV file(s) containing inter-period storage units data. If True, units are initialized with 'building_units_IP.csv' and 'district_units_IP.csv'.
         If None, storage units won't be considered. Default is None.
 
     Returns
@@ -456,7 +443,7 @@ def initialize_units(scenario, grids=None, method={}, building_data=os.path.join
 
     Notes
     -----
-    - The default files are located in ``reho/data/parameters``.
+    - The default files are located in ``reho/data/infrastructure/``.
     - The custom files can be given as absolute or relative path.
 
     Examples
@@ -473,11 +460,10 @@ def initialize_units(scenario, grids=None, method={}, building_data=os.path.join
 
     building_units = prepare_units_array(building_data, exclude_units, grids)
 
-    if method.get("interperiod_storage", False) and isinstance(interperiod_data, str):
-        building_units = np.concatenate([building_units, prepare_units_array(interperiod_data, exclude_units=exclude_units, grids=grids)])
-    elif method.get("interperiod_storage", False):
-        default_interperiod_units = os.path.join(path_to_infrastructure, "building_units_IP.csv")
-        building_units = np.concatenate([building_units, prepare_units_array(default_interperiod_units, exclude_units=exclude_units, grids=grids)])
+    if interperiod_data is True:
+        building_units = np.concatenate([building_units, prepare_units_array(os.path.join(path_to_infrastructure, "building_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
+    elif isinstance(interperiod_data, dict):
+        building_units = np.concatenate([building_units, prepare_units_array(interperiod_data["building_units_IP"], exclude_units=exclude_units, grids=grids)])
 
     if district_data is True:
         district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids)
@@ -486,8 +472,11 @@ def initialize_units(scenario, grids=None, method={}, building_data=os.path.join
     else:
         district_units = []
 
-    if district_data and method.get("interperiod_storage", False):
-        district_units = np.concatenate([district_units, prepare_units_array(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
+    if district_data is not None:
+        if interperiod_data is True:
+            district_units = np.concatenate([district_units, prepare_units_array(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
+        elif isinstance(interperiod_data, dict):
+            district_units = np.concatenate([district_units, prepare_units_array(interperiod_data["district_units_IP"], exclude_units=exclude_units, grids=grids)])
 
     units = {"building_units": building_units, "district_units": district_units}
 
@@ -495,7 +484,7 @@ def initialize_units(scenario, grids=None, method={}, building_data=os.path.join
 
 
 def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
-                     file=os.path.join(path_to_infrastructure, "grids.csv")):
+                     file=os.path.join(path_to_infrastructure, "layers.csv")):
     """
     Initializes grid information for the energy system.
 
@@ -506,7 +495,7 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
         and the values are dictionaries containing optional parameters ['Cost_demand_cst',
         'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst'].
     file : str, optional
-        Path to the CSV file containing grid data. Default is 'grids.csv' in the parameters folder.
+        Path to the CSV file containing grid data. Default is 'layers.csv' in the data/infrastructure/ folder.
 
     Returns
     -------
@@ -519,14 +508,13 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
 
     Notes
     -----
-    - If one wants to use its one custom grid file, he should pay attention that the name of the layer and
-      the parameters correspond.
+    - If one wants to use its one custom grid file, he should pay attention that the name of the layer and the parameters correspond.
     - Adding a layer in a custom file will not add it to the model as it is not modelized.
 
     Examples
     --------
     >>> available_grids = {'Electricity': {'Cost_demand_cst': 0.1, 'GWP_supply_cst': 0.05}, 'NaturalGas': {'Cost_supply_cst': 0.15}}
-    >>> grids = initialize_grids(available_grids, file="custom_grids.csv")
+    >>> grids = initialize_grids(available_grids, file="custom_layers.csv")
     """
 
     grid_data = file_reader(file)
@@ -537,8 +525,10 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
         if idx in available_grids.keys():
             grid_dict = row.to_dict()
             grid_dict['name'] = idx
-            grid_dict['Grids_flowrate_in'] = 1e6 * grid_dict['Grids_flowrate_in']
-            grid_dict['Grids_flowrate_out'] = 1e6 * grid_dict['Grids_flowrate_out']
+            grid_dict['Network_demand_connection'] = 1e6 * grid_dict['Network_demand_connection']
+            grid_dict['Network_supply_connection'] = 1e6 * grid_dict['Network_supply_connection']
+            grid_dict["ReinforcementOfNetwork"] = np.array(grid_dict["ReinforcementOfNetwork"].split("/")).astype(float)
+
             if 'Cost_demand_cst' in available_grids[idx]:
                 grid_dict['Cost_demand_cst'] = available_grids[idx]['Cost_demand_cst']
             if 'Cost_supply_cst' in available_grids[idx]:

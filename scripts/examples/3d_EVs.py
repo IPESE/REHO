@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'FossilFuel' : {},
+                                             'FossilFuel': {},
                                              'Mobility': {},
                                              })
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
@@ -31,6 +31,7 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Set specific parameters
+    parameters = {}
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, parameters=parameters, solver="gurobi")
@@ -41,4 +42,3 @@ if __name__ == '__main__':
 
     # Plot results
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
-

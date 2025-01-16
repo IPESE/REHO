@@ -490,10 +490,10 @@ Grids are initialized with:
 
 .. code-block:: python
 
-    grids = infrastructure.initialize_grids(file="reho/data/infratructure/grids.csv")
+    grids = infrastructure.initialize_grids(file="reho/data/infratructure/layers.csv")
 
 
-Where the file :code:`grids.csv` contains the default parameters for the different energy layers available.
+Where the file :code:`layers.csv` contains the default parameters for the different energy layers available.
 
 To use custom prices, there are two options:
 
@@ -501,7 +501,7 @@ To use custom prices, there are two options:
 
 .. code-block:: python
 
-    grids = infrastructure.initialize_grids(file="my_custom_grids.csv")
+    grids = infrastructure.initialize_grids(file="my_custom_layers.csv")
 
 2. Use the :code:`Cost_supply_cst` and :code:`Cost_demand_cst` parameters in the :code:`initialize_grids()` function:
 

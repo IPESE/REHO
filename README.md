@@ -40,7 +40,7 @@ Joseph Loustau
 </picture>
 
 ## Licence
-Copyright (C) <2021-2024> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
+Copyright (C) <2021-2025> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
 
 Licensed under the Apache License, (the "License");
 you may not use this file except in compliance with the License.

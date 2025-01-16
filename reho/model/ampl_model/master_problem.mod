@@ -65,10 +65,11 @@ lambda[f,h] = lambda_binary[f,h];
 # Network balances
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
+param Network_demand_connection{l in ResourceBalances} default 0;
+param Network_supply_connection{l in ResourceBalances} default 0;
 
 param Grid_supply{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in Time[p]};
 param Grid_demand{l in ResourceBalances, f in FeasibleSolutions, h in House, p in Period, t in  Time[p]};
-param Grids_flowrate{l in ResourceBalances, h in House} default 1e9;
 param Grid_usage_max_demand default 0;
 param Grid_usage_max_supply default 0;
 
@@ -80,8 +81,8 @@ param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 def
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
 
-var Network_supply {l in ResourceBalances, p in Period, t in Time[p]} >= 0 , <=1e9;
-var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0 , <=1e9;
+var Network_supply {l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= Network_supply_connection[l];
+var Network_demand{l in ResourceBalances, p in Period, t in Time[p]} >= 0, <= Network_demand_connection[l];
 var Network_supply_GWP {l in ResourceBalances, p in Period, t in Time[p]} >= 0;
 var Network_demand_GWP{l in ResourceBalances, p in Period, t in Time[p]} >= 0;
 
@@ -106,17 +107,6 @@ subject to TOTAL_profile_c2{l in ResourceBalances, h in House,p in Period,t in T
 Profile_house[l,h,p,t] =  sum{f in FeasibleSolutions} ( (Grid_supply[l,f,h,p,t] - Grid_demand[l,f,h,p,t]) * lambda[f,h])
 ;
 
-#subject to TOTAL_profile_c3{l in ResourceBalances, p in Period,t in Time[p]}:
-#Network_supply[l,p,t] <=  sum{f in FeasibleSolutions, h in House} ( Grid_supply[l,f,h,p,t]  * lambda[f,h] * dp[p] * dt[p]) ;
-
-#subject to TOTAL_profile_c4{l in ResourceBalances, p in Period,t in Time[p]}:
-#Network_demand[l,p,t] <= sum{f in FeasibleSolutions, h in House} ( Grid_demand[l,f,h,p,t]  * lambda[f,h] * dp[p] * dt[p]) ;
-
-subject to TOTAL_line_c5{l in ResourceBalances, p in Period,t in Time[p]}:
- sum{f in FeasibleSolutions, h in House} (Grid_supply[l,f,h,p,t] * lambda[f,h]) <= sum{h in House} Grids_flowrate[l,h];
-
-subject to TOTAL_line_c6{l in ResourceBalances, p in Period,t in Time[p]}:
- sum{f in FeasibleSolutions, h in House} (Grid_demand[l,f,h,p,t] * lambda[f,h]) <= sum{h in House} Grids_flowrate[l,h];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -157,7 +147,7 @@ param Cost_demand_network{l in ResourceBalances, p in Period,t in Time[p]} defau
 
 var Costs_op;
 var Costs_House_op{h in House};
-var ExternalEV_Costs_op{p in Period,t in Time[p]};  # TODO : to be put >= 0  if no mobility ?
+var ExternalEV_Costs_op{p in Period,t in Time[p]};
 
 subject to Costs_opex_house{h in House}:
 Costs_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in PeriodStandard, t in Time[p]} lambda[f,h]*(Cost_supply_network[l,p,t]*Grid_supply[l,f,h,p,t] - Cost_demand_network[l,p,t]*Grid_demand[l,f,h,p,t])* dp[p] * dt[p]; 
@@ -166,7 +156,7 @@ subject to Costs_opex:
 Costs_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t]) + sum{p in PeriodStandard, t in Time[p]}(ExternalEV_Costs_op[p,t]);
 
 subject to ExternalEV_Costs_positive{p in Period,t in Time[p]}:
-ExternalEV_Costs_op[p,t] >=0 ; # TODO : add the functionnality that this constraint can be disabled if we allow the district to sell more energy than it imports
+ExternalEV_Costs_op[p,t] >=0 ;
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES
@@ -176,6 +166,7 @@ param Cost_inv2{u in Units} default 0;    # CHF/...
 param lifetime {u in Units} default 0;    # years
 
 var Costs_Unit_inv{u in Units} >= -1e-4;
+var Costs_Unit_rep{u in Units} >= -1e-4;
 var Costs_inv >= -1e-4;
 var Costs_rep >= -1e-4;
 var Costs_House_inv{h in House} >= -1e-4;
@@ -185,33 +176,36 @@ var Costs_tot;
 var DHN_inv_house{h in House} >= 0;
 
 # Transformer additional capacity
-set ReinforcementTrOfLayer{ResourceBalances} default {};
-var TransformerCapacity{l in ResourceBalances} in ReinforcementTrOfLayer[l];
-var Use_TransformerCapacity{l in ResourceBalances} binary;
-param CostTransformer_inv1{l in ResourceBalances}>=0 default 0;
-param CostTransformer_inv2{l in ResourceBalances}>=0 default 0;
-param GWP_Transformer1{l in ResourceBalances} default 0;
-param GWP_Transformer2{l in ResourceBalances} default 0;
-param Transformer_Ext{l in ResourceBalances} default 1e8;
-param Transformer_Lifetime{l in ResourceBalances} default 20;
+set ReinforcementOfNetwork{ResourceBalances} default {};
+var Network_capacity{l in ResourceBalances} in ReinforcementOfNetwork[l];
+var Use_Network_capacity{l in ResourceBalances} binary;
+param Cost_network_inv1{l in ResourceBalances}>=0 default 0;
+param Cost_network_inv2{l in ResourceBalances}>=0 default 0;
+param GWP_network_1{l in ResourceBalances} default 0;
+param GWP_network_2{l in ResourceBalances} default 0;
+param Network_ext{l in ResourceBalances} default 1000;
+param Network_lifetime{l in ResourceBalances} default 20;
 
 subject to transformer_additional_capacity_c1{l in ResourceBalances}:
-Use_TransformerCapacity[l] * (max {i in ReinforcementTrOfLayer[l]} i)>= TransformerCapacity[l]-Transformer_Ext[l];
+Use_Network_capacity[l] * (max {i in ReinforcementOfNetwork[l]} i)>= Network_capacity[l]-Network_ext[l];
 
 subject to transformer_additional_capacity_c2{l in ResourceBalances}:
-TransformerCapacity[l]>=Transformer_Ext[l];
+Network_capacity[l]>=Network_ext[l];
 
 subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
 
-subject to Costs_Unit_replacement:
-Costs_rep= tau* sum{u in Units diff {"DHN_pipes_district"},n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
+subject to Costs_Unit_replacement{u in Units diff {"DHN_pipes_district"}}:
+Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
+
+subject to Costs_replacement:
+Costs_rep =  sum{u in Units diff {"DHN_pipes_district"}} Costs_Unit_rep[u];
 
 subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] =sum{f in FeasibleSolutions} lambda[f,h] * Costs_inv_rep_SPs[f,h] + DHN_inv_house[h];
 
 subject to Costs_capex:
-Costs_inv = tau* (sum{l in ResourceBalances} (CostTransformer_inv1[l]*Use_TransformerCapacity[l]+CostTransformer_inv2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l]))) + sum{u in Units} (Costs_Unit_inv[u])) + Costs_rep + sum{h in House} (Costs_House_inv[h]);
+Costs_inv = sum{h in House}(Costs_House_inv[h]) + tau* ( sum{u in Units}(Costs_Unit_inv[u]) + Costs_rep + sum{l in ResourceBalances} (Cost_network_inv1[l]*Use_Network_capacity[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l]))) );
 
 subject to cft_costs_house{h in House}: 
 Costs_House_cft[h] = sum{f in FeasibleSolutions} (lambda[f,h] * Costs_ft_SPs[f,h]);
@@ -249,7 +243,7 @@ subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
 
 subject to CO2_construction:
-GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_Transformer1[l]*Use_TransformerCapacity[l]+GWP_Transformer2[l] * (TransformerCapacity[l]-Transformer_Ext[l] * (1- Use_TransformerCapacity[l])))/Transformer_Lifetime[l];
+GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_network_1[l]*Use_Network_capacity[l]+GWP_network_2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l])))/Network_lifetime[l];
 
 subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} (GWP_supply[l,p,t] * Network_supply_GWP[l,p,t] - GWP_demand[l,p,t] * Network_demand_GWP[l,p,t]);
@@ -349,11 +343,11 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 #--------------------------------------------------------------------------------------------------------------------#
 # Transformer capacity constraints
 #--------------------------------------------------------------------------------------------------------------------#
-subject to TransformerCapacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_supply[l,p,t] <= TransformerCapacity[l] * dp[p] * dt[p];
+subject to Network_capacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
+Network_supply[l,p,t] <= Network_capacity[l] * dp[p] * dt[p];
 
-subject to TransformerCapacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
-Network_demand[l,p,t] <= TransformerCapacity[l] * dp[p] * dt[p];
+subject to Network_capacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
+Network_demand[l,p,t] <= Network_capacity[l] * dp[p] * dt[p];
 
 subject to EMOO_grid_constraint {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
 Network_supply[l,p,t]-Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{ts in Time[p]}((Network_supply[l,p,ts]-Network_demand[l,p,ts])*dt[p]/card(Time[p])) else 1e9;

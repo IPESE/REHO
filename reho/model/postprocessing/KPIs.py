@@ -673,12 +673,17 @@ def build_df_Economics(df_Results, df_profiles):
     df_grid_cost['price_curtailment'] = curtailment * df_grid_t.Cost_demand
     df_grid_impact['impact_curtailment'] = curtailment * df_grid_t.GWP_demand
 
+    if "EV_district" in df_unit.index.get_level_values(0).unique():
+        df_grid_cost["price_demand"] += df_grid_t["EV_revenue_ext"].replace(np.nan, 0)
+        df_grid_cost["price_supply"] += df_grid_t["EV_cost_ext"].replace(np.nan, 0)
+
     df_grid_cost = df_grid_cost.mul(period_duration, level='Period', axis=0).groupby(level=['Hub', 'Layer']).sum()
     df_grid_impact = df_grid_impact.mul(period_duration, level='Period', axis=0).groupby(level=['Hub', 'Layer']).sum()
 
     # Unit
     df_unit = df_unit.groupby(level=['Unit', 'Hub']).sum()
     df_unit_cost = df_unit.reset_index().pivot(index='Hub', values='Costs_Unit_inv', columns='Unit')
+    df_unit_cost += df_unit.reset_index().pivot(index='Hub', values='Costs_Unit_rep', columns='Unit')
     df_unit_impact = df_unit.reset_index().pivot(index='Hub', values='GWP_Unit_constr', columns='Unit')
     df_unit_cost.loc['Network', :] = df_unit_cost.sum()
     df_unit_impact.loc['Network', :] = df_unit_impact.sum()

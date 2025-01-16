@@ -309,8 +309,6 @@ reho/data/QBuildings/*
 
 # Documentation
 docs/_build
-docs/_autosummary
-docs/_build
 docs/sections/_autosummary
 
 # Test

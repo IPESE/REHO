@@ -33,7 +33,7 @@ if __name__ == '__main__':
                                              'NaturalGas': {},
                                              'Heat': {}})
 
-    units = infrastructure.initialize_units(scenario, method, grids, district_data=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

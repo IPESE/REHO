@@ -69,7 +69,7 @@ def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, e
     from_network_onsite = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "Network")]["Supply_MWh"].sum()
 
     if elec_storage_use:
-        dest = "Electrical_consumption_bp"
+        dest = "Electrical_consumption"
     else:
         dest = "Electrical_consumption"
 
@@ -99,10 +99,10 @@ def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, e
         energy_stored_loop = 0
         for elec_storage in elec_storage_list:
             # 8 Electrical cons before elec storage to storage device
-            df_label, df_stv, dev_flow_in = add_flow('Electrical_consumption_bp', elec_storage, 'Electricity', elec_storage,
+            df_label, df_stv, dev_flow_in = add_flow('Electrical_consumption', elec_storage, 'Electricity', elec_storage,
                                                      'Demand_MWh', df_annuals, df_label, df_stv)
 
-            df_label, df_stv, dev_stor_out = add_flow(elec_storage, 'Electrical_consumption_bp', 'Electricity',
+            df_label, df_stv, dev_stor_out = add_flow(elec_storage, 'Electrical_consumption', 'Electricity',
                                                       elec_storage,
                                                       'Supply_MWh', df_annuals, df_label, df_stv)
 
@@ -112,11 +112,11 @@ def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, e
         rSOC_to_elec_onsite = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "rSOC")][
             "Supply_MWh"].sum()  # elec_tot_onsite - df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "Network")]["Supply_MWh"].sum()
 
-        df_label = update_label('Electrical_consumption_bp', 'Electrical_consumption', df_label)
-        df_stv['Electrical_consumption_bp_to_Electrical_consumption'] = [
-            df_label.loc['Electrical_consumption_bp', 'pos'],
-            df_label.loc['Electrical_consumption', 'pos'],
-            float(from_network_onsite + PV_to_elec_onsite + rSOC_to_elec_onsite - elec_to_storage - to_Network + energy_stored_loop)]
+        #df_label = update_label('Electrical_consumption', 'Electrical_consumption', df_label)
+        #df_stv['Electrical_consumption_to_Electrical_consumption'] = [
+        #    df_label.loc['Electrical_consumption', 'pos'],
+        #    df_label.loc['Electrical_consumption', 'pos'],
+        #    float(from_network_onsite + PV_to_elec_onsite + rSOC_to_elec_onsite - elec_to_storage - to_Network + energy_stored_loop)]
 
     return df_stv, df_label
 
@@ -193,8 +193,38 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
                                    df_annuals, df_label, df_stv)
 
     # 10 Device to CH4
-    #df_label, df_stv, _ = add_flow('Biomethane', 'rSOC', 'Biomethane', 'Network', 'Supply_MWh',
-    #                               df_annuals, df_label, df_stv)
+    df_label, df_stv, _ = add_flow('Hydrogen_grid', 'rSOC_district', 'Hydrogen', 'Network', 'Supply_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    # 10 Device to CH4
+    df_label, df_stv, _ = add_flow('rSOC_district', 'Hydrogen_grid_feed_in', 'Hydrogen', 'Network', 'Demand_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    # 10 Device to CH4
+    df_label, df_stv, _ = add_flow('MTR_district', 'Biomethane_grid_feed_in', 'Biomethane', 'Network', 'Demand_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    if df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == "MTR")]["Supply_MWh"].sum() > 0:
+
+        units_on_bio_CH4_1 = df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals["Demand_MWh"] > 0)]["Hub"]
+        NG_use = 0
+        for u in units_on_bio_CH4_1:
+            df_label, df_stv, _ = add_flow('MTR', u, 'NaturalGas', 'MTR',
+                                           'Demand_MWh', df_annuals, df_label, df_stv, adjustment=NG_use)
+
+            NG_use = NG_use + df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == u)][
+                "Demand_MWh"].sum()
+
+    if df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == "MTR_district")]["Supply_MWh"].sum() > 0:
+
+        units_on_bio_CH4_2 = df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals["Demand_MWh"] > 0)]["Hub"]
+        NG_use = 0
+        for u in units_on_bio_CH4_2:
+            df_label, df_stv, _ = add_flow('MTR_district', u, 'NaturalGas', 'MTR_district',
+                                           'Supply_MWh',df_annuals, df_label, df_stv, adjustment=NG_use)
+
+            NG_use = NG_use + df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == u)]["Demand_MWh"].sum()
+
     return df_label, df_stv
 
 
@@ -413,7 +443,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
 
     # 1 Elec Grid to Elec Consumption of the building(s) or before electricity storage (=Before Phase, bp) if present
     df_label, df_stv, _ = add_flow('Electrical_grid', 'Electrical_consumption', 'Electricity', 'Network', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv, elec_storage_use, 'Electrical_consumption_bp')
+                                   df_annuals, df_label, df_stv, elec_storage_use, 'Electrical_consumption')
 
     # 2 Elec Cons to Elec Appliances
     df_label, df_stv, _ = add_flow('Electrical_consumption', 'Electrical_appliances', 'Electricity', 'Building',
@@ -443,7 +473,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     elec_storage_energy_out = 0
     for elec_storage in elec_storage_list:
         # 8 Electrical cons before elec storage to storage device
-        df_label, df_stv, dev_flow_in = add_flow('Electrical_consumption_bp', elec_storage, 'Electricity', elec_storage,
+        df_label, df_stv, dev_flow_in = add_flow('Electrical_consumption', elec_storage, 'Electricity', elec_storage,
                                                  'Demand_MWh', df_annuals, df_label, df_stv)
         elec_storage_energy_in += dev_flow_in
 
@@ -453,13 +483,13 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         elec_storage_energy_out += dev_flow_out
 
     # 10 Electrical cons before elec storage to Electr cons
-    if elec_storage_use:
-        df_label = update_label('Electrical_consumption_bp', 'Electrical_consumption', df_label)
-        Ec_after_bp = df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] != 'Network')].Demand_MWh.sum()
-        Ec_after_bp -= elec_storage_energy_out
-        df_stv['Electrical_consumption_bp_to_Electrical_consumption'] = [df_label.loc['Electrical_consumption_bp', 'pos'],
-                                                                         df_label.loc['Electrical_consumption', 'pos'],
-                                                                         float(Ec_after_bp - elec_storage_energy_in)]
+    #if elec_storage_use:
+    #    df_label = update_label('Electrical_consumption', 'Electrical_consumption', df_label)
+    #    Ec_after_bp = df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] != 'Network')].Demand_MWh.sum()
+    #    Ec_after_bp -= elec_storage_energy_out
+    #    df_stv['Electrical_consumption_to_Electrical_consumption'] = [df_label.loc['Electrical_consumption', 'pos'],
+    #                                                                     df_label.loc['Electrical_consumption', 'pos'],
+    #                                                                     float(Ec_after_bp - elec_storage_energy_in)]
 
     # 11 EV and charging station infrastructure
     # check if EV device
@@ -517,7 +547,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
 
         # 7 Device to Elec Consumption (or before electricity storage if present)
         df_label, df_stv, _ = add_flow(device, 'Electrical_consumption', 'Electricity', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv, elec_storage_use, 'Electrical_consumption_bp')
+                                       df_annuals, df_label, df_stv, elec_storage_use, 'Electrical_consumption')
 
         # 8 Device to Cooling
         df_label, df_stv, _ = add_flow(device, 'Cooling', 'Cooling', device, 'Supply_MWh',

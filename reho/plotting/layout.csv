@@ -7,6 +7,7 @@ GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark,,
 ,,,,,,,
 Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark,#8B4513,brown
 NaturalGas_grid,Natural gas import,NG,Gaz naturel,#413D3A,ardoise,#413D3A,ardoise
+NaturalGas_grid_feed_in,Natural gas export,NG,Gaz naturel,#413D3A,ardoise,#413D3A,ardoise
 NG_Boiler,Gas boiler,NGB,Chaudière à gaz,#413D3A,ardoise,#413D3A,ardoise
 NG_Boiler_district,District gas boiler,NGB,Chaudière à gaz (district),#413D3A,ardoise,#413D3A,ardoise
 NG_Cogeneration,NG cogeneration,COGEN,Cogénération,#413D3A,ardoise,#413D3A,ardoise
@@ -18,6 +19,8 @@ WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown,#A2CD5A,greenlight
 Wood,Wood network,Wood,Bois,#8B4513,brown,#556B2F,green
 Biomethane_grid,Biomethane import,biomethane,bio-méthane,#8B4513,brown,#556B2F,green
 Biomethane_grid_feed_in,Biomethane export,biomethane,bio-méthane,#8B4513,brown,#556B2F,green
+Hydrogen_grid,Hydrogen import,Hydrogène,Hydrogène,#82a4d6,lightblue,#9AC0CD,bluegrey
+Hydrogen_grid_feed_in,Hydrogen export,Hydrogène,Hydrogène,#82a4d6,lightblue,#9AC0CD,bluegrey
 ,,,,,,,
 Electricity,Electrical grid,Elec,Réseau électrique,#007480,canard,#00008B,darkblue
 Electrical_grid,Electricity import,Elec in,Électricité (achat),#007480,canard,#00008B,darkblue
@@ -25,7 +28,7 @@ Electrical_grid_feed_in,Electricity export,Elec out,Électricité (vente),#4d9ea
 Electrical_grid_Cogeneration,Electricity (cogen),Elec COGEN,Électricité (cogénération),#413D3A,ardoise,#413D3A,ardoise
 PV_SC,Electricity (self-consumption),Elec SC,Électricité (auto-consommation),#ffd980,yellow_light,#EEAD0E,darkyellow
 Electrical_appliances,Electrical appliances,EL,Électricité domestique,#007480,canard,#76EEC6,turquoise
-Electrical_consumption,Electrical distribution board,EL,Électricité consommée,#007480,canard,#0000FF,royalblue
+Electrical_consumption,Electricity,EL,Électricité consommée,#007480,canard,#0000FF,royalblue
 Electrical_consumption_bp,Electrical distribution board,EL,Électricité consommée + stockage,#007480,canard,#0000FF,royalblue
 ,,,,,,,
 ElectricalHeater,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light,#9A32CD,purple

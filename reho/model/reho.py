@@ -449,7 +449,7 @@ class REHO(MasterProblem):
             #TODO: Add variables
             df_actor = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_District"][
                 ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
-                 'owner_portfolio', 'C_rent_fix', 'renter_expense']]
+                 'owner_portfolio', 'C_rent_fix', 'renter_expense','renter_subsidies','owner_subsidies', 'Costs_House_init', 'is_ins']]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
             df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors_tariff"]
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors"]
@@ -509,11 +509,23 @@ class REHO(MasterProblem):
         df_Annuals = pd.concat([df, df_network]).sort_index()
 
         # df_Buildings
-        df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
-        df_Buildings.index.names = ['Hub']
-        for item in ['x', 'y', 'z', 'geometry']:
-            if item in df_Buildings.columns:
-                df_Buildings.drop([item], axis=1)
+        if self.method['refurbishment']:
+            df_Buildings = self.get_final_SPs_results(MP_selection, 'df_Buildings')
+            df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')]
+            df_Buildings = df_Buildings.droplevel(['Hub', 'Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution'])
+            df_Buildings.index.names = ['Hub']
+            for item in ['x', 'y', 'z', 'geometry']:
+                if item in df_Buildings.columns:
+                    df_Buildings.drop([item], axis=1)
+
+        else:
+            df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
+            df_Buildings.index.names = ['Hub']
+            for item in ['x', 'y', 'z', 'geometry']:
+                if item in df_Buildings.columns:
+                    df_Buildings.drop([item], axis=1)
+
+        df_Buildings = df.sort_index(level='Hub')
 
         if self.method['use_pv_orientation'] or self.method['use_facades']:
             # PV_Surface

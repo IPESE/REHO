@@ -14,9 +14,12 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df2 = get_ampl_data(ampl, 'Costs_House_inv')
         df2 = df2.rename(columns={'Costs_House_inv': 'Costs_inv'})
-        tau = ampl.getParameter('tau').getValues().toList()
+        tau = ampl.getParameter('tau').getValues().toList() #25 years, i = 0.02
+        tau_ins = ampl.getParameter('tau_ins').getValues().toList() #50 years, i = 0.02
+
         df2['Costs_inv'] = df2['Costs_inv'] * tau[0]
         df2['ANN_factor'] = tau[0]
+        df2['ANN_factor_ins'] = tau_ins[0]
 
         df2['Costs_grid_connection'] = get_ampl_data(ampl, 'Costs_grid_connection_House', multi_index=True).groupby(
             level=1).sum()  # yearly cost for grid connection
@@ -40,6 +43,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df75 = get_ampl_data(ampl, 'EMOO_GWP')
         df76 = get_ampl_data(ampl, 'EMOO_grid')
 
+        df8 = get_ampl_data(ampl, 'Costs_ins') * tau_ins[0]
+
         df_N1 = get_ampl_data(ampl, 'Costs_op')  # without the comfort penalty costs
         df_N2 = get_ampl_data(ampl, 'Costs_inv')
         df_N2['Costs_inv'] = df_N2['Costs_inv'] * tau[0]
@@ -50,9 +55,10 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_N4 = pd.DataFrame({'Costs_ft': [df4.sum()['Costs_ft']]})
         df_N5 = get_ampl_data(ampl, 'GWP_op')
         df_N6 = get_ampl_data(ampl, 'GWP_constr')
+        df_N8 = pd.DataFrame({'Costs_ins': [df8.sum()['Costs_ins']]})
 
-        df_PerformanceBuilding = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
-        df_PerformanceNetwork = pd.concat([df_N1, df_N2, df_N3, df_N4, df_N5, df_N6], axis=1)
+        df_PerformanceBuilding = pd.concat([df1, df2, df3, df4, df5, df6, df8], axis=1)
+        df_PerformanceNetwork = pd.concat([df_N1, df_N2, df_N3, df_N4, df_N5, df_N6, df_N8], axis=1)
         df_PerformanceNetwork = df_PerformanceNetwork.rename(index={0: 'Network'})
 
         df_Performance = pd.concat([df_PerformanceBuilding, df_PerformanceNetwork], axis=0)
@@ -419,6 +425,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         # Building
         df1 = get_ampl_data(ampl, 'Costs_inv_rep_SPs', multi_index=True)
         df2 = get_ampl_data(ampl, 'Costs_ft_SPs', multi_index=True)
+
         df_Buildings = pd.concat([df1, df2], axis=1)
         df_Buildings.index.names = ['FeasibleSolution', 'Hub']
         df_Results["df_Buildings"] = df_Buildings.sort_index()
@@ -451,6 +458,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df7 = np.sqrt(np.sum(df_House[["diameter_max"]] ** 2)).to_frame().transpose()
         df8 = get_ampl_data(ampl, 'DHN_inv')
         df_District = pd.concat([df_District, df7, df8], axis=1)
+
     df_District = df_District.set_index(pd.Index(["Network"]))
     df_District = pd.concat([df_House, df_District], axis=0)
     df_District.index.names = ['Hub']
@@ -575,11 +583,24 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_lca_operation"] = LCA_op
 
     if method["actors_problem"]:
+        df1 = get_ampl_data(ampl, 'renter_expense')
+        df2 = get_ampl_data(ampl, 'utility_portfolio')
+        df3 = get_ampl_data(ampl, 'owner_portfolio')
+        df_Results["df_Actors_expense"] = pd.concat([df1, df2, df3], axis=1)
+
         df1 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True).groupby(level=(0, 2)).sum()
         df2 = get_ampl_data(ampl, 'Cost_supply_district', multi_index=True).groupby(level=(0, 2)).sum()
         df3 = get_ampl_data(ampl, 'Cost_self_consumption', multi_index=True).groupby(level=1).sum()
         df3 = pd.concat({'Electricity': df3})
         df_Results["df_Actors_tariff"] = pd.concat([df1, df2, df3], axis=1)
+
+        df1 = get_ampl_data(ampl, 'Cost_self_consumption', multi_index=True)
+        df1 = pd.concat({'Electricity': df1})
+        df2 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True)
+        df3 = get_ampl_data(ampl, 'Cost_supply_district', multi_index=True)
+        df_actor_tariff = pd.concat([df1,df2,df3], axis=1)
+        df_actor_tariff.index.names = ['ResourceBalances', 'FeasibleSolutions', 'Hub']
+        df_Results["df_Actors_tariff_f"] = df_actor_tariff.sort_index()
 
         df_Results["df_Actors"] = get_ampl_data(ampl, 'objective_functions')
 
@@ -591,9 +612,14 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df5 = get_ampl_data(ampl, 'owner_portfolio')
         df6 = get_ampl_data(ampl, 'renter_expense')
         df7 = get_ampl_data(ampl, 'C_rent_fix')
-        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
-        df_8 = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
-        df_Actors = pd.concat([df_Actors, df_8], axis=0)
+        df8 = get_ampl_data(ampl, 'renter_subsidies')
+        df9 = get_ampl_data(ampl, 'owner_subsidies')
+        df10 = get_ampl_data(ampl, 'is_ins')
+        df11 = get_ampl_data(ampl, 'Costs_House_init')
+
+        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11], axis=1)
+        df_network = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
+        df_Actors = pd.concat([df_Actors, df_network], axis=0)
         df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)
         df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
 

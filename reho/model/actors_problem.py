@@ -1,5 +1,6 @@
 from scipy.stats import qmc
 
+#from reho.model.plot3 import Owner_Epsilon
 from reho.model.reho import *
 
 __doc__ = """
@@ -29,27 +30,21 @@ class ActorsProblem(REHO):
     def execute_actors_problem(self, n_sample=10, bounds=None, actor="Owners"):
         self.method["actors_problem"] = True
         self.method["include_all_solutions"] = True
-        self.method['building-scale'] = True
-        # self.method['district-scale'] = True
+        # self.method['building-scale'] = True
+        self.method['district-scale'] = True
         self.scenario["Objective"] = "TOTEX_bui"
         self.set_indexed["ActorObjective"] = np.array([actor])
-        if bounds is not None:
-            sampler = qmc.LatinHypercube(d=2)
-            sample = sampler.random(n=n_sample)
-            l_bound = [bounds[key][0] for key in ["Utility", "Owners"]]
-            u_bound = [bounds[key][1] for key in ["Utility", "Owners"]]
-            samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio'])
-            self.samples = samples.round(4)
-        else:
-            self.samples = pd.DataFrame([[None, None]] * n_sample, columns=['utility_portfolio', 'owner_portfolio'])
+        self.samples = pd.DataFrame([[None, None]] * n_sample, columns=['utility_portfolio', 'owner_portfolio_rate'])
 
         Scn_ID = self.scenario['name']
-        self.pool = mp.Pool(mp.cpu_count())
-        results = {ids: self.pool.apply_async(self.run_actors_optimization, args=(self.samples, ids)) for ids in self.samples.index}
-        while len(results[list(self.samples.index)[-1]].get()) != 3:
-            time.sleep(1)
+        #self.pool = mp.Pool(mp.cpu_count())
+        #results = {ids: self.pool.apply_async(self.run_actors_optimization, args=(self.samples, ids)) for ids in self.samples.index}
+        results = self.run_actors_optimization(self.samples, 0)
+        #while len(results[list(self.samples.index)[-1]].get()) != 3:
+        #    time.sleep(1)
         for ids in self.samples.index:
-            df_Results, df_Results_MP, solver_attributes = results[ids].get()
+            df_Results, df_Results_MP, solver_attributes = results
+            #df_Results, df_Results_MP, solver_attributes = results[ids].get()
             solver_attributes = solver_attributes.droplevel('Iter').iloc[[-1]].copy()
             self.add_df_Results_MP(Scn_ID, ids, self.iter, df_Results_MP, solver_attributes)    # store results MP (pool.apply_async don't store it)
             self.add_df_Results(None, Scn_ID, ids, self.scenario)   # process results based on results MP
@@ -60,13 +55,13 @@ class ActorsProblem(REHO):
             if self.results_MP[self.scenario["name"]][i] is not None:
                 self.samples.loc[i, "objective"] = self.results_MP[self.scenario["name"]][i][0]["df_District"]["Objective"]["Network"]
 
-        self.pool.close()
+        #self.pool.close()
         gc.collect()  # free memory
 
     def run_actors_optimization(self, samples, ids):
         if any([samples[col][0] for col in samples]):  # if samples contain values
             param = samples.iloc[ids]
-            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_min': param['owner_portfolio']}
+            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_rate': param['owner_portfolio_rate']}
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
         try:
             scn = self.scenario["name"]
@@ -119,11 +114,22 @@ class ActorsProblem(REHO):
                 if self.method['parallel_computation']:
                     results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(SP_scenario_init, Scn_ID, s, h, None, beta)) for h in
                                self.infrastructure.houses}
-                    while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
-                        time.sleep(1)
-                    for h in self.infrastructure.houses:
-                        (df_Results, attr) = results[h].get()
-                        self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
+                    if self.method['refurbishment']:
+                        while len(results[list(self.buildings_data.keys())[-1]].get()) != 3:
+                            time.sleep(1)
+                        for h in self.infrastructure.houses:
+                            df_Results, df_Results2,attr = results[h].get()
+                            self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
+                            self.feasible_solutions += 1
+                            self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results2, attr)
+                            self.feasible_solutions -= 1
+                        self.feasible_solutions += 1
+                    else:
+                        while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                            time.sleep(1)
+                        for h in self.infrastructure.houses:
+                            df_Results, attr = results[h].get()
+                            self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
                 self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increases
         self.pool.close()
     
@@ -134,41 +140,126 @@ class ActorsProblem(REHO):
         writer = open(os.path.join(path_to_configurations, filename), 'wb')
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], writer)
 
-    def set_actors_boundary(self, bounds, n_sample=1):
-        sampler = qmc.LatinHypercube(d=2)
+    def set_actors_boundary(self, bounds, n_sample=1, risk_factor=0):
+        sampler = qmc.Sobol(d=3)
         sample = sampler.random(n=n_sample)
-        l_bound = [bounds[key][0] for key in ["Utility", "Owners"]]
-        u_bound = [bounds[key][1] for key in ["Utility", "Owners"]]
-        samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio'])
+        l_bound = [bounds[key][0] for key in ["Utility", "Owners", "PIR"]]
+        u_bound = [bounds[key][1] for key in ["Utility", "Owners", "PIR"]]
+        samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio','owner_portfolio_rate'])
+        samples = samples.sort_values(by='owner_portfolio').reset_index(drop=True)
         self.samples = samples.round(4)
-        self.parameters = {'utility_portfolio_min': samples['utility_portfolio'].item(), 'owner_portfolio_min': samples['owner_portfolio'].item()}
+        # sort the utlity portfolio
+        self.parameters['risk_factor'] = risk_factor
 
-    def actor_decomposition_optimization(self, Pareto_ID=0, actor='Renters'):
+    def actor_decomposition_optimization(self, scenario, actor='Renters'):
+        self.scenario["Objective"] = scenario["Objective"]
         self.method['building-scale'] = False
         self.method['district-scale'] = True
-        self.pool = mp.Pool(mp.cpu_count())
         self.set_indexed["ActorObjective"] = np.array([actor])
-        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
-        Scn_ID = self.scenario['name']
 
-        self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=None)
+        Scn_ID = self.scenario['name']
+        results = {
+            ids: self.run_actor_decomposition_optimization(self.samples, Scn_ID, ids)
+            for ids in self.samples.index}
+
+        self.logger.info('OPTIMIZATION FINISHED')
+
+
+    def run_actor_decomposition_optimization(self, samples, Scn_ID, ids):
+        self.iter = 0
+
+        param = samples.iloc[ids]
+        self.parameters['utility_portfolio_min'] = param['utility_portfolio']
+        self.parameters["renter_expense_max"] = actors.generate_renter_expense_max(self.buildings_data, self.parameters)
+        if param['owner_portfolio'] <= 0.001:
+            self.parameters['owner_portfolio_min'] = [0] * len(self.buildings_data)
+        else:
+            self.parameters['owner_portfolio_min'] = param['owner_portfolio'] * np.array([self.results_MP["Owners"][0][0]['df_Actors_expense']['owner_portfolio'][building]
+                                                      * self.parameters["renter_expense_max"][idx]
+                                                      / self.results_MP["Owners"][0][0]['df_Actors_expense']['renter_expense'][building]
+                                                      for idx, building in enumerate(list(self.buildings_data.keys()))])
+
+        self.parameters['owner_portfolio_rate'] = param['owner_portfolio_rate']
+
+        self.pool = mp.Pool(mp.cpu_count())
+        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
+
+        self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
+        self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=ids, epsilon_init=None)
         self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=ids)
 
         while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
             self.iter += 1
-            self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
-            self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+            self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
+            self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=ids)
+            self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
+            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=ids)
 
-            if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
+            if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=ids) and (self.iter > 3):
                 break
 
         # Finalization
         self.logger.info(self.stopping_criteria)
         self.iter += 1
-        self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
-        self.pool.close()
+        self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
+
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=ids)
+        self.add_df_Results(None, Scn_ID, ids, self.scenario)
+        self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
+        self.get_KPIs(Scn_ID, ids)# process results based on results MP
+
+    def add_dual_Results(self, Scn_ID, Pareto_ID):
+        self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'] = pd.DataFrame()
+        self.results[Scn_ID][Pareto_ID]['df_Utility_Duals'] = pd.DataFrame()
+        self.results[Scn_ID][Pareto_ID]['df_Owners_Duals'] = pd.DataFrame()
+        self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'].index.name = 'iter'
+        self.results[Scn_ID][Pareto_ID]['df_Utility_Duals'].index.name = 'iter'
+        self.results[Scn_ID][Pareto_ID]['df_Owners_Duals'].index.name = 'iter'
+
+        self.results[Scn_ID][Pareto_ID]['df_Duals_t'] = {}
+        self.results[Scn_ID][Pareto_ID]['df_mu'] = {}
+        self.results[Scn_ID][Pareto_ID]['Epsilon'] = {}
+
+        for i in range(self.iter):
+            for a in self.results_MP[Scn_ID][Pareto_ID][i].keys():
+                if a == 'df_Dual':
+                    self.results[Scn_ID][Pareto_ID]['df_mu']['Iter.{}'.format(i)]= self.results_MP[Scn_ID][Pareto_ID][i][a]
+                elif a == 'df_Dual_t':
+                    self.results[Scn_ID][Pareto_ID]['df_Duals_t']['Iter.{}'.format(i)] = self.results_MP[Scn_ID][Pareto_ID][i][a]
+                elif a == 'df_renters_dual':
+                    for b in self.results_MP[Scn_ID][Pareto_ID][i][a].index:
+                        self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'].loc[i, b] = self.results_MP[Scn_ID][Pareto_ID][i][a].loc[b][0]
+                elif a == 'df_owner_dual':
+                    for b in self.results_MP[Scn_ID][Pareto_ID][i][a].index:
+                        self.results[Scn_ID][Pareto_ID]['df_Owners_Duals'].loc[i, b] = self.results_MP[Scn_ID][Pareto_ID][i][a].loc[b][0]
+                elif a == 'df_utility_dual':
+                    self.results[Scn_ID][Pareto_ID]['df_Utility_Duals'].loc[i, 'Utility'] = self.results_MP[Scn_ID][Pareto_ID][i][a].iloc[0][0]
+
+    def get_portfolio_ratio(self):
+        Costs_inv = self.results['Owners'][0]['df_Performance']['Costs_inv']
+        Costs_House_init = self.results['Owners'][0]['df_Performance']['Costs_House_init']
+        owner_portfolio = self.results['Owners'][0]['df_Performance']['owner_portfolio']
+        opr = (owner_portfolio / (Costs_inv + Costs_House_init)).mean()
+        return opr
+
+    def save_samples_parameters(self, df_name='', file_name=''):
+        try:
+            os.makedirs('results')
+        except OSError:
+            if not os.path.isdir('results'):
+                raise
+        if not df_name:
+            print("Error: No DataFrame name provided.")
+            return
+        try:
+            # Dynamically fetch the DataFrame from self
+            df = getattr(self, df_name)
+            # Check if the attribute is a DataFrame
+            if isinstance(df, pd.DataFrame) or isinstance(df, pd.Series):
+                df.to_csv(file_name, index=False)
+                print(f"Saved {df_name} to {file_name}")
+            else:
+                print(f"Error: {df_name} is not a DataFrame or Series.")
+        except AttributeError:
+            print(f"Error: {df_name} does not exist in the class.")

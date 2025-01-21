@@ -8,15 +8,14 @@ def calculate_refurbishment_cost(buildings_data, parameters):
             'area_facade': data.get('area_facade_m2', 0),
             'area_footprint': data.get('area_footprint_m2', 0),
             'area_roof': data.get('SolarRoofArea', 0),
-            'total_area': data.get('area_facade_m2', 0) + data.get('area_footprint_m2', 0) + data.get('SolarRoofArea',
-                                                                                                      0),
+            'total_area': data.get('area_facade_m2', 0) + data.get('area_footprint_m2', 0) + data.get('SolarRoofArea',0),
         }
         for building_name, data in buildings_data.items()
     }
 
     insulation_requirement = thickness_of_insulation(buildings_renovation_info)
 
-    facade_fixed = price_adjustment(22.002) # CHF/m2
+    facade_fixed = price_adjustment(96.88) # CHF/m2
     facade_var = price_adjustment(2.7585) # TODO: CHECK cm or m CHF/cm , m^2
 
     footprint_fixed = price_adjustment(30.754) # underside without cladding
@@ -54,15 +53,15 @@ def calculate_refurbishment_cost(buildings_data, parameters):
             'facade_cost': facade_cost,
             'footprint_cost': footprint_cost,
             'roof_cost': roof_cost,
-            'total_cost': facade_cost + footprint_cost + roof_cost
+            'total_cost': (facade_cost + footprint_cost + roof_cost)
         }
 
         total_cost[building_name] = cost_insulation[building_name]['total_cost']
 
     # GWP
-    if 'risk_factor' in parameters:
+    #if 'risk_factor' in parameters:
         # Get the risk factor value
-        risk_factor = parameters['risk_factor'].get('SWI_regBLBatiments_CriticalPart')
+    #    risk_factor = parameters['risk_factor'].get('SWI_regBLBatiments_CriticalPart')
         # Process each building's data
 
     return total_cost
@@ -87,9 +86,9 @@ def thickness_of_insulation(renovation_info):
 
         buildings_insulation[building] = {
             'U_h_insulation': U_h_insulation,
-            'd_facade': d_facade,
-            'd_footprint': d_footprint,
-            'd_roof': d_roof
+            'd_facade': d_facade * 100,
+            'd_footprint': d_footprint * 100,
+            'd_roof': d_roof * 100
         }
     return buildings_insulation
 
@@ -100,12 +99,12 @@ def thickness_calculation(U_current, U_required):
 
 def price_adjustment(c_de_2015_EUR):
     # Price indices (https://ec.europa.eu/eurostat/databrowser/view/sts_copi_q/default/table?lang=en)
-    c_de_2023_EUR = c_de_2015_EUR * 1.613
+    c_de_2023_EUR = c_de_2015_EUR * 1.603
     # Construction market metrics (https://publications.turnerandtownsend.com/international-construction-market-survey-2024/europe)
-    # Frankfurt vs Geneva
-    c_ch_2023_EUR = c_de_2023_EUR / 77.2 * 112.3
+    # Munich vs Geneva
+    c_ch_2023_EUR = c_de_2023_EUR * 1.322
     # FX (https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/eurofxref-graph-chf.en.html)
-    c_ch_2023_CHF = c_ch_2023_EUR * 0.9596
+    c_ch_2023_CHF = c_ch_2023_EUR * 0.963
     return c_ch_2023_CHF
 
 def U_h_insulation(buildings_data, insulation_data = True):
@@ -115,11 +114,10 @@ def U_h_insulation(buildings_data, insulation_data = True):
     U_h_data = {}
     U_h_ins_data = {}
     for building, data in buildings_data.items():
-
         U_h_data[building]= data['U_h']
         U_h_ins_data[building] = ((data['area_facade_m2'] * U_required_facade + data['area_footprint_m2'] * U_required_footprint + data['SolarRoofArea'] * U_required_roof)
-                                                   / (data['area_facade_m2'] + data['area_footprint_m2'] + data['SolarRoofArea']))
-    if insulation_data:
-        return U_h_ins_data
-    else:
-        return U_h_data
+                                                   / (data['ERA']))
+
+    return U_h_ins_data
+
+

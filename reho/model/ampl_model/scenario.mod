@@ -7,8 +7,8 @@
 param penalty_ratio default 1e-6;
 var penalties default 0;
 
-subject to penalties_contraints:
-penalties = sum{h in House} Costs_House_cft[h] +
+subject to penalties_contraints: 
+penalties = sum{h in House} Costs_House_cft[h] + 
             penalty_ratio * Costs_grid_connection +
             penalty_ratio * (Costs_op + tau*(Costs_inv + Costs_rep)) +
             penalty_ratio * (GWP_op + GWP_constr) +
@@ -45,25 +45,34 @@ set Obj_fct := Lca_kpi union {'TOTEX', 'OPEX', 'CAPEX', 'GWP'};
 # set actors := House union {'Owner', 'Utility'};
 
 param beta_duals{o in Obj_fct} default 0;
-# param nu_duals{ad in actors_dual, a in actors} default 0;
 param nu_renters{h in House} default 0;
-param nu_owner default 0;
+param nu_owner{h in House}  default 0;
 param nu_utility default 0;
 
 param C_rent_fix{h in House} default 0;
+param Cost_self_consumption{h in House} default Cost_supply_cst['Electricity'];
+param Cost_supply_district{h in House, l in ResourceBalances} default Cost_supply_cst[l];
+param Cost_demand_district{h in House, l in ResourceBalances} default Cost_demand_cst[l];
+
+param renter_subsidies{h in House} default 0;
+param owner_subsidies{h in House} default 0;
+
 
 minimize SP_obj_fct:
-beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau*(Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
+beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau * (Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
 sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties 
 + sum{h in House} (nu_renters[h] * (C_rent_fix[h] 
-    + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply[h,l,p,t] * Grid_supply[l,h,p,t]) 
-    + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])))
-+  nu_owner * (- sum{h in House} C_rent_fix[h] 
-    - sum{h in House, p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])  
-    - sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand[h,l,p,t] * Grid_demand[l,h,p,t])  
-    + sum{h in House} Costs_House_inv[h])
-+ nu_utility * (- sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply[h,l,p,t] * Grid_supply[l,h,p,t])
-    + sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand[h,l,p,t] * Grid_demand[l,h,p,t]));
+    + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply_district[h,l] * Grid_supply[l,h,p,t]) 
+    + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h]))
+    - renter_subsidies[h])
++ sum{h in House} (nu_owner[h] * (C_rent_fix[h] 
+    + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])  
+    + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand_district[h,l] * Grid_demand[l,h,p,t])  
+    - (Costs_House_inv[h] * tau)
+    - (ERA[h] * Costs_house_initiation / ((1-((1+i_rate)^(-70)))/i_rate))
+    + owner_subsidies[h]))
++ nu_utility * (sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply_district[h,l] * Grid_supply[l,h,p,t])
+    - sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand_district[h,l] * Grid_demand[l,h,p,t]));
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -95,7 +104,7 @@ subject to EMOO_OPEX_constraint:
 Costs_op + EMOO_slack_opex = EMOO_OPEX*(sum{h in House} ERA[h]);
 
 subject to EMOO_TOTEX_constraint:
-Costs_op + tau*(Costs_inv +Costs_rep ) + EMOO_slack_totex = EMOO_TOTEX*(sum{h in House} ERA[h]);
+Costs_op + tau*(Costs_inv +Costs_rep) + EMOO_slack_totex = EMOO_TOTEX*(sum{h in House} ERA[h]);
 
 subject to EMOO_GWP_constraint:
 GWP_op + GWP_constr + EMOO_slack_gwp = EMOO_GWP*(sum{h in House} ERA[h]);
@@ -104,16 +113,16 @@ subject to EMOO_lca_constraint{k in Lca_kpi} :
 lca_tot[k] <= EMOO_lca[k]*(sum{h in House} ERA[h]);
 
 
-subject to EMOO_grid_constraint{l in ResourceBalances,hl in HousesOfLayer[l],p in PeriodStandard,t in Time[p]: l = 'Electricity' }:
+subject to EMOO_grid_constraint{l in ResourceBalances,hl in HousesOfLayer[l],p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 Grid_supply[l,hl,p,t] - Grid_demand[l,hl,p,t]  <= if EMOO_grid!=0 then EMOO_grid*sum{i in Time[p]}((Grid_supply[l,hl,p,i] - Grid_demand[l,hl,p,i] )*dt[p])/(card(Time[p])) else 1e8;
 
-subject to EMOO_network_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity' }:
+subject to EMOO_network_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 Network_supply[l,p,t] - Network_demand[l,p,t] <= if EMOO_network!=0 then EMOO_network*sum{i in Time[p]}((Network_supply[l,p,i] - Network_demand[l,p,i])*dt[p])/(card(Time[p])) else 1e8;
 
-subject to EMOO_GU_demand_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
+subject to EMOO_GU_demand_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 Network_demand[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_demand);
 
-subject to EMOO_GU_supply_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
+subject to EMOO_GU_supply_constraint{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 Network_supply[l,p,t] <= sum{h in House} (E_house_max[h]* EMOO_GU_supply);
 
 

@@ -298,10 +298,15 @@ param Costs_House_limit{h in House} default 0;						# CHF/yr
 param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
 param Costs_ins{h in House} default 0;
+param Costs_house_initiation default 7759;
 
 param n_years default 25;
 param i_rate default 0.02;
 param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
+
+param n_years_ins default 50;
+param tau_ins := i_rate*(1+i_rate)^n_years_ins/(((1+i_rate)^n_years_ins)-1);
+
 
 var Costs_Unit_inv{u in Units} >= 0;
 var Costs_House_inv{h in House} >= Costs_House_limit[h];
@@ -313,16 +318,16 @@ subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + Units_Mult[u]*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + Costs_ins[h];	
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + Costs_ins[h] * tau_ins / tau;	
 
 subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
 
 subject to Costs_Grid_supply:
-Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]);	
+Costs_inv = sum{u in Units}(Costs_Unit_inv[u]) + sum{h in House}(Costs_ins[h]) * tau_ins / tau;	
 
 subject to Costs_replacement:
-Costs_rep =  sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
+Costs_rep = sum{u in Units,n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );	
 
 #--------------------------------------------------------------------------------------------------------------------#
 #-OPERATING EXPENSES
@@ -337,7 +342,7 @@ param Cost_supply_network{l in ResourceBalances,p in Period,t in Time[p]} defaul
 
 var Costs_House_op{h in House};
 var Costs_op;
-var Cost_self_consumption{h in House};
+
 
 subject to Costs_house_opex{h in House}:
 Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply[h,l,p,t]*Grid_supply[l,h,p,t] - Cost_demand[h,l,p,t]*Grid_demand[l,h,p,t])*dp[p]*dt[p]); 
@@ -345,11 +350,6 @@ Costs_House_op[h] = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}(
 subject to Costs_opex:
 Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_supply_network[l,p,t]*Network_supply[l,p,t] - Cost_demand_network[l,p,t]*Network_demand[l,p,t])*dp[p]*dt[p]); 
 
-subject to size_cstr5{h in House}:            
-Cost_demand_cst['Electricity'] <= Cost_self_consumption[h];
-
-subject to size_cstr6{h in House}:           
-Cost_self_consumption[h] <= Cost_supply_cst['Electricity'];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#

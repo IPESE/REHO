@@ -1,0 +1,9 @@
+transformer,location,cluster_num,risk_factor,nb_buildings,ScaleFactor,TransformerCapacity
+9522,Zurich,0,0.027262,5,7.42,10.659
+290,Lugano,4,0.031457,10,7.47,12.12
+15154,Zurich,7,0.277933,6,12.06,8.2217
+9772,Geneva,1,0.270259,90,5.58,295.734
+12193,Bern,2,0.043,51,48.15,512.23
+3135,Geneva,3,0.02926,67,101.18,309.2266
+774,Lugano,9,0.232939,82,55.57,828.433
+9524,Zurich,10,0.019927,117,46.61,288.77

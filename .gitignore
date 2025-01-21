@@ -316,3 +316,7 @@ documentation/sections/_autosummary
 scripts/*
 !scripts/examples/
 !scripts/test/
+
+scripts/examples/results
+scripts/examples/6_Actors_problem/results
+

@@ -94,6 +94,7 @@ objective_functions["Utility"] = - utility_portfolio;
 param Costs_House_init{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
 param owner_portfolio_min{h in House} default 0;
 var owner_portfolio{h in House};
+var owner_subsidies{h in House};
 
 param Uh{h in House} default 0;
 param Uh_ins{f in FeasibleSolutions,h in House} default 0;

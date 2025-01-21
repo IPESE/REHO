@@ -55,7 +55,7 @@ def calculate_refurbishment_cost(buildings_data, parameters):
             'roof_cost': roof_cost,
             'total_cost': (facade_cost + footprint_cost + roof_cost)
         }
-
+    #TODO delete 100000...
         total_cost[building_name] = cost_insulation[building_name]['total_cost']
 
     # GWP

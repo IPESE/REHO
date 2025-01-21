@@ -373,6 +373,7 @@ lca_tot[k] <= EMOO_lca[k] * Area_tot;
 param penalty_ratio default 1e-6;
 var penalties default 0;
 var renter_subsidies{h in House} >= 0;
+
 var owner_subsidies{h in House} >= 0;
 
 subject to penalties_contraints:

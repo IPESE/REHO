@@ -123,7 +123,6 @@ def generate_renter_expense_max(buildings,parameters):
 
                         if not ERA_rent_mapping[ERA_pp[i]]:
                             del ERA_rent_mapping[ERA_pp[i]]
-
             return max_rent_building
         return parameters['renter_expense_max']
     else:

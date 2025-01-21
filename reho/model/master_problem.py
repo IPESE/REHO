@@ -225,7 +225,7 @@ class MasterProblem:
             init_beta = [1000.0, 1, 0.001]
         else:
             init_beta = []  # skip the initialization
-
+##########TODO####################
         for beta in init_beta:  # execute SP for MP initialization
             if self.method['refurbishment']:
                 for id, h in enumerate(self.infrastructure.houses):
@@ -813,6 +813,26 @@ class MasterProblem:
             renter_subsidies = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]['df_District']['renter_subsidies']
             parameters_SP['owner_subsidies'] = owner_subsidies[h]
             parameters_SP['renter_subsidies'] = renter_subsidies[h]
+
+            if self.iter >= 1:
+                #df_renter_subsidies = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_District"]['renter_subsidies']
+                #parameters_SP['renter_subsidies'] = df_renter_subsidies
+
+                lambdas = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_DW"]['lambda']
+                df_sc_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_self_consumption"]["Electricity"]
+                df_sc = df_sc_f * lambdas
+                cost_self_consumption = df_sc.groupby(level='Hub').sum()
+                parameters_SP['Cost_self_consumption'] = cost_self_consumption
+
+                df_cost_supply_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_supply_district"]
+                df_cost_supply = df_cost_supply_f * lambdas
+                cost_supply_district = df_cost_supply.groupby(level=('Hub','ResourceBalances')).sum()
+                parameters_SP['Cost_supply_district'] = cost_supply_district
+
+                df_cost_demand_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_demand_district"]
+                df_cost_demand = df_cost_demand_f * lambdas
+                cost_demand_district = df_cost_demand.groupby(level=('Hub','ResourceBalances')).sum()
+                parameters_SP['Cost_demand_district'] = cost_demand_district
 
             if self.iter >= 1:
                 #df_renter_subsidies = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_District"]['renter_subsidies']

@@ -1,21 +1,20 @@
-from jupyter_server.transutils import trans
-
 from reho.model.actors_problem import *
 
 if __name__ == '__main__':
     clusters_data = pd.read_csv("./clusters_data.csv")
     for i in clusters_data.index:
+        i = 1
         transformer = int(clusters_data.loc[i, 'transformer'])
         cluster_num = clusters_data.loc[i, 'cluster_num']
         location = clusters_data.loc[i, 'location']
         nb_buildings = int(clusters_data.loc[i, 'nb_buildings'])
         risk_factor = float(clusters_data.loc[i, 'risk_factor'])
         TransformerCapacity = float(clusters_data.loc[i, 'TransformerCapacity'])
-        n_samples = 30
+        n_samples = 2
 
         Owner_portfolio = True
         Utility_portfolio = False
-        Owner_PIR = True
+        Owner_PIR = False
 
         # Set scenario
         scenario = dict()
@@ -69,7 +68,7 @@ if __name__ == '__main__':
         units = infrastructure.initialize_units(scenario, grids)
 
         DW_params={}
-        DW_params['max_iter'] = 8
+        DW_params['max_iter'] = 2
 
         # Initiate the actor-based problem formulation
         reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
@@ -97,21 +96,21 @@ if __name__ == '__main__':
             reho.scenario["name"] = "Owners"
             print("Calculate boundary for Owners")
             reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-            bound_o = np.array(1) # Percentage of maximal achievable revenue
+            bound_o = 1 # Percentage of maximal achievable revenue
         else:
             print("Calculate boundary for Owners: DEFAULT 0")
-            bound_o = np.array(0.00001)
+            bound_o = 0.00001
             if Utility_portfolio == False:
                 reho.parameters["renter_expense_max"] = [1e6] * nb_buildings
 
         if Owner_PIR:
             print("Calculate PIR boundary for Owners")
-            bound_pir = np.array([reho.get_portfolio_ratio()])
+            bound_pir = reho.get_portfolio_ratio()
         else:
             print("Calculate PIR boundary for Owners: DEFAULT 1")
-            bound_pir = np.array(1)
+            bound_pir = 1
 
-        bounds = {"Utility": [0, bound_d.max()/2], "Owners": [0, bound_o.max()], "PIR": [0, 1]}
+        bounds = {"Utility": [0, bound_d.max()/2], "Owners": [0, bound_o], "PIR": [0, bound_pir]}
 
         # Run actor-based optimization
         reho.scenario["name"] = "MOO_actors"

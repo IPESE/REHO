@@ -3,12 +3,12 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     cluster_num = 6
-    location = 'Zurich' # St.Gallen (Wil, Wolfertswil)
+    location = 'Zurich'
     nb_buildings = 6
     risk_factor = 0.278
     n_samples = 1
     Owner_portfolio = False
-    Utility_portfolio = False
+    Utility_portfolio = True
     Owner_PIR = False
 
     # Set scenario
@@ -36,16 +36,15 @@ if __name__ == '__main__':
     method = {'actors_problem': True, "print_logs": True, "refurbishment": True, "include_all_solutions": False}
 
     # Initialize available units and grids
-    #grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3},  'NaturalGas': {"Cost_supply_cst": 0.15}})
-    grids = infrastructure.initialize_grids()
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3},  'NaturalGas': {"Cost_supply_cst": 0.15}})
+    #grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
     DW_params={}
-    #DW_params['max_iter'] = 5
+    DW_params['max_iter'] = 5
     # Initiate the actor-based problem formulation
     reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
-    #, DW_params=DW_params
-    #gurobiasl
+
     # Generate configurations
     tariffs_ranges = {'Electricity': {"Cost_supply_cst": [0.15, 0.45]},
                       'NaturalGas': {"Cost_supply_cst": [0.10, 0.30]}}
@@ -94,4 +93,4 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario1_{}_{}_Grid'.format(cluster_num,risk_factor))
+    reho.save_results(format=["pickle","save_all"], filename='Scenario1_{}_{}_Grid'.format(cluster_num,risk_factor))

@@ -3,9 +3,9 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     cluster_num = 6
-    location = 'Zurich' # St.Gallen (Wil, Wolfertswil)
+    location = 'Zurich'
     nb_buildings = 6
-    risk_factor = 0.278
+    risk_factor = 0.031457
     n_samples = 1
     Owner_portfolio = False
     Utility_portfolio = False
@@ -43,8 +43,7 @@ if __name__ == '__main__':
     DW_params['max_iter'] = 1
     # Initiate the actor-based problem formulation
     reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
-    #, DW_params=DW_params
-    #gurobiasl
+
     # Generate configurations
     tariffs_ranges = {'Electricity': {"Cost_supply_cst": [0.15, 0.45]},
                       'NaturalGas': {"Cost_supply_cst": [0.10, 0.30]}}
@@ -61,7 +60,7 @@ if __name__ == '__main__':
         bound_d = reho.results["Utility"][0]["df_Actors"].loc["Utility"][0]
     else:
         print("Calculate boundary for Utility: DEFAULT 0")
-        bound_d = 0.00001
+        bound_d = np.array(0.00001)
 
     # Define owner boundaries
     if Owner_portfolio:
@@ -96,6 +95,6 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario3_{}_{}'.format(cluster_num,risk_factor))
+    reho.save_results(format=["pickle","save_all"], filename='Scenario3_{}_{}'.format(cluster_num,risk_factor))
 
 

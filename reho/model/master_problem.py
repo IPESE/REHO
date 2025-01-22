@@ -561,10 +561,6 @@ class MasterProblem:
 
         MP_set_indexed['FeasibleSolutions'] = df_Performance.index.unique('FeasibleSolution').to_numpy()  # index to array as set
 
-        #if self.method['refurbishment']:
-        #    MP_parameters["refurbishment_cost"] = refurbishment.calculate_refurbishment_cost(self.buildings_data)
-        #    MP_parameters["U_h"] = refurbishment.U_h_insulation(self.buildings_data)
-
         if self.method['actors_problem']:
             # MP_parameters['Costs_tot_actors_min'] = df_Performance[["Costs_op", "Costs_inv", "Costs_rep"]].sum(axis=1).groupby("house").min()
             MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]

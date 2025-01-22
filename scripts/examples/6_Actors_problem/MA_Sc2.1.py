@@ -3,12 +3,13 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     cluster_num = 6
-    location = 'Zurich' # St.Gallen (Wil, Wolfertswil)
-    nb_buildings = 6
+    location = 'Zurich'
+    nb_buildings = 10
     risk_factor = 0.278
-    n_samples = 4
+    n_samples = 2
     Owner_portfolio = True
     Utility_portfolio = False
+    #for Sc2 PIR is derived from init.
     Owner_PIR = False
 
     # Set scenario
@@ -20,10 +21,10 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(15154, nb_buildings=nb_buildings)
+    qbuildings_data = reader.read_db(290, nb_buildings=nb_buildings)
 
     # Set specific parameters
-    parameters = {"TransformerCapacity": np.array([24.66, 1e8])}
+    parameters = {"TransformerCapacity": np.array([36.36, 1e8])}
 
     # Select clustering options for weather data
     cluster = {'Location': location, 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -40,11 +41,10 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     DW_params={}
-    DW_params['max_iter'] = 5
+    DW_params['max_iter'] = 2
     # Initiate the actor-based problem formulation
     reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
-    #, DW_params=DW_params
-    #gurobiasl
+
     # Generate configurations
     tariffs_ranges = {'Electricity': {"Cost_supply_cst": [0.15, 0.45]},
                       'NaturalGas': {"Cost_supply_cst": [0.10, 0.30]}}
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         bound_d = -np.array([reho.results[i][0]["df_Actors"].loc["Utility"][0] for i in reho.results])
     else:
         print("Calculate boundary for Utility: DEFAULT 0")
-        bound_d = 0.00001
+        bound_d = np.array(0.00001)
 
     # Define owner boundaries
     if Owner_portfolio:
@@ -82,7 +82,7 @@ if __name__ == '__main__':
         print("Calculate PIR boundary for Owners: DEFAULT 1")
         bound_pir = 1
 
-    bounds = {"Utility": [0, bound_d.max()/2], "Owners": [0, bound_o.max()], "PIR": [0, bound_pir]}
+    bounds = {"Utility": [0, bound_d.max()/2], "Owners": [0, bound_o], "PIR": [0, bound_pir]}
 
     # Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"
@@ -93,4 +93,4 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario2.1_{}_{}_.5'.format(cluster_num,risk_factor))
+    reho.save_results(format=["pickle","save_all"], filename='Scenario2.1_{}_{}_.5'.format(cluster_num,risk_factor))

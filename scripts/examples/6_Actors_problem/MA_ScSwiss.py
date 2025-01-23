@@ -6,7 +6,6 @@ def build_district(transformer, nb_buildings):
     qbuildings_data = reader.read_csv(buildings_filename=path+'case_study/buildings_'+str(transformer)+'.gpkg',
                                       roofs_filename=path+'case_study/roofs_'+str(transformer)+'.gpkg', nb_buildings=nb_buildings)
     qbuildings_data = filter_nan(qbuildings_data)
-    print(qbuildings_data["buildings_data"].__len__())
     return qbuildings_data
 
 
@@ -67,7 +66,7 @@ if __name__ == '__main__':
         # Set method options
         method = {'actors_problem': True, "print_logs": False, "refurbishment": True, "include_all_solutions": False,
                   'use_pv_orientation': True, 'use_facades': False,  "use_dynamic_emission_profiles": True,
-                  "save_streams": False, "save_timeseries": False, "save_data_input": False}
+                  "save_streams": False, "save_timeseries": False, "save_data_input": True}
 
         # Initialize available units and grids
         grids = infrastructure.initialize_grids()

@@ -222,7 +222,7 @@ class MasterProblem:
         # check if TOTEX, OPEX or multi-objective optimization -> init with beta
         if self.method['building-scale']:
             init_beta = [None]  # keep same objective function
-        elif not self.method["actors_problem"] and not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0:
+        elif not self.method["actors_problem"] and (not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0):
             self.flags[scenario['Objective']] = 1  # never been optimized with this objective previously
             init_beta = [1000.0, 1, 0.001]
         else:
@@ -230,10 +230,15 @@ class MasterProblem:
 ##########TODO####################
         for beta in init_beta:  # execute SP for MP initialization
             if self.method['refurbishment']:
-                for id, h in enumerate(self.infrastructure.houses):
-                    df_Results, df_Results2 , attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
-                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta)) for h in self.infrastructure.houses}
 
+                while len(results[list(self.buildings_data.keys())[-1]].get()) != 3:
+                    time.sleep(1)
+
+                for h in self.infrastructure.houses:
+                    (df_Results, df_Results2, attr) = results[h].get()
+
+                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
                     self.feasible_solutions += 1
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results2, attr)
                     self.feasible_solutions -= 1
@@ -710,8 +715,14 @@ class MasterProblem:
             pareto ID
         """
         if self.method['refurbishment']:
+            results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.infrastructure.houses}
+
+            while len(results[list(self.buildings_data.keys())[-1]].get()) != 3:
+                time.sleep(1)
+
             for h in self.infrastructure.houses:
-                df_Results, df_Results2, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
+                (df_Results, df_Results2, attr) = results[h].get()
+
                 self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
                 self.feasible_solutions += 1
                 self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results2, attr)

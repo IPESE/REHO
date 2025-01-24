@@ -108,7 +108,7 @@ class ActorsProblem(REHO):
     
             scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
             Scn_ID = self.scenario['name']
-            init_beta = [10, 5, 2, 1, 0.5, 0.2, 0.1]
+            init_beta = [10, 2, 1, 0.5, 0.1]
     
             for beta in init_beta:  # execute SP for MP initialization
                 if self.method['parallel_computation']:

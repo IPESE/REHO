@@ -359,9 +359,9 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
     df_Results["df_Grid_t"] = set_df_grid(ampl, method)
     df_Results["df_Time"], df_Weather, df_Index = set_dfs_other(ampl)
+    df_Results["df_Buildings"] = set_df_buildings(buildings_data)
 
     if method['save_data_input']:
-        df_Results["df_Buildings"] = set_df_buildings(buildings_data)
         df_Results["df_Weather"] = df_Weather
         df_Results["df_Index"] = df_Index
 

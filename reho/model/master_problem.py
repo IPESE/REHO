@@ -222,7 +222,7 @@ class MasterProblem:
         # check if TOTEX, OPEX or multi-objective optimization -> init with beta
         if self.method['building-scale']:
             init_beta = [None]  # keep same objective function
-        elif not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0:
+        elif not self.method["actors_problem"] and not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0:
             self.flags[scenario['Objective']] = 1  # never been optimized with this objective previously
             init_beta = [1000.0, 1, 0.001]
         else:

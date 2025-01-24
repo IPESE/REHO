@@ -158,9 +158,11 @@ class ActorsProblem(REHO):
         self.set_indexed["ActorObjective"] = np.array([actor])
 
         Scn_ID = self.scenario['name']
-        results = {
-            ids: self.run_actor_decomposition_optimization(self.samples, Scn_ID, ids)
-            for ids in self.samples.index}
+        for ids in self.samples.index:
+            try:
+                self.run_actor_decomposition_optimization(self.samples, Scn_ID, ids)
+            except:
+                self.results[Scn_ID][ids] = None
 
         self.logger.info('OPTIMIZATION FINISHED')
 

@@ -15,7 +15,7 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['specific'] = []
+    scenario['specific'] = ["constraint"]
 
     # Set building parameters
     reader = QBuildingsReader()

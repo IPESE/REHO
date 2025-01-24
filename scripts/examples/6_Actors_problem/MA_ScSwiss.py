@@ -1,12 +1,41 @@
 from reho.model.actors_problem import *
 
+def build_district(transformer, nb_buildings):
+    reader = QBuildingsReader(load_roofs=True)
+    path = ""#'scripts/examples/6_Actors_problem/'
+    qbuildings_data = reader.read_csv(buildings_filename=path+'case_study/buildings_'+str(transformer)+'.gpkg',
+                                      roofs_filename=path+'case_study/roofs_'+str(transformer)+'.gpkg', nb_buildings=nb_buildings)
+    qbuildings_data = filter_nan(qbuildings_data)
+    return qbuildings_data
+
+
+def filter_nan(qbuildings_data):
+    for bui in qbuildings_data["buildings_data"]:
+        bui_class = qbuildings_data["buildings_data"][bui]["id_class"]
+        qbuildings_data["buildings_data"][bui]["id_class"] = qbuildings_data["buildings_data"][bui]["id_class"].replace("nan", "II")
+        qbuildings_data["buildings_data"][bui]["id_class"] = qbuildings_data["buildings_data"][bui]["id_class"].replace("VIII", "III")
+        qbuildings_data["buildings_data"][bui]["ratio"] = qbuildings_data["buildings_data"][bui]["ratio"].replace("nan","0.0")
+        if bui_class != qbuildings_data["buildings_data"][bui]["id_class"]:
+            print(bui, "had nan class and was", bui_class)
+        if math.isnan(qbuildings_data["buildings_data"][bui]["U_h"]):
+            qbuildings_data["buildings_data"][bui]["U_h"] = 0.00181
+        if math.isnan(qbuildings_data["buildings_data"][bui]["HeatCapacity"]):
+            qbuildings_data["buildings_data"][bui]["HeatCapacity"] = 120
+        if math.isnan(qbuildings_data["buildings_data"][bui]["T_comfort_min_0"]):
+            qbuildings_data["buildings_data"][bui]["T_comfort_min_0"] = 20
+        if math.isnan(qbuildings_data["buildings_data"][bui]["count_floor"]):
+            qbuildings_data["buildings_data"][bui]["count_floor"] = 2
+        if qbuildings_data["buildings_data"][bui]["n_p"] < 1:
+            qbuildings_data["buildings_data"][bui]["n_p"] = 1
+    return qbuildings_data
+
 if __name__ == '__main__':
     clusters_data = pd.read_csv("./clusters_data.csv")
     for i in clusters_data.index:
         transformer = int(clusters_data.loc[i, 'transformer'])
         cluster_num = clusters_data.loc[i, 'cluster_num']
         location = clusters_data.loc[i, 'location']
-        nb_buildings = int(clusters_data.loc[i, 'nb_buildings'])
+        nb_buildings = 1000
         risk_factor = float(clusters_data.loc[i, 'risk_factor'])
         TransformerCapacity = float(clusters_data.loc[i, 'TransformerCapacity'])
         n_samples = 2
@@ -22,32 +51,7 @@ if __name__ == '__main__':
         scenario['specific'] = ['Owner_Sub_bigM_ub','Owner2']
 
         # Set building parameters
-        reader = QBuildingsReader()
-        reader.establish_connection('Suisse')
-        qbuildings_data = reader.read_db(transformer=transformer, nb_buildings=nb_buildings)
-
-        # Replace Nan
-        for bui in qbuildings_data["buildings_data"]:
-            bui_class = qbuildings_data["buildings_data"][bui]["id_class"]
-            qbuildings_data["buildings_data"][bui]["id_class"] = qbuildings_data["buildings_data"][bui][
-                "id_class"].replace(
-                "nan", "II")
-            qbuildings_data["buildings_data"][bui]["id_class"] = qbuildings_data["buildings_data"][bui][
-                "id_class"].replace(
-                "VIII", "III")
-            qbuildings_data["buildings_data"][bui]["ratio"] = qbuildings_data["buildings_data"][bui]["ratio"].replace(
-                "nan",
-                "0.0")
-            if bui_class != qbuildings_data["buildings_data"][bui]["id_class"]:
-                print(bui, "had nan class and was", bui_class)
-            if math.isnan(qbuildings_data["buildings_data"][bui]["U_h"]):
-                qbuildings_data["buildings_data"][bui]["U_h"] = 0.00181
-            if math.isnan(qbuildings_data["buildings_data"][bui]["HeatCapacity"]):
-                qbuildings_data["buildings_data"][bui]["HeatCapacity"] = 120
-            if math.isnan(qbuildings_data["buildings_data"][bui]["T_comfort_min_0"]):
-                qbuildings_data["buildings_data"][bui]["T_comfort_min_0"] = 20
-            if math.isnan(qbuildings_data["buildings_data"][bui]["count_floor"]):
-                qbuildings_data["buildings_data"][bui]["count_floor"] = 2
+        qbuildings_data = build_district(transformer, nb_buildings)
 
         # Set specific parameters
         parameters = {"TransformerCapacity": np.array([TransformerCapacity*3, 1e8])}
@@ -60,7 +64,9 @@ if __name__ == '__main__':
         scenario['enforce_units'] = []
 
         # Set method options
-        method = {'actors_problem': True, "print_logs": True, "refurbishment": True, "include_all_solutions": False}
+        method = {'actors_problem': True, "print_logs": False, "refurbishment": True, "include_all_solutions": False,
+                  'use_pv_orientation': True, 'use_facades': False,  "use_dynamic_emission_profiles": True,
+                  "save_streams": False, "save_timeseries": False, "save_data_input": True}
 
         # Initialize available units and grids
         grids = infrastructure.initialize_grids()

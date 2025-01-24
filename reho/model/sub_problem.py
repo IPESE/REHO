@@ -638,7 +638,10 @@ class SubProblem:
                 try:
                     ampl.getConstraint(specific_constraint).restore()
                 except:
-                    logging.warning('Specific constraint "' + str(specific_constraint) + '" was not found in ampl subproblem and was thus ignored.')
+                    if self.method_sp['actors_problem']:
+                        pass
+                    else:
+                        logging.warning('Specific constraint "' + str(specific_constraint) + '" was not found in ampl subproblem and was thus ignored.')
 
         return ampl
 

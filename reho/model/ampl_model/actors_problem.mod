@@ -94,7 +94,6 @@ objective_functions["Utility"] = - utility_portfolio;
 param Costs_House_init{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
 param owner_portfolio_min{h in House} default 0;
 var owner_portfolio{h in House};
-#var owner_subsidies{h in House};
 
 param Uh{h in House} default 0;
 param Uh_ins{f in FeasibleSolutions,h in House} default 0;
@@ -102,8 +101,8 @@ param owner_portfolio_rate default 1;
 var is_ins{h in House} binary; 
 
 #Scenario 3 (Insulation_enforce)
-#subject to Insulation_enforce{h in House}:
-#is_ins[h] = 1;
+subject to Insulation_enforce{h in House}:
+is_ins[h] = 1;
 
 subject to Insulation1{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) >= 0.0001 - 1e10*(1-is_ins[h]);
@@ -111,7 +110,7 @@ Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) >= 0.0001 - 1e10*
 subject to Insulation2{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 1e7* is_ins[h];
 
-#Scenario 2 & 2.1 & 3 (Owner_Sub_bigM_lb,Owner_Sub_bigM_ub)
+#Scenario 2 & 2.1 & 3 (Owner_Sub_bigM_ub)
 subject to Owner_Sub_bigM_ub{h in House}:
 owner_subsidies[h] <= 1e10 * is_ins[h];
 
@@ -122,14 +121,8 @@ owner_portfolio[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to
 subject to Owner2{h in House}:
 owner_portfolio[h] <= owner_portfolio_rate * (Costs_House_inv[h] + Costs_House_init[h]);
 
-#Scenario 2 & 2.1 & 3(Owner_epsilon)
 subject to Owner_epsilon{h in House}: #nu_owner
 owner_portfolio[h] + owner_subsidies[h] >= owner_portfolio_min[h];
-
-#Scenario 1 !NOT for other scenarios!
-#subject to Owner_epsilon{h in House}: #nu_owner
-#owner_portfolio[h] + owner_subsidies[h] >= 0;
-
 
 subject to obj_fct3:
 objective_functions["Owners"] = - sum{h in House} (owner_portfolio[h]);

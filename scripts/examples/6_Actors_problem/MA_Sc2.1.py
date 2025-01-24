@@ -10,13 +10,13 @@ if __name__ == '__main__':
     Owner_portfolio = True
     Utility_portfolio = False
     #for Sc2 PIR is derived from init.
-    Owner_PIR = False
+    Owner_PIR = True
 
     # Set scenario
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['specific'] = []
+    scenario['specific'] = ['Owner_Sub_bigM_ub','Owner2']
 
     # Set building parameters
     reader = QBuildingsReader()

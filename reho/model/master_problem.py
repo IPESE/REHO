@@ -117,8 +117,10 @@ class MasterProblem:
         self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'renter_subsidies_bound','risk_factor', 'renter_expense_max','utility_portfolio_min', 'owner_portfolio_rate', 'owner_portfolio_min','EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
-                         "list_constraints_MP": []
+                         "list_constraints_MP": [],
+                         "list_constraints_Actors": ['Insulation_enforce', 'Owner_Sub_bigM_ub', 'Owner2']
                          }
+
 
         self.df_fix_Units = pd.DataFrame()
         self.fix_units_list = []
@@ -1195,6 +1197,10 @@ class MasterProblem:
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
                             'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2'] + self.lists_MP["list_constraints_MP"]
+
+        if self.method['actors_problem']:
+            list_constraints += self.lists_MP["list_constraints_Actors"]
+
         for cst in list_constraints:
             ampl.getConstraint(cst).drop()
 

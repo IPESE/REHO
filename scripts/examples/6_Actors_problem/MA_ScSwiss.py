@@ -3,7 +3,6 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
     clusters_data = pd.read_csv("./clusters_data.csv")
     for i in clusters_data.index:
-        i = 1
         transformer = int(clusters_data.loc[i, 'transformer'])
         cluster_num = clusters_data.loc[i, 'cluster_num']
         location = clusters_data.loc[i, 'location']
@@ -20,7 +19,7 @@ if __name__ == '__main__':
         scenario = dict()
         scenario['Objective'] = 'TOTEX'
         scenario['EMOO'] = {}
-        scenario['specific'] = []
+        scenario['specific'] = ['Owner_Sub_bigM_ub','Owner2']
 
         # Set building parameters
         reader = QBuildingsReader()

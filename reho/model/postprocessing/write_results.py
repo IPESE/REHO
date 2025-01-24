@@ -637,6 +637,11 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_owner_dual"] = df2
         df_Results['df_utility_dual'] = df3
 
+        df_Results["Samples"] = dict()
+        df_Results["Samples"]["Owner_Epsilon"] = get_ampl_data(ampl, 'owner_portfolio_min')
+        df_Results["Samples"]["Renter_Epsilon"] = get_ampl_data(ampl, 'renter_expense_max')
+        df_Results["Samples"]["PIR"] = get_ampl_data(ampl, 'owner_portfolio_rate')
+
     return df_Results
 
 

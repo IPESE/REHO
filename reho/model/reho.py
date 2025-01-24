@@ -453,6 +453,7 @@ class REHO(MasterProblem):
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
             df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors_tariff"]
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors"]
+            df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["Samples"]
 
         # df_Grid_t
         df = self.get_final_SPs_results(MP_selection, 'df_Grid_t')

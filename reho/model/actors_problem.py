@@ -108,7 +108,7 @@ class ActorsProblem(REHO):
     
             scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
             Scn_ID = self.scenario['name']
-            init_beta = [10, 2, 1, 0.5, 0.1]
+            init_beta = [2, 1, 0.5]
     
             for beta in init_beta:  # execute SP for MP initialization
                 if self.method['parallel_computation']:
@@ -210,6 +210,8 @@ class ActorsProblem(REHO):
         self.add_df_Results(None, Scn_ID, ids, self.scenario)
         self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
         self.get_KPIs(Scn_ID, ids)# process results based on results MP
+        self.initialize_optimization_tracking_attributes()
+        self.read_configurations()
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
         self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'] = pd.DataFrame()

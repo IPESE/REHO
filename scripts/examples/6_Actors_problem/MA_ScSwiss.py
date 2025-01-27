@@ -90,7 +90,7 @@ if __name__ == '__main__':
             try:
                 reho.read_configurations()  # if configurations were already generated, simply import them
             except FileNotFoundError:
-                reho.generate_configurations(n_sample=n_samples, tariffs_ranges=tariffs_ranges)
+                reho.generate_configurations(n_sample=2, tariffs_ranges=tariffs_ranges)
 
             # Define boundaries
             if Utility_portfolio:

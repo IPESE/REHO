@@ -715,7 +715,7 @@ class MasterProblem:
             pareto ID
         """
         if self.method['refurbishment']:
-            results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.infrastructure.houses}
+            results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.infrastructure.houses}
 
             while len(results[list(self.buildings_data.keys())[-1]].get()) != 3:
                 time.sleep(1)

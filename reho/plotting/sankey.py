@@ -121,6 +121,47 @@ def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, e
     return df_stv, df_label
 
 
+def handle_biometh_h2_import_export(df_label, df_stv, df_annuals):
+
+    # Check if rSOC district is implemented (or if grid import/export should be routed to rSOC building)
+    if len(df_annuals.loc[(df_annuals['Layer'] == "Biomethane") & (df_annuals['Hub'] == "rSOC_district")]) > 0:
+        # Biomethane to rSOC
+        df_label, df_stv, _ = add_flow('Biomethane_grid', 'rSOC_district', 'Biomethane', 'Network', 'Supply_MWh',
+                                       df_annuals, df_label, df_stv)
+    else:
+        # Biomethane to rSOC
+        df_label, df_stv, _ = add_flow('Biomethane_grid', 'rSOC', 'Biomethane', 'Network', 'Supply_MWh',
+                                       df_annuals, df_label, df_stv)
+
+    if len(df_annuals.loc[(df_annuals['Layer'] == "Biomethane") & (df_annuals['Hub'] == "MTR_district")]) > 0:
+        # 10 Device to CH4
+        df_label, df_stv, _ = add_flow('MTR_district', 'Biomethane_grid_feed_in', 'Biomethane', 'Network', 'Demand_MWh',
+                                       df_annuals, df_label, df_stv)
+    else:
+        # 10 Device to CH4
+        df_label, df_stv, _ = add_flow('MTR', 'Biomethane_grid_feed_in', 'Biomethane', 'Network', 'Demand_MWh',
+                                       df_annuals, df_label, df_stv)
+
+    if len(df_annuals.loc[(df_annuals['Layer'] == "Hydrogen") & (df_annuals['Hub'] == "rSOC_district")]) > 0:
+
+        # H2 to rSOC
+        df_label, df_stv, _ = add_flow('Hydrogen_grid', 'rSOC_district', 'Hydrogen', 'Network', 'Supply_MWh',
+                                       df_annuals, df_label, df_stv)
+        # 10 Device to CH4
+        df_label, df_stv, _ = add_flow('rSOC_district', 'Hydrogen_grid_feed_in', 'Hydrogen', 'Network', 'Demand_MWh',
+                                       df_annuals, df_label, df_stv)
+    else:
+        # H2 to rSOC
+        df_label, df_stv, _ = add_flow('Hydrogen_grid', 'rSOC', 'Hydrogen', 'Network', 'Supply_MWh',
+                                       df_annuals, df_label, df_stv)
+
+        # 10 Device to CH4
+        df_label, df_stv, _ = add_flow('rSOC', 'Hydrogen_grid_feed_in', 'Hydrogen', 'Network', 'Demand_MWh',
+                                       df_annuals, df_label, df_stv)
+
+
+    return df_label, df_stv
+
 def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
     """
     This function is called to add all the streams/units that are related to molecule (interperiod storage) to the sankey diagram.
@@ -157,8 +198,16 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
                                    'Demand_MWh',
                                    df_annuals, df_label, df_stv)
 
+    # Electricity consumption for CH4 & CO2 storage
+    elec_CO2_IP = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "CO2_storage_IP")][
+            "Demand_MWh"].sum()
+
+    df_label, df_stv, _ = add_flow('Electrical_consumption', 'Hybrid_storage_IP', 'Electricity', 'CH4_storage_IP',
+                                   'Demand_MWh',
+                                   df_annuals, df_label, df_stv,adjustment=+elec_CO2_IP)
+
     # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('CH4_storage_IP', 'rSOC', 'Biomethane', 'CH4_storage_IP', 'Supply_MWh',
+    df_label, df_stv, _ = add_flow('Hybrid_storage_IP', 'rSOC', 'Biomethane', 'CH4_storage_IP', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
     # 9 Device to H2
@@ -166,7 +215,7 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
                                    df_annuals, df_label, df_stv)
 
     # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('MTR', 'CH4_storage_IP', 'Biomethane', 'MTR', 'Supply_MWh',
+    df_label, df_stv, _ = add_flow('MTR', 'Hybrid_storage_IP', 'Biomethane', 'MTR', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
     df_label, df_stv, _ = add_flow('H2_storage_IP_district', 'rSOC_district', 'Hydrogen', 'H2_storage_IP_district','Supply_MWh',
@@ -177,7 +226,7 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
                                    df_annuals, df_label, df_stv, False, None, -ETZ_to_H2_stor)
 
     # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('CH4_storage_IP_district', 'rSOC_district', 'Biomethane', 'CH4_storage_IP_district', 'Supply_MWh',
+    df_label, df_stv, _ = add_flow('Hybrid_storage_IP_district', 'rSOC_district', 'Biomethane', 'CH4_storage_IP_district', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
     # 9 Device to H2
@@ -185,24 +234,10 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
                                    df_annuals, df_label, df_stv)
 
     # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('MTR_district', 'CH4_storage_IP_district', 'Biomethane', 'MTR_district', 'Supply_MWh',
+    df_label, df_stv, _ = add_flow('MTR_district', 'Hybrid_storage_IP_district', 'Biomethane', 'MTR_district', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
-    # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('Biomethane_grid', 'rSOC_district', 'Biomethane', 'Network','Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('Hydrogen_grid', 'rSOC_district', 'Hydrogen', 'Network', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('rSOC_district', 'Hydrogen_grid_feed_in', 'Hydrogen', 'Network', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('MTR_district', 'Biomethane_grid_feed_in', 'Biomethane', 'Network', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
+    df_label, df_stv = handle_biometh_h2_import_export(df_label, df_stv, df_annuals)
 
     if df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == "MTR")]["Supply_MWh"].sum() > 0:
 

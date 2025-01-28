@@ -11,10 +11,11 @@
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-param SOFC_elec_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.6; # (elec output/H2 LHV) eff
+# These efficiencies come from Aspen/OSMOSE modelling (Arthur Waeber/ Xinyi Wei / Shivom Sharma)
+param SOFC_elec_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.7; # (elec output/H2 LHV) eff 0.62
 param SOFC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.3; # (elec output/H2 LHV) eff
-param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.85; # (H2 LHV/elec output) eff
-param SOEC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.1; # (H2 LHV/elec output) efff
+param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.9; # (H2 LHV/elec output) eff (includes heat that is provided through electrical heaters)
+param SOEC_therm_eff{u in UnitsOfType['rSOC']} <=1 default 0; # (H2 LHV/elec output) eff # Requires Heat (since Methanator is modelled appart) -0.15
 
 param SOEC_power_max_limit_in{u in UnitsOfType['rSOC']} >=0 default 3;
 param SOFC_power_max_limit_out{u in UnitsOfType['rSOC']} >=0 default 1;
@@ -40,14 +41,18 @@ subject to SOEC_energy_balance{u in UnitsOfType['rSOC'], p in Period,t in Time[p
     Units_supply['Hydrogen',u,p,t] = SOEC_conv_eff[u]*Units_demand['Electricity',u,p,t];
 
 subject to SOFC_energy_balance_2{u in UnitsOfType['rSOC'], p in Period,t in Time[p]}:
-    Units_supply['CO2',u,p,t] = mol_h_CO2_per_kW_CH4[u]*Units_demand['Biomethane',u,p,t];
+    Units_supply['CO2',u,p,t] <= mol_h_CO2_per_kW_CH4[u]*Units_demand['Biomethane',u,p,t];
 
 #-hot stream heat leaving
 subject to SOFC_Usable_heat_computation{h in House,u in UnitsOfType['rSOC'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p]:Streams_Hin[st] = 1}:
     Units_demand['Hydrogen',u,p,t]*SOFC_therm_eff[u] +
-    Units_demand['Biomethane',u,p,t]*SOFC_therm_eff[u] +
-    Units_demand['Electricity',u,p,t]*SOEC_therm_eff[u]
+    Units_demand['Biomethane',u,p,t]*SOFC_therm_eff[u]
     >= sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t];
+/*
+#-hot stream heat entering in SOEC
+subject to SOEC_required_heat_computation{h in House,u in UnitsOfType['rSOC'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p]:Streams_Hout[st] = 1}:
+    -Units_demand['Electricity',u,p,t]*SOEC_therm_eff[u] = sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t];
+*/
 
 # Force mode_SOFC to be 1 when power is supplied
 subject to SOFC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:

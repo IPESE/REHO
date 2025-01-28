@@ -20,7 +20,7 @@ if __name__ == '__main__':
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    grids["Electricity"]["ReinforcementOfNetwork"] = np.array([100, 1000])  # available capacities of networks [Electricity, NaturalGas]
+    grids["Electricity"]["ReinforcementOfNetwork"] = np.array([100, 1000])  # available capacities of networks [Electricity]
     parameters = {'Network_ext': np.array([100, 1000])}  # existing capacities of networks [Electricity, NaturalGas]
 
     # Set method options

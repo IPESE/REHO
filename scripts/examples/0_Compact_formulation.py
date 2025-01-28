@@ -29,15 +29,11 @@ if __name__ == '__main__':
     method = {"save_streams":True}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/grids.csv
-    units = infrastructure.initialize_units(scenario, grids, method)  # units are based on data/infrastructure/building_units.csv
-
-    # Initialize available units and grids
     grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv
     units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

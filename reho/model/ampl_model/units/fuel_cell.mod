@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-param FC_conv_el_eff_basis{u in UnitsOfType['FuelCell']} default 0.6; # (elec output/H2 LHV) eff
+param FC_conv_el_eff_basis{u in UnitsOfType['FuelCell']} default 0.55; # (elec output/H2 LHV) eff
 param FC_power_limit_in_basis{u in UnitsOfType['FuelCell']} >=0 default 1;
 
 param FC_eff_yearly_degradation{u in UnitsOfType['FuelCell']} default 0.0175;

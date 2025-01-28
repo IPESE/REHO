@@ -98,7 +98,9 @@ Battery_IP,Battery_IP,Bat,Batterie_IP,#A57300,lightblue,#76EEC6,turquoise
 Battery_IP_district,Battery_IP,Bat,Batterie_IP,#A57300,lightblue,#76EEC6,turquoise
 H2_storage_IP,Hydrogen storage,H2_stor,H2_storage,#82a4d6,lightblue,#9AC0CD,bluegrey
 H2_storage_IP_district,Hydrogen storage,H2_stor,H2_storage,#82a4d6,lightblue,#9AC0CD,bluegrey
-CH4_storage_IP,Biomethane storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
-CH4_storage_IP_district,Biomethane storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CH4_storage_IP,Hybrid (CH4/CO2) storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+CH4_storage_IP_district,Hybrid (CH4/CO2) storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
 CO2_storage_IP,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
 CO2_storage_IP_district,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
+Hybrid_storage_IP,Hybrid (CH4/CO2) storage,Hyb_stor,Hyb_stor,#9f8753,darkyellow,#9f8753,darkyellow
+Hybrid_storage_IP_district,Hybrid (CH4/CO2) storage,Hyb_stor,Hyb_stor,#9f8753,darkyellow,#9f8753,darkyellow

@@ -529,3 +529,5 @@ sum{h in House} (Grid_supply[l,h,p,t]) = Network_supply[l,p,t];
 
 subject to disallow_exchanges_2{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 sum{h in House} (Grid_demand[l,h,p,t]) = Network_demand[l,p,t];
+
+

@@ -17,7 +17,7 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
     scenario['enforce_units'] = ["rSOC_district"]
-    scenario['exclude_units'] = ['NG_Cogeneration', 'ThermalSolar', 'ElectricalHeater_SH', "PV", "EV_district", "DHN_hex_out", 'HeatPump', 'rSOC', "NG_Boiler"]
+    scenario['exclude_units'] = ['NG_Cogeneration', 'ThermalSolar', 'ElectricalHeater_SH', "EV_district", 'HeatPump', 'rSOC', "NG_Boiler"]
     scenario['specific'] = ['enforce_DHN']
 
     # Set method
@@ -34,9 +34,15 @@ if __name__ == '__main__':
     })
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
-    # Set parameters
+    # Set the parameter
     parameters = {}
-
+    parameters = {"Network_ext": np.array([100, 100, 100, 100, 0, 0])}
+    """
+    grids["Electricity"]["ReinforcementOfNetwork"] = np.array(
+        [0])  # available capacities of networks [Electricity]
+    grids["NaturalGas"]["ReinforcementOfNetwork"] = np.array(
+        [0])  # available capacities of networks [Electricity]
+    """
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()

@@ -227,7 +227,7 @@ class MasterProblem:
             init_beta = [1000.0, 1, 0.001]
         else:
             init_beta = []  # skip the initialization
-##########TODO####################
+
         for beta in init_beta:  # execute SP for MP initialization
             if self.method['refurbishment']:
                 results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta)) for h in self.infrastructure.houses}
@@ -799,12 +799,6 @@ class MasterProblem:
                          'lca_kpi_demand': pi_lca.mul(0)
                          }
 
-        #parameters_SP['Costs_ins'] = 0
-        # Cost_self_consumption = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]['Cost_self_consumption']
-        # C_rent_fix = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]['C_rent_fix'] #TODO: drop FeasibileSolution f
-        # parameters_SP = {'Cost_self_consumption': Cost_self_consumption,
-        #                  'C_rent_fix': C_rent_fix
-        #                  }
         if self.method['actors_problem']:
             nu_renters = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'nu_renters')
             nu_utility = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'nu_utility')
@@ -824,44 +818,21 @@ class MasterProblem:
             parameters_SP['renter_subsidies'] = renter_subsidies[h]
 
             if self.iter >= 1:
-                #df_renter_subsidies = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_District"]['renter_subsidies']
-                #parameters_SP['renter_subsidies'] = df_renter_subsidies
-
                 lambdas = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_DW"]['lambda']
                 df_sc_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_self_consumption"]["Electricity"]
                 df_sc = df_sc_f * lambdas
                 cost_self_consumption = df_sc.groupby(level='Hub').sum()
-                parameters_SP['Cost_self_consumption'] = cost_self_consumption
+                parameters_SP['Cost_self_consumption'] = cost_self_consumption[[h]]
 
                 df_cost_supply_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_supply_district"]
                 df_cost_supply = df_cost_supply_f * lambdas
                 cost_supply_district = df_cost_supply.groupby(level=('Hub','ResourceBalances')).sum()
-                parameters_SP['Cost_supply_district'] = cost_supply_district
+                parameters_SP['Cost_supply_district'] = cost_supply_district[[h]]
 
                 df_cost_demand_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_demand_district"]
                 df_cost_demand = df_cost_demand_f * lambdas
                 cost_demand_district = df_cost_demand.groupby(level=('Hub','ResourceBalances')).sum()
-                parameters_SP['Cost_demand_district'] = cost_demand_district
-
-            if self.iter >= 1:
-                #df_renter_subsidies = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_District"]['renter_subsidies']
-                #parameters_SP['renter_subsidies'] = df_renter_subsidies
-
-                lambdas = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_DW"]['lambda']
-                df_sc_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_self_consumption"]["Electricity"]
-                df_sc = df_sc_f * lambdas
-                cost_self_consumption = df_sc.groupby(level='Hub').sum()
-                parameters_SP['Cost_self_consumption'] = cost_self_consumption
-
-                df_cost_supply_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_supply_district"]
-                df_cost_supply = df_cost_supply_f * lambdas
-                cost_supply_district = df_cost_supply.groupby(level=('Hub','ResourceBalances')).sum()
-                parameters_SP['Cost_supply_district'] = cost_supply_district
-
-                df_cost_demand_f = self.results_MP[Scn_ID][Pareto_ID][self.iter - 1]["df_Actors_tariff_f"]["Cost_demand_district"]
-                df_cost_demand = df_cost_demand_f * lambdas
-                cost_demand_district = df_cost_demand.groupby(level=('Hub','ResourceBalances')).sum()
-                parameters_SP['Cost_demand_district'] = cost_demand_district
+                parameters_SP['Cost_demand_district'] = cost_demand_district[[h]]
 
         # find district structure, objective, beta and parameter for one single building
         buildings_data_SP, parameters_SP = self.split_parameter_sets_per_building(h, parameters_SP)

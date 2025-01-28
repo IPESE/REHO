@@ -210,8 +210,7 @@ class ActorsProblem(REHO):
         self.add_df_Results(None, Scn_ID, ids, self.scenario)
         self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
         self.get_KPIs(Scn_ID, ids)# process results based on results MP
-        self.initialize_optimization_tracking_attributes()
-        self.read_configurations()
+        del self.results_MP['MOO_actors'], self.results_SP['MOO_actors']
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
         self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'] = pd.DataFrame()

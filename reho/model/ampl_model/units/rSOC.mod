@@ -12,9 +12,9 @@
 ######################################################################################################################
 
 # These efficiencies come from Aspen/OSMOSE modelling (Arthur Waeber/ Xinyi Wei / Shivom Sharma)
-param SOFC_elec_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.7; # (elec output/H2 LHV) eff 0.62
-param SOFC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.3; # (elec output/H2 LHV) eff
-param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.9; # (H2 LHV/elec output) eff (includes heat that is provided through electrical heaters)
+param SOFC_elec_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.62; # (elec output/H2 LHV) eff
+param SOFC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.2; # (elec output/H2 LHV) eff
+param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.85; # (H2 LHV/elec output) eff (includes heat that is provided through electrical heaters)
 param SOEC_therm_eff{u in UnitsOfType['rSOC']} <=1 default 0; # (H2 LHV/elec output) eff # Requires Heat (since Methanator is modelled appart) -0.15
 
 param SOEC_power_max_limit_in{u in UnitsOfType['rSOC']} >=0 default 3;

@@ -15,16 +15,16 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
-    scenario['exclude_units'] = ['NG_Cogeneration', "FC", "ETZ","Battery_IP","H2_storage_IP"]
+    scenario['exclude_units'] = ['NG_Cogeneration', "FC", "ETZ", "Battery_IP"]
     scenario['enforce_units'] = []
 
     # Set method options
     method = {'interperiod_storage': True, "building-scale": False}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.17},
                                              'NaturalGas': {"Cost_supply_cst": 0.15, "Cost_demand_cst": 0.12},
-                                             'Hydrogen': {"Cost_supply_cst": 0.45,"Cost_demand_cst": 0.15}, # 5 €/kg H2 (between 3 and 7): 120 MJ/kg --> 5/(120/3.6) = 0.15 €/kWh
+                                             #'Hydrogen': {"Cost_supply_cst": 10,"Cost_demand_cst": 0.15}, # 5 €/kg H2 (between 3 and 7): 120 MJ/kg --> 5/(120/3.6) = 0.15 €/kWh
                                              'Biomethane': {},
                                              'CO2': {"Cost_supply_cst": 0.01,"Cost_demand_cst": 0},
                                              })
@@ -33,19 +33,20 @@ if __name__ == '__main__':
 
     #parameters = {"Network_ext": np.array([10, 10, 0, 0, 0])}
     grids["Electricity"]["ReinforcementOfNetwork"] = np.array(
-        [0,15])  # available capacities of networks [Electricity]
+        [15])  # available capacities of networks [Electricity]
     grids["NaturalGas"]["ReinforcementOfNetwork"] = np.array(
         [0])  # available capacities of networks [Electricity]
-    grids["Hydrogen"]["ReinforcementOfNetwork"] = np.array(
-        [0])  # available capacities of networks [Electricity]
+    #grids["Hydrogen"]["ReinforcementOfNetwork"] = np.array(
+    #    [0,100])  # available capacities of networks [Electricity]
     grids["Biomethane"]["ReinforcementOfNetwork"] = np.array(
         [0])  # available capacities of networks [Electricity]
     grids["CO2"]["ReinforcementOfNetwork"] = np.array(
         [0])  # available capacities of networks [Electricity]
-    #grids["Electricity"]["Network_supply_connection"] = 0
 
+    #parameters = {'HydrogenDailyExport': 10, "Network_ext": np.array([1000, 0, 1000, 0, 0])}
     #parameters = {'HydrogenNetExport': 10000,'NetExportTol': 1, "Network_ext": np.array([1000, 0, 1000, 0, 0])}
-    parameters = { "Network_ext": np.array([15, 0, 0, 0, 0])}
+    parameters = { "Network_ext": np.array([15, 0, 0, 0])}
+    #parameters = {}
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

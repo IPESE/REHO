@@ -23,7 +23,6 @@ def calculate_refurbishment_cost(buildings_data, parameters):
 
     roof_fixed = price_adjustment(33.438) # Pitched roof without dormers
     roof_var = price_adjustment(2.3652)
-
     cost_functions = {
         'facade_cost': lambda area_facade, d_facade: area_facade * (facade_fixed + facade_var * d_facade),
         'footprint_cost': lambda area_footprint, d_footprint: area_footprint * (footprint_fixed + footprint_var * d_footprint),

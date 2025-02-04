@@ -148,7 +148,6 @@ class ActorsProblem(REHO):
         samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio','owner_portfolio_rate'])
         samples = samples.sort_values(by='owner_portfolio').reset_index(drop=True)
         self.samples = samples.round(4)
-        # sort the utlity portfolio
         self.parameters['risk_factor'] = risk_factor
 
     def actor_decomposition_optimization(self, scenario, actor='Renters'):
@@ -210,8 +209,8 @@ class ActorsProblem(REHO):
         self.add_df_Results(None, Scn_ID, ids, self.scenario)
         self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
         self.get_KPIs(Scn_ID, ids)# process results based on results MP
-        self.initialize_optimization_tracking_attributes()
-        self.read_configurations()
+        #self.initialize_optimization_tracking_attributes()
+        #self.read_configurations()
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
         self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'] = pd.DataFrame()

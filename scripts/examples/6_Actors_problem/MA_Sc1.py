@@ -6,7 +6,7 @@ if __name__ == '__main__':
     location = 'Zurich'
     nb_buildings = 6
     risk_factor = 0.278
-    n_samples = 1
+    n_samples = 16
     Owner_portfolio = False
     Utility_portfolio = True
     Owner_PIR = False
@@ -15,10 +15,10 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['specific'] = ["constraint"]
+    scenario['specific'] = ["Owner_noSub"]
 
     # Set building parameters
-    reader = QBuildingsReader()
+    reader = QBuildingsReader(load_roofs=True)
     reader.establish_connection('Suisse')
     qbuildings_data = reader.read_db(15154, nb_buildings=nb_buildings)
 
@@ -33,15 +33,16 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'actors_problem': True, "print_logs": True, "refurbishment": True, "include_all_solutions": False}
-
+    method = {'actors_problem': True, "print_logs": True, "refurbishment": True, "include_all_solutions": False,
+              'use_pv_orientation': True, 'use_facades': False, "use_dynamic_emission_profiles": True,
+              "save_streams": False, "save_timeseries": False, "save_data_input": False}
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3},  'NaturalGas': {"Cost_supply_cst": 0.15}})
-    #grids = infrastructure.initialize_grids()
+    #grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3},  'NaturalGas': {"Cost_supply_cst": 0.15}})
+    grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
     DW_params={}
-    DW_params['max_iter'] = 2
+    DW_params['max_iter'] = 5
     # Initiate the actor-based problem formulation
     reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
 
@@ -58,31 +59,31 @@ if __name__ == '__main__':
         reho.scenario["name"] = "Utility"
         print("Calculate boundary for Utility")
         reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Utility")
-        bound_d = -np.array([reho.results[i][0]["df_Actors"].loc["Utility"][0] for i in reho.results])
+        bound_d = [-np.array([reho.results[i][0]["df_Actors"].loc["Utility"][0] for i in reho.results]).max()/2, -np.array([reho.results[i][0]["df_Actors"].loc["Utility"][0] for i in reho.results]).max()]
     else:
         print("Calculate boundary for Utility: DEFAULT 0")
-        bound_d = np.array(0.00001)
+        bound_d = [0,0.000001]
 
     # Define owner boundaries
     if Owner_portfolio:
         reho.scenario["name"] = "Owners"
         print("Calculate boundary for Owners")
         reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-        bound_o = np.array(1) # Percentage of maximal achievable revenue
+        bound_o = [0,1]
     else:
         print("Calculate boundary for Owners: DEFAULT 0")
-        bound_o = np.array(0.00001)
+        bound_o = [0,0.000001]
         if Utility_portfolio == False:
             reho.parameters["renter_expense_max"] = [1e6] * nb_buildings
 
     if Owner_PIR:
         print("Calculate PIR boundary for Owners")
-        bound_pir = np.array([reho.get_portfolio_ratio()])
+        bound_pir = [0,1]
     else:
         print("Calculate PIR boundary for Owners: DEFAULT 1")
-        bound_pir = np.array(1)
+        bound_pir = [0.99,1]
 
-    bounds = {"Utility": [0, bound_d.max()/2], "Owners": [0, bound_o.max()], "PIR": [0.99, bound_pir]}
+    bounds = {"Utility": bound_d, "Owners": bound_o, "PIR": bound_pir}
 
     # Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"
@@ -93,4 +94,4 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle","save_all"], filename='Scenario1_{}_{}_Grid'.format(cluster_num,risk_factor))
+    reho.save_results(format=["pickle"], filename='Scenario1_3')

@@ -118,7 +118,7 @@ class MasterProblem:
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
                          "list_constraints_MP": [],
-                         "list_constraints_Actors": ['Insulation_enforce', 'Owner_Sub_bigM_ub', 'Owner2']
+                         "list_constraints_Actors": ['Insulation_enforce', 'Owner_Sub_bigM_ub', 'Owner2', 'Owner_noSub', 'Renter_noSub']
                          }
 
 
@@ -1010,9 +1010,9 @@ class MasterProblem:
             beta_penalty = sum(beta * obj_fct)
 
             Costs_ft = last_SP_results[h]["df_Performance"].iloc[0].Costs_ft
-            reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu - rc_actors[h]
+            reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu
             if self.method['actors_problem']:
-                reduced_cost_h += rc_actors[h]
+                reduced_cost_h -= rc_actors[h]
             reduced_cost.at[h, 'Reduced_cost'] = reduced_cost_h
 
         if (reduced_cost.Reduced_cost >= self.DW_params['threshold_subP_value']).all():
@@ -1156,13 +1156,13 @@ class MasterProblem:
         if actor == "Renters":
             renter_expense = pd.Series(dtype='float')
             for b in self.buildings_data:
-                renter_expense[b] = (last_MP_results['df_District']['C_rent_fix'][b] +
-                                     sum(last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity']) +
-                                     cost_self_consumption[b])
+                renter_expense[b] = (last_MP_results['df_District']['C_rent_fix'][b]
+                                     + sum(last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity'])
+                                     + cost_self_consumption[b])
             return renter_expense
         elif actor == "Owner":
-            owner_expense = (- sum(last_MP_results['df_District']['C_rent_fix'])
-                             - sum(cost_self_consumption)
+            owner_expense = (sum(last_MP_results['df_District']['C_rent_fix'])
+                             + sum(cost_self_consumption)
                              - sum(last_MP_results['df_District']['Costs_inv']))
             for b in self.buildings_data:
                 owner_expense -= sum(last_MP_results['df_Actors_tariff']['Cost_demand_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_demand']['Electricity'])
@@ -1171,8 +1171,8 @@ class MasterProblem:
         elif actor == "Utility":
             utility_expense = 0
             for b in self.buildings_data:
-                utility_expense += (- sum(last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity'])
-                                    + sum(last_MP_results['df_Actors_tariff']['Cost_demand_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_demand']['Electricity']))
+                utility_expense += (+ sum(last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity'])
+                                    - sum(last_MP_results['df_Actors_tariff']['Cost_demand_district']['Electricity'][b] * last_SP_results[b]['df_Grid_t']['Grid_demand']['Electricity']))
 
             return utility_expense
 

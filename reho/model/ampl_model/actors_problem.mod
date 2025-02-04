@@ -42,13 +42,12 @@ var renter_expense{h in House};
 var C_rent_fix{h in House} >= 0;
 var C_op_renters_to_utility{h in House} >= 0;
 var C_op_renters_to_owners{h in House} >= 0;
-# var subsidies{h in House} >= 0;
 
 subject to Costs_opex_renter1{h in House}:
-C_op_renters_to_utility[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} ( Cost_supply_district[l,f,h] * Grid_supply[l,f,h,p,t] * dp[p] * dt[p] );
+C_op_renters_to_utility[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_supply_district[l,f,h] * Grid_supply[l,f,h,p,t] * dp[p] * dt[p] );
 
 subject to Costs_opex_renter2{h in House}:
-C_op_renters_to_owners[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} ( Cost_self_consumption[f,h] * PV_self_consummed[f,h,p,t] * dp[p] * dt[p] );
+C_op_renters_to_owners[h] = sum{f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_self_consumption[f,h] * PV_self_consummed[f,h,p,t] * dp[p] * dt[p] );
 
 subject to Renter1{h in House}:
 renter_expense[h] = C_rent_fix[h] + C_op_renters_to_utility[h] + C_op_renters_to_owners[h] - renter_subsidies[h] ;
@@ -62,9 +61,11 @@ subject to Rent_fix2{h in House, i in House : h != i}:
 subject to Renter_subsidies_interval{h in House}:
 renter_subsidies[h] <= renter_subsidies_bound;
 
+subject to Renter_noSub{h in House}:
+renter_subsidies[h] = 0;
+
 subject to Renter_epsilon{h in House}: #nu_renters
 renter_expense[h] <= renter_expense_max[h];
-#renter_expense[h] <= renter_expense_max[h];    
 
 subject to obj_fct1:
 objective_functions["Renters"] = sum{h in House}(renter_expense[h]);
@@ -121,7 +122,10 @@ owner_portfolio[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to
 subject to Owner2{h in House}:
 owner_portfolio[h] <= owner_portfolio_rate * (Costs_House_inv[h] + Costs_House_init[h]);
 
-subject to Owner_epsilon{h in House}: #nu_owner
+subject to Owner_noSub{h in House}:
+owner_subsidies[h] = 0;
+
+subject to Owner_epsilon{h in House}: #nuH_owner
 owner_portfolio[h] + owner_subsidies[h] >= owner_portfolio_min[h];
 
 subject to obj_fct3:

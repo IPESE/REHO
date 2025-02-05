@@ -94,4 +94,4 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario2_{}_{}_RENTER_NOSUB'.format(cluster_num,risk_factor))
+    reho.save_results(format=["pickle"], filename='Scenario2_NoAdjust')

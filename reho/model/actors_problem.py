@@ -207,9 +207,13 @@ class ActorsProblem(REHO):
 
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=ids)
         self.add_df_Results(None, Scn_ID, ids, self.scenario)
+        self.add_sample_Data(Scn_ID=Scn_ID, Pareto_ID=ids)
         self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
         self.get_KPIs(Scn_ID, ids)# process results based on results MP
         del self.results_MP['MOO_actors'], self.results_SP['MOO_actors']
+
+    def add_sample_Data(self, Scn_ID, Pareto_ID):
+        self.results[Scn_ID][Pareto_ID]['Samples']['Owner_Epsilon_percentage'] = self.samples['owner_portfolio'][Pareto_ID]
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
         self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'] = pd.DataFrame()
@@ -245,23 +249,3 @@ class ActorsProblem(REHO):
         opr = (owner_portfolio / (Costs_inv + Costs_House_init)).mean()
         return opr
 
-    def save_samples_parameters(self, df_name='', file_name=''):
-        try:
-            os.makedirs('results')
-        except OSError:
-            if not os.path.isdir('results'):
-                raise
-        if not df_name:
-            print("Error: No DataFrame name provided.")
-            return
-        try:
-            # Dynamically fetch the DataFrame from self
-            df = getattr(self, df_name)
-            # Check if the attribute is a DataFrame
-            if isinstance(df, pd.DataFrame) or isinstance(df, pd.Series):
-                df.to_csv(file_name, index=False)
-                print(f"Saved {df_name} to {file_name}")
-            else:
-                print(f"Error: {df_name} is not a DataFrame or Series.")
-        except AttributeError:
-            print(f"Error: {df_name} does not exist in the class.")

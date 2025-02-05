@@ -78,7 +78,7 @@ var utility_portfolio;
 var C_op_utility_to_owners{h in House};
 
 subject to Utility1{h in House}: 
-C_op_utility_to_owners[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_demand_district[l,f,h] * Grid_demand[l,f,h,p,t] * dp[p] * dt[p] );
+C_op_utility_to_owners[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_demand_district[l,f,h] * Grid_demand[l,f,h,p,t] * dp[p] * dt[p]);
 
 subject to Utility2:
 utility_portfolio = sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units} Costs_Unit_inv[u] - Costs_rep;

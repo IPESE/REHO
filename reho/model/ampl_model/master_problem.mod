@@ -193,7 +193,7 @@ Costs_House_cft[h] = sum{f in FeasibleSolutions} (lambda[f,h] * Costs_ft_SPs[f,h
 subject to cft_costs: 
 Costs_cft = sum{h in House} Costs_House_cft[h];
 
-subject to total_costs: 
+subject to total_costs:  # dual value=?
 Costs_tot = Costs_op + Costs_inv;
 
 ######################################################################################################################
@@ -345,12 +345,6 @@ sum{f in FeasibleSolutions, h in House} (Grid_supply[l,f,h,p,t] * lambda[f,h]*dp
 
 subject to disallow_exchanges_2{l in ResourceBalances, p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
 sum{f in FeasibleSolutions, h in House} (Grid_demand[l,f,h,p,t] * lambda[f,h]*dp[p]*dt[p]) = Network_demand[l,p,t];
-
-#subject to EMOO_c2 {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
-#Network_supply[l,p,t] <=  if EMOO_grid!=0 then EMOO_grid*sum{tau in Time[p]}(Network_supply[l,p,tau]*dt[p]/card(Time[p])) else 1e9;
-
-#subject to EMOO_c3 {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
-#Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{tau in Time[p]}(Network_demand[l,p,tau]*dt[p]/card(Time[p])) else 1e9;
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Multi objective optimization

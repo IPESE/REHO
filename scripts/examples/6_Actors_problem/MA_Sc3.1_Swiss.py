@@ -44,7 +44,7 @@ if __name__ == '__main__':
             nb_buildings = 1000
             risk_factor = float(clusters_data.loc[i, 'risk_factor'])
             TransformerCapacity = float(clusters_data.loc[i, 'TransformerCapacity'])
-            n_samples = 3
+            n_samples = 16
 
             Owner_portfolio = True
             Utility_portfolio = False
@@ -107,11 +107,12 @@ if __name__ == '__main__':
                 bound_d = [0, 0.000001]
 
             # Define owner boundaries
+            # TODO: Adjust the bound_o depending on the first results
             if Owner_portfolio:
                 reho.scenario["name"] = "Owners"
                 print("Calculate boundary for Owners")
                 reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-                bound_o = [0, 1]
+                bound_o = [0, 0.5]
             else:
                 print("Calculate boundary for Owners: DEFAULT 0")
                 bound_o = [0, 0.000001]
@@ -135,7 +136,7 @@ if __name__ == '__main__':
 
             time_now = time.strftime("%d_%Hh%M")
             # Save results
-            reho.save_results(format=["pickle"], filename='Scn_CH_{}_{}'.format(transformer, time_now))
+            reho.save_results(format=["pickle"], filename='Sc3.1_CH_{}_{}'.format(transformer, time_now))
             del reho
 
         except:

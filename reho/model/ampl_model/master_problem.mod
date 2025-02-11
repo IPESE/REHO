@@ -172,7 +172,7 @@ var Costs_cft >= -1e-4;
 var Costs_House_cft{h in House} >= -1e-4;
 var Costs_tot;
 #var DHN_inv_house{h in House} >= -1e-4 ;
-var DHN_inv_house{h in House} = 0;
+var DHN_inv_house{h in House} >= 0, <=0.01;
 
 
 subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}} :

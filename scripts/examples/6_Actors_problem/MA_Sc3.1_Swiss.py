@@ -33,7 +33,7 @@ def filter_nan(qbuildings_data):
 if __name__ == '__main__':
 
     clusters_data = pd.read_csv("./clusters_data.csv")
-    run_id = 3
+    run_id = 1
     runs = [[0, 1, 2], [3], [4], [5], [6], [7]][run_id]
 
     for i in runs:
@@ -44,7 +44,7 @@ if __name__ == '__main__':
             nb_buildings = 1000
             risk_factor = float(clusters_data.loc[i, 'risk_factor'])
             TransformerCapacity = float(clusters_data.loc[i, 'TransformerCapacity'])
-            n_samples = 16
+            n_samples = 2
 
             Owner_portfolio = True
             Utility_portfolio = False

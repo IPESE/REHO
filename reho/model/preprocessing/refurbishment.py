@@ -1,7 +1,7 @@
 from reho.paths import *
 import pandas as pd
 import numpy as np
-def calculate_refurbishment_cost(buildings_data, parameters):
+def calculate_refurbishment_cost(buildings_data, Uh_ins):
     buildings_renovation_info = {
         building_name: {
             'U_h': data['U_h'],
@@ -54,14 +54,10 @@ def calculate_refurbishment_cost(buildings_data, parameters):
             'roof_cost': roof_cost,
             'total_cost': (facade_cost + footprint_cost + roof_cost)
         }
-    #TODO delete 100000...
         total_cost[building_name] = cost_insulation[building_name]['total_cost']
-
-    # GWP
-    #if 'risk_factor' in parameters:
-        # Get the risk factor value
-    #    risk_factor = parameters['risk_factor'].get('SWI_regBLBatiments_CriticalPart')
-        # Process each building's data
+    for b in buildings_data:
+        if buildings_renovation_info[b]['U_h'] - Uh_ins[b] <= 0.00001:
+            total_cost[b] = 0
 
     return total_cost
 
@@ -106,7 +102,7 @@ def price_adjustment(c_de_2015_EUR):
     c_ch_2023_CHF = c_ch_2023_EUR * 0.963
     return c_ch_2023_CHF
 
-def U_h_insulation(buildings_data, insulation_data = True):
+def U_h_insulation(buildings_data):
     U_required_facade = 0.0002
     U_required_footprint = 0.00025
     U_required_roof = 0.00017
@@ -116,7 +112,8 @@ def U_h_insulation(buildings_data, insulation_data = True):
         U_h_data[building]= data['U_h']
         U_h_ins_data[building] = ((data['area_facade_m2'] * U_required_facade + data['area_footprint_m2'] * U_required_footprint + data['SolarRoofArea'] * U_required_roof)
                                                    / (data['ERA']))
-
+        if U_h_ins_data[building] >= U_h_data[building]:
+            U_h_ins_data[building] = U_h_data[building] - 0.00001
     return U_h_ins_data
 
 

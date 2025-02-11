@@ -340,8 +340,8 @@ class MasterProblem:
         gc.collect()  # free memory
 
         if self.method['refurbishment']:
-            U_h = refurbishment.U_h_insulation(self.buildings_data, insulation_data=True)
-            Cost_ins = refurbishment.calculate_refurbishment_cost(self.buildings_data, self.parameters)
+            U_h = refurbishment.U_h_insulation(self.buildings_data)
+            Cost_ins = refurbishment.calculate_refurbishment_cost(self.buildings_data, U_h)
             for i in buildings_data_SP:
                 buildings_data_SP[i]['U_h'] = U_h[i]
                 parameters_SP['Costs_ins'] = Cost_ins[i]
@@ -866,8 +866,8 @@ class MasterProblem:
         attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         if self.method['refurbishment']:
-            U_h = refurbishment.U_h_insulation(self.buildings_data, insulation_data=True)
-            Cost_ins = refurbishment.calculate_refurbishment_cost(self.buildings_data, self.parameters)
+            U_h = refurbishment.U_h_insulation(self.buildings_data)
+            Cost_ins = refurbishment.calculate_refurbishment_cost(self.buildings_data, U_h)
             for i in buildings_data_SP:
                 buildings_data_SP[i]['U_h'] = U_h[i]
                 parameters_SP['Costs_ins'] = Cost_ins[i]

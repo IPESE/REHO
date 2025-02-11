@@ -106,7 +106,7 @@ subject to Insulation_enforce{h in House}:
 is_ins[h] = 1;
 
 subject to Insulation1{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) >= 0.0001 - 1e10*(1-is_ins[h]);
+Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) >= 0.00001 - 1e10*(1-is_ins[h]);
 
 subject to Insulation2{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 1e7* is_ins[h];

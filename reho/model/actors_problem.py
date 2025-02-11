@@ -37,14 +37,10 @@ class ActorsProblem(REHO):
         self.samples = pd.DataFrame([[None, None]] * n_sample, columns=['utility_portfolio', 'owner_portfolio_rate'])
 
         Scn_ID = self.scenario['name']
-        #self.pool = mp.Pool(mp.cpu_count())
-        #results = {ids: self.pool.apply_async(self.run_actors_optimization, args=(self.samples, ids)) for ids in self.samples.index}
         results = self.run_actors_optimization(self.samples, 0)
-        #while len(results[list(self.samples.index)[-1]].get()) != 3:
-        #    time.sleep(1)
+
         for ids in self.samples.index:
             df_Results, df_Results_MP, solver_attributes = results
-            #df_Results, df_Results_MP, solver_attributes = results[ids].get()
             solver_attributes = solver_attributes.droplevel('Iter').iloc[[-1]].copy()
             self.add_df_Results_MP(Scn_ID, ids, self.iter, df_Results_MP, solver_attributes)    # store results MP (pool.apply_async don't store it)
             self.add_df_Results(None, Scn_ID, ids, self.scenario)   # process results based on results MP

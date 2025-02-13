@@ -269,7 +269,6 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
 
 
 def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, cluster, timestamp_file, emissions_matrix):
-
     # Emissions
     em_supply_dy = df_profiles_net.GWP_supply.xs('Electricity')
     em_demand_dy = df_profiles_net.GWP_demand.xs('Electricity')
@@ -322,7 +321,7 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
         df_h = df_annual.loc[h]
         RES_dy = (df_h['MWh_SC'] + res_e) / (df_h['MWh_SC'] + df_h['MWh_resources'] + df_h['MWh_imp_el'])
         RES_av = (df_h['MWh_SC'] + res_av * df_h['MWh_imp_el']) / (
-                    df_h['MWh_SC'] + df_h['MWh_resources'] + df_h['MWh_imp_el'])
+                df_h['MWh_SC'] + df_h['MWh_resources'] + df_h['MWh_imp_el'])
 
         RES_dy = RES_dy
         RES_av = RES_av
@@ -334,9 +333,9 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
     res_e = res_e.groupby(level=['Period']).sum()
     res_e = res_e.mul(df_Time.dp, axis=0).sum() / 1000
     RES_dy = (df_annual['MWh_SC'].sum() + res_e) / (
-                df_annual['MWh_SC'].sum() + df_annual_net['MWh_resources'] + df_annual_net['MWh_el_imp'])
+            df_annual['MWh_SC'].sum() + df_annual_net['MWh_resources'] + df_annual_net['MWh_el_imp'])
     RES_av = (df_annual['MWh_SC'].sum() + res_av.values[0] * df_annual_net['MWh_el_imp']) / (
-                df_annual['MWh_SC'].sum() + df_annual_net['MWh_resources'] + df_annual_net['MWh_el_imp'])
+            df_annual['MWh_SC'].sum() + df_annual_net['MWh_resources'] + df_annual_net['MWh_el_imp'])
 
     RES_dy = RES_dy
     RES_av = pd.DataFrame(RES_av)
@@ -609,35 +608,27 @@ def units_power_profiles_per_building(df_Results, infrastructure, unittype):
 
 
 def remove_building_from_index(df):
-    def filter_building_str(str):
-        if 'Building' in str:
-            str_split = str.split("_")
-            if len(str_split) > 2:
-                new_idx = "_".join(str.split("_", 2)[:2])
-
-            else:
-                new_idx = str_split[0]
-            hub = str_split[-1]
+    def filter_building_str(unit_str):
+        parts = unit_str.split('_')
+        if 'Building' in parts[-1]:  # Check if the last part contains 'Building'
+            new_idx = '_'.join(parts[:-1])  # Remove only the last part
+            hub = parts[-1]  # Keep the removed part separately as Hub
         else:
-            new_idx = str
+            new_idx = unit_str
             hub = 'Network'
         return new_idx, hub
 
-    new_index = []
     index_frame = df.index.to_frame()
+
     if 'Unit' in index_frame.columns:
-        for idx in index_frame['Unit']:
-            new_index.append(filter_building_str(idx))
-        new_index = pd.DataFrame.from_records(new_index, columns=['Unit', 'Hub'])
-        index_frame[['Unit', 'Hub']] = new_index.values
+        new_index = [filter_building_str(idx) for idx in index_frame['Unit']]
+        new_index_df = pd.DataFrame(new_index, columns=['Unit', 'Hub'])
+        index_frame[['Unit', 'Hub']] = new_index_df.values
     elif 'Hub' in index_frame.columns:
-        for idx in index_frame['Hub']:
-            new_index.append(filter_building_str(idx)[0])
-        index_frame['Hub'] = new_index
+        index_frame['Hub'] = [filter_building_str(idx)[0] for idx in index_frame['Hub']]
 
-    index_modified = pd.MultiIndex.from_frame(index_frame)
-
-    return df.set_index(index_modified)
+    new_index = pd.MultiIndex.from_frame(index_frame)
+    return df.set_index(new_index)
 
 
 def build_df_Economics(df_Results, df_profiles):

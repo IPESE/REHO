@@ -48,7 +48,7 @@ if __name__ == '__main__':
     reho.single_optimization()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='7b')
+    reho.save_results(format=['xlsx', 'pickle'], filename='7c')
 
     # Plot results
     plotting.plot_sankey(reho.results['totex'][0]).show()

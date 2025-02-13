@@ -7,6 +7,7 @@ from reho.model.postprocessing.KPIs import *
 from reho.paths import *
 
 from reho.model.postprocessing.write_results import get_ampl_data
+
 __doc__ = """
 File for constructing and solving the optimization problem.
 """
@@ -23,7 +24,8 @@ class REHO(MasterProblem):
     reho.model.master_problem.MasterProblem
     """
 
-    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
+    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs",
+                 DW_params=None):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
@@ -121,7 +123,7 @@ class REHO(MasterProblem):
         self.pool.close()
 
         return None, None
-    
+
     def generate_pareto_curve(self):
 
         Scn_ID = self.scenario['name']
@@ -289,7 +291,7 @@ class REHO(MasterProblem):
                 self.sort_decomp_result(Scn_ID, df['index'].values)
 
         # Bounds Pareto curve
-        obj1_lower_bound = find_obj1_lower_bound() 
+        obj1_lower_bound = find_obj1_lower_bound()
         obj1_upper_bound = find_obj2_lower_bound()
 
         obj1_max = obj1_upper_bound["district_obj1"]
@@ -416,8 +418,7 @@ class REHO(MasterProblem):
         district_units = [i for i in self.infrastructure.district_units if i["UnitOfType"] != "DHN_pipes"]
         units = {"building_units": self.infrastructure.units, "district_units": district_units}
         buildings = {"buildings_data": self.buildings_data}
-        self.infrastructure = infrastructure.Infrastructure(buildings,  units, self.infrastructure.grids)
-
+        self.infrastructure = infrastructure.Infrastructure(buildings, units, self.infrastructure.grids)
 
     def add_df_Results(self, ampl, Scn_ID, Pareto_ID, scenario):
         if self.method['building-scale'] or self.method['district-scale']:
@@ -466,7 +467,7 @@ class REHO(MasterProblem):
         # df_Grid
         df = self.get_final_SPs_results(MP_selection, 'df_Grid')
         df = df.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-        df_Grid = pd.concat([df,last_results["df_Grid"]])
+        df_Grid = pd.concat([df, last_results["df_Grid"]])
 
         # df_Grid_t
         df = self.get_final_SPs_results(MP_selection, 'df_Grid_t')
@@ -521,13 +522,14 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                #Only consider PeriodStandard (without extreme days) to compute annual balance.
+                # Only consider PeriodStandard (without extreme days) to compute annual balance
                 PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
                     ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
 
                 # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
-                                level='Period', axis=0).sum() / 1000
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(
+                    df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
+                    level='Period', axis=0).sum() / 1000
 
                 # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')
@@ -565,12 +567,12 @@ class REHO(MasterProblem):
         df_Results["df_Performance"] = df_Performance
         df_Results["df_Annuals"] = df_Annuals
         df_Results["df_Unit"] = df_Unit
-        df_Results["df_Grid"]=df_Grid
+        df_Results["df_Grid"] = df_Grid
         df_Results["df_Grid_t"] = df_Grid_t
         df_Results["df_Time"] = df_Time
 
-        #Add Long-term storage to results dictionary (if 'interperiod_storage': True in method)
-        if (self.method["interperiod_storage"]):
+        # Add interperiod storage to results dictionary
+        if self.method["interperiod_storage"]:
             try:
                 df_interperiod = self.get_final_SPs_results(MP_selection, 'df_Interperiod')
                 df_interperiod = df_interperiod.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
@@ -582,11 +584,10 @@ class REHO(MasterProblem):
             except:
                 df_interperiod_district = pd.DataFrame()
 
-            df_interperiod_all = pd.concat([df_interperiod, df_interperiod_district],axis=0)
+            df_interperiod_all = pd.concat([df_interperiod, df_interperiod_district], axis=0)
             df_interperiod_all = df_interperiod_all.sort_index(level=0)
 
             df_Results["df_Interperiod"] = df_interperiod_all
-
 
         if self.method["save_data_input"]:
             df_Results["df_Buildings"] = df_Buildings
@@ -639,7 +640,8 @@ class REHO(MasterProblem):
         return df
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
-        df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster, self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
+        df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster,
+                                              self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
         self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
         self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_Economics
 

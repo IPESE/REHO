@@ -37,7 +37,7 @@ ElectricalHeater_SH,Electrical heater SH,EH (SH),Chauffage électrique,#ff6666,g
 ,,,,,,,
 HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon,#CD1076,pink
 HeatPump_Air,Heat pump air,HP air,"Pompe à chaleur, air",#FEA993,salmon,#CD1076,pink
-HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, DHN",#FEA993,salmon,#CD1076,pink
+HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, CAD",#FEA993,salmon,#CD1076,pink
 HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",#FEA993,salmon,#CD1076,pink
 HeatPump_Geothermal_district,HP geothermal (district),District HP geo,"PAC géothermie (district)",#FEA993,salmon,#CD1076,pink
 HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon,#CD1076,pink
@@ -104,3 +104,4 @@ CO2_storage_IP,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darky
 CO2_storage_IP_district,CO2 storage,CH4_stor,CH4_storage,#9f8753,darkyellow,#9f8753,darkyellow
 Hybrid_storage_IP,Hybrid (CH4/CO2) storage,Hyb_stor,Hyb_stor,#9f8753,darkyellow,#9f8753,darkyellow
 Hybrid_storage_IP_district,Hybrid (CH4/CO2) storage,Hyb_stor,Hyb_stor,#9f8753,darkyellow,#9f8753,darkyellow
+Compressor_IP,Storage compressor,Comp,Compressor_IP,#82a4d6,lightblue,#9AC0CD,bluegrey

@@ -118,11 +118,19 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=No
     indices = data_resources.index.get_level_values(0)
     new_indices = []
     [new_indices.append(tuple(idx.split("_", 1))) for idx in indices]
-    for i, tup in enumerate(new_indices):
+    for i, tup in enumerate(new_indices):  # TODO generalize this for all layers
         if tup == ('costs', 'Electricity'):
             new_indices[i] = ('costs', 'Electrical_grid')
         elif tup == ('revenues', 'Electricity'):
             new_indices[i] = ('revenues', 'Electrical_grid_feed_in')
+        if tup == ('costs', 'Hydrogen'):
+            new_indices[i] = ('costs', 'Hydrogen_grid')
+        elif tup == ('revenues', 'Hydrogen'):
+            new_indices[i] = ('revenues', 'Hydrogen_grid_feed_in')
+        if tup == ('costs', 'Biomethane'):
+            new_indices[i] = ('costs', 'Biomethane_grid')
+        elif tup == ('revenues', 'Biomethane'):
+            new_indices[i] = ('revenues', 'Biomethane_grid_feed_in')
     data_resources.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
 
     if premium_version is not None:

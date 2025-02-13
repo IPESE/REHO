@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # Set method options (as defined in sub_problem.py > initialize_default_methods)
     # By default a district-scale design is performed with a compact formulation.
     # Watch out the maximum number of buildings is around 10 due to exponential complexity.
-    method = {"save_streams":True}
+    method = {}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv

@@ -164,20 +164,20 @@ AnnualHeatGainHouse[h] = sum{p in PeriodStandard,t in Time[p]}(HeatGains[h,p,t]*
 subject to total_solar_gains{h in House}:
 AnnualSolarGainHouse[h] = sum{p in PeriodStandard,t in Time[p]}(SolarGains[h,p,t]*dp[p]*dt[p]/1000);
 
-/*
-### Additional export constraints for biofuels production
+######################################################################################################################
+#--------------------------------------------------------------------------------------------------------------------#
+# SPECIFIC CONSTRAINTS
+#--------------------------------------------------------------------------------------------------------------------#
+######################################################################################################################
 
-param HydrogenNetExport >= 0 default 0;
-param NetExportTol >= 0 default 1; # Percentage % of HydrogenNetExport
+### Force hydrogen export
 
-subject to forced_H2_export_min:
-HydrogenNetExport  * (1 - NetExportTol/100) <= sum{p in PeriodStandard,t in Time[p]} Network_demand['Hydrogen',p,t]*dp[p]*dt[p];
+param HydrogenAnnualExport >= 0 default 0;  # set as a parameter for an annual H2 export [kWh]
 
-subject to forced_H2_export_max:
-HydrogenNetExport * (1 + NetExportTol/100) >= sum{p in PeriodStandard,t in Time[p]} Network_demand['Hydrogen',p,t]*dp[p]*dt[p];
+subject to forced_H2_annual_export:
+HydrogenAnnualExport = sum{p in PeriodStandard,t in Time[p]} Network_demand['Hydrogen',p,t]*dp[p]*dt[p];
 
-var HydrogenDailyExport >= 0 default 0;
+var HydrogenDailyExport >= 0;  # set as a variable for an optimal daily H2 export [kWh]
 
-subject to forced_cont_H2_export{p in PeriodStandard}:
+subject to forced_H2_fixed_daily_export{p in PeriodStandard}:
 HydrogenDailyExport = sum{t in Time[p]} Network_demand['Hydrogen',p,t]*dt[p];
-*/

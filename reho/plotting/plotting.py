@@ -575,7 +575,7 @@ def plot_sankey(df_Results, label='EN_long', color='ColorPastel', title=None, fi
     label: str
         Indicate the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
     color: str
-        Indicate the color set to use for the plot. Choose among 'ColorPastel', 'ColorFlash'.
+        Indicate the color set to use for the plot. 'ColorPastel' is default.
     title: str
         Title for the plot.
     filename: str
@@ -652,7 +652,7 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
     label: str
         Indicate the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
     color: str
-        Indicate the color set to use for the plot. Choose among 'ColorPastel', 'ColorFlash'.
+        Indicate the color set to use for the plot. 'ColorPastel' is default.
     resolution: str
         Moving average possible, choose between 'monthly', 'weekly', and 'daily'.
     plot_curtailment: bool
@@ -753,10 +753,10 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
 
     if style == 'matplotlib':
         fig, ax = plt.subplots()
-        ax.plot(idx, import_profile["Electricity"], color=layout.loc['Electrical_grid', color],
-                label=layout.loc['Electrical_grid', label])
-        ax.plot(idx, -export_profile["Electricity"], color=layout.loc['Electrical_grid_feed_in', color],
-                label=layout.loc['Electrical_grid_feed_in', label])
+        ax.plot(idx, import_profile["Electricity"], color=layout.loc['Electricity_import', color],
+                label=layout.loc['Electricity_import', label])
+        ax.plot(idx, -export_profile["Electricity"], color=layout.loc['Electricity_export', color],
+                label=layout.loc['Electricity_export', label])
         for layer in list(layers)[1:]:
             ax.plot(idx, import_profile[layer], color=layout.loc[layer, color], label=layout.loc[layer, label], alpha=0.5)
         for unit in units_demand:
@@ -788,8 +788,8 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
             x=idx,
             y=import_profile["Electricity"],
             mode="lines",
-            name=layout.loc['Electrical_grid', label],
-            line=dict(color=layout.loc['Electrical_grid', color])
+            name=layout.loc['Electricity_import', label],
+            line=dict(color=layout.loc['Electricity_import', color])
         ))
 
         if export_profile["Electricity"].any() > 0:
@@ -797,8 +797,8 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
                 x=idx,
                 y=-export_profile["Electricity"],
                 mode="lines",
-                name=layout.loc['Electrical_grid_feed_in', label],
-                line=dict(color=layout.loc['Electrical_grid_feed_in', color], dash='dash')
+                name=layout.loc['Electricity_export', label],
+                line=dict(color=layout.loc['Electricity_export', color], dash='dash')
             ))
 
         for layer in list(layers)[1:]:
@@ -1168,7 +1168,7 @@ def plot_pareto(results, color='ColorPastel', title=None, return_df=False):
     results: dict
         Dictionary of REHO results.
     color: str
-        Indicate the color set to use for the plot. Choose among 'ColorPastel', 'ColorFlash'.
+        Indicate the color set to use for the plot. 'ColorPastel' is default.
     title: str
         Title for the plot.
     return_df: bool
@@ -1482,12 +1482,6 @@ def plot_composite_curve(df_Results, cluster, periods=["Yearly"], filename=None,
 
 def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
     def plot_storage_sep(storage_SOC_tot, counter, fig, stor_var, items_average):
-        cm = {
-            "Electricity": 'rgba(167, 165, 165, 0.5)',
-            "H2": 'rgba(121, 166, 210, 0.5)',
-            "CH4": 'rgba(215, 182, 82, 0.5)',
-            "CO2": 'rgba(210, 54, 62, 0.5)'
-        }
 
         time_index = np.arange(0, 8760)
 
@@ -1496,16 +1490,22 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
 
         mol = stor_var.split("_")[0]
         if mol == "BAT":
-            mol = "Electricity"
+            mol = "Battery"
+        elif mol == "H2":
+            mol = "H2_storage_IP"
+        elif mol == "CH4":
+            mol = "CH4_storage_IP"
+        elif mol == "CO2":
+            mol = "CO2_storage_IP"
 
         fig.add_trace(go.Scatter(
             x=time_index_average,
             y=SOC_average,
             mode='lines',
             name=mol + " storage",
-            line=dict(color=cm[mol], width=0),
+            line=dict(color=hex_to_rgb(layout.loc[mol, "ColorPastel"]), width=0),
             fill='tozeroy',
-            fillcolor=cm[mol]
+            fillcolor=hex_to_rgb(layout.loc[mol, "ColorPastel"])
         ),
             row=counter,
             col=1
@@ -1679,27 +1679,28 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
                 )
     if IP_storage is not None:
         for storage in IP_storage:
-            cm = {
-                "Electricity": 'rgba(167, 165, 165, 0.2)',
-                "H2": 'rgba(121, 166, 210, 0.2)',
-                "CH4": 'rgba(215, 182, 82, 0.2)',
-                "CO2": 'rgba(210, 54, 62, 0.2)'
-            }
+
             storage_SOC_tot = df_interperiod.groupby(level=1)[storage].sum()
             max_storage = df_Results["df_Interperiod"][storage].max()
 
             mol = storage.split("_")[0]
             if mol == "BAT":
-                mol = "Electricity"
+                mol = "Battery"
+            elif mol == "H2":
+                mol = "H2_storage_IP"
+            elif mol == "CH4":
+                mol = "CH4_storage_IP"
+            elif mol == "CO2":
+                mol = "CO2_storage_IP"
 
             fig.add_trace(go.Scatter(
                 x=list(TD_time.index),
                 y=storage_SOC_tot / max_storage * 100,
                 mode="lines",
                 name=mol + " storage",
-                line=dict(color=cm[mol]),
+                line=dict(color=hex_to_rgb(layout.loc[mol, "ColorPastel"])),
                 fill='tozeroy',
-                fillcolor=cm[mol]
+                fillcolor=hex_to_rgb(layout.loc[mol, "ColorPastel"])
             ),
                 row=2,
                 col=1

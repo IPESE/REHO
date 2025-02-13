@@ -22,6 +22,13 @@ cm = dict({'ardoise': '#413D3A', 'perle': '#CAC7C7', 'rouge': '#FF0000', 'grosei
 layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Name').dropna(how='all')
 
 
+def hex_to_rgb(value, transparency=0.5):
+    value = value.lstrip('#')
+    lv = len(value)
+    rgb = tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+    return "rgba" + str(rgb)[:-1] + ", " + str(transparency) + ")"
+
+
 def dict_to_df(results, df):
     t = {(Scn_ID, Pareto_ID): results[Scn_ID][Pareto_ID][df]
          for Scn_ID in results.keys()
@@ -120,26 +127,26 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=No
     [new_indices.append(tuple(idx.split("_", 1))) for idx in indices]
     for i, tup in enumerate(new_indices):  # TODO generalize this for all layers
         if tup == ('costs', 'Electricity'):
-            new_indices[i] = ('costs', 'Electrical_grid')
+            new_indices[i] = ('costs', 'Electricity_import')
         elif tup == ('revenues', 'Electricity'):
-            new_indices[i] = ('revenues', 'Electrical_grid_feed_in')
+            new_indices[i] = ('revenues', 'Electricity_export')
         if tup == ('costs', 'Hydrogen'):
-            new_indices[i] = ('costs', 'Hydrogen_grid')
+            new_indices[i] = ('costs', 'Hydrogen_import')
         elif tup == ('revenues', 'Hydrogen'):
-            new_indices[i] = ('revenues', 'Hydrogen_grid_feed_in')
+            new_indices[i] = ('revenues', 'Hydrogen_export')
         if tup == ('costs', 'Biomethane'):
-            new_indices[i] = ('costs', 'Biomethane_grid')
+            new_indices[i] = ('costs', 'Biomethane_import')
         elif tup == ('revenues', 'Biomethane'):
-            new_indices[i] = ('revenues', 'Biomethane_grid_feed_in')
+            new_indices[i] = ('revenues', 'Biomethane_export')
     data_resources.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
 
     if premium_version is not None:
         data_resources.loc[('avoided', 'solar_premium'), :] = data_resources.loc[('avoided', 'PV_SC')] * (premium_version[0] - premium_version[1]) / \
                                                               premium_version[0]
-        data_resources.loc[('revenues', 'solar_value'), :] = data_resources.loc[('revenues', 'Electrical_grid_feed_in')] + data_resources.loc[
+        data_resources.loc[('revenues', 'solar_value'), :] = data_resources.loc[('revenues', 'Electricity_export')] + data_resources.loc[
             ('avoided', 'PV_SC')] - data_resources.loc[('avoided', 'solar_premium')]
         data_resources = data_resources.drop("PV_SC", level='Layer')
-        data_resources = data_resources.drop("Electrical_grid_feed_in", level='Layer')
+        data_resources = data_resources.drop("Electricity_export", level='Layer')
 
     data_resources = data_resources.drop("PV", level='Layer')
 

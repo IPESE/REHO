@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'FossilFuel': {},
+                                             'Gasoline': {},
                                              'Mobility': {},
                                              })
     units = infrastructure.initialize_units(scenario, grids, district_data=True)

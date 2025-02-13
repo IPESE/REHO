@@ -28,7 +28,7 @@ var share_ICE{u in UnitsOfType['ICE'],p in Period} >= 0; # [-]
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
 subject to ICE_EB_c1{u in UnitsOfType['ICE'],p in Period,t in Time[p]}:
-Units_demand['FossilFuel',u,p,t ]= Units_supply['Mobility',u,p,t] /  ICE_eff[u]/ ff_ICE;
+Units_demand['Gasoline',u,p,t ]= Units_supply['Mobility',u,p,t] /  ICE_eff[u]/ ff_ICE;
 
 subject to ICE_EB_c2{u in UnitsOfType['ICE'],p in Period, t in Time[p]}:
 Units_supply['Mobility',u,p,t] = share_ICE[u,p] * Daily_Profile[u,p,t];

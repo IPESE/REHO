@@ -182,8 +182,10 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_12.columns = ['Capacity', 'UseCapacity']
         df_12.index.names = ['Layer', 'Hub']
         df_Grid = df_12.swaplevel().sort_index()
-        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_line_inv1']+(df_Grid['Capacity'] -df7['Line_ext']*(1-df_Grid['UseCapacity']))*df4['Cost_line_inv2']*df8['Line_Length']
-        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_line_1'] + (df_Grid['Capacity']-df7['Line_ext']*(1-df_Grid['UseCapacity']))*df6['GWP_line_2']*df8['Line_Length']
+        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_line_inv1'] + (df_Grid['Capacity'] - df7['Line_ext'] * (1 - df_Grid['UseCapacity'])) * \
+                                       df4['Cost_line_inv2'] * df8['Line_Length']
+        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_line_1'] + (df_Grid['Capacity'] - df7['Line_ext'] * (1 - df_Grid['UseCapacity'])) * df6[
+            'GWP_line_2'] * df8['Line_Length']
         return df_Grid
 
     def set_df_grid(ampl, method):
@@ -299,24 +301,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         return df_Streams_t.sort_index()
 
-    def set_dfs_lca(ampl):
-
-        LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)
-        LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
-
-        LCA_tot = get_ampl_data(ampl, 'lca_tot')
-        LCA_tot = LCA_tot.stack().unstack(level=0)
-        LCA_tot.index = ["Network"]
-        LCA_tot_house = get_ampl_data(ampl, 'lca_tot_house', multi_index=True)
-        LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
-        LCA_tot = pd.concat([LCA_tot_house, LCA_tot], axis=0)
-        LCA_tot.index.names = ['Hub']
-
-        LCA_op = get_ampl_data(ampl, 'lca_op', multi_index=True)
-        LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
-
-        return LCA_units, LCA_tot, LCA_op
-
     def set_dfs_pv(ampl):
 
         # PV_Surface
@@ -403,9 +387,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
     if method["save_streams"]:
         df_Results["df_Streams_t"] = set_df_streams_t(ampl)
 
-    if method['save_lca']:
-        df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(ampl)
-
     if method['use_pv_orientation'] or method['use_facades']:
         df_Results["df_PV_Surface"], df_Results["df_PV_orientation"] = set_dfs_pv(ampl)
 
@@ -465,7 +446,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df4 = get_ampl_data(ampl, 'Cost_network_inv2', multi_index=False)
     df5 = get_ampl_data(ampl, 'GWP_network_1', multi_index=False)
     df6 = get_ampl_data(ampl, 'GWP_network_2', multi_index=False)
-    df7 = get_ampl_data(ampl,'Network_ext', multi_index=False)
+    df7 = get_ampl_data(ampl, 'Network_ext', multi_index=False)
 
     df3.index.names = ['Layer']
     df4.index.names = ['Layer']
@@ -474,13 +455,15 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df7.index.names = ['Layer']
 
     df12 = pd.concat([df1, df2], axis=1)
-    df12.columns=['Capacity', 'UseCapacity']
+    df12.columns = ['Capacity', 'UseCapacity']
     df12.index.names = ['Layer']
-    df12['Hub']='Network'
+    df12['Hub'] = 'Network'
     df12.set_index('Hub', append=True, inplace=True)
-    df_Grid=df12.swaplevel().sort_index()
-    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_network_inv1'] + (df_Grid['Capacity']-df7['Network_ext']*(1-df_Grid['UseCapacity'])) * df4['Cost_network_inv2']
-    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_network_1'] + (df_Grid['Capacity']-df7['Network_ext']*(1-df_Grid['UseCapacity'])) * df6['GWP_network_2']
+    df_Grid = df12.swaplevel().sort_index()
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_network_inv1'] + (
+                df_Grid['Capacity'] - df7['Network_ext'] * (1 - df_Grid['UseCapacity'])) * df4['Cost_network_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_network_1'] + (df_Grid['Capacity'] - df7['Network_ext'] * (1 - df_Grid['UseCapacity'])) * \
+                                  df6['GWP_network_2']
 
     df_Results['df_Grid'] = df_Grid
 
@@ -518,11 +501,11 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df_Results["df_District"] = df_District.sort_index()
 
     # df_beta
-    emoo_keys = ["EMOO_CAPEX", "EMOO_OPEX", "EMOO_GWP", "EMOO_TOTEX", "EMOO_lca"]
+    emoo_keys = ["EMOO_CAPEX", "EMOO_OPEX", "EMOO_GWP", "EMOO_TOTEX"]
     list_keys = [i for i in scenario["EMOO"].keys() if i in emoo_keys]
     if not list_keys:
-        df = pd.DataFrame([0.0] * 16)
-        df.index = ['CAPEX', 'OPEX', 'GWP', 'TOTEX'] + list(get_ampl_data(ampl, 'Lca_kpi').index)
+        df = pd.DataFrame([0.0] * 4)
+        df.index = ['CAPEX', 'OPEX', 'GWP', 'TOTEX']
         df.columns = ["beta"]
         df_Results["df_beta"] = df
     else:
@@ -536,9 +519,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df4.columns = ['TOTEX']
         df_beta = pd.concat([df1, df2, df3, df4], axis=1).stack().droplevel(0)
         df_beta = pd.DataFrame(df_beta, columns=['beta'])
-        df5 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_lca_constraint', False)
-        df5.columns = ['beta']
-        df_Results["df_beta"] = pd.concat([df_beta, df5])
+        df_Results["df_beta"] = df_beta
 
     # District_t
     df1 = get_ampl_data(ampl, 'Cost_demand_network', multi_index=True)
@@ -547,15 +528,15 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df4 = get_ampl_data(ampl, 'GWP_supply', multi_index=True)
     df5 = get_ampl_data(ampl, 'Network_supply', multi_index=True)
     df6 = get_ampl_data(ampl, 'Network_demand', multi_index=True)
-    df7 = get_ampl_data(ampl,"Domestic_energy",multi_index = True)
+    df7 = get_ampl_data(ampl, "Domestic_energy", multi_index=True)
 
     if binary:
         df_District_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1).sort_index()
     else:
         df_District_t = pd.concat([df5, df6], axis=1)
     if "EV_district" in district.UnitsOfDistrict:
-        df8 = get_ampl_data(ampl,"EV_supply_ext", multi_index = True)
-        df8 = df8[['EV_supply_ext']].unstack(level = 0)
+        df8 = get_ampl_data(ampl, "EV_supply_ext", multi_index=True)
+        df8 = df8[['EV_supply_ext']].unstack(level=0)
         df8.columns = [f'EV_supply_ext[{j}]' if j != '' else f'{i}' for i, j in df8.columns]
         df8 = pd.concat([df8], keys=['Electricity'], names=['Layer'])
         df8["EV_revenue_ext"] = get_ampl_data(ampl, 'EV_revenue_ext').values
@@ -577,10 +558,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df1.columns = ['pi']
     df2 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_GWP', True)
     df2.columns = ['pi_GWP']
-    df3 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_lca', True).stack().unstack(0).droplevel(3)
-    df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_grid_constraint', False)
-    df4.columns = ['gamma_supply']
-    df_Dual_t = pd.concat([df1, df2, df3, df4], axis=1)
+    df3 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_grid_constraint', False)
+    df3.columns = ['gamma_supply']
+    df_Dual_t = pd.concat([df1, df2, df3], axis=1)
     df_Dual_t.index.names = ['Layer', 'Period', 'Time']
     df_Results["df_Dual_t"] = df_Dual_t.sort_index()
 
@@ -617,8 +597,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             if len(ampl.getSet('Districts').getValues().toList()) > 0:
                 df7 = get_ampl_data(ampl, 'EV_demand_ext', multi_index=True)
-                df7 = df7[['EV_demand_ext']].unstack(level = [0,1])
-                df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j,k in df7.columns]
+                df7 = df7[['EV_demand_ext']].unstack(level=[0, 1])
+                df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j, k in df7.columns]
                 df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
             else:
                 df7 = pd.DataFrame()
@@ -634,23 +614,6 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Interperiod"] = set_df_Interperiod(ampl)
     else:
         df_Results["df_Interperiod"] = pd.DataFrame()
-    # LCA
-    if method["save_lca"]:
-        LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)
-        LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
-        df_Results["df_lca_Units"] = LCA_units
-
-        LCA_tot = get_ampl_data(ampl, 'lca_tot')
-        LCA_tot = LCA_tot.stack().unstack(level=0)
-        LCA_tot.index = ["Network"]
-        LCA_tot_house = get_ampl_data(ampl, 'lca_tot_house', multi_index=True)
-        LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
-        df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
-        df_Results["df_lca_Performance"].index.names = ['Hub']
-
-        LCA_op = get_ampl_data(ampl, 'lca_op', multi_index=True)
-        LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
-        df_Results["df_lca_operation"] = LCA_op
 
     if method["actors_problem"]:
         df1 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True).groupby(level=(0, 2)).sum()
@@ -675,16 +638,17 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
     return df_Results
 
-def set_df_Interperiod(ampl):
 
+def set_df_Interperiod(ampl):
     IP_stor_list = []
-    def add_stor_to_list(IP_stor_list,ampl,var):
+
+    def add_stor_to_list(IP_stor_list, ampl, var):
         """
         Check whether the var is an ampl variable and (if not empty) add it to the list of IP_stor_list if it is the case.
         Use reset_index for level 1 as we want to differentiate on the  Building and the HourOfYear, not on the type
         """
         try:
-            df1 = get_ampl_data(ampl, var, multi_index=True).reset_index(level=1,drop=True)
+            df1 = get_ampl_data(ampl, var, multi_index=True).reset_index(level=1, drop=True)
             df1.index = df1.index.str.split("_").str[-1]
             if not df1.empty:
                 IP_stor_list.append(df1)
@@ -700,7 +664,7 @@ def set_df_Interperiod(ampl):
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CH4_stor_stored")
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CO2_stor_stored")
     if IP_stor_list:
-        df_IP_storage = pd.concat(IP_stor_list,axis=1)
+        df_IP_storage = pd.concat(IP_stor_list, axis=1)
         if df_IP_storage.index.nlevels == 1:
             new_level = list(range(len(df_IP_storage)))
             # Convert the existing index to a list (or use .get_level_values() for specific levels)
@@ -722,6 +686,8 @@ def set_df_Interperiod(ampl):
         df_IP_storage = pd.DataFrame()
 
     return df_IP_storage
+
+
 def get_ampl_data(ampl, ampl_name, multi_index=False):
     # AMPl data in AMPLPY Dataframe
     df = ampl.getData(ampl_name)

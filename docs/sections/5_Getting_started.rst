@@ -534,7 +534,7 @@ Where:
     - The unit name has to match the *Unit* column of ``building_units.csv``.
     - If you do not want to exclude or enforce any unit, give empty lists.
 - :code:`grids` is the dictionary formerly returned by :code:`initialize_grids()`.
-- ``building_units.csv`` contains the default parameters for units characteristics (specific cost, LCA indicators...).
+- ``building_units.csv`` contains the default specifications for units (cost, carbon footprint...).
 
 District units can be enabled with the argument :code:`district_data`:
 

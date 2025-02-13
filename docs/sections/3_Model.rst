@@ -464,28 +464,14 @@ These layers are modeled through parameters that can be changed in the model:
 
 - Import and export tariffs,
 - Carbon content,
-- Environmental impact (detailed LCA characterization).
-
-.. _List of LCA criteria:
-
-.. dropdown:: List of LCA criteria
-    :icon: globe
-
-    - Land use
-    - Human toxicity
-    - Water pollutants
-    - (to be completed)
-
-    .. caution:: Complete list of LCA
+- Environmental impact.
 
 They can be set as constant through the year or specified at an hourly resolution.
 
 Specifications
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Cost, environmental impact, maximal capacity for district imports and exports
-
-.. Are they internal costs?
+Cost, environmental impact, maximal capacity for district imports and exports.
 
 
 Equipments
@@ -497,7 +483,7 @@ the *EUDs*.
 The units are parametrized by:
 
 - Specific cost (fixed and variable costs, valid for a limited range :math:`f_{min}` - :math:`f_{max}`)
-- Environmental impact (= grey energy encompassing the manufacturing of the unit, and distributed over the lifetime of the unit, see `List of LCA criteria`_)
+- Environmental impact (= grey energy encompassing the manufacturing of the unit, and distributed over the lifetime of the unit)
 - Thermodynamics properties (efficiency, temperature of operation)
 
 Building-level units

@@ -143,7 +143,7 @@ class MasterProblem:
         self.pool = None
         self.iter = 0  # keeps track of iterations, takes value of last iteration circle
         self.feasible_solutions = 0  # keeps track how many sets of SP solutions are proposed to the MP eg '2' means two per building
-        list_obj = list(self.infrastructure.lca_kpis) + ["TOTEX", "CAPEX", "OPEX", "GWP"]
+        list_obj = ["TOTEX", "CAPEX", "OPEX", "GWP"]
         self.flags = {obj: 0 for obj in list_obj}  # keep track if the initialization has already been done
 
         # output attributes
@@ -301,10 +301,7 @@ class MasterProblem:
             emoo = scenario["EMOO"].copy()
             emoo.pop("EMOO_grid")
             if len(emoo) == 1:
-                if 'EMOO_lca' in emoo:
-                    scenario["EMOO"]["EMOO_lca"][list(emoo["EMOO_lca"].keys())[0]] = epsilon_init.loc[h]
-                else:
-                    scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
+                scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
             else:
                 raise warnings.warn("Multiple epsilon constraints")
         elif not self.method['building-scale']:
@@ -485,19 +482,9 @@ class MasterProblem:
         MP_parameters['Costs_ft_SPs'] = pd.DataFrame(np.round(df_Performance.Costs_ft, 6)).set_axis(['Costs_ft_SPs'], axis=1)
         MP_parameters['GWP_house_constr_SPs'] = pd.DataFrame(df_Performance.GWP_constr).set_axis(['GWP_house_constr_SPs'], axis=1)
 
-        if self.method['save_lca']:
-            df_lca_Units = self.return_combined_SP_results(self.results_SP, 'df_lca_Units')
-            df_lca_Units = df_lca_Units.groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'house']).sum()
-            MP_parameters['lca_house_units_SPs'] = df_lca_Units.droplevel(["Scn_ID", "Pareto_ID"]).stack().swaplevel(1, 2)
-            if not self.method['include_all_solutions']:
-                MP_parameters['lca_house_units_SPs'] = MP_parameters['lca_house_units_SPs'].xs(self.feasible_solutions - 1, level="FeasibleSolution",
-                                                                                               drop_level=False)
-
         MP_parameters['Grids_Parameters'] = self.infrastructure.Grids_Parameters
-        MP_parameters['Grids_Parameters_lca'] = self.infrastructure.Grids_Parameters_lca
         MP_parameters['Units_flowrate'] = self.infrastructure.Units_flowrate.query('Unit.str.contains("district")')
         MP_parameters['Units_Parameters'] = self.infrastructure.Units_Parameters.query('index.str.contains("district")')
-        MP_parameters['Units_Parameters_lca'] = self.infrastructure.Units_Parameters_lca.query('index.get_level_values("Units").str.contains("district")')
 
         if self.method['use_dynamic_emission_profiles']:
             MP_parameters['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
@@ -541,7 +528,7 @@ class MasterProblem:
         if 'ReinforcementOfNetwork' in self.infrastructure.Set.keys():
             additional = additional + ["ReinforcementOfNetwork"]
 
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi'] + additional:
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer'] + additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
@@ -738,7 +725,6 @@ class MasterProblem:
         # Give dual variables to Subproblem
         pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
         pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
-        pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_lca')
         pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
 
         parameters_SP = {'Cost_supply_network': pi,
@@ -747,7 +733,6 @@ class MasterProblem:
                          'Cost_demand': pi_h * (1 - 1e-9),
                          'GWP_supply': pi_GWP,
                          'GWP_demand': pi_GWP.mul(0),  # set emissions of feed in to 0 -> changed in  postcompute
-                         'lca_kpi_demand': pi_lca.mul(0)
                          }
 
         # find district structure, objective, beta and parameter for one single building
@@ -836,26 +821,19 @@ class MasterProblem:
             df_Grid_t = df_Grid_t.xs(h, level='Hub')
             pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi')
             pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_GWP')
-            pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_lca')
 
             # Operation impact
             Cop_h = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi, cost_supply=pi)
             Cop_h_GWP = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_GWP, cost_supply=pi_GWP)
-            Cop_h_lca = [self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_lca.xs(kpi), cost_supply=pi_lca.xs(kpi)) for kpi in self.infrastructure.lca_kpis]
-            Cop_h_lca = pd.concat(Cop_h_lca, axis=1)
-            Cop_h = pd.concat([Cop_h, Cop_h_GWP, Cop_h_lca], axis=1)
-            Cop_h.columns = ["TOTEX", "GWP"] + list(self.infrastructure.lca_kpis)
+            Cop_h = pd.concat([Cop_h, Cop_h_GWP], axis=1)
+            Cop_h.columns = ["TOTEX", "GWP"]
             Cop = pd.concat([Cop, Cop_h])
 
             # Investment impact
             df = last_SP_results[h]["df_Performance"].iloc[0]
             Cinv_h = pd.Series(df.Costs_rep + df.Costs_inv, index=["TOTEX"])
             Cinv_h_GWP = pd.Series(df.GWP_constr, index=["GWP"])
-            if self.method['save_lca']:
-                Cinv_h_lca = last_SP_results[h]["df_lca_Units"].sum()
-                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP, Cinv_h_lca])).transpose()
-            else:
-                Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP])).transpose()
+            Cinv_h = pd.DataFrame(pd.concat([Cinv_h, Cinv_h_GWP])).transpose()
             Cinv_h.index = Cop_h.index
             Cinv = pd.concat([Cinv, Cinv_h])
 
@@ -997,9 +975,7 @@ class MasterProblem:
         return annual_grid_costs
 
     def select_MP_objective(self, ampl, scenario):
-        list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
-                            'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP[
-                               "list_constraints_MP"]
+        list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
 
         for cst in list_constraints:
             try:
@@ -1012,10 +988,7 @@ class MasterProblem:
             for epsilon_constraint in emoo:
                 ampl.getConstraint(epsilon_constraint + '_constraint').restore()
                 epsilon_parameter = ampl.getParameter(epsilon_constraint)
-                if epsilon_constraint in ["EMOO_lca"]:
-                    epsilon_parameter.setValues(scenario['EMOO'][epsilon_constraint])
-                else:
-                    epsilon_parameter.setValues([scenario['EMOO'][epsilon_constraint]])
+                epsilon_parameter.setValues([scenario['EMOO'][epsilon_constraint]])
 
         if 'specific' in scenario:
             for specific_constraint in scenario['specific']:
@@ -1048,12 +1021,9 @@ class MasterProblem:
         # add beta values on emoo constraint
         if isinstance(beta, (float, int)) and not self.method['building-scale']:
             emoo = scenario["EMOO"].copy()
-            for cst in [k for k in scenario["EMOO"].keys() if k not in ['EMOO_TOTEX', 'EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_lca']]:
+            for cst in [k for k in scenario["EMOO"].keys() if k not in ['EMOO_TOTEX', 'EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP']]:
                 emoo.pop(cst, None)
-            if 'EMOO_lca' in scenario["EMOO"].keys():
-                key = list(emoo['EMOO_lca'].keys())[0].replace("EMOO_", "")
-                beta_list[key] = beta
-            elif len(emoo) == 1:
+            if len(emoo) == 1:
                 key = list(emoo.keys())[0].replace("EMOO_", "")
                 beta_list[key] = beta
             elif len(emoo) == 0:
@@ -1071,7 +1041,7 @@ class MasterProblem:
     def remove_emoo_constraints(scenario):
 
         EMOOs = list(scenario['EMOO'].keys())
-        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', 'EMOO_lca', "EMOO_elec_export", "EMOO_EV"]
+        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', "EMOO_elec_export", "EMOO_EV"]
         if 'EMOO' in scenario:
             for key in list(set(EMOOs).intersection(keys_to_remove)):
                 scenario['EMOO'].pop(key, None)
@@ -1100,7 +1070,7 @@ class MasterProblem:
             dual variables
         """
         attribute = None
-        if dual_variable in ['pi', 'pi_GWP', 'pi_lca']:
+        if dual_variable in ['pi', 'pi_GWP']:
             attribute = 'df_Dual_t'
         elif dual_variable in ['beta_cap', 'beta_op', 'beta_tot', 'beta_gwp']:
             attribute = 'df_District'
@@ -1112,9 +1082,6 @@ class MasterProblem:
         df = self.results_MP[Scn_ID][Pareto_ID][iter][attribute]
         if dual_variable == 'mu':
             dual_value = df[dual_variable][House]  # dual variable from previous iteration
-        elif dual_variable == 'pi_lca':
-            dual_value = df[self.infrastructure.Set["Lca_kpi"]].stack()
-            dual_value.index = dual_value.index.reorder_levels((3, 0, 1, 2))
         else:
             dual_value = df[dual_variable]  # dual variable from previous iteration
         return dual_value  # dual value for one BES only

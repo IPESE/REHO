@@ -254,52 +254,6 @@ GWP_House_op[h] = sum{f in FeasibleSolutions, l in ResourceBalances, p in Period
 subject to total_GWP: 
 GWP_tot = GWP_constr + GWP_op;
 
-######################################################################################################################
-#--------------------------------------------------------------------------------------------------------------------#
-# Life cycle analysis
-#--------------------------------------------------------------------------------------------------------------------#
-######################################################################################################################
-
-set Lca_kpi default {'land_use'};
-param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
-param lca_kpi_2{k in Lca_kpi, u in Units} default 0;
-param lca_kpi_supply_cst{k in Lca_kpi, l in ResourceBalances} default 0.1;
-param lca_kpi_demand_cst{k in Lca_kpi, l in ResourceBalances} default 0.0; 
-param lca_house_units_SPs{f in FeasibleSolutions, k in Lca_kpi, h in House} default 0;
-param lca_kpi_supply{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_supply_cst[k,l];
-param lca_kpi_demand{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_demand_cst[k,l];  
-
-var Network_supply_lca {k in Lca_kpi, l in ResourceBalances, p in Period, t in Time[p]} >= 0;
-var Network_demand_lca {k in Lca_kpi, l in ResourceBalances, p in Period, t in Time[p]} >= 0;
-var lca_op{k in Lca_kpi, l in ResourceBalances} default 0;
-
-var lca_units{k in Lca_kpi, u in Units} default 0;
-var lca_house_units{k in Lca_kpi, h in House} default 0;
-var lca_inv{k in Lca_kpi} default 0;
-
-var lca_tot{k in Lca_kpi} default 0;
-var lca_tot_house{k in Lca_kpi, h in House} default 0;
-
-subject to LU_inv_cst{k in Lca_kpi, u in Units}:
-lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + (Units_Mult[u]-Units_Ext[u])*lca_kpi_2[k, u])/lifetime[u];
-
-subject to LCA_construction_house{k in Lca_kpi, h in House}:
-lca_house_units[k, h] = sum{f in FeasibleSolutions}(lambda[f,h] * lca_house_units_SPs[f,k,h]);
-
-subject to LCA_construction{k in Lca_kpi}:
-lca_inv[k] = sum {u in Units} lca_units[k, u] + sum{h in House} lca_house_units[k, h];
-
-subject to complicating_cst_lca{k in Lca_kpi, l in ResourceBalances, p in Period, t in Time[p]}:
-Network_supply_lca[k,l,p,t] - Network_demand_lca[k,l,p,t] = (Domestic_energy[l,p,t] +  sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
-
-subject to LU_op_cst{k in Lca_kpi, l in ResourceBalances}:
-lca_op[k, l] = sum{p in PeriodStandard,t in Time[p]}(lca_kpi_supply[k,l,p,t]*Network_supply_lca[k,l,p,t] - lca_kpi_demand[k,l,p,t]*Network_demand_lca[k,l,p,t]);
-
-subject to LU_tot_cst{k in Lca_kpi}:
-lca_tot[k] = lca_inv[k] + sum{l in ResourceBalances} lca_op[k, l];
-
-subject to LU_tot_house_cst{k in Lca_kpi, h in House}:
-lca_tot_house[k, h] = lca_house_units[k, h] + sum{f in FeasibleSolutions,l in ResourceBalances,p in PeriodStandard,t in Time[p]} (lca_kpi_supply[k,l,p,t]*Grid_supply[l,f,h,p,t]-lca_kpi_demand[k,l,p,t]*Grid_demand[l,f,h,p,t])*lambda[f,h]*dp[p]*dt[p];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -312,7 +266,6 @@ param EMOO_OPEX default 1000;
 param EMOO_GWP default 1000;
 param EMOO_TOTEX default 1000;
 param EMOO_grid default 0;
-param EMOO_lca{k in Lca_kpi} default 1e6;
 param EMOO_elec_export default 0;
 
 var EMOO_slack                >= 0, <= abs(EMOO_CAPEX) * Area_tot;
@@ -379,9 +332,6 @@ GWP_tot + EMOO_slack_gwp = EMOO_GWP * Area_tot;
 subject to EMOO_TOTEX_constraint: # beta_tot
 Costs_tot + EMOO_slack_totex = EMOO_TOTEX * Area_tot;
 
-subject to EMOO_lca_constraint{k in Lca_kpi} :
-lca_tot[k] <= EMOO_lca[k] * Area_tot;
-
 subject to EMOO_elec_export_constraint:
 sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]} ( Network_demand[l,p,t] - Network_supply[l,p,t] ) / 1000  =  EMOO_slack_elec_export + EMOO_elec_export * (sum{h in House} ERA[h]);
 
@@ -389,7 +339,7 @@ param penalty_ratio default 1e-6;
 var penalties default 0;
 
 subject to penalties_contraints:
-penalties = penalty_ratio * (Costs_inv + Costs_op + sum{k in Lca_kpi} lca_tot[k] +
+penalties = penalty_ratio * (Costs_inv + Costs_op +
             sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]) );
 
 #--------------------------------------------------------------------------------------------------------------------#
@@ -406,12 +356,6 @@ Costs_inv + penalties;
 
 minimize GWP:
 GWP_tot + penalties;
-
-minimize Human_toxicity:
-lca_tot["Human_toxicity"] + penalties;
-
-minimize land_use:
-lca_tot["land_use"] + penalties;
 
 minimize MAX_EXPORT:
 -sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) / 1000 + penalties;

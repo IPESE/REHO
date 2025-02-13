@@ -10,14 +10,14 @@ Units
 To define the units' costs, the price per unit installed and the unit lifetime are considered.
 They are reported in Tables :ref:`tbl-building-units-csv` and :ref:`tbl-district-units-csv`.
 
-.. csv-table:: Building units default costs and LCA values
+.. csv-table:: Building units default specifications
    :file: ../../reho/data/infrastructure/building_units.csv
    :header-rows: 1
    :delim: ;
    :class: longtable
    :name: tbl-building-units-csv
 
-.. csv-table:: District units default costs and LCA values
+.. csv-table:: District units default specifications
    :file: ../../reho/data/infrastructure/district_units.csv
    :header-rows: 1
    :delim: ;
@@ -28,7 +28,7 @@ They are reported in Tables :ref:`tbl-building-units-csv` and :ref:`tbl-district
 Grids
 ======
 
-.. csv-table:: Grid costs and LCA values
+.. csv-table:: Grid default specifications
    :file: ../../reho/data/infrastructure/layers.csv
    :header-rows: 1
    :delim: ;

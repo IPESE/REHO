@@ -17,7 +17,6 @@
 *save_input_data*;Adds in the results file the input data (df_Buildings, df_Weather, df_Index);True
 *save_timeseries*;Adds in the results file the timeseries results (df_Buildings_t and df_Unit_t);True
 *save_streams*;Adds in the results file the streams-timeseries results (df_Streams_t);False
-*save_lca*;Adds in the results file the impact in terms of LCA indicators by units, hubs and energy carriers;False
 *extract_parameters*;To extract all the parameters used in the optimization;False
 *print_logs*;Prints the logs of the optimization(s);True
 **Other**;;

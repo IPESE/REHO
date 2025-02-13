@@ -185,9 +185,7 @@ class REHO(MasterProblem):
                     obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = totex_per_house()
                 elif "GWP" == obj:
                     obj_values["district_obj" + str(i + 1)], obj_values["building_obj" + str(i + 1)] = gwp_per_house()
-                else:
-                    obj_values["district_obj" + str(i + 1)] = self.results[Scn_ID][Pareto_ID]["df_lca_Performance"][obj]["Network"] / np.sum(surfaces)[0]
-                    obj_values["building_obj" + str(i + 1)] = self.results[Scn_ID][Pareto_ID]["df_lca_Performance"][obj].drop("Network").div(surfaces.ERA)
+
             return obj_values
 
         def add_constraints_from_self_scenario():
@@ -271,10 +269,7 @@ class REHO(MasterProblem):
 
             df = pd.DataFrame()
             for i in self.results[Scn_ID].keys():
-                if self.scenario["Objective"][0] in self.infrastructure.lca_kpis:
-                    df2 = pd.DataFrame([self.results[Scn_ID][i]["df_lca_Performance"][self.scenario["Objective"][0]].xs("Network")], index=[i])
-                else:
-                    df2 = pd.DataFrame([self.results[Scn_ID][i]["df_Performance"]['Costs_op'].xs("Network")], index=[i])
+                df2 = pd.DataFrame([self.results[Scn_ID][i]["df_Performance"]['Costs_op'].xs("Network")], index=[i])
                 df = pd.concat([df, df2])
             df = df.sort_values([0], ascending=False).reset_index()
 
@@ -311,8 +306,6 @@ class REHO(MasterProblem):
 
             if self.scenario["Objective"][0] in ["OPEX", "CAPEX", "TOTEX", "GWP"]:
                 scenario['EMOO']['EMOO_' + self.scenario["Objective"][0]] = obj1_eps_lim
-            else:
-                scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][0]: obj1_eps_lim}
 
             self.epsilon_constraints['EMOO_obj1'] = np.append(self.epsilon_constraints['EMOO_obj1'], obj1_eps_lim)
             self.logger.info('---------------> ' + str(self.scenario["Objective"][0]) + ' LIMIT: ' + str(obj1_eps_lim))
@@ -352,10 +345,7 @@ class REHO(MasterProblem):
                 obj2_eps_lim = (obj2_max - obj2_min) / (self.nPareto + 1) * (point + 1) + obj2_min
                 epsilon_init = return_epsilon_init(obj2_house_max, obj2_house_min, self.nPareto, point, self.scenario["Objective"][1])
 
-                if self.scenario["Objective"][1] in ["OPEX", "CAPEX", "TOTEX", "GWP"]:
-                    scenario['EMOO']['EMOO_' + self.scenario["Objective"][1]] = obj2_eps_lim
-                else:
-                    scenario['EMOO']['EMOO_lca'] = {self.scenario["Objective"][1]: obj2_eps_lim}
+                scenario['EMOO']['EMOO_' + self.scenario["Objective"][1]] = obj2_eps_lim
 
                 self.epsilon_constraints['EMOO_obj2'] = np.append(self.epsilon_constraints['EMOO_obj2'], obj2_eps_lim)
                 self.logger.info('---------------> ' + str(self.scenario["Objective"][1]) + ' LIMIT: ' + str(obj2_eps_lim))
@@ -621,13 +611,6 @@ class REHO(MasterProblem):
             df_Streams_t = self.get_final_SPs_results(MP_selection, 'df_Streams_t')
             df_Streams_t = df_Streams_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
             df_Results["df_Streams_t"] = df_Streams_t
-
-        if self.method["save_lca"]:
-            df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
-            df_lca_Units = df_lca_Units.droplevel(level=["Scn_ID", "Pareto_ID", "Iter", "FeasibleSolution", "house"])
-            df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
-            df_Results["df_lca_Performance"] = last_results["df_lca_Performance"]
-            df_Results["df_lca_operation"] = last_results["df_lca_operation"]
 
         return df_Results
 

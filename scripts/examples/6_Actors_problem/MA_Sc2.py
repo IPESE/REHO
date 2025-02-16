@@ -3,9 +3,9 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     cluster_num = 6
-    location = 'Zurich'
-    nb_buildings = 6
-    risk_factor = 0.278
+    location = 'Lugano'
+    nb_buildings = 10
+    risk_factor = 0.031457
     n_samples = 4
     Owner_portfolio = True
     Utility_portfolio = False
@@ -20,16 +20,16 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader(load_roofs=True)
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(15154, nb_buildings=nb_buildings)
+    qbuildings_data = reader.read_db(290, nb_buildings=nb_buildings)
 
     # Set specific parameters
-    parameters = {"TransformerCapacity": np.array([24.66, 1e8])}
+    parameters = {"TransformerCapacity": np.array([12.12 * 3, 1e8])}
 
     # Select clustering options for weather data
     cluster = {'Location': location, 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Choose energy system structure options
-    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration','Battery']
     scenario['enforce_units'] = []
 
     # Set method options
@@ -38,11 +38,11 @@ if __name__ == '__main__':
               "save_streams": False, "save_timeseries": False, "save_data_input": False}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3346},  'NaturalGas': {"Cost_supply_cst": 0.14}})
     units = infrastructure.initialize_units(scenario, grids)
 
     DW_params={}
-    DW_params['max_iter'] = 6
+    DW_params['max_iter'] = 4
     # Initiate the actor-based problem formulation
     reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
 
@@ -69,12 +69,12 @@ if __name__ == '__main__':
         reho.scenario["name"] = "Owners"
         print("Calculate boundary for Owners")
         reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-        bound_o = [0, 1]
+        bound_o = [0, 0.5]
     else:
         print("Calculate boundary for Owners: DEFAULT 0")
         bound_o = [0, 0.000001]
         if Utility_portfolio == False:
-            reho.parameters["renter_expense_max"] = [1e6] * nb_buildings
+            reho.parameters["renter_expense_max"] = [1e7] * nb_buildings
 
     if Owner_PIR:
         print("Calculate PIR boundary for Owners")
@@ -94,4 +94,4 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario2_NoAdjust')
+    reho.save_results(format=["pickle"], filename='Scenario2_290_FINAL')

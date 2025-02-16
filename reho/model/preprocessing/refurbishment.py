@@ -56,7 +56,7 @@ def calculate_refurbishment_cost(buildings_data, Uh_ins):
         }
         total_cost[building_name] = cost_insulation[building_name]['total_cost']
     for b in buildings_data:
-        if buildings_renovation_info[b]['U_h'] - Uh_ins[b] <= 0.00001:
+        if buildings_renovation_info[b]['U_h'] - Uh_ins[b] <= 0.00005:
             total_cost[b] = 0
 
     return total_cost

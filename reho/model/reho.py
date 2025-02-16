@@ -447,13 +447,13 @@ class REHO(MasterProblem):
 
         if self.method["actors_problem"]:
             #TODO: Add variables
-            df_actor = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_District"][
+            df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][
                 ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
                  'owner_portfolio', 'C_rent_fix', 'renter_expense','renter_subsidies','owner_subsidies', 'Costs_House_init', 'is_ins']]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
-            df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors_tariff"]
-            df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors"]
-            df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["Samples"]
+            df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors_tariff"]
+            df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
+            df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
 
         # df_Grid_t
         df = self.get_final_SPs_results(MP_selection, 'df_Grid_t')

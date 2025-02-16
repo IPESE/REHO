@@ -3,10 +3,10 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     cluster_num = 6
-    location = 'Zurich'
-    nb_buildings = 6
-    risk_factor = 0.277933
-    n_samples = 16
+    location = 'Lugano'
+    nb_buildings = 10
+    risk_factor = 0.031457
+    n_samples = 64
     Owner_portfolio = True
     Utility_portfolio = False
     #for Sc2 PIR is derived from init.
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader(load_roofs=True)
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(15154, nb_buildings=nb_buildings)
+    qbuildings_data = reader.read_db(290, nb_buildings=nb_buildings)
 
     # Set specific parameters
     parameters = {"TransformerCapacity": np.array([36.36, 1e8])}
@@ -38,7 +38,7 @@ if __name__ == '__main__':
               'use_pv_orientation': True, 'use_facades': False, "use_dynamic_emission_profiles": True,
               "save_streams": False, "save_timeseries": False, "save_data_input": False}
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3346},  'NaturalGas': {"Cost_supply_cst": 0.14}})
     units = infrastructure.initialize_units(scenario, grids)
 
     DW_params={}
@@ -94,4 +94,4 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario3.2_2')
+    reho.save_results(format=["pickle"], filename='Scenario3.2_290_FINAL')

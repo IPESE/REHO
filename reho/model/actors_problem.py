@@ -142,7 +142,7 @@ class ActorsProblem(REHO):
         l_bound = [bounds[key][0] for key in ["Utility", "Owners", "PIR"]]
         u_bound = [bounds[key][1] for key in ["Utility", "Owners", "PIR"]]
         samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio','owner_portfolio_rate'])
-        samples = samples.sort_values(by='owner_portfolio').reset_index(drop=True)
+        samples = samples.sort_values(by='utility_portfolio').reset_index(drop=True)
         self.samples = samples.round(4)
         self.parameters['risk_factor'] = risk_factor
 

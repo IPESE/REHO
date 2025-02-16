@@ -69,7 +69,7 @@ if __name__ == '__main__':
             cluster = {'Location': location, 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
             # Choose energy system structure options
-            scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+            scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration','Battery']
             scenario['enforce_units'] = []
 
             # Set method options
@@ -78,7 +78,8 @@ if __name__ == '__main__':
                       "save_streams": False, "save_timeseries": False, "save_data_input": False}
 
             # Initialize available units and grids
-            grids = infrastructure.initialize_grids()
+            grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3346},
+                                                     'NaturalGas': {"Cost_supply_cst": 0.14}})
             units = infrastructure.initialize_units(scenario, grids)
 
             DW_params={}
@@ -117,7 +118,7 @@ if __name__ == '__main__':
                 print("Calculate boundary for Owners: DEFAULT 0")
                 bound_o = [0, 0.000001]
                 if Utility_portfolio == False:
-                    reho.parameters["renter_expense_max"] = [1e6] * nb_buildings
+                    reho.parameters["renter_expense_max"] = [1e7] * nb_buildings
 
             if Owner_PIR:
                 print("Calculate PIR boundary for Owners")

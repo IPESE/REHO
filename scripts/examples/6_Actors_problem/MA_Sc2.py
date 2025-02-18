@@ -6,7 +6,7 @@ if __name__ == '__main__':
     location = 'Lugano'
     nb_buildings = 10
     risk_factor = 0.031457
-    n_samples = 4
+    n_samples = 60
     Owner_portfolio = True
     Utility_portfolio = False
     Owner_PIR = False
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         reho.scenario["name"] = "Owners"
         print("Calculate boundary for Owners")
         reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-        bound_o = [0, 0.5]
+        bound_o = [0, 0.27]
     else:
         print("Calculate boundary for Owners: DEFAULT 0")
         bound_o = [0, 0.000001]
@@ -94,4 +94,4 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario2_290_FINAL')
+    reho.save_results(format=["pickle"], filename='Scenario2_290_FINAL_60Samples')

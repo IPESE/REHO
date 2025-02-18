@@ -44,6 +44,7 @@ if __name__ == '__main__':
             nb_buildings = 1000
             risk_factor = float(clusters_data.loc[i, 'risk_factor'])
             TransformerCapacity = float(clusters_data.loc[i, 'TransformerCapacity'])
+            owner_epsilon = float(clusters_data.loc[i, 'epsilon_percentage'])
             n_samples = 2
 
             Owner_portfolio = True
@@ -113,7 +114,7 @@ if __name__ == '__main__':
                 reho.scenario["name"] = "Owners"
                 print("Calculate boundary for Owners")
                 reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-                bound_o = [0, 0.5]
+                bound_o = [0, owner_epsilon]
             else:
                 print("Calculate boundary for Owners: DEFAULT 0")
                 bound_o = [0, 0.000001]

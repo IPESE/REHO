@@ -18,10 +18,9 @@ def get_weather_data(qbuildings_data, export_filename=None):
     """
     Using the pvlib library, connects to the PVGIS dabatase to extract the weather data based on the building's coordinates.
     """
-    lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'],
-                                                                         qbuildings_data['buildings_data']['Building1']['y'])
+    lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'], qbuildings_data['buildings_data']['Building1']['y'])
 
-    pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, outputformat='csv', startyear=2005, endyear=2016)
+    pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, startyear=2005, endyear=2016)
     coordinates = pvgis_data[2]
     weather_data = pvgis_data[0]
 
@@ -156,6 +155,7 @@ def generate_weather_data(cluster, qbuildings_data):
     # Set the time for the new rows (variable hours per period)
     T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0], 1, 1]
     T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1], 1, 1]
+    T_min["Text"] = -10.0
 
     # Append the new extreme values to the data
     new_index_min = len(data_cls)  # Dynamically find the next available index

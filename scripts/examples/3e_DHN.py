@@ -19,11 +19,6 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = ['HeatPump_DHN']
     scenario["specific"] = ["enforce_DHN"]
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {},
-                                             'NaturalGas': {},
-                                             'Heat': {}})
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     # You can specify if the DHN is based on CO2. If not, a water DHN is assumed.
@@ -32,6 +27,13 @@ if __name__ == '__main__':
     # Set specific parameters
     # Specify the temperature of the DHN
     parameters = {'T_DHN_supply_cst': np.repeat(20.0, 4), "T_DHN_return_cst": np.repeat(15.0, 4)}
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids({'Electricity': {},
+                                             'NaturalGas': {},
+                                             'Heat': {}})
+
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

@@ -4,6 +4,7 @@ from pathlib import Path
 from pandas import read_csv, read_table, read_excel, set_option
 import sys
 from dotenv import load_dotenv, find_dotenv
+import geopandas as gpd
 
 __doc__ = """
 File for managing file paths and configurations.
@@ -33,8 +34,7 @@ else:
 path_to_ampl_model = os.path.join(path_to_model, 'ampl_model')
 path_to_units = os.path.join(path_to_ampl_model, 'units')
 path_to_district_units = os.path.join(path_to_ampl_model, 'units', 'district_units')
-path_to_units_storage = os.path.join(path_to_ampl_model, 'units', 'storage')
-path_to_units_h2 = os.path.join(path_to_ampl_model, 'units', 'h2_units')
+path_to_units_interperiod = os.path.join(path_to_ampl_model, 'units', 'interperiod')
 
 # data
 path_to_elcom = os.path.join(path_to_data, 'elcom')
@@ -45,6 +45,8 @@ path_to_infrastructure = os.path.join(path_to_data, 'infrastructure')
 
 path_to_qbuildings = os.path.join(path_to_data, 'QBuildings')
 
+path_to_mobility = os.path.join(path_to_data, 'mobility')
+
 path_to_sia = os.path.join(path_to_data, 'SIA')
 path_to_sia_equivalence = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
 path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
@@ -53,6 +55,7 @@ path_to_skydome = os.path.join(path_to_data, 'skydome')
 path_to_irradiation = os.path.join(path_to_skydome, 'total_irradiation.csv')
 path_to_areas = os.path.join(path_to_skydome, 'skyPatchesAreas.txt')  # area of patches
 path_to_cenpts = os.path.join(path_to_skydome, 'skyPatchesCenPts.txt')  # location of centre points
+
 
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
@@ -84,6 +87,8 @@ def file_reader(file, index_col=None):
                 line = next(f).strip()
                 delim = sniffer.sniff(line)
             return read_csv(file, sep=delim.delimiter, index_col=index_col)
+        elif file.suffix == '.gpkg':
+            return gpd.read_file(file)
         elif file.suffix == '.xlsx':
             return read_excel(file)
         else:

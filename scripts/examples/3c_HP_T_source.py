@@ -19,12 +19,12 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
+    # Set method options
+    method = {'building-scale': True}
+
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
-
-    # Set method options
-    method = {'building-scale': True}
 
     # Set specific parameters
     # Heat pump can have different sources such as air, lake, geothermal

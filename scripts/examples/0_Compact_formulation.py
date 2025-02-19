@@ -23,14 +23,14 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']  # specify some units to be excluded
     scenario['enforce_units'] = []  # specify some units to be enforced
 
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/grids.csv
-    units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
-
     # Set method options (as defined in sub_problem.py > initialize_default_methods)
     # By default a district-scale design is performed with a compact formulation.
     # Watch out the maximum number of buildings is around 10 due to exponential complexity.
     method = {}
+
+    # Initialize available units and grids
+    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv
+    units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

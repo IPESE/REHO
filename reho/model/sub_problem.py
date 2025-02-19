@@ -3,7 +3,7 @@ import logging
 
 from amplpy import AMPL, Environment
 
-import reho.model.preprocessing.EV_profile_generator as EV_gen
+import reho.model.preprocessing.mobility_generator as EV_gen
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as weather
@@ -144,7 +144,7 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
         ampl.cd(path_to_ampl_model)
         ampl.read('sub_problem.mod')
-
+        ampl.read('scenario.mod')
         # Energy conversion Units
         ampl.cd(path_to_units)
         if 'ElectricalHeater' in self.infrastructure_sp.UnitTypes:
@@ -173,54 +173,42 @@ class SubProblem:
                 ampl.read('pv_orientation.mod')
             else:
                 ampl.read('pv.mod')
-
-        # district Units
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.cd(path_to_district_units)
-            ampl.read('evehicle.mod')
-        # Storage Units
-        ampl.cd(path_to_units_storage)
+        if 'rSOC' in self.infrastructure_sp.UnitTypes:
+            ampl.read('rSOC.mod')
+        if "Methanator" in self.infrastructure_sp.UnitTypes:
+            ampl.read('methanator.mod')
+        if 'FuelCell' in self.infrastructure_sp.UnitTypes:
+            ampl.read('fuel_cell.mod')
+        if 'Electrolyzer' in self.infrastructure_sp.UnitTypes:
+            ampl.read('electrolyzer.mod')
         if 'WaterTankSH' in self.infrastructure_sp.UnitTypes:
             ampl.read('heatstorage.mod')
         if 'WaterTankDHW' in self.infrastructure_sp.UnitTypes:
             ampl.read('dhwstorage.mod')
         if 'Battery' in self.infrastructure_sp.UnitTypes:
             ampl.read('battery.mod')
-        ampl.cd(path_to_ampl_model)
+        # ampl.read('heat_curtailment.mod')
 
-        # Objectives, epsilon constraints and specific constraints
-        ampl.read('scenario.mod')
+        # Load interperiod storage units
+        if self.method_sp['interperiod_storage']:
+            ampl.cd(path_to_units_interperiod)
 
-        # TODO: integrate all storage units into infrastructure (avoid using ampl eval)
-        if self.method_sp['use_Storage_Interperiod']:
-            ampl.eval(
-                'set UnitsOfStorage := setof{u in UnitsOfType["Battery_interperiod"] union UnitsOfType["PTES_storage"]'
-                'union UnitsOfType["PTES_conversion"] union UnitsOfType["CH4storage"]'
-                'union UnitsOfType["H2storage"] union UnitsOfType["SOEFC"]'
-                'union UnitsOfType["Methanizer"] union UnitsOfType["FuelCell"]'
-                'union UnitsOfType["Electrolyzer"] union UnitsOfType["WaterTankSH_interperiod"]'
-                'union UnitsOfType["SolidLiquidLHS"]'
-                '} u;')
+            if 'Battery_interperiod' in self.infrastructure_sp.UnitTypes:
+                ampl.read('battery_IP.mod')
+            if 'H2storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('H2storage_IP.mod')
+            if 'CH4storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('CH4storage_IP.mod')
+            if 'CO2storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('CO2storage_IP.mod')
 
-            # Storage Units
-            ampl.cd(path_to_units_storage)
-            ampl.read('h2_storage.mod')
-            ampl.read('heatstorage_interperiod.mod')
-            ampl.read('LHS_storage.mod')
-            ampl.read('battery_interperiod.mod')
-            ampl.read('PTES.mod')
-            ampl.read('CH4_tank.mod')
+            # if 'WaterTankSH_interperiod' in self.infrastructure_sp.UnitTypes:
+            #    ampl.read('heatstorage_IP.mod')
 
-            # H2 Units
-            ampl.cd(path_to_units_h2)
-            ampl.read('fuel_cell.mod')
-            ampl.read('electrolyser.mod')
-            ampl.read('SOEFC.mod')
-            ampl.read('methanizer.mod')
-
-            ampl.cd(path_to_units)
-            ampl.read('heat_curtailment.mod')
-            ampl.cd(path_to_ampl_model)
+        # Load EV units (district-scale, but can be included in building-scale)
+        if 'EV' in self.infrastructure_sp.UnitTypes:
+            ampl.cd(path_to_district_units)
+            ampl.read('evehicle.mod')
 
         return ampl
 
@@ -248,8 +236,7 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
 
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
-        self.parameters_to_ampl['Grids_flowrate'] = self.infrastructure_sp.Grids_flowrate
-        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters
+        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"], axis=1)
         self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_sp.Grids_Parameters_lca
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
         self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_sp.Units_Parameters_lca
@@ -288,20 +275,13 @@ class SubProblem:
         if self.method_sp['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
             self.parameters_to_ampl['GWP_demand'] = self.parameters_to_ampl['GWP_supply']
-            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity').drop(
-                columns=['Cost_demand_cst', 'Cost_supply_cst'])
+            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity')[["GWP_demand_cst", "GWP_supply_cst"]]
 
     def set_temperature_and_EVs_profiles(self):
 
         # Reference temperature
         self.parameters_to_ampl['T_comfort_min'] = buildings_profiles.reference_temperature_profile(self.parameters_to_ampl, self.cluster_sp)
 
-        # Set default EV plug out profile if EVs are allowed
-        if "EV_plugged_out" not in self.parameters_to_ampl:
-            if len(self.infrastructure_sp.UnitsOfDistrict) != 0:
-                if "EV_district" in self.infrastructure_sp.UnitsOfDistrict:
-                    self.parameters_to_ampl["EV_plugged_out"], self.parameters_to_ampl["EV_plugging_in"] = EV_gen.generate_EV_plugged_out_profiles_district(
-                        self.cluster_sp, self.local_data["df_Timestamp"])
 
     def set_HP_parameters(self, ampl):
         # --------------- Heat Pump ---------------------------------------------------------------------------#
@@ -564,10 +544,7 @@ class SubProblem:
             else:
                 raise ValueError('Type Error setting AMPLPY Parameter', i)
 
-        # TODO remove data_stream.dat
-        ampl.readData('data_stream.dat')
-        if self.method_sp['use_Storage_Interperiod']:
-            ampl.readData('data_stream_storage.dat')
+        ampl.readData('data_stream.dat')  # TODO remove data_stream.dat
 
         return ampl
 
@@ -594,6 +571,8 @@ class SubProblem:
         ampl.getConstraint('EMOO_TOTEX_constraint').drop()
         ampl.getConstraint('EMOO_GWP_constraint').drop()
         ampl.getConstraint('EMOO_lca_constraint').drop()
+
+        ampl.getConstraint('EMOO_elec_export_constraint').drop()
 
         ampl.getConstraint('EMOO_GU_demand_constraint').drop()
         ampl.getConstraint('EMOO_GU_supply_constraint').drop()
@@ -626,8 +605,6 @@ class SubProblem:
                 ampl.getConstraint('DHN_heat').drop()
         if 'Air_Conditioner' in self.infrastructure_sp.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_sp.units]:
             ampl.getConstraint('AC_c3').drop()
-        if 'EV' in self.infrastructure_sp.UnitTypes:
-            ampl.getConstraint('unidirectional_service').drop()
 
         if self.method_sp['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()
@@ -724,8 +701,11 @@ def initialize_default_methods(method):
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False
 
-    if 'use_Storage_Interperiod' not in method:
-        method['use_Storage_Interperiod'] = False
+    if 'interperiod_storage' not in method:
+        method['interperiod_storage'] = False
+
+    if "external_district" not in method:
+        method['external_district'] = False
 
     if method['building-scale']:
         method['include_all_solutions'] = False  # avoid interactions between optimization scenarios

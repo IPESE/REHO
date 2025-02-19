@@ -23,12 +23,12 @@ def test_run(save_results=True):
         scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
         scenario['enforce_units'] = []
 
+        # Set method options
+        method = {'building-scale': True}
+
         # Initialize available units and grids
         grids = infrastructure.initialize_grids()
         units = infrastructure.initialize_units(scenario, grids)
-
-        # Set method options
-        method = {'building-scale': True}
 
         # Run optimization
         reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")

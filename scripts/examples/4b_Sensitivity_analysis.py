@@ -19,12 +19,12 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
     scenario['enforce_units'] = []
 
+    # Set method options
+    method = {'building-scale': True}
+
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
-
-    # Set method options
-    method = {'building-scale': True}
 
     # Run sensitivity analysis
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

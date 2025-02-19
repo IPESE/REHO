@@ -58,7 +58,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 - ``units/`` contains the model files specific to each technology that can be used in the system. Three subfolders (``district_units``, ``h2_units``, and ``storage``) are used for easier classification.
 - ``data_stream.dat`` contains values that specify the operating temperatures of streams and energy conversion units.
-- ``data_stream_storage.dat`` specifies the operating temperatures of the energy storage units.
 - ``master_problem.mod`` contains the modeling of the problem for the decomposition approach.
 - ``sub_problem.mod`` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
 - ``scenario.mod`` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
@@ -67,12 +66,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 -----------------------
 
 .. automodule:: reho.model.postprocessing
-
-`building_scale_network_builder.py`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: reho.model.postprocessing.building_scale_network_builder
-    :members:
 
 `KPIs.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,10 +116,10 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.preprocessing.emissions_parser
     :members:
 
-`EV_profile_generator.py`
+`mobility_generator.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: reho.model.preprocessing.EV_profile_generator
+.. automodule:: reho.model.preprocessing.mobility_generator
     :members:
 
 `local_data.py`

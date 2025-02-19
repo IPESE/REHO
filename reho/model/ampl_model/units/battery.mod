@@ -12,8 +12,8 @@
 # [1]	F. Oldewurtel et al., Building Control and Storage Management with [...], 2010 
 # [2]   M. Koller et al., Defining a Degradation Cost Function for Optimal [...], 2013
 
-param BAT_eff_ch{u in UnitsOfType['Battery']} 	default 0.9;			#-	[1]
-param BAT_eff_di{u in UnitsOfType['Battery']} 	default 0.9;			#-	[1]
+param BAT_eff_ch{u in UnitsOfType['Battery']} 	default 0.95;			#-	[1]
+param BAT_eff_di{u in UnitsOfType['Battery']} 	default 0.95;			#-	[1]
 param BAT_limit_ch{u in UnitsOfType['Battery']} default 0.8;			#-	[2]
 param BAT_limit_di{u in UnitsOfType['Battery']} default 0.2;			#-	[1]
 param BAT_efficiency{u in UnitsOfType['Battery']} default 0.99992;		#-	[1]

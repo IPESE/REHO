@@ -146,6 +146,22 @@ class ActorsProblem(REHO):
         self.samples = samples.round(4)
         self.parameters['risk_factor'] = risk_factor
 
+    def set_actors_boundary_CH(self, bounds, step=0.02, risk_factor=0):
+        self.parameters['risk_factor'] = risk_factor
+        n_sample =  math.ceil((bounds["Owners"][1] - bounds["Owners"][0]) / step) + 1
+        sampler = qmc.Sobol(d=3)
+        sample = sampler.random(n=n_sample)
+        l_bound = [bounds[key][0] for key in ["Utility", "Owners", "PIR"]]
+        u_bound = [bounds[key][1] for key in ["Utility", "Owners", "PIR"]]
+        samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound),
+                               columns=['utility_portfolio', 'owner_portfolio', 'owner_portfolio_rate'])
+        for i in range(n_sample):
+            samples.iloc[i].owner_portfolio = i * step
+        samples = samples.sort_values(by='owner_portfolio').reset_index(drop=True)
+        self.samples = samples.round(4)
+        self.parameters['risk_factor'] = risk_factor
+
+
     def actor_decomposition_optimization(self, scenario, actor='Renters'):
         self.scenario["Objective"] = scenario["Objective"]
         self.method['building-scale'] = False

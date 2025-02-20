@@ -6,11 +6,13 @@ if __name__ == '__main__':
     location = 'Lugano'
     nb_buildings = 10
     risk_factor = 0.031457
-    n_samples = 48
+    n_samples = 2
     Owner_portfolio = True
     Utility_portfolio = False
     Owner_PIR = False
-
+    clusters_data = pd.read_csv("./clusters_data.csv")
+    i = 1
+    owner_epsilon = float(clusters_data.loc[i, 'epsilon_percentage'])
     # Set scenario
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
@@ -42,7 +44,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     DW_params={}
-    DW_params['max_iter'] = 5
+    DW_params['max_iter'] = 2
     # Initiate the actor-based problem formulation
     reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
 
@@ -69,12 +71,12 @@ if __name__ == '__main__':
         reho.scenario["name"] = "Owners"
         print("Calculate boundary for Owners")
         reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-        bound_o = [0, 0.2]
+        bound_o = [0, 0.15]
     else:
         print("Calculate boundary for Owners: DEFAULT 0")
         bound_o = [0, 0.000001]
         if Utility_portfolio == False:
-            reho.parameters["renter_expense_max"] = [1e6] * nb_buildings
+            reho.parameters["renter_expense_max"] = [1e7] * nb_buildings
 
     if Owner_PIR:
         print("Calculate PIR boundary for Owners")
@@ -87,11 +89,11 @@ if __name__ == '__main__':
 
     # Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"
-    reho.set_actors_boundary(bounds=bounds, n_sample=n_samples, risk_factor=risk_factor)
-
+    #reho.set_actors_boundary(bounds=bounds, n_sample=n_samples, risk_factor=risk_factor)
+    reho.set_actors_boundary_CH(bounds=bounds, step=0.02, risk_factor=risk_factor)
     reho.actor_decomposition_optimization(scenario)
 
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario3.1_290_48Samples')
+    reho.save_results(format=["pickle"], filename='Scenario3.1_290_Owner0')

@@ -60,7 +60,7 @@ if __name__ == '__main__':
             # Set building parameters
             #reader = QBuildingsReader(load_roofs=True)
             #reader.establish_connection('Suisse')
-            #qbuildings_data = reader.read_db(15154, nb_buildings=nb_buildings)
+            #qbuildings_data = reader.read_db(transformer, nb_buildings=nb_buildings)
             qbuildings_data = build_district(transformer, nb_buildings)
 
             # Set specific parameters
@@ -131,7 +131,9 @@ if __name__ == '__main__':
             bounds = {"Utility": bound_d, "Owners": bound_o, "PIR": bound_pir}
             # Run actor-based optimization
             reho.scenario["name"] = "MOO_actors"
-            reho.set_actors_boundary(bounds=bounds, n_sample=n_samples, risk_factor=risk_factor)
+            #reho.set_actors_boundary(bounds=bounds, n_sample=n_samples, risk_factor=risk_factor)
+            reho.set_actors_boundary_CH(bounds=bounds, step=0.02, risk_factor=risk_factor)
+
             #reho.save_samples_parameters(df_name='samples', file_name='samples_{}'.format(transformer))
 
             reho.actor_decomposition_optimization(scenario)

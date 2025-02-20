@@ -45,7 +45,7 @@ if __name__ == '__main__':
             risk_factor = float(clusters_data.loc[i, 'risk_factor'])
             TransformerCapacity = float(clusters_data.loc[i, 'TransformerCapacity'])
             owner_epsilon = float(clusters_data.loc[i, 'epsilon_percentage'])
-            n_samples = 2
+            n_samples = 1
 
             Owner_portfolio = True
             Utility_portfolio = False
@@ -55,13 +55,13 @@ if __name__ == '__main__':
             scenario = dict()
             scenario['Objective'] = 'TOTEX'
             scenario['EMOO'] = {}
-            scenario['specific'] = ['Renter_noSub', 'Owner_Sub_bigM_ub']
+            scenario['specific'] = ['Renter_noSub', 'Owner_Sub_bigM_ub', 'Renovation_Improvement']
 
             # Set building parameters
-            #reader = QBuildingsReader(load_roofs=True)
-            #reader.establish_connection('Suisse')
-            #qbuildings_data = reader.read_db(transformer, nb_buildings=nb_buildings)
-            qbuildings_data = build_district(transformer, nb_buildings)
+            reader = QBuildingsReader(load_roofs=True)
+            reader.establish_connection('Suisse')
+            qbuildings_data = reader.read_db(transformer, nb_buildings=nb_buildings)
+            #qbuildings_data = build_district(transformer, nb_buildings)
 
             # Set specific parameters
             parameters = {"TransformerCapacity": np.array([TransformerCapacity*3, 1e8])}
@@ -74,7 +74,7 @@ if __name__ == '__main__':
             scenario['enforce_units'] = []
 
             # Set method options
-            method = {'actors_problem': True, "print_logs": False, "refurbishment": True, "include_all_solutions": False,
+            method = {'actors_problem': True, "print_logs": True, "refurbishment": True, "include_all_solutions": False,
                       'use_pv_orientation': True, 'use_facades': False,  "use_dynamic_emission_profiles": True,
                       "save_streams": False, "save_timeseries": False, "save_data_input": False}
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
             units = infrastructure.initialize_units(scenario, grids)
 
             DW_params={}
-            DW_params['max_iter'] = 6
+            DW_params['max_iter'] = 2
 
             # Initiate the actor-based problem formulation
             reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
@@ -109,7 +109,6 @@ if __name__ == '__main__':
                 bound_d = [0, 0.000001]
 
             # Define owner boundaries
-            # TODO: Adjust the bound_o depending on the first results
             if Owner_portfolio:
                 reho.scenario["name"] = "Owners"
                 print("Calculate boundary for Owners")

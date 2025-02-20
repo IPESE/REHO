@@ -3,10 +3,10 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     cluster_num = 6
-    location = 'Zurich'
+    location = 'Lugano'
     nb_buildings = 6
     risk_factor = 0.278
-    n_samples = 16
+    n_samples = 64
     Owner_portfolio = False
     Utility_portfolio = False
     Owner_PIR = True
@@ -15,21 +15,21 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['specific'] = ['Owner_Sub_bigM_ub', 'Owner2', 'Insulation_enforce']
+    scenario['specific'] = ['Owner_Sub_bigM_ub', 'Owner2', 'Insulation_enforce', 'Renovation_Improvement']
 
     # Set building parameters
     reader = QBuildingsReader(load_roofs=True)
     reader.establish_connection('Suisse')
-    qbuildings_data = reader.read_db(15154, nb_buildings=nb_buildings)
+    qbuildings_data = reader.read_db(290, nb_buildings=nb_buildings)
 
     # Set specific parameters
-    parameters = {"TransformerCapacity": np.array([24.66, 1e8])}
+    parameters = {"TransformerCapacity": np.array([36.36, 1e8])}
 
     # Select clustering options for weather data
     cluster = {'Location': location, 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
     # Choose energy system structure options
-    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration', 'Battery']
     scenario['enforce_units'] = []
 
     # Set method options
@@ -106,5 +106,5 @@ if __name__ == '__main__':
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")
     # print(reho.results["Renters"][0]["df_Actors"])
     # Save results
-    reho.save_results(format=["pickle"], filename='Scenario4_1')
+    reho.save_results(format=["pickle"], filename='Scenario4_1_290')
 

@@ -16,7 +16,7 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['specific'] = ['Owner_Sub_bigM_ub','Owner2']
+    scenario['specific'] = ['Owner_Sub_bigM_ub','Owner2','Renovation_Improvement']
 
     # Set building parameters
     reader = QBuildingsReader(load_roofs=True)

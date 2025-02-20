@@ -56,7 +56,7 @@ def calculate_refurbishment_cost(buildings_data, Uh_ins):
         }
         total_cost[building_name] = cost_insulation[building_name]['total_cost']
     for b in buildings_data:
-        if buildings_renovation_info[b]['U_h'] - Uh_ins[b] <= 0.00005:
+        if buildings_renovation_info[b]['U_h'] - Uh_ins[b] <= 0.00015:
             total_cost[b] = 0
 
     return total_cost
@@ -113,7 +113,7 @@ def U_h_insulation(buildings_data):
         U_h_ins_data[building] = ((data['area_facade_m2'] * U_required_facade + data['area_footprint_m2'] * U_required_footprint + data['SolarRoofArea'] * U_required_roof)
                                                    / (data['ERA']))
         if U_h_ins_data[building] >= U_h_data[building]:
-            U_h_ins_data[building] = U_h_data[building] - 0.00001
+            U_h_ins_data[building] = U_h_data[building] - 0.0001
     return U_h_ins_data
 
 

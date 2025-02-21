@@ -111,9 +111,9 @@ subject to Renovation_Improvement{h in House}:
 renovation[h] = Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]); 
 
 subject to Insulation1{h in House}:
-renovation[h]  >= 0.0001 - 10000 * (1 - is_ins[h]);
+renovation[h]  >= 0.000009 - 10000 * (1 - is_ins[h]);
 subject to Insulation2{h in House}:
-renovation[h] <= 0.0001 + 10000 * is_ins[h];
+renovation[h] <= 0.000009 + 10000 * is_ins[h];
 
 #Scenario 2 & 2.1 & 3 (Owner_Sub_bigM_ub)
 subject to Owner_Sub_bigM_ub{h in House}:

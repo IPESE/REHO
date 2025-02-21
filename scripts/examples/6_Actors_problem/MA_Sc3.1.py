@@ -18,7 +18,7 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
     # TEST for what happens if there is no subsidies for renters
-    scenario['specific'] = ['Renter_noSub', 'Owner_Sub_bigM_ub'] #
+    scenario['specific'] = ['Renter_noSub', 'Owner_Sub_bigM_ub','Renovation_Improvement']
     # Set building parameters
     reader = QBuildingsReader(load_roofs=True)
     reader.establish_connection('Suisse')
@@ -89,8 +89,8 @@ if __name__ == '__main__':
 
     # Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"
-    #reho.set_actors_boundary(bounds=bounds, n_sample=n_samples, risk_factor=risk_factor)
-    reho.set_actors_boundary_CH(bounds=bounds, step=0.07, risk_factor=risk_factor)
+    reho.set_actors_boundary(bounds=bounds, n_sample=n_samples, risk_factor=risk_factor)
+    #reho.set_actors_boundary_CH(bounds=bounds, step=0.07, risk_factor=risk_factor)
     reho.actor_decomposition_optimization(scenario)
 
     # print(reho.results["Renters"][0]["df_Actors_tariff"].xs("Electricity").mean(), "\n")

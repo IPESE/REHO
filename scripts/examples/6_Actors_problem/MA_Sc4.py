@@ -4,7 +4,7 @@ if __name__ == '__main__':
 
     cluster_num = 6
     location = 'Lugano'
-    nb_buildings = 6
+    nb_buildings = 10
     risk_factor = 0.278
     n_samples = 64
     Owner_portfolio = False
@@ -38,7 +38,7 @@ if __name__ == '__main__':
               "save_streams": False, "save_timeseries": False, "save_data_input": False}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3346},  'NaturalGas': {"Cost_supply_cst": 0.14}})
     units = infrastructure.initialize_units(scenario, grids)
 
     DW_params={}

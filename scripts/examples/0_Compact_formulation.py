@@ -2,7 +2,7 @@ from reho.model.reho import *
 from reho.plotting import plotting
 
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
 
     # Set building parameters
     reader = QBuildingsReader()  # load QBuildingsReader class

@@ -89,17 +89,56 @@ class Clustering:
 
     def __execute_clustering(self):
         """
-        Executes the K-Medoids clustering for each number of clusters.
+        Executes the K-Medoids clustering for each number of clusters, keeping clustering per month,
+        but concatenates results to form a yearly DataFrame with the correct shape (365, 1).
         """
         df_res = pd.DataFrame()
 
+        # Define day ranges for each month (0-based indexing)
+        month_day_ranges = {
+            1: (0, 31), 2: (31, 59), 3: (59, 90), 4: (90, 120),
+            5: (120, 151), 6: (151, 181), 7: (181, 212), 8: (212, 243),
+            9: (243, 273), 10: (273, 304), 11: (304, 334), 12: (334, 365)
+        }
+
+        # Loop over each number of clusters
         for n_clusters in self.nb_clusters:
-            print('Applying algorithm for', n_clusters, 'clusters')
-            df = self.__run_KMedoids(self.attr_nor, n_clusters)
-            df_res[str(n_clusters)] = df[str(n_clusters)]
+
+            # Create a temporary DataFrame to store the results for the year
+            year_results = pd.DataFrame()
+
+            # Loop through each month
+            for month, (start, end) in month_day_ranges.items():
+                # Slice self.attr_nor for the current month
+                month_attr_nor = self.attr_nor[start:end, :]
+
+                # Apply K-Medoids clustering for the current month
+                df = self.__run_KMedoids(month_attr_nor, n_clusters)
+                df[str(n_clusters)] = df[str(n_clusters)] + start
+                # Ensure the correct date index for the month
+                df.index = self.data_org.index[start:end]
+
+                # Concatenate the results for each month into the yearly DataFrame
+                year_results = pd.concat([year_results, df], axis=0)
+
+            df_res[str(n_clusters)] = year_results[str(n_clusters)]
 
         df_res.columns.name = "iteration"
         self.results["idx"] = df_res
+    #
+    # def __execute_clustering(self):
+    #     """
+    #     Executes the K-Medoids clustering for each number of clusters.
+    #     """
+    #     df_res = pd.DataFrame()
+    #     for n_clusters in self.nb_clusters:
+    #         print('Applying algorithm for', n_clusters, 'clusters')
+    #         df = self.__run_KMedoids(self.attr_nor, n_clusters)
+    #         df_res[str(n_clusters)] = df[str(n_clusters)]
+    #
+    #     df_res.columns.name = "iteration"
+    #     self.results["idx"] = df_res
+
 
     def __compute_kpis(self):
         """

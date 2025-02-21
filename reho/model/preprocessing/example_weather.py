@@ -8,7 +8,7 @@ if __name__ == '__main__':
     qbuildings_data = reader.read_db(district_id=5, egid=['2034144/2034143/2749579/2034146/2034145'])  # read data
 
     Attributes = ['Text', 'Irr']
-    nb_clusters = [2, 4, 6, 8, 10, 12]
+    nb_clusters = [2,3,4]
 
     df_annual = get_weather_data(qbuildings_data).reset_index(drop=True)
     df_annual = df_annual[Attributes]

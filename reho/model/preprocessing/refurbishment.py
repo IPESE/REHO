@@ -112,7 +112,7 @@ def U_h_insulation(buildings_data):
         U_h_data[building]= data['U_h']
         U_h_ins_data[building] = ((data['area_facade_m2'] * U_required_facade + data['area_footprint_m2'] * U_required_footprint + data['SolarRoofArea'] * U_required_roof)
                                                    / (data['ERA']))
-        if U_h_ins_data[building] >= U_h_data[building]:
+        if U_h_ins_data[building] + 0.00001 >= U_h_data[building]:
             U_h_ins_data[building] = U_h_data[building] - 0.00001
     return U_h_ins_data
 

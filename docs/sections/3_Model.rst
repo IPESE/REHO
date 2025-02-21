@@ -8,9 +8,9 @@ diverse end use demands through building-level equipment and district-level infr
 For a delimited perimeter of buildings, REHO selects the optimal energy system configuration minimizing the specified objective function.
 All the energy flows at building-level and district-level are then fully characterized by the model decision variables.
 
-.. figure:: ../images/district_documentation.svg
+.. figure:: ../images/district.svg
    :align: center
-   :name: district_documentation
+   :name: district
 
    District-level energy hub model in REHO
 
@@ -26,16 +26,16 @@ Energy can be stored in installed equipment (such as a battery or a water tank),
 Photovoltaic panels act as a renewable energy source.
 The building-level energy system is interconnected to the energy distribution infrastructure of the district (electrical grid, natural gas grid, ...).
 
-.. figure:: ../images/diagram_model.svg
+.. figure:: ../images/model.svg
    :align: center
-   :name: fig-diagram_model
+   :name: fig-model
 
    REHO model architecture
 
-.. figure:: ../images/building_energy_hub.png
+.. figure:: ../images/building.png
    :width: 450
    :align: center
-   :name: building_energy_hub
+   :name: building
 
    Building-level energy hub in REHO
 
@@ -315,7 +315,7 @@ List of symbols
 Inputs
 ===========================
 
-For the application of REHO, the energy hub description needs to contain - as highlighted by :ref:`fig-diagram_model` :
+For the application of REHO, the energy hub description needs to contain - as highlighted by :ref:`fig-model` :
 
 - the *End Use Demands (EUDs)*, from the meteorological data and the buildings characteristics,
 - the resources to which it has access to provide those *EUDs*, namely the grids,
@@ -335,7 +335,8 @@ The *EUDs* profiles to be determined are:
     - The internal heat gains from occupancy,
     - The internal heat gains from electric appliances,
     - The heat exchange with the exterior,
-    - The solar gains from the irradiance.
+    - The solar gains from the irradiance,
+- The demand profile for mobility. 
 
 .. admonition:: Statistical profiles
 
@@ -445,12 +446,14 @@ In the REHO model, a grid is characterized by the energy carrier it transports a
 Energy layers
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Five energy carriers are considered in REHO, namely:
+Seven energy carriers are considered in REHO, namely:
 
 - Electricity,
 - Natural gas,
 - Oil,
 - District heat,
+- Fossil fuel,
+- Mobility (service expressed in pkm),
 - Data (ICT service).
 
 These layers are modeled through parameters that can be changed in the model:
@@ -533,25 +536,36 @@ The units cannot be used at the building-scale.
 .. table:: Overview of district-level units in REHO: Input and output streams, the reference unit of each technology
     :name: tbl-district-units
 
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Technology                      | Input stream              | Output stream     | Reference unit |
-    +=================================+===========================+===================+================+
-    | Energy conversion technologies  |                           |                   |                |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | geothermal heat pump            | ambient heat, electricity | heat              |   $$kW_{e}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | district heating network        | heat                      | heat              |  $$kW_{th}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Electricity storage technologies|                           |                   |                |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | electrical vehicle              | electricity               | electricity       |    $$kWh$$     |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | battery                         | electricity               | electricity       |    $$kWh$$     |
-    +---------------------------------+---------------------------+-------------------+----------------+
++------------------------------------------+---------------------------+------------------------+----------------+
+| Technology                               | Input stream              | Output stream          | Reference unit |
++------------------------------------------+---------------------------+------------------------+----------------+
+| Energy conversion technologies           |                           |                        |                |
++------------------------------------------+---------------------------+------------------------+----------------+
+| gas boiler                               | natural gas               | heat                   |  $$kW_{th}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| geothermal heat pump                     | ambient heat, electricity | heat                   |   $$kW_{e}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| district heating network                 | heat                      | heat                   |  $$kW_{th}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| cogeneration                             | natural gas               | electricity, heat      |   $$kW_{e}$$   |
++------------------------------------------+---------------------------+------------------------+----------------+
+| Electricity storage technologies         |                           |                        |                |
++------------------------------------------+---------------------------+------------------------+----------------+
+| EV charger                               | electricity*              | electricity*           |     $$kWh$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| electrical vehicle                       | electricity*              | electricity*, mobility |     $$kWh$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| ICE vehicle (internal combustion engine) | fossil fuel               | mobility               |    $$unit$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| bike                                     |                           | mobility               |    $$unit$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| electric bike                            | electricity               | mobility               |    $$unit$$    |
++------------------------------------------+---------------------------+------------------------+----------------+
+| battery                                  | electricity               | electricity            |    $$kWh$$     |
++------------------------------------------+---------------------------+------------------------+----------------+
+
+.. note::
+    EVs are not directly connected to the Layer *electricity*.  Rather, intermediate variables representing the exchanges between EVs and charging stations are used, and the import of electricity from the Grid to charge the vehicles can be observed through the EV charger demand :math:`\boldsymbol{\sum_{u \in EVcharger}\dot{E}_{u,p,t}^{-}}` (see :ref:`annex <fig-mob1>`). 
 
 Model
 ===========================
@@ -750,15 +764,15 @@ Grid capacity
 The maximum capacity of the local low-voltage transformer is considered.
 The electricity export and the import is constrained within the feasibility range of the transformer.
 
-.. _network_diagram:
+.. _network:
 
-.. figure:: ../images/network_diagram.svg
+.. figure:: ../images/network.svg
    :align: center
 
    Energy flows and network constraints in REHO
 
 
-:ref:`network_diagram` distinguishes the:
+:ref:`network` distinguishes the:
 
 - Grid = energy flows within the district boundary
 - Network = exchanges with the district exterior, through the interface (transformer perspective)
@@ -788,5 +802,3 @@ Key performance indicators
 
 The KPIs are divided in four subgroups: Environmental, economical, technical and security indicators.
 For more information on how to calculate the KPIs presented below, please refer to :cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.5 Key performance indicators*.
-
-

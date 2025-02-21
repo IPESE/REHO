@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(transformer=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
+    qbuildings_data = reader.read_db(district_id=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     # You can add more resources layers besides electricity and natural gas, and adapt their prices
     # - directly within the script
-    # - or through a custom csv file based on the default values from data/infrastructure/grids.csv
+    # - or through a custom csv file based on the default values from data/infrastructure/layers.csv
     grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              'Wood': {},

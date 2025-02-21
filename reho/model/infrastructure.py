@@ -69,18 +69,18 @@ class Infrastructure:
         self.HousesOfLayer = {}
         for l in self.Layers:
             self.HousesOfLayer[l] = np.array([])
-            self.ReinforcementTrOfLayer={}
-            self.ReinforcementLineOfLayer = {}
+            self.ReinforcementOfNetwork = {}
+            self.ReinforcementOfLine = {}
             for l in grids.keys():
-                if 'ReinforcementTrOfLayer' in grids[l].keys():
-                    self.ReinforcementTrOfLayer[l] = grids[l]['ReinforcementTrOfLayer']
+                if 'ReinforcementOfNetwork' in grids[l].keys():
+                    self.ReinforcementOfNetwork[l] = grids[l]['ReinforcementOfNetwork']
                 else:
-                    self.ReinforcementTrOfLayer[l] = np.array([1e8])
+                    self.ReinforcementOfNetwork[l] = np.array([1e8])
 
-                if 'ReinforcementLineOfLayer' in grids[l].keys():
-                    self.ReinforcementLineOfLayer[l] = grids[l]['ReinforcementLineOfLayer']
+                if 'ReinforcementOfLine' in grids[l].keys():
+                    self.ReinforcementOfLine[l] = grids[l]['ReinforcementOfLine']
                 else:
-                    self.ReinforcementLineOfLayer[l] = np.array([1e8])
+                    self.ReinforcementOfLine[l] = np.array([1e8])
 
         self.StreamsOfBuilding = {}
         self.StreamsOfUnit = {}
@@ -90,7 +90,6 @@ class Infrastructure:
 
         # Parameter --------------------------------
         self.Units_flowrate = pd.DataFrame()
-        self.Grids_flowrate = pd.DataFrame()
         self.Grids_Parameters = pd.DataFrame()
         self.Grids_Parameters_lca = pd.DataFrame()
         self.Units_Parameters = pd.DataFrame()
@@ -174,11 +173,11 @@ class Infrastructure:
         self.Set['StreamsOfUnit'] = self.StreamsOfUnit
         self.Set['Lca_kpi'] = self.lca_kpis
 
-        if 'ReinforcementTrOfLayer' in self.__dict__.keys():
-            self.Set['ReinforcementTrOfLayer']=self.ReinforcementTrOfLayer
+        if 'ReinforcementOfNetwork' in self.__dict__.keys():
+            self.Set['ReinforcementOfNetwork'] = self.ReinforcementOfNetwork
 
-        if 'ReinforcementLineOfLayer' in self.__dict__.keys():
-            self.Set['ReinforcementLineOfLayer']=self.ReinforcementLineOfLayer
+        if 'ReinforcementOfLine' in self.__dict__.keys():
+            self.Set['ReinforcementOfLine'] = self.ReinforcementOfLine
 
     def generate_parameter(self):
         # Units Flows -----------------------------------------------------------
@@ -235,16 +234,11 @@ class Infrastructure:
         self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
         # Grids
-        keys = ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection']
         lca_impact_demand = [key + "_demand_cst" for key in self.lca_kpis]
         lca_impact_supply = [key + "_supply_cst" for key in self.lca_kpis]
-        for g in self.grids:
-            for h in self.House:
-                idx = pd.MultiIndex.from_tuples([(g, h)], names=['Layer', 'House'])
-                df = pd.DataFrame([[self.grids[g]['Grids_flowrate_out'], self.grids[g]['Grids_flowrate_in']]],
-                                  index=idx, columns=['Grids_flowrate_out', 'Grids_flowrate_in'])
-                self.Grids_flowrate = pd.concat([self.Grids_flowrate, df])
+        keys = [key for key in self.grids["Electricity"] if key not in lca_impact_supply + lca_impact_demand + ["ref_unit", "name", "ReinforcementOfNetwork"]]
 
+        for g in self.grids:
             df = pd.DataFrame([[self.grids[g][key] for key in keys]], index=[g], columns=keys)
             self.Grids_Parameters = pd.concat([self.Grids_Parameters, df])
 
@@ -284,10 +278,6 @@ class Infrastructure:
 
         for key in self.TemperatureSets:  # add additional sets from units to total set
             self.Set[key] = self.TemperatureSets[key]
-
-        # TODO select the AC and HP units without number place in the self.units array
-        # self.Set['AC_Tsupply'] = np.array(self.units[2]['stream_Tin'])
-        # self.Set['HP_Tsupply'] = np.array(self.units[0]['stream_Tin'])
 
         # Streams
 
@@ -494,7 +484,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 
 
 def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
-                     file=os.path.join(path_to_infrastructure, "grids.csv")):
+                     file=os.path.join(path_to_infrastructure, "layers.csv")):
     """
     Initializes grid information for the energy system.
 
@@ -505,7 +495,7 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
         and the values are dictionaries containing optional parameters ['Cost_demand_cst',
         'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst'].
     file : str, optional
-        Path to the CSV file containing grid data. Default is 'grids.csv' in the parameters folder.
+        Path to the CSV file containing grid data. Default is 'layers.csv' in the parameters folder.
 
     Returns
     -------
@@ -536,8 +526,10 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
         if idx in available_grids.keys():
             grid_dict = row.to_dict()
             grid_dict['name'] = idx
-            grid_dict['Grids_flowrate_in'] = 1e6 * grid_dict['Grids_flowrate_in']
-            grid_dict['Grids_flowrate_out'] = 1e6 * grid_dict['Grids_flowrate_out']
+            grid_dict['Network_demand_connection'] = 1e6 * grid_dict['Network_demand_connection']
+            grid_dict['Network_supply_connection'] = 1e6 * grid_dict['Network_supply_connection']
+            grid_dict["ReinforcementOfNetwork"] = np.array(grid_dict["ReinforcementOfNetwork"].split("/")).astype(float)
+
             if 'Cost_demand_cst' in available_grids[idx]:
                 grid_dict['Cost_demand_cst'] = available_grids[idx]['Cost_demand_cst']
             if 'Cost_supply_cst' in available_grids[idx]:

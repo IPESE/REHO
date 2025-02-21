@@ -106,7 +106,7 @@ class SensitivityAnalysis:
                 for parameter in unit_parameter:
                     value = default_units_values[default_units_values.index.str.contains(unit)][parameter].iloc[0]
                     name = str(unit) + "___" + str(parameter)
-                    SA_parameters[name] = np.array([0.5, 2]) * value
+                    SA_parameters[name] = np.array([0.5, 2.0]) * value
 
         self.parameter = SA_parameters
         # 2) Generate a dictionary with all parameters and their bounds for the sampling

@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()  # load QBuildingsReader class
     reader.establish_connection('Geneva')  # connect to QBuildings database
-    qbuildings_data = reader.read_db(5, egid=['2034144/2034143/2749579/2034146/2034145'])  # read data
+    qbuildings_data = reader.read_db(district_id=5, egid=['2034144/2034143/2749579/2034146/2034145'])  # read data
 
     # Select clustering options for weather data
     #  - I refers to Irradiance, T to Temperature, and W to Weekday
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []  # specify some units to be enforced
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/grids.csv
+    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv
     units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Set method options (as defined in sub_problem.py > initialize_default_methods)

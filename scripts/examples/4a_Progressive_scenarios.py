@@ -7,7 +7,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(transformer=234, nb_buildings=1)
+    qbuildings_data = reader.read_db(district_id=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -43,30 +43,35 @@ if __name__ == '__main__':
     reho.scenario = scenario
     reho.units = units
     reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+    reho.build_infrastructure_SP()
     reho.buildings_data['Building1']['temperature_heating_supply_C'] = 42
     reho.buildings_data['Building1']['temperature_heating_return_C'] = 34
     reho.single_optimization()
 
     # Scenario 3 EV
     scenario['name'] = 'EV'
-    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat']
+    scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'Bike_district', 'ICE_district', 'ElectricBike_district']
     scenario['enforce_units'] = ['EV_district']
+
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'FossilFuel': {}, 'Mobility': {}})
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
-    reho.parameters['n_vehicles'] = 6
 
     reho.scenario = scenario
     reho.units = units
     reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+    reho.build_infrastructure_SP()
     reho.single_optimization()
 
     # Scenario 4 ICT
     scenario['name'] = 'ICT'
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'DataHeat_SH']
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Data': {}})
     units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     reho.scenario = scenario
     reho.units = units
     reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+    reho.build_infrastructure_SP()
     reho.single_optimization()
 
     # Scenario 5 Isolation

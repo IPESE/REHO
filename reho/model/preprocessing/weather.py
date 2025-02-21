@@ -21,7 +21,7 @@ def get_weather_data(qbuildings_data, export_filename=None):
     lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'],
                                                                          qbuildings_data['buildings_data']['Building1']['y'])
 
-    pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, outputformat='csv', startyear=2005, endyear=2016)
+    pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, outputformat='json', startyear=2005, endyear=2016)
     coordinates = pvgis_data[2]
     weather_data = pvgis_data[0]
 
@@ -156,18 +156,12 @@ def generate_weather_data(cluster, qbuildings_data):
     # Set the time for the new rows (variable hours per period)
     T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0], 1, 1]
     T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1], 1, 1]
+    T_min["Text"] = -10.0
 
     # Append the new extreme values to the data
     new_index_min = len(data_cls)  # Dynamically find the next available index
     new_index_max = len(data_cls) + 1
     data_cls = pd.concat([data_cls, T_min.rename({T_idx[0]: new_index_min}), T_max.rename({T_idx[1]: new_index_max})])
-
-    # Apply a 10% margin for the extreme temperature
-    data_cls.loc[new_index_max, 'Text'] *= 1.1  # max gets increased by 10%
-    if data_cls.loc[new_index_min, 'Text'] > 0:
-        data_cls.loc[new_index_min, 'Text'] *= 0.9  # min gets decreased by 10% if positive
-    else:
-        data_cls.loc[new_index_min, 'Text'] *= 1.1  # min gets increased by 10% if negative
 
     # Construct inter-period data
     data_idy = pd.DataFrame(
@@ -307,7 +301,7 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
     IterationFile.write(header)
     for key in dict_index:
         pt = df_time.iloc[0].timesteps  # take the same period duration also for modulo
-        date = dt.datetime(2005, 1, 1) + dt.timedelta(hours=float((key - 1) * pt))
+        date = dt.datetime(2005, 1, 1) + dt.timedelta(hours=float((key) * pt))
 
         if 'Weekday' in attributes:
             text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict_index[key] - 1]) + '\t' + str(

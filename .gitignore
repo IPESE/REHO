@@ -72,9 +72,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
-
 # pyenv
 .python-version
 
@@ -86,12 +83,11 @@ celerybeat-schedule
 
 # Environments
 .env
+venv
 .venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+docs/.venvdocs
+docs/venvdocs
+
 
 # Spyder project settings
 .spyderproject
@@ -164,6 +160,9 @@ cmake-build-release/
 *.iws
 
 ## Plugin-specific files:
+
+# VScode
+.vscode/
 
 # IntelliJ
 out/
@@ -309,8 +308,10 @@ reho/data/QBuildings/*
 !reho/data/QBuildings/Suisse.ini
 
 # Documentation
-documentation/_build
-documentation/sections/_autosummary
+docs/_build
+docs/_autosummary
+docs/_build
+docs/sections/_autosummary
 
 # Test
 reho/test/data/*
@@ -320,3 +321,7 @@ reho/test/results/*
 # Scripts
 scripts/*
 !scripts/examples/
+*.json
+*.dat
+*.txt
+*.pickle

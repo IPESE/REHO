@@ -1,0 +1,17 @@
+label,description,source
+demwdy_def,demand profile of a weekday [-],OFS G 3.1.3 + G 3317
+demwnd_def,demand profile of a weekend day [-],OFS G 3.1.3 + G 3317
+EV_cpfwdy,charging profile of EVs during a weekday [-],UK data on charging stations
+EV_cpfwnd,charging profile of EVs during the weekend [-],UK data on charging stations
+EV_outwdy,share of EVs unplugged during a weekday,UK data on charging stations
+EV_outwnd,share of EVs unplugged during a weekend day,UK data on charging stations
+Bike_prfwdy,supply profile for bikes during a weekday [-],OFS G3.3.1.7
+Bike_prfwnd,supply profile for bikes during a weekend [-],OFS G3.3.1.7
+EV_aworkwdy,share of the EV fleet located at a work place during a weekday,
+EV_atravelwdy,share of the EV fleet travelling during a weekday,
+EV_aleisurewdy,share of the EV fleet located at a leisure place during a weekday,
+EV_aleisurewnd,share of the EV fleet located at a leisure place during the weekend,
+EV_aworkwnd,share of the EV fleet located at a work place during the weekend,
+EV_atravelwnd,share of the EV fleet travelling during the weekend,
+EBike_cpfwdy,charging profile of electric bikes during a weekday [-],
+EBike_cpfwnd,charging profile of electric bikes during a weekday [-],

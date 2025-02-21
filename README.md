@@ -1,4 +1,17 @@
-# REHO
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/logo-reho-white.png?raw=true">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/logo-reho-black.png?raw=true">
+  <img width="300"  alt="Shows the IPESE logo, white one in dark color mode and black one in light color mode.">
+</picture>
+
+[![DOI](https://joss.theoj.org/papers/10.21105/joss.06734/status.svg)](https://doi.org/10.21105/joss.06734)
+[![Documentation Status](https://readthedocs.org/projects/reho/badge/?version=main)](https://reho.readthedocs.io/)
+
+[![PyPI](https://img.shields.io/pypi/v/REHO.svg)](https://pypi.org/project/REHO/)[![Python Version](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://pypi.org/project/REHO/)
+
+[![License](https://img.shields.io/badge/license-Apache%202-blue)](https://www.apache.org/licenses/LICENSE-2.0)
+
+
 Renewable Energy Hub Optimizer (REHO) is a decision support tool for sustainable urban energy system planning.
 REHO simultaneously addresses the optimal design and operation of capacities, catering to multi-objective considerations
 across economic, environmental, and efficiency criteria.
@@ -19,6 +32,12 @@ REHO is developed by EPFL (Switzerland), within the Industrial Process and Energ
 Dorsan Lepour <dorsan.lepour@epfl.ch>  
 Cédric Terrier <cedric.terrier@epfl.ch>  
 Joseph Loustau
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/ipese-logo-white.svg?raw=true">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/ipese-logo-black.svg?raw=true">
+  <img width="300"  alt="Shows the IPESE logo, white one in dark color mode and black one in light color mode.">
+</picture>
 
 ## Licence
 Copyright (C) <2021-2024> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
@@ -53,4 +72,3 @@ Please refer to "[Getting started](https://reho.readthedocs.io/en/main/sections/
 All suggestions or implementation must be tracked with dedicated issues and reported in the project repository.
 
 Refer to "[Contribute](https://reho.readthedocs.io/en/main/sections/7_Contribute.html)" section of the documentation for further guidance.
-

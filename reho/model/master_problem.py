@@ -1,3 +1,4 @@
+import copy
 import gc
 import time
 import warnings
@@ -77,7 +78,7 @@ class MasterProblem:
         if cluster is None:
             self.cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
         else:
-            self.cluster = cluster
+            self.cluster = copy.deepcopy(cluster)
 
         # load SIA norms
         sia_data = dict()
@@ -91,7 +92,7 @@ class MasterProblem:
         if parameters is None:
             self.parameters = {}
         else:
-            self.parameters = parameters
+            self.parameters = copy.deepcopy(parameters)
 
         # build end use demands profile
         self.parameters['HeatGains'], self.parameters['DHW_flowrate'], self.parameters['Domestic_electricity'] = \
@@ -104,27 +105,32 @@ class MasterProblem:
         if set_indexed is None:
             self.set_indexed = {}
         else:
-            self.set_indexed = set_indexed
+            self.set_indexed = copy.deepcopy(set_indexed)
+
+        # prepare mobility data
+        self.modal_split = None
 
         # attributes for the decomposition algorithm
         if DW_params is None:
             self.DW_params = {}  # init of values in initiate_decomposition method
         else:
-            self.DW_params = DW_params
+            self.DW_params = copy.deepcopy(DW_params)
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
 
         # TODO : un jour, peut-être changer la nomenclature de ces parametres pour semi-automatiser la separation entre MP et SP : (ex : tous les param MP finissent pas _MP)
-        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Transformer_Ext',
+        self.lists_MP = {"list_parameters_MP": ['utility_portfolio_min', 'owner_portfolio_min', 'EMOO_totex_renter', 'Network_ext',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn","Population","transport_Units",
-                                                "DailyDist","Mode_Speed","Cost_demand_ext","EV_charger_supply_ext","share_activity","Cost_supply_ext",
-                                                "max_share_cars" ,  "min_share_cars" ,  "max_share_PT" , "min_share_PT" , "max_share_MD" , "min_share_MD" , "max_share_ICE" ,  "min_share_ICE" ,
-                                                 "max_share_EV" , "min_share_EV" , "max_share_PT_train" ,    "min_share_PT_train" ,    "max_share_EBikes", "min_share_EBikes" ,"max_share_bikes", "min_share_bikes", "n_ICEperhab",
-                                                 "CostTransformer_inv1", "CostTransformer_inv2", "GWP_Transformer1", "GWP_Transformer2","Units_Ext_district","Transformer_Lifetime"],
+                                                "DailyDist","Mode_Speed","Cost_demand_ext","EV_supply_ext","share_activity","Cost_supply_ext",
+                                                "max_share", "min_share","max_share_modes", "min_share_modes" ,  "n_ICEperhab",
+                                                 "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2","Units_Ext_district","Network_lifetime"],
                          "list_constraints_MP": [],
-                         "list_set_indexed_MP" : ["Districts"]
+                         "list_set_indexed_MP" : ["Districts","Distances"]
                          }
+
+        if "EV_district" in self.infrastructure.UnitsOfDistrict:
+            self.lists_MP["list_constraints_MP"] += ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
 
         self.df_fix_Units = pd.DataFrame()
         self.fix_units_list = []
@@ -189,12 +195,12 @@ class MasterProblem:
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
-        if "Transformer_Ext" in self.parameters:
+        if "Network_ext" in self.parameters:
             nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
             profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
             max_DEL = profile_building_x.max(axis=1).sum()
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Transformer_Ext"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Network_ext"][0] * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Network_ext"][0] * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -328,7 +334,7 @@ class MasterProblem:
         if exitcode != 0:
             # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
             if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
-                raise Exception('Sub problem did not converge')
+                raise Exception('Sub problem did not converge with building', h)
 
         return df_Results, attr
 
@@ -358,16 +364,18 @@ class MasterProblem:
         ValueError: If the sets are not arrays or if the parameters are not arrays or floats or dataframes. Or if the MP optimization did not converge
         """
 
-        # Create the ampl Master Problem (MP)
-        if os.getenv('USE_AMPL_MODULES', False):
-            from amplpy import modules
-            modules.load()
-            ampl_MP = AMPL()
-        else:
+        if "AMPL_PATH" in os.environ:
             try:
                 ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
-                raise Exception("AMPL_PATH is not defined. Please include a .env file at the project root (e.g., AMPL_PATH='C:/AMPL')")
+                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+        else:
+            try:
+                from amplpy import modules
+                modules.load()
+                ampl_MP = AMPL()
+            except:
+                raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license: https://reho.readthedocs.io/en/main/sections/5_Getting_started.html#ampl-license")
 
         # AMPL (GNU) OPTIONS
         ampl_MP.setOption('solution_round', 11)
@@ -402,8 +410,6 @@ class MasterProblem:
                 ampl_MP.read('mobility.mod')
             if "EV_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('evehicle.mod')
-                mobility_cst = ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2", 'ExternalEV_Costs_positive']
-                self.lists_MP["list_constraints_MP"] = self.lists_MP["list_constraints_MP"] + mobility_cst
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
@@ -471,22 +477,14 @@ class MasterProblem:
             MP_parameters['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
             MP_parameters['GWP_demand'] = MP_parameters["GWP_supply"] * (1-1e-9)
 
-        for key in self.lists_MP['list_parameters_MP']:
-            if key in self.parameters.keys():
-                if key == "Units_Ext_district":
-                    key2 = "Units_Ext"
-                    MP_parameters[key2] = self.parameters[key]
-                else:
-                    MP_parameters[key] = self.parameters[key]
-
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            p = EV_gen.generate_mobility_parameters(self.cluster,self.parameters,
-                                                    np.setdiff1d(np.append(self.infrastructure.UnitsOfLayer["Mobility"],'Public_transport'),self.infrastructure.UnitsOfType["EV_charger"]))
-            MP_parameters.update(p)
+            mobility_parameters = EV_gen.generate_mobility_parameters(self.cluster, self.parameters, self.infrastructure, self.modal_split)
+            for param in mobility_parameters:
+                MP_parameters[param] = mobility_parameters[param]
 
         if read_DHN:
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -502,13 +500,20 @@ class MasterProblem:
             if "area_district" in MP_parameters:
                 del MP_parameters["area_district"]
 
+        for key in self.lists_MP['list_parameters_MP']:
+            if key in self.parameters.keys():
+                if key == "Units_Ext_district":
+                    MP_parameters["Units_Ext"] = self.parameters[key]
+                else:
+                    MP_parameters[key] = self.parameters[key]
+
         # -------------------------------------------------------------------------------------------------------------
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
         additional = []
-        if 'ReinforcementTrOfLayer' in self.infrastructure.Set.keys():
-             additional = additional + ["ReinforcementTrOfLayer"]
+        if 'ReinforcementOfNetwork' in self.infrastructure.Set.keys():
+             additional = additional + ["ReinforcementOfNetwork"]
 
         for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Lca_kpi']+additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
@@ -543,7 +548,8 @@ class MasterProblem:
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]), ['PT_train', 'PT_bus'])
-            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars']  = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars'] = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['Distances'] = np.array(MP_parameters['DailyDist'].index)
 
         if self.method['external_district']:
             MP_set_indexed['Districts'] = np.array(self.set_indexed["Districts"])
@@ -719,17 +725,17 @@ class MasterProblem:
                          }
 
         # find district structure, objective, beta and parameter for one single building
-        buildings_data_SP, parameters_SP = self.split_parameter_sets_per_building(h, parameters_SP)
+        buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster,
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster,
                               scenario, self.method, self.solver, self.qbuildings_data)
         else:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, self.set_indexed, self.cluster,
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster,
                               scenario, self.method, self.solver)
 
         ampl = REHO.build_model_without_solving()
@@ -755,7 +761,7 @@ class MasterProblem:
         if exitcode != 0:
             # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
             if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
-                raise Exception('Sub problem did not converge')
+                raise Exception('Sub problem did not converge with building', h)
 
         return df_Results, attr
 
@@ -967,8 +973,12 @@ class MasterProblem:
     def select_MP_objective(self, ampl, scenario):
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint',
                             'EMOO_lca_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
+
         for cst in list_constraints:
-            ampl.getConstraint(cst).drop()
+            try:
+                ampl.getConstraint(cst).drop()
+            except:
+                pass
 
         if 'EMOO' in scenario:
             emoo = scenario['EMOO'].copy()
@@ -1206,14 +1216,17 @@ class MasterProblem:
             if key not in self.lists_MP["list_parameters_MP"]:
                 if isinstance(self.parameters[key], (int, float)):
                     parameters_SP[key] = self.parameters[key]
-                elif self.parameters[key].shape[0] >= self.DW_params['timesteps']:  # if demands profiles are set for more than 1 building
-                    if len(self.infrastructure.houses) < self.DW_params['timesteps']:
-                        nb_buildings = round(self.parameters[key].shape[0] / self.DW_params['timesteps'])
-                        profile_building_x = self.parameters[key].reshape(nb_buildings, self.DW_params['timesteps'])
-                        parameters_SP[key] = profile_building_x[ID]
                 else:
-                    parameters_SP[key] = self.parameters[key][ID]
-        
+                    if len(self.parameters[key]) == len(self.buildings_data):
+                        parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
+                    else:
+                        try:
+                            timesteps = int(len(self.parameters[key])/len(self.buildings_data))
+                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps) # for time series
+                            parameters_SP[key] = profile_building_x[ID]
+                        except:
+                            parameters_SP[key] = self.parameters[key] # one parameter for all buildings
+
         for key in self.set_indexed:
             if key not in self.lists_MP["list_set_indexed_MP"]:
                 set_indexed_SP[key] = self.set_indexed[key]

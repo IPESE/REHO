@@ -20,35 +20,33 @@
 
 # Usage
 param n_EVperhab{u in UnitsOfType['EV']} default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
-param n_EVtotperhab default 1.5; #1.5; # 1.1;
+param n_EVtotperhab default 1.5; # number
 param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population; 
 param n_EVtot_max := n_EVtotperhab * Population; 
-param ff_EV{u in UnitsOfType['EV']} default 1.56; # [4]
+param ff_EV{u in UnitsOfType['EV']} default 1.56; # person/vehicle [4]
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
 param EV_charging_profile{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
-param tau_relaxation_charging_profile default 0.03;
-param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}; # initialized through the function generate_mobility_parameters
-param min_share_EV default 0;
-param max_share_EV default 1; # [4] G 3.3.1.6 : share of cars is 66 %
-param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # usually a car spends 1h per day on the move - source : Timo
+param tau_relaxation_charging_profile default 0.03; # [-]
+param EV_activity{a in Activities,u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}; # [-] initialized through the function generate_mobility_parameters
+param max_daily_time_spend_travelling{u in UnitsOfType['EV']} default 0.9; # hours - usually a car spends 1h per day on the move - source : Timo
 
 # Computed parameters to calculate the variation between EV_E_stored (plug_in and plug_out) depending on EV_plugged_out at each interval of time
-param storedOut2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedOut2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} :=  # [-]
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 0 then
 		1 
 	else
 		min(1,EV_plugged_out[u,p,t]/EV_plugged_out[u,p,prev(t,Time[p])]);
-param storedIn2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedIn2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := # [-]
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 1 then
 		1
 	else
 		min(1,(1-EV_plugged_out[u,p,t])/(1-EV_plugged_out[u,p,prev(t,Time[p])]));
-param storedIn2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedIn2Out{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := # [-]
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 1 then
 		0
 	else
 		max(0,1-(1-EV_plugged_out[u,p,t])/(1-EV_plugged_out[u,p,prev(t,Time[p])]));
-param storedOut2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := 
+param storedOut2In{u in UnitsOfType['EV'], p in Period, t in Time[p] diff {first(Time[p])}} := # [-]
 	if EV_plugged_out[u,p,prev(t,Time[p])] = 0 then
 		0
 	else
@@ -65,34 +63,36 @@ param EV_eff_travel default 6; 					#km/kWh
 param EV_charger_Power{uc in UnitsOfType['EV_charger']} default 7;			#kW	 	[5] and [7]
 param EV_eff_ch default 0.9;				#-		[1] both charging station efficiency and battery efficiency
 param EV_eff_di default 0.9;				#-		[1]
-param EV_charger_supply_ext{a in Activities, p in Period, t in Time[p]} default 0; #kWh
-param Cost_supply_ext{ p in PeriodStandard, t in Time[p]} default 0;
+param EV_supply_ext{a in Activities, p in Period, t in Time[p]} default 0; #kWh
+param Cost_supply_ext{ p in PeriodStandard, t in Time[p]} default 0; #CHF/kWh
 
 # EV batteries charging outside the district
 param EV_charger_Power_ext{d in Districts} default 7; # kW - describes the mean charger power of the overall town (sum of districts)
-param share_activity{a in Activities, d in Districts} default 0; # to describe the distribution of EVs plugged out in the other disctricts : default 0 means that there is no interaction with other districts = run as standalone
-param Cost_demand_ext{d in Districts, p in PeriodStandard, t in Time[p]} default Cost_supply_network["Electricity",p,t];
+param share_activity{a in Activities, d in Districts} default 0; # [-] to describe the distribution of EVs plugged out in the other disctricts : default 0 means that there is no interaction with other districts = run as standalone
+param Cost_demand_ext{d in Districts, p in PeriodStandard, t in Time[p]} default Cost_supply_network["Electricity",p,t]; #CHF/kWh
 
 # ----------------------------------------- VARIABLES ---------------------------------------
-var n_vehicles{u in UnitsOfType['EV']} integer >= 0;
-var EV_E_stored{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
-var EV_E_stored_plug_out{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
-var EV_E_stored_plug_in{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
-var EV_V2V{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
-var EV_supply_travel{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0;
+var n_vehicles{u in UnitsOfType['EV']} integer >= 0; # number 
+var EV_E_stored{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh
+var EV_E_stored_plug_out{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh
+var EV_E_stored_plug_in{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh
+var EV_V2V{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh
+var EV_supply_travel{u in UnitsOfType['EV'],p in Period,t in Time[p]} >= 0; # kWh
 
 # charging stations
 var n_chargers{uc in UnitsOfType['EV_charger']} integer >= 0;
-var EV_demand{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
-var coeff_charging_profile{u in UnitsOfType['EV'],p in Period} >= 0; # only used when forcing a charging profile
-var EV_supply{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0;
-var C2V{uc in UnitsOfType['EV_charger'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ; # Charger to Vehicle
-var V2C{uc in UnitsOfType['EV_charger'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ; # Vehicle to Charger
+var EV_demand{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0; # kWh
+var coeff_charging_profile{u in UnitsOfType['EV'],p in Period} >= 0; # [-] only used when forcing a charging profile
+var EV_supply{u in UnitsOfType['EV'],p in Period,t in Time[p]} >=0; # kWh
+var C2V{uc in UnitsOfType['EV_charger'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ; # kWh - Charger to Vehicle
+var V2C{uc in UnitsOfType['EV_charger'],u in UnitsOfType['EV'],p in Period,t in Time[p]}>= 0 ; # kWh - Vehicle to Charger
 
 # EV batteries charging outside the district
 var EV_demand_ext{a in Activities, d in Districts, u in UnitsOfType['EV'], p in Period, t in Time[p]} >= 0; # kWh
-var C2A{uc in UnitsOfType['EV_charger'],a in Activities,p in Period,t in Time[p]}>= 0 ; # Charger to Activity (i.e. the external load EV_charger_supply_ext)
+var C2A{uc in UnitsOfType['EV_charger'],a in Activities,p in Period,t in Time[p]}>= 0 ; # kWh - Charger to Activity (i.e. the external load EV_supply_ext)
 
+var EV_revenue_ext{p in Period,t in Time[p]};
+var EV_cost_ext{p in Period,t in Time[p]};
 
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 #--Energy balance
@@ -149,30 +149,34 @@ EV_demand_ext[a,d,u,p,t] <= EV_activity[a,u,p,t]* share_activity[a,d]  * n_vehic
 subject to external_charging_c2{d in Districts, u in UnitsOfType['EV'], p in PeriodStandard, t in Time[p]}:
 EV_demand_ext["travel",d,u,p,t] <=0; # During the travel activity, EV can provide pkm, but they do not have charging opportunities. 
 
+# costs and revenues of external charging
+subject to external_charging_costs1{ p in PeriodStandard, t in Time[p]}:
+EV_revenue_ext[p,t] = Cost_supply_ext[p,t] *sum {a in Activities} EV_supply_ext[a,p,t];
 
-subject to external_charging_costs{ p in PeriodStandard, t in Time[p]}:
-ExternalEV_Costs_op[p,t] = sum{d in Districts}( Cost_demand_ext[d,p,t] *sum {a in Activities} (sum {u in UnitsOfType['EV'] } (EV_demand_ext[a,d,u,p,t]))) # 
-							- Cost_supply_ext[p,t] *sum {a in Activities}(EV_charger_supply_ext[a,p,t] ) ;
+subject to external_charging_costs2{ p in PeriodStandard, t in Time[p]}:
+EV_cost_ext[p,t] = sum{d in Districts, a in Activities, u in UnitsOfType['EV']} Cost_demand_ext[d,p,t] * EV_demand_ext[a,d,u,p,t];
 
+subject to external_charging_costs3{ p in PeriodStandard, t in Time[p]}:
+ExternalEV_Costs_op[p,t] = (EV_cost_ext[p,t] - EV_revenue_ext[p,t])* dp[p] * dt[p];
 
 
 #--Stock constraints
-subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
-n_vehicles[u] <= n_EV_max[u];
+#subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
+#n_vehicles[u] <= n_EV_max[u];
 
-subject to EV_stock_upperbound2:
-sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
+#subject to EV_stock_upperbound2:
+#sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
 
 #--Max share and time of travel
-subject to EV_maxshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) <= max_share_EV * Population * DailyDist; 
+subject to EV_maxshare{u in UnitsOfType['EV'],p in PeriodStandard, dist in Distances}:
+sum {t in Time[p]}(pkm_supply[u,dist,p,t]) <= max_share[u,dist] * Population * DailyDist[dist] ; 
 
-subject to EV_minshare{p in PeriodStandard}:
-sum {u in UnitsOfType['EV'],t in Time[p]}(Units_supply['Mobility',u,p,t]) >= min_share_EV * Population * DailyDist; 
+subject to EV_minshare{u in UnitsOfType['EV'],p in PeriodStandard, dist in Distances}:
+sum {t in Time[p]}(pkm_supply[u,dist,p,t]) >= min_share[u,dist] * Population * DailyDist[dist] ; 
 
-subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
-sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 
+#subject to EV_timeoftravel{p in Period,u in UnitsOfType['EV']}:
+#sum {t in Time[p]}(Units_supply['Mobility',u,p,t])/ff_EV[u] /Mode_Speed[u]  <= max_daily_time_spend_travelling[u] * n_vehicles[u] ; 
 
 
 #--SoC constraints
@@ -221,7 +225,7 @@ subject to chargingstation_c5{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_supply[u,p,t]  = sum {uc in UnitsOfType['EV_charger']}(V2C[uc,u,p,t] );	
 
 subject to chargingstation_c6{a in Activities,p in Period,t in Time[p]}:
-EV_charger_supply_ext[a,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2A[uc,a,p,t] );	
+EV_supply_ext[a,p,t]  = sum {uc in UnitsOfType['EV_charger']}(C2A[uc,a,p,t] );
 
 subject to chargingstation_capacity{uc in UnitsOfType['EV_charger']}:
 Units_Mult[uc] = EV_charger_Power[uc] * n_chargers[uc];  #kWh

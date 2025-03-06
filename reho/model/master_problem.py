@@ -199,11 +199,14 @@ class MasterProblem:
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
         if "Network_ext" in self.parameters:
-            nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
-            profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
-            max_DEL = profile_building_x.max(axis=1).sum()
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = self.parameters["Network_ext"][0] * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = self.parameters["Network_ext"][0] * 0.999 / max_DEL
+            capacity = self.parameters["Network_ext"][0]
+        else:
+            capacity = self.infrastructure.Grids_Parameters["Network_ext"].xs("Electricity")
+        nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
+        profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
+        max_DEL = profile_building_x.max(axis=1).sum()
+        SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
+        SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -299,7 +302,8 @@ class MasterProblem:
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
         if epsilon_init is not None and self.method['building-scale']:
             emoo = scenario["EMOO"].copy()
-            emoo.pop("EMOO_grid")
+            for key in ["EMOO_grid", "EMOO_GU_demand", "EMOO_GU_supply"]:
+                emoo.pop(key)
             if len(emoo) == 1:
                 scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
             else:

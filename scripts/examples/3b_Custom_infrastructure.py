@@ -32,7 +32,8 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Units specifications can also be adapted through a custom csv file based on the default values from data/infrastructure/building_units.csv
-    path_to_custom_units = str(Path(__file__).parent / 'data' / 'building_units.csv')
+    # You can simply create a new file and specify the path to it in the initialize_units function
+    path_to_custom_units = str(Path(__file__).parent / 'data' / 'custom_building_units.csv')
     units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
 
     # Run optimization

@@ -230,26 +230,24 @@ class Infrastructure:
         for h in self.House:
 
             for u in self.houses[h]['units']:
-                if not u['HP_parameters'] in ['nan', 'None', None]:
+                if u['UnitOfType'] == 'Air_Conditioner' or u['UnitOfType'] == 'HeatPump':
                     complete_name = u['name'] + '_' + h
-                    file = os.path.join(path_to_infrastructure, u['HP_parameters'])
-                    if u['UnitOfType'] == 'Air_Conditioner' or u['UnitOfType'] == 'HeatPump':
-                        df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
-                        df = pd.concat([df], keys=[complete_name])
-                        # get index sets of source and sink of HP
-                        name, rest = df.columns[0].split('_', 1)
-                        self.TemperatureSets[name + '_Tsink'] = np.array(df.index.get_level_values(1).unique())
-                        self.TemperatureSets[name + '_Tsource'] = np.array(df.index.get_level_values(2).unique())
-                    else:
-                        df = pd.read_csv(file, delimiter=';')
-                        df.index = [complete_name]
+                    if u['UnitOfType'] == 'Air_Conditioner':
+                        file = os.path.join(path_to_infrastructure, 'AC_parameters.txt')
+                    elif u['UnitOfType'] == 'HeatPump':
+                        file = os.path.join(path_to_infrastructure, 'HP_parameters.txt')
 
-                    if u['HP_parameters'] in self.HP_parameters:
+                    df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
+                    df = pd.concat([df], keys=[complete_name])
+                    # get index sets of source and sink of HP
+                    name, rest = df.columns[0].split('_', 1)
+                    self.TemperatureSets[name + '_Tsink'] = np.array(df.index.get_level_values(1).unique())
+                    self.TemperatureSets[name + '_Tsource'] = np.array(df.index.get_level_values(2).unique())
 
-                        self.HP_parameters[u['HP_parameters']] = pd.concat(
-                            [self.HP_parameters[u['HP_parameters']], df])
+                    if u['UnitOfType'] in self.HP_parameters:
+                        self.HP_parameters[u['UnitOfType']] = pd.concat([self.HP_parameters[u['UnitOfType']], df])
                     else:
-                        self.HP_parameters[u['HP_parameters']] = df
+                        self.HP_parameters[u['UnitOfType']] = df
 
         for key in self.TemperatureSets:  # add additional sets from units to total set
             self.Set[key] = self.TemperatureSets[key]
@@ -346,9 +344,6 @@ def prepare_units_array(file, exclude_units=[], grids=None):
                        ' files in data/infrastructure.')
 
     unit_data = unit_data.apply(check_validity, axis=1)
-    
-    if 'HP_parameters' in unit_data.columns:
-        unit_data['HP_parameters'] = unit_data['HP_parameters'].astype(str)
 
     units = []
     if grids is None:
@@ -420,7 +415,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                         district_data="custom_district_units.csv", interperiod_data=True)
     """
 
-    default_units_to_exclude = ["Air_Conditioner", 'HeatPump_Anergy', 'HeatPump_Lake', 'DataHeat_SH', 'NG_Cogeneration']
+    default_units_to_exclude = ["Air_Conditioner", 'HeatPump_Lake', 'DataHeat_SH', 'NG_Cogeneration']
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:

@@ -236,7 +236,8 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
 
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
-        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"], axis=1)
+        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"],
+                                                                                                   axis=1)
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
         self.parameters_to_ampl['Streams_H'] = self.infrastructure_sp.Streams_H
 
@@ -280,10 +281,7 @@ class SubProblem:
         # Reference temperature
         self.parameters_to_ampl['T_comfort_min'] = buildings_profiles.reference_temperature_profile(self.parameters_to_ampl, self.cluster_sp)
 
-
     def set_HP_parameters(self, ampl):
-        # --------------- Heat Pump ---------------------------------------------------------------------------#
-        # T = 7.5C for Lake, T = 12C for underground, T = 16C for CO2
 
         df_end = ampl.getParameter('TimeEnd').getValues().toPandas()
         timesteps = int(df_end['TimeEnd'].sum())  # total number of timesteps
@@ -303,8 +301,6 @@ class SubProblem:
                     T_source = np.concatenate([T_source, np.repeat(7.5, timesteps)])
                 elif 'Geothermal' in unit:
                     T_source = np.concatenate([T_source, np.repeat(8, timesteps)])
-                elif 'Anergy' in unit:
-                    T_source = np.concatenate([T_source, np.repeat(16, timesteps)])
                 elif 'DHN' in unit:
                     if 'T_DHN_supply' and 'T_DHN_return' in self.parameters_sp:
                         T_DHN_mean = (self.parameters_sp["T_DHN_supply"] + self.parameters_sp["T_DHN_return"]) / 2

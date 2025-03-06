@@ -93,7 +93,8 @@ WaterTankDHW,Water Tank DHW,WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux
 DataHeat_SH,Data centers,ICT,Centre de données,#ffcc99,skin
 DataHeat_DHW,Data centers (DHW),ICT,Centre de données (ECS),#ffcc99,skin
 ,,,,,
-Air_Conditioner,Air conditioner,AC,Climatiseur,#00008B,darkblue
+AirConditioner,Air conditioner,AC,Climatiseur,#00008b,darkblue
+Cooling,Space cooling,SC,Demande en froid,#00008b,darkblue
 ,,,,,
 Isolation,Thermal insulation,INS,Isolation,#69B58A,green
 Isolation_roof,Roof insulation,INS1,Isolation toiture,#a9d6bc,green_light

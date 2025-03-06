@@ -429,7 +429,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     semi_auto_device = [
         'NG_Boiler', 'NG_Cogeneration', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
         'ElectricalHeater_DHW', 'ElectricalHeater_SH',
-        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'Air_Conditioner',
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'AirConditioner',
         'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC','rSOC_district',
         'MTR_district', 'NG_Boiler_district', 'HeatPump_Geothermal_district'
     ]

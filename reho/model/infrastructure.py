@@ -230,9 +230,9 @@ class Infrastructure:
         for h in self.House:
 
             for u in self.houses[h]['units']:
-                if u['UnitOfType'] == 'Air_Conditioner' or u['UnitOfType'] == 'HeatPump':
+                if u['UnitOfType'] == 'AirConditioner' or u['UnitOfType'] == 'HeatPump':
                     complete_name = u['name'] + '_' + h
-                    if u['UnitOfType'] == 'Air_Conditioner':
+                    if u['UnitOfType'] == 'AirConditioner':
                         file = os.path.join(path_to_infrastructure, 'AC_parameters.txt')
                     elif u['UnitOfType'] == 'HeatPump':
                         file = os.path.join(path_to_infrastructure, 'HP_parameters.txt')
@@ -415,7 +415,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                         district_data="custom_district_units.csv", interperiod_data=True)
     """
 
-    default_units_to_exclude = ["Air_Conditioner", 'HeatPump_Lake', 'DataHeat_SH', 'NG_Cogeneration']
+    default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH', 'NG_Cogeneration']
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:

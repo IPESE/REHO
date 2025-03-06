@@ -157,7 +157,7 @@ class SubProblem:
             ampl.read('wood_stove.mod')
         if 'HeatPump' in self.infrastructure_sp.UnitTypes:
             ampl.read('heatpump.mod')
-        if 'Air_Conditioner' in self.infrastructure_sp.UnitTypes:
+        if 'AirConditioner' in self.infrastructure_sp.UnitTypes:
             ampl.read('air_conditioner.mod')
         if 'ThermalSolar' in self.infrastructure_sp.UnitTypes:
             ampl.read('thermal_solar.mod')
@@ -322,8 +322,8 @@ class SubProblem:
             sources = self.parameters_sp['T_source_cool'].keys()
 
         T_source_cool = np.array([])
-        if 'Air_Conditioner' in self.infrastructure_sp.UnitsOfType:
-            for unit in self.infrastructure_sp.UnitsOfType['Air_Conditioner']:
+        if 'AirConditioner' in self.infrastructure_sp.UnitsOfType:
+            for unit in self.infrastructure_sp.UnitsOfType['AirConditioner']:
                 # if T_source_cool defined from script
                 if any([i in unit for i in sources]):
                     source = list(itertools.compress(sources, [i in unit for i in sources]))[0]
@@ -598,8 +598,6 @@ class SubProblem:
             ampl.getConstraint('enforce_DHN').drop()
             if not any("DHN" in unit for unit in self.infrastructure_sp.UnitsOfType['HeatPump']):
                 ampl.getConstraint('DHN_heat').drop()
-        if 'Air_Conditioner' in self.infrastructure_sp.UnitsOfType and "Air_Conditioner_DHN" not in [unit["name"] for unit in self.infrastructure_sp.units]:
-            ampl.getConstraint('AC_c3').drop()
 
         if self.method_sp['use_pv_orientation']:
             ampl.getConstraint('enforce_PV_max_fac').drop()

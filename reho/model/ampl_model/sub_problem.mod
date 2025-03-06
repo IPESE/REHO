@@ -433,13 +433,13 @@ subject to House_streams_heating_c2{h in House,p in Period,t in Time[p]}:
 sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='SH' and Streams_Hin[st]=0}(Streams_Q[se,st,p,t]) = House_Q_heating[h,p,t];
 
 #-cooling 
-#subject to House_streams_cooling_c1{h in House,p in Period,t in Time[p]}:
-#sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='Cooling' and Streams_Hout[st]=0}(Streams_Mcp[st,p,t]*HC_Streams_Mult[se,st,p,t]) <= Mcp_0c[h];
+subject to House_streams_cooling_c1{h in House,p in Period,t in Time[p]}:
+sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='Cooling' and Streams_Hout[st]=0}(Streams_Mcp[st,p,t]*HC_Streams_Mult[se,st,p,t]) <= Mcp_0c[h];
 
 subject to House_streams_cooling_c2{h in House,p in Period,t in Time[p]}:
 sum{se in Services,st in StreamsOfService[se] inter StreamsOfBuilding[h]:se='Cooling' and Streams_Hout[st]=0}(Streams_Q[se,st,p,t]) = House_Q_cooling[h,p,t];
 
-#-Standard energy balance - without refurbishment
+#-Standard energy balance
 subject to House_energy_balance{h in House,p in Period,t in Time[p] diff {last(Time[p])}}:
 (ERA[h]*HeatCapacity[h]/1000)*(T_in[h,p,next(t,Time[p])] - T_in[h,p,t])/dt[p] = (U_h[h]*ERA[h])*(T_ext[p,t]-T_in[h,p,t]) +
 																					(House_Q_heating[h,p,t]-House_Q_cooling[h,p,t]) + HeatGains[h,p,t] + SolarGains[h,p,t];

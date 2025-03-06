@@ -82,6 +82,11 @@ Connect to ELCOM database for electricity prices
 .. literalinclude:: ../../scripts/examples/3i_Electricity_prices.py
    :language: python
 
+Include capacities of networks for imports and exports
+===========================================================
+.. literalinclude:: ../../scripts/examples/3j_Transformer_capacities.py
+   :language: python
+
 4. Global features
 --------------------
 

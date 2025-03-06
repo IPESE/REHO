@@ -194,3 +194,44 @@ def remove_building_from_index(df):
     index_modified = pd.MultiIndex.from_frame(index_frame)
 
     return df.set_index(index_modified)
+
+
+def get_cluster_file_ID(cluster):
+    """
+    Gets the weather file ID that corresponds to the specifications provided in the reho initalization.
+
+    The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
+    ``cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}``
+    Will yield to:
+    ``File_ID = 'Geneva_10_24_T_I_W'``
+
+    Parameters
+    ----------
+    cluster : dict
+        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
+
+    Returns
+    -------
+    str
+        A literal representation to identify the location and clustering attritutes.
+    """
+    if 'T' in cluster['Attributes']:
+        T = '_T'
+    else:
+        T = ''
+    if 'I' in cluster['Attributes']:
+        I = '_I'
+    else:
+        I = ''
+    if 'W' in cluster['Attributes']:
+        W = '_W'
+    else:
+        W = ''
+    if 'E' in cluster['Attributes']:
+        E = '_E'
+    else:
+        E = ''
+
+    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + T + I + W + E
+
+    return File_ID

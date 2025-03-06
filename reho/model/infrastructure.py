@@ -346,7 +346,9 @@ def prepare_units_array(file, exclude_units=[], grids=None):
                        ' files in data/infrastructure.')
 
     unit_data = unit_data.apply(check_validity, axis=1)
-    unit_data['HP_parameters'] = unit_data['HP_parameters'].astype(str)
+    
+    if 'HP_parameters' in unit_data.columns:
+        unit_data['HP_parameters'] = unit_data['HP_parameters'].astype(str)
 
     units = []
     if grids is None:

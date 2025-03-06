@@ -155,7 +155,6 @@ def generate_weather_data(cluster, qbuildings_data):
     # Set the time for the new rows (variable hours per period)
     T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0], 1, 1]
     T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1], 1, 1]
-    T_min["Text"] = -10.0
 
     # Append the new extreme values to the data
     new_index_min = len(data_cls)  # Dynamically find the next available index

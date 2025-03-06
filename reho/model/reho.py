@@ -63,11 +63,9 @@ class REHO(MasterProblem):
 
         else:  # compact formulation
             if self.method['use_facades'] or self.method['use_pv_orientation']:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                  self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
+                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
             else:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                  self.cluster, self.scenario, self.method, self.solver)
+                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster, self.scenario, self.method, self.solver)
             ampl = reho.build_model_without_solving()
 
             if self.method['fix_units']:

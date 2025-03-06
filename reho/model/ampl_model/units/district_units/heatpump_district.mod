@@ -126,14 +126,3 @@ subject to HP_sizing{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[
 subject to HP_heating_output{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p],T in HP_Tsupply: T = Streams_Tin[st,p,t]}:
 	Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply} HP_COP[u,p,t,T]*HP_Power[u,p,t,T];
 
-# HEX Direct Cooling
-
-param DHN_efficiency_out{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]}  := if min{T in HP_Tsupply} T >= T_source[u,p,t] + 2 then 1.0 else 0;
-param T_m{u in UnitsOfType['HeatPump'], p in Period,t in Time[p]}  := min{T in HP_Tsupply} (T) - T_source[u,p,t];
-param U_hex default 1; # [kW / m2K], https://sistemas.eel.usp.br/docentes/arquivos/5817712/LOQ4086/saari__heat_exchanger_dimensioning.pdf
-
-subject to HEX_cooling1{u in UnitsOfType['HeatPump'], v in UnitsOfType['DHN_direct_cooling'], p in Period,t in Time[p]}:
-	Units_demand['Heat',v,p,t]/(U_hex * T_m[u,p,t])  <= Units_Mult[v];	
-
-subject to HEX_cooling3{u in UnitsOfType['HeatPump'], v in UnitsOfType['DHN_direct_cooling'], p in Period,t in Time[p]}:
-	Units_demand['Heat',v,p,t] <= 1e4 *  DHN_efficiency_out[u,p,t];	

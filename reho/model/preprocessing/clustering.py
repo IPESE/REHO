@@ -93,7 +93,6 @@ class Clustering:
         but concatenates results to form a yearly DataFrame with the correct shape (365, 1).
         """
         df_res = pd.DataFrame()
-
         # Define day ranges for each month (0-based indexing)
         month_day_ranges = {
             1: (0, 31), 2: (31, 59), 3: (59, 90), 4: (90, 120),
@@ -102,8 +101,9 @@ class Clustering:
         }
 
         # Loop over each number of clusters
-        for n_clusters in self.nb_clusters:
-
+        for n_clust_tot in self.nb_clusters:
+            #n_clusters = int(self.nb_clusters[idx_nb] / 12)
+            n_clusters = int(n_clust_tot/ 12)
             # Create a temporary DataFrame to store the results for the year
             year_results = pd.DataFrame()
 
@@ -114,14 +114,15 @@ class Clustering:
 
                 # Apply K-Medoids clustering for the current month
                 df = self.__run_KMedoids(month_attr_nor, n_clusters)
+                # Take into account when does the current month start
                 df[str(n_clusters)] = df[str(n_clusters)] + start
                 # Ensure the correct date index for the month
                 df.index = self.data_org.index[start:end]
 
                 # Concatenate the results for each month into the yearly DataFrame
                 year_results = pd.concat([year_results, df], axis=0)
-
-            df_res[str(n_clusters)] = year_results[str(n_clusters)]
+            #df_res[str(self.nb_clusters[idx_nb])] = year_results[str(n_clusters)]
+            df_res[str(n_clust_tot)] = year_results[str(n_clusters)]
 
         df_res.columns.name = "iteration"
         self.results["idx"] = df_res
@@ -163,7 +164,11 @@ class Clustering:
         pi.loc["LDC"] = (abs(np.sort(data_clu.values, axis=0) - np.sort(self.data_nor.values, axis=0)).sum() /
                          self.data_nor.values.sum())
         pi.loc["MAE"] = (abs(self.data_nor - data_clu).sum()) / len(data_clu)
+        print("MAE")
+        print((abs(self.data_nor - data_clu).sum()) / len(data_clu))
         pi.loc["RMSD"] = np.sqrt(((self.data_nor - data_clu) ** 2).mean())
+        print("RMSD")
+        print(np.sqrt(((self.data_nor - data_clu) ** 2).mean()))
         pi.loc["MAPE"] = (abs(self.data_nor - data_clu).sum() / self.data_nor.mean()) / len(data_clu)
         return pi
 

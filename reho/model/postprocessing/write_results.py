@@ -127,7 +127,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         tau = ampl.getParameter('tau').getValues().toList()
         df1 = get_ampl_data(ampl, 'Units_Use')
         df2 = get_ampl_data(ampl, 'Units_Mult')
-
         df3 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_inv')
         df4 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_rep')
         df5 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime

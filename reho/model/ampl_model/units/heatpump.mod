@@ -118,7 +118,7 @@ subject to HP_power_input{h in House, u in UnitsOfType['HeatPump'] inter UnitsOf
 
 # Sizing
 subject to HP_sizing{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
-	sum{T in HP_Tsupply} (HP_Power[h,u,p,t,T]/HP_Pmax[h,u,p,t,T]) <= Units_Mult[u];
+	sum{T in HP_Tsupply} HP_COP[h,u,p,t,T]*(HP_Power[h,u,p,t,T]/HP_Pmax[h,u,p,t,T]) <= Units_Mult[u];
 
 # DWH production
 subject to HP_EB_c2{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
@@ -126,7 +126,7 @@ sum{st in StreamsOfUnit[u]: Streams_Tin[st,p,t] < 55} Streams_Q['DHW',st,p,t] = 
 
 # Need of technical buffer tank (defrost & hydraulic decoupling) if no floor heating & cycle inversion
 subject to HP_c4{h in House,ui in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],uj in UnitsOfType['WaterTankSH'] inter UnitsOfHouse[h]}:
-	Units_Mult[uj] >= if Th_supply_0[h] > 50 then 0.015*Units_Mult[ui]*HP_Eta_nominal[ui,35,20]*(35+273.15)/(35 - (20)) else 0;			#m3
+	Units_Mult[uj] >= if Th_supply_0[h] > 50 then 1000*0.005*Units_Mult[ui]*HP_Eta_nominal[ui,35,20]*(35+273.15)/(35 - (20)) else 0;			#L
 
 # Ensures only one type of heat pump per house
 subject to max_one_HeatPump_per_house{h in House}:

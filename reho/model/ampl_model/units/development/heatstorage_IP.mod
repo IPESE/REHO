@@ -19,7 +19,7 @@ param TES_IP_eff_ch{UnitsOfType['WaterTankSH_interperiod']} 	default 0.99;		#-
 param TES_IP_eff_di{UnitsOfType['WaterTankSH_interperiod']} 	default 0.99;		#-
 param TES_IP_Tamb{UnitsOfType['WaterTankSH_interperiod']} 	default 20;			#degC		estimated
 param TES_IP_efficiency{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h],p in Period,T in TESindex_IP[h,p] diff {first(TESindex_IP[h,p])} }:=
-	4*TES_IP_U_h[u]*(T-TES_IP_Tamb[u])*3600/(cp_water_kj*TES_IP_diameter[u]*rho_water*TES_IP_dT[h,p,T]);						#-
+	4*TES_IP_U_h[u]*(T-TES_IP_Tamb[u])*3600/(cp_water_kj*TES_IP_diameter[u]*1000*rho_water*TES_IP_dT[h,p,T]);						#-
 	
 # overall energy capacity
 var TES_IP_Mass{h in House,u in UnitsOfType['WaterTankSH_interperiod'] inter UnitsOfHouse[h], hy in Year,TESindex_IP[h,PeriodOfYear[hy]]}>= 0,<= 1e4*sum{i in House}(ERA[i]);	#kg

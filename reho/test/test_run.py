@@ -20,7 +20,7 @@ def test_run(save_results=True):
         scenario['EMOO'] = {}
         scenario['specific'] = []
         scenario['name'] = 'totex'
-        scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+        scenario['exclude_units'] = ['ThermalSolar']
         scenario['enforce_units'] = []
 
         # Set method options

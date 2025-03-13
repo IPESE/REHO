@@ -16,7 +16,7 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
-    scenario['exclude_units'] = ['Battery', 'NG_Cogeneration']
+    scenario['exclude_units'] = []
     scenario['enforce_units'] = ['HeatPump_DHN']
     scenario["specific"] = ["enforce_DHN"]
 

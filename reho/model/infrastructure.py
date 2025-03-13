@@ -415,7 +415,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                         district_data="custom_district_units.csv", interperiod_data=True)
     """
 
-    default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH', 'NG_Cogeneration']
+    default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH']
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:

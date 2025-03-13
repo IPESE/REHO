@@ -25,7 +25,7 @@ param DHW_diameter{UnitsOfType['WaterTankDHW']}>=0 default 0.7;							#m
 param DHW_U_h{UnitsOfType['WaterTankDHW']}>=0 default 0.0013;							#kW/m2 K	[1]
 param DHW_eff_ch{UnitsOfType['WaterTankDHW']}>=0 default 0.95;							#-
 param DHW_efficiency{u in UnitsOfType['WaterTankDHW'],T in DHWindex diff {first(DHWindex)}} := 
-	4*DHW_U_h[u]*(T-DHW_T_min)*3600/(cp_water_kj*DHW_diameter[u]*rho_water*DHW_dT);	#-
+	4*DHW_U_h[u]*(T-DHW_T_min)*3600/(cp_water_kj*DHW_diameter[u]*1000*rho_water*DHW_dT);	#-
 
 var DHW_Mass{u in UnitsOfType['WaterTankDHW'],T in DHWindex,p in Period,t in Time[p]} 								>= 0,<= 1e2*sum{h in House}(ERA[h]);	#kg
 var DHW_mf_cold{u in UnitsOfType['WaterTankDHW'],T in DHWindex diff {first(DHWindex)},p in Period,t in Time[p]} 	>= 0,<= sum{h in House}(ERA[h]);		#kg/h
@@ -55,13 +55,13 @@ subject to DHW_MB_c3{h in House,u in (UnitsOfType['WaterTankDHW'] inter UnitsOfH
 
 #--SIZING (SIA 385/2)
 subject to DHW_c1{h in House,u in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
-Units_Mult[u] = 1.25*(1/rho_water)*sum{T in DHWindex} DHW_Mass[u,T,p,t];														#m3
+Units_Mult[u] = 1.25*(1/rho_water)*sum{T in DHWindex} DHW_Mass[u,T,p,t];														#L
 
 subject to DHW_c2{h in House,u in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse[h]}:
 Units_Mult[u]/(1.25*(1/rho_water)) >= 1.05*(max{ip in Period,it in Time[ip]} (DHW_flowrate[h,ip,it]));							#kg
 
 subject to DHW_c3{h in House,u in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse[h]}:
-Units_Mult[u] <= max{p in PeriodStandard} (sum{t in Time[p]} DHW_flowrate[h,p,t]/rho_water);									#m3
+Units_Mult[u] <= max{p in PeriodStandard} (sum{t in Time[p]} DHW_flowrate[h,p,t]/rho_water);									#L
 
 #subject to DHW_c4{h in House,u in (UnitsOfType['ElectricalHeater'] inter UnitsOfService['DHW']) inter UnitsOfHouse[h]}:	# enforces minimum ElectricalHeater size for dhw tank
 #Units_Mult[u] >= (cp_water_kj/3600)*(max{p in Period,t in Time[p]} DHW_flowrate[h,p,t])*(DHW_T_max-DHW_T_min);

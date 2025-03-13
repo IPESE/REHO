@@ -1711,7 +1711,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
 
     fig.update_yaxes(title_text="Electricity flows, kW", row=1, col=1)
     fig.update_layout(
-        title="Electricity flows and long term storage behaviour for " + str(time_range) + " starting form day: " + str(day_of_the_year),
+        title="Electricity flows and long term storage behaviour for " + str(time_range) + " starting from day: " + str(day_of_the_year),
         xaxis=dict(
             dtick=24 if time_range in ['month', '2weeks', 'week'] else 4),
         yaxis2=dict(range=[0, 100])

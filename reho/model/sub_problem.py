@@ -135,9 +135,7 @@ class SubProblem:
         # -SOLVER OPTIONS
         ampl.setOption('solver', self.solver)
         if self.solver == "gurobi":
-            ampl.eval("option gurobi_options 'NodeFileStart=0.5';")
-        if self.solver == "cplex":
-            ampl.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=3000';")
+            ampl.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
 
         # -----------------------------------------------------------------------------------------------------#
         #  MODEL FILES
@@ -163,18 +161,16 @@ class SubProblem:
             ampl.read('thermal_solar.mod')
         if 'DataHeat' in self.infrastructure_sp.UnitTypes:
             ampl.read('data_heat.mod')
-        if 'NG_Cogeneration' in self.infrastructure_sp.UnitTypes:
-            ampl.read('ng_cogeneration.mod')
         if 'DHN_hex' in self.infrastructure_sp.UnitTypes:
-            ampl.read('DHN_hex.mod')
-            ampl.read('DHN_pipes.mod')
+            ampl.read('dhn_hex.mod')
+            ampl.read('dhn_pipes.mod')
         if 'PV' in self.infrastructure_sp.UnitTypes:
             if self.method_sp['use_pv_orientation']:
                 ampl.read('pv_orientation.mod')
             else:
                 ampl.read('pv.mod')
         if 'rSOC' in self.infrastructure_sp.UnitTypes:
-            ampl.read('rSOC.mod')
+            ampl.read('rsoc.mod')
         if "Methanator" in self.infrastructure_sp.UnitTypes:
             ampl.read('methanator.mod')
         if 'FuelCell' in self.infrastructure_sp.UnitTypes:
@@ -623,10 +619,6 @@ class SubProblem:
             ampl.eval('suffix iis symbolic OUT;')
             ampl.setOption('presolve', 1)
 
-        # ampl evaluation to speed up the optimization in case we have cogeneration units (since it has many integer variables)
-        # ampl.eval("suffix priority IN, integer, >= 0, <= 9999; let {u in Units} Units_Use[u].priority := 9999; "
-        #          "let {u in UnitsOfType['NG_Cogeneration'],p in Period,t in Time[p]} Units_Use_t[u,p,t].priority := "
-        #          "200*round(max{i in Period,j in Time[i]}(T_ext[i,j])-T_ext[p,t],0);")
         ampl.solve()
 
         if debugging:

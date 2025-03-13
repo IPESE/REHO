@@ -24,7 +24,7 @@ def qbuildings_data():
 
 @pytest.fixture(scope="module")
 def scenario():
-    return {'exclude_units': ['NG_Cogeneration'], 'enforce_units': []}
+    return {'exclude_units': ['ThermalSolar'], 'enforce_units': []}
 
 
 @pytest.fixture(scope="module")
@@ -56,7 +56,7 @@ def test_infrastructure_initialization(infrastructure):
     assert 'Building2' in infrastructure.House
 
     assert set(infrastructure.grids.keys()) == {'Electricity', 'NaturalGas'}
-    assert 'NG_Cogeneration' not in infrastructure.UnitTypes
+    assert 'ThermalSolar' not in infrastructure.UnitTypes
     assert np.array_equal(infrastructure.LayersOfType['HeatCascade'], np.array(['HeatCascade']))
     assert not infrastructure.UnitsOfDistrict
 

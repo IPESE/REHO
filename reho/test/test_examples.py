@@ -115,6 +115,11 @@ def test_example_3i():
     execute_script(script_path)
 
 
+def test_example_3j():
+    script_path = Path(EXAMPLES_DIR) / "3j_Transformer_capacity.py"
+    execute_script(script_path)
+
+
 def test_example_4a():
     script_path = Path(EXAMPLES_DIR) / "4a_Progressive_scenarios.py"
     execute_script(script_path)
@@ -142,4 +147,14 @@ def test_example_6a():
 
 def test_example_6b():
     script_path = Path(EXAMPLES_DIR) / "6b_Mobility_externaldistricts.py"
+    execute_script(script_path)
+
+
+def test_example_7a():
+    script_path = Path(EXAMPLES_DIR) / "7a_rSOC_IP.py"
+    execute_script(script_path)
+
+
+def test_example_7b():
+    script_path = Path(EXAMPLES_DIR) / "7b_rSOC_H2_export.py"
     execute_script(script_path)

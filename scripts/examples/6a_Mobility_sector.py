@@ -15,7 +15,7 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['exclude_units'] = ['NG_Cogeneration']
+    scenario['exclude_units'] = []
     scenario['enforce_units'] = ['EV_district']
 
     # Initialize available units and grids

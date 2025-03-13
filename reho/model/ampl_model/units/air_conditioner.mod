@@ -122,4 +122,4 @@ subject to AC_power_input{h in House,u in UnitsOfType['AirConditioner'] inter Un
 
 # Sizing
 subject to AC_sizing{h in House,u in UnitsOfType['AirConditioner'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
-	sum{T in AC_Tsupply} (AC_Power[h,u,p,t,T]/AC_Pmax[h,u,p,t,T]) <= Units_Mult[u];
+	sum{T in AC_Tsupply} AC_COP[h,u,p,t,T]*(AC_Power[h,u,p,t,T]/AC_Pmax[h,u,p,t,T]) <= Units_Mult[u];

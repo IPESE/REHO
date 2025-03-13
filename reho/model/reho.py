@@ -143,7 +143,7 @@ class REHO(MasterProblem):
                     df1_h = write_results.get_ampl_data(ampl, 'Costs_House_rep', multi_index=False)
                     df = write_results.get_ampl_data(ampl, 'Costs_inv', multi_index=False)
                     df1 = write_results.get_ampl_data(ampl, 'Costs_rep', multi_index=False)
-                    # annualized investment costs with replacements (important for BAT and NG_Cogeneration)
+                    # annualized investment costs with replacements
                     district = (df.sum()[0] + df1.sum()[0]) * tau[0] / surfaces.sum()[0]  # for compact formulation
                     buildings = (df_h.Costs_House_inv.div(surfaces.ERA) + df1_h.Costs_House_rep.div(surfaces.ERA)) * tau[0]  # for decomposition formulation
                 return district, buildings

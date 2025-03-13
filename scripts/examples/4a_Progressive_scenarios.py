@@ -44,8 +44,8 @@ if __name__ == '__main__':
     reho.units = units
     reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.build_infrastructure_SP()
-    reho.buildings_data['Building1']['temperature_heating_supply_C'] = 42
-    reho.buildings_data['Building1']['temperature_heating_return_C'] = 34
+    reho.buildings_data['Building1']['Th_supply_0'] = 42
+    reho.buildings_data['Building1']['Th_return_0'] = 34
     reho.single_optimization()
 
     # Scenario 3 EV
@@ -86,4 +86,5 @@ if __name__ == '__main__':
 
     # Plot results
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
+    plotting.plot_performance(reho.results, plot='gwp', indexed_on='Scn_ID', label='EN_long', title="Environmental performance").show()
 

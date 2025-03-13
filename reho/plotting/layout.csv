@@ -24,7 +24,6 @@ Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark
 OIL_Boiler,Oil boiler,OB,Chaudière à mazout,#000000,dark
 NG_Boiler,Gas boiler,NGB,Chaudière à gaz,#413D3A,ardoise
 NG_Boiler_district,District gas boiler,NGB,Chaudière à gaz (district),#413D3A,ardoise
-NG_Cogeneration,NG cogeneration,COGEN,Cogénération,#413D3A,ardoise
 NG_Cogeneration_district,District cogeneration,COGEN,Cogénération (district),#413D3A,ardoise
 WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown
 ,,,,,

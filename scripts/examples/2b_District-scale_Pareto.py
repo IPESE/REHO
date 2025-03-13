@@ -16,7 +16,7 @@ if __name__ == '__main__':
     scenario['Objective'] = ['OPEX', 'CAPEX']
     scenario['nPareto'] = 2
     scenario['name'] = 'pareto'
-    scenario['exclude_units'] = ['NG_Cogeneration', 'OIL_Boiler']
+    scenario['exclude_units'] = ['OIL_Boiler']
     scenario['enforce_units'] = []
 
     # Set method options

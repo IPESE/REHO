@@ -397,9 +397,7 @@ class MasterProblem:
         # -SOLVER OPTIONS
         ampl_MP.setOption('solver', self.solver)
         if self.solver == "gurobi":
-            ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5';")
-        if self.solver == "cplex":
-            ampl_MP.eval("option cplex_options 'bestbound mipgap=5e-7 integrality=1e-09 timing=1 timelimit=120';")
+            ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
 
         ampl_MP.eval('option show_boundtol 0;')
         ampl_MP.eval('option abs_boundtol 1e-10;')
@@ -437,11 +435,11 @@ class MasterProblem:
             if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('ng_cogeneration_district.mod')
             if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('rSOC_district.mod')
+                ampl_MP.read('rsoc_district.mod')
             if "MTR_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('methanator_district.mod')
         if read_DHN:
-            ampl_MP.read('DHN.mod')
+            ampl_MP.read('dhn.mod')
 
         # Load interperiod storage units
         ampl_MP.cd(path_to_units_interperiod)

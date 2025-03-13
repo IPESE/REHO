@@ -523,7 +523,7 @@ Units are initialized with:
 
 .. code-block:: python
 
-    scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration']
+    scenario['exclude_units'] = ['ThermalSolar']
     scenario['enforce_units'] = ['HeatPump_Air']
     units = infrastructure.initialize_units(scenario, grids, building_data="reho/data/infratructure/building_units.csv")
 

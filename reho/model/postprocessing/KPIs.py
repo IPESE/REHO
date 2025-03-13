@@ -418,16 +418,8 @@ def build_df_profiles_house(df_Results, infrastructure):
     df_profiles_house['T_in'] = df_Results["df_Buildings_t"]['T_in']
     df_profiles_house['Q_DHW'] = df_Results["df_Buildings_t"]['House_Q_DHW']
 
-    if 'NG_Cogeneration' in infrastructure.UnitTypes and not any(infrastructure.UnitsOfType["NG_Cogeneration"] == 'NG_Cogeneration_district'):
-        df_NG_Cogeneration = units_power_profiles_per_building(df_Results, infrastructure, 'NG_Cogeneration')
-        df_profiles_house['NG_Cogeneration'] = df_NG_Cogeneration['Units_supply']
-        df_profiles_house['onsite_el'] = df_profiles_house['PV'] + df_profiles_house['NG_Cogeneration']
-        PV_sell = df_profiles_house['Grid_demand'] - df_profiles_house['NG_Cogeneration']
-        PV_sell[PV_sell < 0] = 0
-        df_profiles_house['PV_SC'] = df_profiles_house['PV'] - PV_sell
-    else:
-        df_profiles_house['onsite_el'] = df_profiles_house['PV']
-        df_profiles_house['PV_SC'] = df_profiles_house['onsite_el'] - df_profiles_house['Grid_demand']
+    df_profiles_house['onsite_el'] = df_profiles_house['PV']
+    df_profiles_house['PV_SC'] = df_profiles_house['onsite_el'] - df_profiles_house['Grid_demand']
     df_profiles_house['SC'] = df_profiles_house['onsite_el'] - df_profiles_house['Grid_demand']
 
     return df_profiles_house

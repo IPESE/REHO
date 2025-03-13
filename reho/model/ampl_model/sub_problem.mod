@@ -58,7 +58,7 @@ set ServicesOfStream{s in Streams} within Services := setof{se in Services,sl in
 param LHV_ng := 50018;						#kJ/kg
 param LKV_ng := 51757;						#kJ/kg
 param cp_water_kj := 4.18;					#KJ/kg K	
-param rho_water := 1000;					#kg/m3
+param rho_water := 1;					#kg/L
 param Pi := 4 * atan(1);					#-
 
 #-TEMPORAL DATA

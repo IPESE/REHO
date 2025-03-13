@@ -427,11 +427,11 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     mol_storage_list = ['H2_storage_IP', 'CH4_storage_IP']
     # Semi automatic handled devices
     semi_auto_device = [
-        'NG_Boiler', 'NG_Cogeneration', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
+        'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
         'ElectricalHeater_DHW', 'ElectricalHeater_SH',
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'AirConditioner',
-        'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC','rSOC_district',
-        'MTR_district', 'NG_Boiler_district', 'HeatPump_Geothermal_district'
+        'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district',
+        'MTR_district', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district'
     ]
 
     DHN_units = ["HeatPump_Geothermal_district", "rSOC_district", "NG_Boiler_district", "MTR_district"]

@@ -27,7 +27,7 @@ param TES_eff_ch{UnitsOfType['WaterTankSH']} 	default 0.99;		#-
 param TES_eff_di{UnitsOfType['WaterTankSH']} 	default 0.99;		#-
 param TES_Tamb{UnitsOfType['WaterTankSH']} 	default 20;			#degC		estimated
 param TES_efficiency{h in House,u in UnitsOfType['WaterTankSH'] inter UnitsOfHouse[h],p in Period,T in TESindex[h,p] diff {first(TESindex[h,p])} }:=
-	4*TES_U_h[u]*(T-TES_Tamb[u])*3600/(cp_water_kj*TES_diameter[u]*rho_water*TES_dT[h,p,T]);						#-
+	4*TES_U_h[u]*(T-TES_Tamb[u])*3600/(cp_water_kj*TES_diameter[u]*1000*rho_water*TES_dT[h,p,T]);						#-
 	
 var TES_Mass{h in House,u in UnitsOfType['WaterTankSH'] inter UnitsOfHouse[h],p in Period,t in Time[p],TESindex[h,p]} 										>= 0,<= 1e4*sum{i in House}(ERA[i]);	#kg
 var TES_mf_cold{h in House,u in UnitsOfType['WaterTankSH'] inter UnitsOfHouse[h],p in Period,t in Time[p],T in TESindex[h,p] diff {first(TESindex[h,p])}}	>= 0,<= 1e4*sum{i in House}(ERA[i]);	#kg/h

@@ -17,7 +17,7 @@ if __name__ == '__main__':
     scenario['Objective'] = ['OPEX', 'CAPEX']  # for multi-objective optimization two objectives are needed
     scenario['nPareto'] = 2  # number of points per objective (total number of optimizations = nPareto * 2 + 2)
     scenario['name'] = 'pareto'
-    scenario['exclude_units'] = ['NG_Cogeneration', 'OIL_Boiler', 'ThermalSolar']
+    scenario['exclude_units'] = ['OIL_Boiler', 'ThermalSolar']
     scenario['enforce_units'] = []
 
     # Set method options

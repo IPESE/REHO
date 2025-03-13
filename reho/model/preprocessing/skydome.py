@@ -309,11 +309,6 @@ def limiting_angle_for_tilt():
 def plot_irr(save_fig):
     cm = plt.cm.get_cmap('Spectral_r')
 
-    # cm = plt.cm.get_cmap('cividis')
-    # cm = plt.cm.get_cmap('tab20c')
-
-    # cm = plt.cm.get_cmap('GnBu')
-
     filename = os.path.join(path_to_skydome, 'orientated_irr.csv')
 
     df = pd.read_csv(filename, index_col=0)

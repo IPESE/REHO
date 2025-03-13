@@ -181,7 +181,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                                                  combined_capacities[i] + combined_resources[i]) + text_placeholder,
                                text="<b>Total</b><br>" + str(custom_round((combined_capacities[i] + combined_resources[i]), decimal)) + change_data.loc[
                                    'unites', lang],
-                               font=dict(size=10, color=cm['darkblue']),
+                               font=dict(size=10, color=layout.loc['TOTEX', "ColorPastel"]),
                                textangle=0, align='center', valign='top',
                                showarrow=False
                                )
@@ -241,7 +241,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
             name=change_data.loc['total', lang],
             x=xtick,
             y=sum_capacities + sum_resources,
-            marker_color=cm['lightblue'],
+            marker_color=layout.loc['TOTEX', "ColorPastel"],
             width=1 / 6,
             hovertemplate=f'<b>Total</b><br>%{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
             legendgroup='group3',
@@ -254,7 +254,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
             name=change_data.loc['scc_legend', lang],
             x=xtick,
             y=sum_scc_capacities + sum_scc_resources,
-            marker_color=cm['lightblue'],
+            marker_color=layout.loc['TOTEX', "ColorPastel"],
             marker_pattern_shape="x",
             width=1 / 6,
             hovertemplate=f'<b>Total</b><br>%{{y:.{decimal}f}}{change_data.loc["unites", lang]}',
@@ -445,7 +445,7 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
                            )
         fig.add_annotation(x=xtick[i], y=combined_costs[i] + 0.04 * max(max(combined_revenues), max(combined_costs)),
                            text=text_totex[i],
-                           font=dict(size=10, color=cm['darkblue']),
+                           font=dict(size=10, color=layout.loc['TOTEX', "ColorPastel"]),
                            textangle=0, align='center', valign='top',
                            showarrow=False
                            )
@@ -1574,9 +1574,9 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
         period = 7
     elif time_range == 'month':
         period = 30
-    elif time_range == '2weeks':
+    elif time_range == '2 weeks':
         period = 14
-    elif time_range == '3days':
+    elif time_range == '3 days':
         period = 3
     else:
         period = 1
@@ -1713,7 +1713,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
     fig.update_layout(
         title="Electricity flows and long term storage behaviour for " + str(time_range) + " starting from day: " + str(day_of_the_year),
         xaxis=dict(
-            dtick=24 if time_range in ['month', '2weeks', 'week'] else 4),
+            dtick=24 if time_range in ['month', '2 weeks', 'week'] else 4),
         yaxis2=dict(range=[0, 100])
     )
 

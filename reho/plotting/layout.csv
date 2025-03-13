@@ -2,8 +2,8 @@ Name,EN_long,EN_short,FR_long,ColorPastel,NamePastel
 ,,,,,
 CAPEX,Capital expenses,CAPEX,Coûts d'investissement,#007480,canard
 OPEX,Operational expenses,OPEX,Coûts opérationnels,#FEA993,salmon
-TOTEX,Total expenses,TOTEX,Coûts totaux,#007480,canard
-GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark
+TOTEX,Total expenses,TOTEX,Coûts totaux,#737373,grey
+GWP,Global warming potential,GWP,Empreinte carbone équivalente,#737373,grey
 ,,,,,
 Electricity_import,Electricity import,Elec in,Électricité (import),#007480,canard
 Electricity_export,Electricity export,Elec out,Électricité (export),#4d9ea6,canard_light

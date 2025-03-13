@@ -16,7 +16,7 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
     scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP", "CO2_storage_IP", "CH4_storage_IP"]
-    scenario['enforce_units'] = []
+    scenario['enforce_units'] = ["rSOC"]
 
     # Set method options
     method = {'interperiod_storage': True}
@@ -25,10 +25,9 @@ if __name__ == '__main__':
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
     grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
-                                             'Hydrogen': {"Cost_supply_cst": 0.45, "Cost_demand_cst": 0.15},
-                                             # default export price = 0.15 CHF/kWh (5 CHF/kg H2)
+                                             'Hydrogen': {"Cost_supply_cst": 0.45, "Cost_demand_cst": 0.15}, # default export price = 0.15 CHF/kWh (5 CHF/kg H2)
                                              'Biomethane': {},
-                                             'CO2': {"Cost_supply_cst": 0.01, "Cost_demand_cst": 0},
+                                             'CO2': {},
                                              })
 
     grids["Electricity"]["ReinforcementOfNetwork"] = np.array([15])  # limit the 2000 kW default value (from layers.csv) for export or import electricity
@@ -55,9 +54,6 @@ if __name__ == '__main__':
 
     # Plot results
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
-
     plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()
-
-    plotting.plot_electricity_flows(reho.results['totex'][0], color='ColorPastel', day_of_the_year=40, time_range='2weeks', label='EN_long').show()
-
-    plotting.plot_storage_profile(reho.results['totex'][0], resolution='hourly').show()
+    plotting.plot_electricity_flows(reho.results['totex'][0], color='ColorPastel', day_of_the_year=40, time_range='2 weeks', label='EN_long').show()
+    plotting.plot_storage_profile(reho.results['totex'][0], resolution='weekly').show()

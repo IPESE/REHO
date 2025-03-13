@@ -139,6 +139,6 @@ param DHN_CO2_efficiency default 0.95;  # Efficiency based on literature
 subject to DHN_heat{h in House, u in {'HeatPump_DHN_'&h}, p in Period, t in Time[p]}:
 	Units_demand['Heat',u,p,t]*DHN_CO2_efficiency = sum{st in StreamsOfUnit[u], se in ServicesOfStream[st]} Streams_Q[se,st,p,t] - sum{st in StreamsOfUnit[u], T in HP_Tsupply: T = Streams_Tin[st,p,t]} HP_Power[h,u,p,t,T];
 
-subject to enforce_DHN{h in House, u in {'DHN_hex_in_'&h}, v in {'HeatPump_DHN_'&h}}:
+subject to enforce_DHN{h in House, u in {'DHN_hex_'&h}, v in {'HeatPump_DHN_'&h}}:
 	0.95 * sum{p in PeriodStandard, t in Time[p]}(House_Q_heating[h,p,t]* dp[p] * dt[p]) <= sum{p in PeriodStandard, t in Time[p]} (Units_demand['Heat',u,p,t]  * dp[p] * dt[p] + sum{st in StreamsOfUnit[v], se in ServicesOfStream[st]} (Streams_Q[se,st,p,t] * dp[p] * dt[p]));
 

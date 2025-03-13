@@ -122,7 +122,6 @@ def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, e
 
 
 def handle_biometh_h2_import_export(df_label, df_stv, df_annuals):
-
     # Check if rSOC district is implemented (or if grid import/export should be routed to rSOC building)
     if len(df_annuals.loc[(df_annuals['Layer'] == "Biomethane") & (df_annuals['Hub'] == "rSOC_district")]) > 0:
         # Biomethane to rSOC
@@ -159,8 +158,8 @@ def handle_biometh_h2_import_export(df_label, df_stv, df_annuals):
         df_label, df_stv, _ = add_flow('rSOC', 'Hydrogen_export', 'Hydrogen', 'Network', 'Demand_MWh',
                                        df_annuals, df_label, df_stv)
 
-
     return df_label, df_stv
+
 
 def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
     """
@@ -200,11 +199,11 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
 
     # Electricity consumption for CH4 & CO2 storage
     elec_CO2_IP = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "CO2_storage_IP")][
-            "Demand_MWh"].sum()
+        "Demand_MWh"].sum()
 
     df_label, df_stv, _ = add_flow('Electrical_consumption', 'Hybrid_storage_IP', 'Electricity', 'CH4_storage_IP',
                                    'Demand_MWh',
-                                   df_annuals, df_label, df_stv,adjustment=+elec_CO2_IP)
+                                   df_annuals, df_label, df_stv, adjustment=+elec_CO2_IP)
 
     # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
     df_label, df_stv, _ = add_flow('Hybrid_storage_IP', 'rSOC', 'Biomethane', 'CH4_storage_IP', 'Supply_MWh',
@@ -218,11 +217,11 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
     df_label, df_stv, _ = add_flow('MTR', 'Hybrid_storage_IP', 'Biomethane', 'MTR', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
-    df_label, df_stv, _ = add_flow('H2_storage_IP_district', 'rSOC_district', 'Hydrogen', 'H2_storage_IP_district','Supply_MWh',
+    df_label, df_stv, _ = add_flow('H2_storage_IP_district', 'rSOC_district', 'Hydrogen', 'H2_storage_IP_district', 'Supply_MWh',
                                    df_annuals, df_label, df_stv, False, None, -H2_stor_to_FC)
 
     # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('rSOC_district', 'H2_storage_IP_district', 'Hydrogen', 'H2_storage_IP_district','Demand_MWh',
+    df_label, df_stv, _ = add_flow('rSOC_district', 'H2_storage_IP_district', 'Hydrogen', 'H2_storage_IP_district', 'Demand_MWh',
                                    df_annuals, df_label, df_stv, False, None, -ETZ_to_H2_stor)
 
     # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
@@ -256,7 +255,7 @@ def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
         NG_use = 0
         for u in units_on_bio_CH4_2:
             df_label, df_stv, _ = add_flow('MTR_district', u, 'NaturalGas', 'MTR_district',
-                                           'Supply_MWh',df_annuals, df_label, df_stv, adjustment=NG_use)
+                                           'Supply_MWh', df_annuals, df_label, df_stv, adjustment=NG_use)
 
             NG_use = NG_use + df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == u)]["Demand_MWh"].sum()
 
@@ -274,21 +273,26 @@ def add_ETZ_FC_to_sankey(df_annuals, df_label, df_stv):
 
     return df_label, df_stv
 
+
 def add_DHN_units(df_annuals, DHN_units, df_label, df_stv):
     for unit in DHN_units:
         df_label, df_stv, _ = add_flow(unit, 'DHN', 'Heat', unit, 'Supply_MWh',
                                        df_annuals, df_label, df_stv)
 
-
     df_label, df_stv, _ = add_flow('Heat_import', 'DHN', 'Heat', 'Network', 'Supply_MWh',
                                    df_annuals, df_label, df_stv)
 
-    df_label, df_stv, _ = add_flow('DHN', 'DHN_hex_in', 'Heat', 'DHN_hex_in', 'Demand_MWh',
+    df_label, df_stv, _ = add_flow('DHN', 'Heat_export', 'Heat', 'Network', 'Demand_MWh',
                                    df_annuals, df_label, df_stv)
 
-    df_label, df_stv, _ = add_flow('DHN','Heat_export', 'Heat', 'Network', 'Demand_MWh',
+    df_label, df_stv, _ = add_flow('DHN', 'DHN_hex', 'Heat', 'DHN_hex', 'Demand_MWh',
                                    df_annuals, df_label, df_stv)
+
+    df_label, df_stv, _ = add_flow('DHN', 'HeatPump_DHN', 'Heat', 'HeatPump_DHN', 'Demand_MWh',
+                                   df_annuals, df_label, df_stv)
+
     return df_label, df_stv
+
 
 def add_label_value(df_label, df_stv, precision, units):
     """
@@ -427,11 +431,10 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     mol_storage_list = ['H2_storage_IP', 'CH4_storage_IP']
     # Semi automatic handled devices
     semi_auto_device = [
-        'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar',
-        'ElectricalHeater_DHW', 'ElectricalHeater_SH',
+        'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'DataHeat_DHW', 'DataHeat_SH',
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'AirConditioner',
-        'DHN_hex_in', 'DHN_hex_out', 'DataHeat_DHW', 'DataHeat_SH', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district',
-        'MTR_district', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district'
+        'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district', 'DHN_hex',
+        'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district',
     ]
 
     DHN_units = ["HeatPump_Geothermal_district", "rSOC_district", "NG_Boiler_district", "MTR_district"]
@@ -537,14 +540,13 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         for device in EV_device:
             # 1 Ele Cons to Device (for charging stations)
             df_label, df_stv, _ = add_flow('Electrical_consumption', "Total_EV_fleet", 'Electricity', device, 'Demand_MWh',
-                                        df_annuals, df_label, df_stv)
+                                           df_annuals, df_label, df_stv)
             # 2 Device to Ele Cons
             df_label, df_stv, _ = add_flow('Total_EV_fleet', "Electrical_consumption", 'Electricity', device, 'Supply_MWh',
-                                        df_annuals, df_label, df_stv)
+                                           df_annuals, df_label, df_stv)
             # 3 Device to Mobility
-            df_label, df_stv, _ = add_flow("Total_EV_fleet", 'Mobility (0.1 kWh/pkm)', 'Mobility', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv,fact=1/9.37)
-
+            df_label, df_stv, _ = add_flow("Total_EV_fleet", 'Mobility', 'Mobility', device, 'Supply_MWh',
+                                           df_annuals, df_label, df_stv, fact=1 / 9.37)
 
     # Semi-Auto for the followings devices
     for device in semi_auto_device:
@@ -561,15 +563,15 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                                        df_annuals, df_label, df_stv)
 
         # 3 Wood to Device
-        df_label, df_stv, _ = add_flow('Wood', device, 'Wood', device, 'Demand_MWh',
+        df_label, df_stv, _ = add_flow('Wood_import', device, 'Wood', device, 'Demand_MWh',
                                        df_annuals, df_label, df_stv)
 
         # 4 Oil to Device
-        df_label, df_stv, _ = add_flow('Oil', device, 'Oil', device, 'Demand_MWh',
+        df_label, df_stv, _ = add_flow('Oil_import', device, 'Oil', device, 'Demand_MWh',
                                        df_annuals, df_label, df_stv)
 
         # 4.1 Gasoline to Device
-        df_label, df_stv, _ = add_flow('Gasoline', device, 'Gasoline', device, 'Demand_MWh',
+        df_label, df_stv, _ = add_flow('Gasoline_import', device, 'Gasoline', device, 'Demand_MWh',
                                        df_annuals, df_label, df_stv)
 
         # 5 Device to DHW
@@ -589,8 +591,8 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                                        df_annuals, df_label, df_stv)
 
         # 9 Device to Mobility
-        df_label, df_stv, _ = add_flow(device, 'Mobility (0.1 kWh/pkm)', 'Mobility', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv,fact=1/9.37)
+        df_label, df_stv, _ = add_flow(device, 'Mobility', 'Mobility', device, 'Supply_MWh',
+                                       df_annuals, df_label, df_stv, fact=1 / 9.37)
 
     if mol_storage_use:
         df_label, df_stv = add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use)

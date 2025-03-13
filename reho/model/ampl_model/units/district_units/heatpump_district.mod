@@ -106,6 +106,6 @@ subject to HP_sizing{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
 	sum{T in HP_Tsupply} (HP_Power[u,p,t,T]/HP_Pmax[u,p,t,T]) <= Units_Mult[u];
 
 # Heating output
-subject to HP_heating_output{u in UnitsOfType['HeatPump'],st in StreamsOfUnit[u],p in Period,t in Time[p],T in HP_Tsupply: T = Streams_Tin[st,p,t]}:
+subject to HP_heating_output{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
 	Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply} HP_COP[u,p,t,T]*HP_Power[u,p,t,T];
 

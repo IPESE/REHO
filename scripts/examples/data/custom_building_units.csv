@@ -14,8 +14,7 @@ ThermalSolar;m2;0.1;100000;6000;800;500;100;20;ThermalSolar;HeatCascade;DHW;h_ht
 Battery;kWh;0.1;100000;5000;550;100;100;15;Battery;Electricity;;;Electricity;Electricity;;;`Tesla Powerwall <https://www.tesla.com/fr_ch/powerwall>`_
 WaterTankSH;L;0.1;100000;2000;2;200;1;20;WaterTankSH;HeatCascade;SH;h_ht/ c_lt;;;35/ 35;35/ 35;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
 WaterTankDHW;L;0.1;100000;2000;2;200;1;20;WaterTankDHW;HeatCascade;DHW;c_ht ;;;10;60;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
-DHN_hex_in;m2;0.1;100000;2000;200;200;100;20;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_ht;Heat;;80;60;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
-DHN_hex_out;m2;0.1;100000;2000;200;200;100;20;DHN_hex;Heat/ HeatCascade;Cooling;c_ht;;Heat;18;19;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
+DHN_hex;m2;0.1;100000;2000;200;200;100;20;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_ht;Heat;;80;60;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
 DHN_pipes;kW;0.1;100000;0.1;0.1;0;0;60;DHN_pipes;Heat;;;;;;;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
 DataHeat_SH;kWth;0.1;100000;1000;5000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;SH;h_ht;Electricity;Data;80;60;
 DataHeat_DHW;kWth;0.1;100000;1000;11000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;DHW;h_ht;Electricity;Data;80;60;

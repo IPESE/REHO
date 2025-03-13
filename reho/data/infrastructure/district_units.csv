@@ -7,7 +7,7 @@ ElectricBike_district;number;0;1000;0;1200;0;200;10;EBike;Mobility / Electricity
 Bike_district;number;0;1000;0;200;0;75;10;Bike;Mobility;;;;Mobility;;;
 NG_Boiler_district;kWth;0.1;100000;21767;65;10000;5;30;NG_Boiler;NaturalGas/ Heat;;;NaturalGas;Heat;80;60;`Vaillant.ch <https://www.vaillant.ch/downloads/preisliste/franzoesisch-3/liste-de-prix-chaudires-murales-gaz-systmes-dvacuation-de-gaz-brls-prtirage-04-2021-2041428.pdf>`_
 NG_Cogeneration_district;kWth;0.1;100000;50000;250;10000;10;30;NG_Cogeneration;Heat/ Electricity/ NaturalGas;;;NaturalGas;Heat/ Electricity;60;40;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
-HeatPump_Geothermal_district;kWth;0.1;100000;75353;207;10000;10;30;HeatPump;Heat/ Electricity;;;Electricity;Heat;21/ 16/ 11;20/ 15/ 10;`Helvetia Energy <https://www.helvetia-energy.ch/cout-pompe-a-chaleur-geothermique-en-suisse/>`_
+HeatPump_Geothermal_district;kWth;0.1;100000;75353;207;10000;10;30;HeatPump;Heat/ Electricity;;;Electricity;Heat;80;60;`Helvetia Energy <https://www.helvetia-energy.ch/cout-pompe-a-chaleur-geothermique-en-suisse/>`_
 DHN_pipes_district;kW;0.1;100000;5670;613;0;0;60;DHN_pipes;Heat;;;;;;;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
 rSOC_district;kW;0.1;100000;1000;3000;1500;10;15;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ Heat;;;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen/ Heat;90;60;
 MTR_district;kW;0.1;100000;1000;375;1000;10;20;Methanator;Biomethane/ NaturalGas/ CO2/ Hydrogen/ Electricity/ Heat;;;Hydrogen/ CO2/ Electricity;Biomethane/ NaturalGas/ Heat;90;60;

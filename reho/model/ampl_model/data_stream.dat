@@ -15,8 +15,5 @@ let {h in House,st in StreamsOfHouse[h] inter {'WaterTankSH_'&h&'_h_lt'},p in Pe
 let {h in House,st in StreamsOfHouse[h] inter {'WaterTankSH_'&h&'_h_lt'},p in Period,t in Time[p]} Streams_Tout[st,p,t] := TES_T_ret[h,p]-(0);
 
 # District heating network
-let {h in House,s in StreamsOfHouse[h] inter {'DHN_hex_in_'&h&'_h_ht'},p in Period,t in Time[p]} Streams_Tin[s,p,t] := T_DHN_supply[p,t]; # direct hot water connection from DHN
-let {h in House,s in StreamsOfHouse[h] inter {'DHN_hex_in_'&h&'_h_ht'},p in Period,t in Time[p]} Streams_Tout[s,p,t] := T_DHN_return[p,t];
-
-let {h in House,s in StreamsOfHouse[h] inter {'DHN_hex_out_'&h&'_c_ht'},p in Period,t in Time[p]} Streams_Tin[s,p,t] := T_DHN_return[p,t] + 2; # dT min HEX
-let {h in House,s in StreamsOfHouse[h] inter {'DHN_hex_out_'&h&'_c_ht'},p in Period,t in Time[p]} Streams_Tout[s,p,t] := T_DHN_supply[p,t] + 2;
+let {h in House,s in StreamsOfHouse[h] inter {'DHN_hex_'&h&'_h_ht'},p in Period,t in Time[p]} Streams_Tin[s,p,t] := T_DHN_supply[p,t]; # direct hot water connection from DHN
+let {h in House,s in StreamsOfHouse[h] inter {'DHN_hex_'&h&'_h_ht'},p in Period,t in Time[p]} Streams_Tout[s,p,t] := T_DHN_return[p,t];

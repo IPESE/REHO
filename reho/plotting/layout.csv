@@ -7,7 +7,6 @@ GWP,Global warming potential,GWP,Empreinte carbone équivalente,#000000,dark
 ,,,,,
 Electricity_import,Electricity import,Elec in,Électricité (import),#007480,canard
 Electricity_export,Electricity export,Elec out,Électricité (export),#4d9ea6,canard_light
-NaturalGas_import,Natural gas import,NG,Gaz naturel (import),#413D3A,ardoise
 Heat_import,Heat import,Heat in,CAD (import),#FF8C00,orange
 Heat_export,Heat export,Heat out,CAD (export),#FF8C00,orange
 Biomethane_import,Biomethane import,CH4 in,Biogaz (import),#8B4513,brown
@@ -15,10 +14,11 @@ Biomethane_export,Biomethane export,CH4 out,Biogaz (export),#8B4513,brown
 Hydrogen_import,Hydrogen import,H2 in,Hydrogène (import),#82a4d6,lightblue
 Hydrogen_export,Hydrogen export,H2 out,Hydrogène (export),#82a4d6,lightblue
 ,,,,,
-Oil,Oil,OIL,Mazout (import),#000000,dark
-Wood,Wood import,WD,Bois (import),#8B4513,brown
-Gasoline,Gasoline,GAS,Essence (import),#55552b,kaki
-Data,Data processing,ICT,Données traitées,#ffcc99,skin
+Oil_import,Oil,OIL,Mazout (import),#000000,dark
+NaturalGas_import,Natural gas import,NG,Gaz naturel (import),#413D3A,ardoise
+Wood_import,Wood import,WD,Bois (import),#8B4513,brown
+Gasoline_import,Gasoline,GAS,Essence (import),#55552b,kaki
+Data_export,Data processing,ICT,Données traitées,#ffcc99,skin
 ,,,,,
 Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark
 OIL_Boiler,Oil boiler,OB,Chaudière à mazout,#000000,dark
@@ -49,8 +49,7 @@ HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon
 ,,,,,
 DHN_pipes,DHN connection,DHN,Connexion CAD,#FF8C00,orange
 DHN,DHN,DHN,Connexion CAD,#FF8C00,orange
-DHN_hex_in,Heat exchanger (in),HEX in,Échangeur de chaleur (entrée),#FF8C00,orange
-DHN_hex_out,Heat exchanger (out),HEX out,Échangeur de chaleur (sortie),#FF8C00,orange
+DHN_hex,Heat exchanger,HEX,Échangeur de chaleur,#FF8C00,orange
 Heat_losses,Heat losses,SH leak,Pertes chaleur,#FF8C00,orange
 ,,,,,
 rSOC,rSOC,rSOC,rSOC,#7070db,darkblue
@@ -100,8 +99,7 @@ Isolation_roof,Roof insulation,INS1,Isolation toiture,#a9d6bc,green_light
 Isolation_facade,Facade insulation,INS2,Isolation façade,#87c5a1,green_medium
 Isolation_full,Complete insulation,INS3,Isolation complète,#53ac7a,green_dark
 ,,,,,
-Mobility,Mobility,pkm,Mobilité,#32CD32,limegreen
-Mobility (0.1 kWh/pkm),Mobility (0.1 kWh/pkm),Epkm,Mobilité (0.1 kWh/pkm),#32CD32,limegreen
+Mobility,Mobility,Mob,Mobilité,#32CD32,limegreen
 ICE_district,Fossil fuel vehicles,ICE,Véhicule à combustion,#8B4513,saddlebrown
 Bike_district,Bikes,Bike,Vélos,#90EE90,lightgreen
 ElectricBike_district,Electric bikes,EBike,Vélos électriques,#00FF7F,springgreen

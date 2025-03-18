@@ -596,9 +596,15 @@ class SubProblem:
         ampl.getConstraint('disallow_exchanges_1').drop()
         ampl.getConstraint('disallow_exchanges_2').drop()
         ampl.getConstraint('no_ElectricalHeater_without_HP').drop()
+        ampl.getConstraint('unique_heating_system').drop()
 
+        if 'NG_Boiler' in self.infrastructure_sp.UnitsOfType:
+            ampl.getConstraint('enforce_NG_Boiler').drop()
+        if 'OIL_Boiler' in self.infrastructure_sp.UnitsOfType:
+            ampl.getConstraint('enforce_OIL_Boiler').drop()
         if 'PV' in self.infrastructure_sp.UnitsOfType:
             ampl.getConstraint('enforce_PV_max').drop()
+            ampl.getConstraint('enforce_PV').drop()
         if 'HeatPump' in self.infrastructure_sp.UnitsOfType:
             ampl.getConstraint('enforce_DHN').drop()
             if not any("DHN" in unit for unit in self.infrastructure_sp.UnitsOfType['HeatPump']):

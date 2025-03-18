@@ -403,7 +403,10 @@ def translate_buildings_to_REHO(df_buildings):
 
         # Annual roof and facade irradiance
         'roof_annual_irr_kWh_y': 'roof_annual_irr_kWh_y',
-        'facade_annual_irr_kWh_y': 'facade_annual_irr_kWh_y'
+        'facade_annual_irr_kWh_y': 'facade_annual_irr_kWh_y',
+
+        # Current scenario
+        'heating_system_2024': 'heating_system_2024',
     }
 
     try:

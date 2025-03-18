@@ -292,7 +292,7 @@ local.properties
 [Ll]ib
 [Ll]ib64
 [Ll]ocal
-[Ss]cripts
+#[Ss]cripts
 pyvenv.cfg
 pip-selfcheck.json
 
@@ -319,7 +319,11 @@ reho/test/results/*
 # Scripts
 scripts/*
 !scripts/examples/
+scripts/examples/results
+#!scripts/Lausanne/
+#!scripts/CRYOS/
 *.json
 *.dat
 *.txt
 *.pickle
+

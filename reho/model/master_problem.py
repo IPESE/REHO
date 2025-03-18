@@ -453,9 +453,11 @@ class MasterProblem:
             if "CO2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read("CO2storage_IP.mod")
 
-        ampl_MP.cd(path_to_clustering)
-        ampl_MP.readData('frequency_' + self.local_data['File_ID'] + '.dat')
-        ampl_MP.readData('index_' + self.local_data['File_ID'] + '.dat')
+        clustering_directory = os.path.join(path_to_clustering, self.local_data['File_ID'])
+        ampl_MP.cd(clustering_directory)
+
+        ampl_MP.readData('frequency.dat')
+        ampl_MP.readData('index.dat')
         ampl_MP.cd(path_to_ampl_model)
 
         # -------------------------------------------------------------------------------------------------------------

@@ -197,7 +197,7 @@ def remove_building_from_index(df):
 
 def get_cluster_file_ID(cluster):
     """
-    Gets the weather file ID that corresponds to the specifications provided in the reho initalization.
+    Gets the weather file ID that corresponds to the specifications provided in the REHO initalization.
 
     The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
     ``cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}``

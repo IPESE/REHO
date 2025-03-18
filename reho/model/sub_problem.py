@@ -213,14 +213,14 @@ class SubProblem:
         # -Setting DATA
         # -----------------------------------------------------------------------------------------------------#
 
-        ampl.cd(path_to_clustering)
-
         File_ID = weather.get_cluster_file_ID(self.cluster_sp)
+        clustering_directory = os.path.join(path_to_clustering, File_ID)
+        ampl.cd(clustering_directory)
 
-        ampl.readData('frequency_' + File_ID + '.dat')
-        ampl.readData('index_' + File_ID + '.dat')
-        self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(path_to_clustering, 'T_' + File_ID + '.dat'))
-        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(path_to_clustering, 'Irr_' + File_ID + '.dat'))
+        ampl.readData('frequency.dat')
+        ampl.readData('index.dat')
+        self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(clustering_directory, 'Text.dat'))
+        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(clustering_directory, 'Irr.dat'))
 
         ampl.cd(path_to_ampl_model)
 

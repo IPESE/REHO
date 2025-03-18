@@ -36,10 +36,11 @@ def return_local_data(cluster, qbuildings_data):
     File_ID = weather.get_cluster_file_ID(cluster)
     local_data['File_ID'] = File_ID
 
-    path_to_timestamp = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
-    if not os.path.exists(path_to_timestamp):
+    clustering_directory = os.path.join(path_to_clustering, File_ID)
+    if not os.path.exists(clustering_directory):
         weather.generate_weather_data(cluster, qbuildings_data)
 
+    path_to_timestamp = os.path.join(clustering_directory, 'timestamp.dat')
     local_data["df_Timestamp"] = pd.read_csv(path_to_timestamp, delimiter='\t', parse_dates=[0])
 
     # Solar
@@ -47,7 +48,7 @@ def return_local_data(cluster, qbuildings_data):
     local_data["df_Area"] = pd.read_csv(path_to_areas, header=None)
     local_data["df_Cenpts"] = pd.read_csv(path_to_cenpts, header=None)
 
-    path_to_westfacades_irr = os.path.join(path_to_clustering, 'westfacades_irr_' + File_ID + '.txt')
+    path_to_westfacades_irr = os.path.join(clustering_directory, 'westfacades_irr.txt')
     # check if irradiation already exists:
     if not os.path.exists(path_to_westfacades_irr):
         local_data["df_Timestamp"].Date = pd.to_datetime(local_data["df_Timestamp"]['Date'], format="%m/%d/%Y/%H")

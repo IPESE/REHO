@@ -103,7 +103,7 @@ subject to HP_power_input{u in UnitsOfType['HeatPump'], p in Period, t in Time[p
 
 # Sizing
 subject to HP_sizing{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
-	sum{T in HP_Tsupply} (HP_Power[u,p,t,T]/HP_Pmax[u,p,t,T]) <= Units_Mult[u];
+	sum{T in HP_Tsupply} HP_COP[u,p,t,T] * (HP_Power[u,p,t,T]/HP_Pmax[u,p,t,T]) <= Units_Mult[u];
 
 # Heating output
 subject to HP_heating_output{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:

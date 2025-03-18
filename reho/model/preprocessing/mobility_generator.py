@@ -56,12 +56,15 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
 
     # Periods
     # TODO IMPLEMENTATION of flexible period duration
+
     File_ID = weather.get_cluster_file_ID(cluster)
+    clustering_directory = os.path.join(path_to_clustering, File_ID)
+
     if 'W' in File_ID.split('_'):
-        timestamp = np.loadtxt(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), usecols=(1, 2, 3), skiprows=1)
+        timestamp = np.loadtxt(os.path.join(clustering_directory, 'timestamp.dat'), usecols=(1, 2, 3), skiprows=1)
         timestamp = pd.DataFrame(timestamp, columns=["Day", "Frequency", "Weekday"])
     else:
-        df = pd.read_csv(os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat'), delimiter='\t')
+        df = pd.read_csv(os.path.join(clustering_directory, 'timestamp.dat'), delimiter='\t')
         timestamp = df.fillna(1)  # only weekdays
 
     days_mapping = {0: "wnd",  # Weekend

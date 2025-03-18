@@ -20,7 +20,7 @@ def get_weather_data(qbuildings_data, export_filename=None):
     """
     lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'], qbuildings_data['buildings_data']['Building1']['y'])
 
-    pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, startyear=2005, endyear=2016)
+    pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, startyear=2005, endyear=2020)
     coordinates = pvgis_data[2]
     weather_data = pvgis_data[0]
 
@@ -39,10 +39,11 @@ def get_weather_data(qbuildings_data, export_filename=None):
     # Add unique identifier column 'id'
     weather_data['id'] = (weather_data.reset_index().index + 1).to_list()
 
-    print(f'The weather data have been loaded from the PVGIS database for a location with coordinates {coordinates}.')
+    print(f'The weather data have been extracted from the PVGIS database for : {coordinates}.')
+
+    weather_data = weather_data[['id', 'Month', 'Day', 'Hour', 'Irr', 'Text', 'Weekday']]
 
     if export_filename is not None:
-        weather_data = weather_data[['id', 'Month', 'Day', 'Hour', 'Irr', 'Text', 'Weekday']]
         weather_data.to_csv(export_filename)
 
     return weather_data
@@ -169,14 +170,14 @@ def generate_weather_data(cluster, qbuildings_data):
         data_idy = pd.concat([data_idy, pd.DataFrame([[max_time_dd + 1, max_time_dd + 1]], columns=data_idy.columns)],
                              ignore_index=True)
 
-    write_weather_files(attributes, cluster, data_cls, data_idy)
+    clustering_directory = write_weather_files(attributes, cluster, data_cls, data_idy)
 
-    print(f'The data have been computed and saved in {path_to_clustering}.')
+    print(f'The data have been computed and saved in {clustering_directory}.')
 
 
 def write_weather_files(attributes, cluster, values_cluster, index_inter):
     """
-    Writes the clustering results computed from ``generate_weather_data`` as .dat files.
+    Writes the clustering results computed from ``generate_weather_data`` as .dat files in a folder following the File_ID nomenclature.
 
     Parameters
     ----------
@@ -192,28 +193,29 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
     Notes
     -----
     - Independently of the clustering attributes, time dependent files are generated:
-        - 'frequency_File_ID.dat'
-        - 'index_File_ID.dat'
-        - 'timestamp_File_ID.dat'
+        - 'frequency.dat'
+        - 'index.dat'
+        - 'timestamp.dat'
     """
 
     File_ID = get_cluster_file_ID(cluster)
+    clustering_directory = os.path.join(path_to_clustering, File_ID)
 
-    if not os.path.isdir(path_to_clustering):
-        os.makedirs(path_to_clustering)
+    if not os.path.isdir(clustering_directory):
+        os.makedirs(clustering_directory)
 
     # -------------------------------------------------------------------------------------
-    # T
+    # Text
     # -------------------------------------------------------------------------------------
     df_T = values_cluster['Text']
-    filename = os.path.join(path_to_clustering, 'T_' + File_ID + '.dat')
+    filename = os.path.join(clustering_directory, 'Text.dat')
     df_T.to_csv(filename, index=False, header=False)
 
     # -------------------------------------------------------------------------------------
     # Irr
     # -------------------------------------------------------------------------------------
     df_Irr = values_cluster['Irr']
-    filename = os.path.join(path_to_clustering, 'Irr_' + File_ID + '.dat')
+    filename = os.path.join(clustering_directory, 'Irr.dat')
     df_Irr.to_csv(filename, index=False, header=False)
 
     # -------------------------------------------------------------------------------------
@@ -237,7 +239,7 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
             w = values_cluster.loc[values_cluster['time.dd'] == dd, 'Weekday'].unique()
             Weekday = np.append(Weekday, w)
 
-    filename = os.path.join(path_to_clustering, 'frequency_' + File_ID + '.dat')
+    filename = os.path.join(clustering_directory, 'frequency.dat')
 
     IterationFile = open(filename, 'w')
 
@@ -283,7 +285,7 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
 
     df_aim.index = df_aim.index + 1
 
-    filename = os.path.join(path_to_clustering, 'index_' + File_ID + '.dat')
+    filename = os.path.join(clustering_directory, 'index.dat')
     IterationFile = open(filename, 'w')
     IterationFile.write('param : PeriodOfYear TimeOfYear := \n')
     IterationFile.write(df_aim.to_string(header=False))
@@ -293,7 +295,7 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
     # -------------------------------------------------------------------------------------
     # Time stamp
     # -------------------------------------------------------------------------------------
-    filename = os.path.join(path_to_clustering, 'timestamp_' + File_ID + '.dat')
+    filename = os.path.join(clustering_directory, 'timestamp.dat')
     IterationFile = open(filename, 'w')
     header = 'Date\tDay\tFrequency\tWeekday\n'
     IterationFile.write(header)
@@ -308,6 +310,8 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
             text = date.strftime("%m/%d/%Y/%H") + '\t' + str(key) + '\t' + str(dp[dict_index[key] - 1])
         IterationFile.write(text + '\n')
     IterationFile.close()
+
+    return clustering_directory
 
 
 def get_cluster_file_ID(cluster):

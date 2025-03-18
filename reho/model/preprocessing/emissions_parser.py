@@ -65,7 +65,10 @@ def annual_to_typical_emissions(cluster, country, metric, df_time, df_emission):
 
 def return_typical_emission_profiles(cluster, File_ID, metric, timestamp_file, emissions_matrix):
     country = 'CH'
-    emission_file = os.path.join(path_to_clustering, metric + '_' + File_ID + '.dat')
+
+    clustering_directory = os.path.join(path_to_clustering, File_ID)
+
+    emission_file = os.path.join(clustering_directory, metric + '.dat')
 
     if os.path.exists(emission_file):
         df_E = pd.read_csv(emission_file, index_col=[0, 1, 2])

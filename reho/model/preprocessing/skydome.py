@@ -361,7 +361,7 @@ if __name__ == '__main__':
     typical_frequency = {'20050921': 54, '20050228': 46, '20050810': 17, '20050313': 49, '20050725': 52,
                          '20050107': 68, '20050911': 49, '20050618': 30}
 
-    # thisfile = os.path.join(path_to_clustering, 'timestamp.dat')
+    # thisfile = os.path.join(clustering_directory, 'timestamp.dat')
     # df = pd.read_csv(thisfile, delimiter='\t')
 
     # typical_days_string = df.Date.values

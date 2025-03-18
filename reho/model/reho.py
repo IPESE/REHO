@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import os.path
 import pickle
+import openpyxl
 
 from reho.model.master_problem import *
 from reho.model.postprocessing.KPIs import *
@@ -695,9 +696,33 @@ class REHO(MasterProblem):
                     for df_name, df in results[Scn_ID][Pareto_ID].items():
                         if df is not None:
                             df = df.fillna(0)  # replace all NaN with zeros
+
                             if filter:
-                                df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros
+                                # Determine columns to exclude based on df_name
+                                exclude_cols = []
+                                if df_name == "df_Unit":
+                                    exclude_cols = ["lifetime"]
+                                elif df_name == "df_Grid_t":
+                                    exclude_cols = ["Cost_supply", "Cost_demand", "GWP_supply", "GWP_demand"]
+                                elif df_name == "df_Streams_t":
+                                    exclude_cols = ["Streams_Tin", "Streams_Tout"]
+
+                                # Columns to consider when checking for zeros
+                                cols_to_check = df.columns.difference(exclude_cols)
+
+                                # Drop rows where all considered columns are zeros
+                                df = df.loc[~(df[cols_to_check] == 0).all(axis=1)]
+
                             df.to_excel(writer, sheet_name=df_name)
+                            auto_adjust_columns(writer, df, df_name)
 
                     writer.close()
                     self.logger.info('Results are saved in ' + result_file_path)
+
+
+def auto_adjust_columns(writer, df, sheet_name):
+    worksheet = writer.sheets[sheet_name]
+    for idx, col in enumerate(df.columns, 1):
+        # Calculate the width needed based on maximum length in column
+        max_length = len(col) + 2  # column header length + extra padding
+        worksheet.column_dimensions[openpyxl.utils.get_column_letter(idx)].width = max_length

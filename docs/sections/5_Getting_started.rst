@@ -407,7 +407,7 @@ Yearly weather data is then clustered into typical days. The :code:`cluster` dic
 
 Where:
 
-- 'Location' will be the name of the files produced.
+- 'Location' will be the name of the directory where clustering files are written.
 - 'Attributes' indicates the features among which the clustering is applied (T refers to Temperature, I to Irradiance, and W to Weekday).
 - 'Periods' relates to the desired number of typical periods.
 - 'PeriodDuration' is the typical period duration (24h is the default choice, corresponding to a typical day).

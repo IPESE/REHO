@@ -1428,10 +1428,10 @@ def plot_composite_curve(df_Results, cluster, periods=["Yearly"], filename=None,
     df_heat = df_heat.groupby(["Period", "temperature"], level=[1, 3]).sum()
 
     # get index typical periods
-    file_ID = get_cluster_file_ID(cluster)
-    file_name = "index_" + file_ID + ".dat"
-    thisfile = os.path.join(path_to_clustering, file_name)
-    df = np.loadtxt(thisfile, skiprows=1, max_rows=8760)
+    File_ID = get_cluster_file_ID(cluster)
+    clustering_directory = os.path.join(path_to_clustering, File_ID)
+    filename = os.path.join(clustering_directory, 'index.dat')
+    df = np.loadtxt(filename, skiprows=1, max_rows=8760)
     df = pd.DataFrame(df).set_index(0)
 
     # calculate monthly heat load profile, raw data
@@ -1591,7 +1591,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
     TD_time = TD_time.rename(columns={'PeriodOfYear': 'Period'})
     TD_time["Time"] = np.mod(list(TD_time.index), 24)
     TD_time["Time"] = TD_time["Time"].replace(0, 24)
-    #SOC = df_Results["df_interperiod"]["BAT_E_stored_IP"][starting_hour:ending_hour]
+    # SOC = df_Results["df_interperiod"]["BAT_E_stored_IP"][starting_hour:ending_hour]
 
     unit_elec_use_df = df_Results["df_Annuals"].loc["Electricity"]
     unit_elec_use_df = unit_elec_use_df[(unit_elec_use_df["Demand_MWh"] != 0) | (unit_elec_use_df["Supply_MWh"] != 0)]

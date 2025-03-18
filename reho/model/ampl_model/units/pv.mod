@@ -17,6 +17,8 @@ param PVA_F{u in UnitsOfType['PV']} default 0.9;					#- 		[1]
 param PVA_temperature_ref{u in UnitsOfType['PV']} default 298;		#K 		[1]
 param PVA_efficiency_ref{u in UnitsOfType['PV']} default 0.2;		#- 		[1]
 param PVA_efficiency_var{u in UnitsOfType['PV']} default 0.0012;	#- 		[1]
+
+param PV_install{u in UnitsOfType['PV']} default 0;
 																									
 param PVA_temperature{u in UnitsOfType['PV'],p in Period,t in Time[p]} :=
 	(PVA_U_h[u]*(T_ext[p,t]+273.15))/(PVA_U_h[u] - PVA_efficiency_var[u]*I_global[p,t]) +
@@ -42,3 +44,7 @@ sum{ui in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h]}(Units_Mult[ui]) + s
 
 subject to enforce_PV_max{h in House, u in UnitsOfType['PV']}:
 sum{ui in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h]}(Units_Mult[ui]) + sum{uj in UnitsOfType['PV'] inter UnitsOfHouse[h]}(Units_Mult[uj]/PVA_efficiency_ref[uj]) = ((SolarRoofArea[h]) div PVA_module_size[u])*PVA_module_size[u];
+
+# constraint to enforce the installation of PV panels
+subject to enforce_PV{u in UnitsOfType['PV']}:
+Units_Use[u] = PV_install[u];

@@ -6,6 +6,7 @@
 
 param BOI_efficiency_max{u in UnitsOfType['NG_Boiler']} default 0.95;
 param BOI_partload_max{u in UnitsOfType['NG_Boiler']} default 1;
+param NG_Boiler_install{u in UnitsOfType['NG_Boiler']} default 0;
 
 subject to BOI_energy_balance{h in House, l in LayersOfType['ResourceBalance'], u in UnitsOfType['NG_Boiler'] inter UnitsOfHouse[h] inter UnitsOfLayer[l],p in Period,t in Time[p]}:
 sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t] = BOI_efficiency_max[u]*Units_demand[l,u,p,t];	
@@ -13,6 +14,8 @@ sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t] = BO
 subject to BOI_c1{h in House,u in UnitsOfType['NG_Boiler'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t]  <= Units_Mult[u]*BOI_partload_max[u];
 
+subject to enforce_NG_Boiler{u in UnitsOfType['NG_Boiler']}:
+Units_Use[u] = NG_Boiler_install[u];
 
 #-Advanced model with part-load efficiencies
 

@@ -101,6 +101,10 @@ Units_Mult[u]-Units_Ext[u] >= Units_Use[u]*Units_Fmin[u];
 subject to Units_sizing_c2{u in Units}:
 Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
 
+# constraint to limit the number of heating units to one
+subject to unique_heating_system{h in House}:
+sum{u in UnitsOfType['HeatPump']: 'HeatPump' in UnitTypes}(Units_Use[u])+sum{u in UnitsOfType['OIL_Boiler']: 'OIL_Boiler' in UnitTypes}(Units_Use[u])+sum{u in UnitsOfType['NG_Boiler']: 'NG_Boiler' in UnitTypes}(Units_Use[u])+sum{u in {'DHN_hex_in_'&h}:'DHN_hex_in_'&h in Units}(Units_Use[u]) <=1;
+
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 # MASS BALANCES

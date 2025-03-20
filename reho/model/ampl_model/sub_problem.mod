@@ -63,7 +63,7 @@ param Pi := 4 * atan(1);					#-
 
 #-TEMPORAL DATA
 param T_ext{p in Period,t in Time[p]};		#deg C
-param I_global{p in Period,t in Time[p]};	#W/m2
+param Irr{p in Period,t in Time[p]};	#W/m2
 
 #-THERMAL STREAMS
 param T_DHN_supply_cst default 80; 			#deg C

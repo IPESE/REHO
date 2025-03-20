@@ -348,7 +348,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         # External
         df1 = get_ampl_data(ampl, 'T_ext', multi_index=True)
-        df2 = get_ampl_data(ampl, 'I_global', multi_index=True)
+        df2 = get_ampl_data(ampl, 'Irr', multi_index=True)
         df_Weather = pd.concat([df1, df2], axis=1)
         df_Weather.index.names = ['Period', 'Time']
         df_Weather = df_Weather.sort_index()

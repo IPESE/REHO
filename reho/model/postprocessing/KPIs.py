@@ -24,7 +24,7 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
 
     # -----------------------------eta_I including PV
     # annual irradiation density
-    irr_p = df_Weather['I_global'].groupby(level='Period').sum() / 1000  # kWh /m2
+    irr_p = df_Weather['Irr'].groupby(level='Period').sum() / 1000  # kWh /m2
     irr_a = irr_p.mul(df_Time.dp, axis=0)
     irr_a = irr_a.sum() / 1000  # MWh/m2
     # reference efficiency PV panel - default 0.14 if no value as input
@@ -98,7 +98,7 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
 
     eta_carnot_irr = (1 - ((df_Weather['T_ext'] + 273.15) / (
         6000)))  # Temperature sun 6000k - source: book: McEnvoy: Practical Handbook of Photovoltaics 2nd edition page 64
-    E_irr = eta_carnot_irr * df_Weather['I_global'] / 1000  # kW/m2
+    E_irr = eta_carnot_irr * df_Weather['Irr'] / 1000  # kW/m2
     E_irr_p = E_irr.groupby(level='Period').sum()
     E_irr_a = E_irr_p.mul(df_Time.dp, axis=0)
     E_irr_a = E_irr_a.sum() / 1000  # MWh

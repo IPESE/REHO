@@ -277,10 +277,7 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
 
 def solar_gains_profile(buildings_data, sia_data, local_data):
     """
-    Computes the solar heat gains from the irradiance.
-
-    It uses a typical irradiation file and uses `calc_orientation_profiles` to obtain the irradiation on the west
-    facades. Additionally, the solar gains depends on the facades and on a window fraction (obtained from SIA 2024).
+    Computes the solar heat gains from the irradiance. Heat gains depend on the facades surfaces and on a window fraction (obtained from SIA 2024).
 
     Parameters
     ----------
@@ -297,10 +294,10 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
         Solar gains for each timesteps.
     """
 
-    irr_west = local_data["df_Westfacades_irr"]
+    irr = local_data["Irr"]
 
-    g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
-    g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
+    g = np.repeat(0.5, len(irr))  # g-value SIA 2024
+    g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:
@@ -318,7 +315,7 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
             glass_fraction_2024 = df['Taux de surface vitrée']
             glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
             glass_fraction_building += glass_fraction_rooms * float(ratios[i])
-        gains = irr_west / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
+        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
         # glass fraction on facades from SIA 2024, 0.9 SIA 2024: acknowledge perpendicular rays
         np_gains = np.append(np_gains, gains)
 

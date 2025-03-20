@@ -22,8 +22,8 @@ param STC_Tlm{u in UnitsOfType['ThermalSolar'],T in STCindex,p in Period,t in Ti
 
 #-Definition from [2]
 param STC_efficiency{u in UnitsOfType['ThermalSolar'],T in STCindex,p in Period,t in Time[p]} :=
-if I_global[p,t] >0 and STC_efficiency_ref[u] - STC_a[u]*(STC_Tlm[u,T,p,t]/I_global[p,t]) - STC_b[u]*(STC_Tlm[u,T,p,t]^2/I_global[p,t]) > 0 then 
-	STC_efficiency_ref[u] - STC_a[u]*(STC_Tlm[u,T,p,t]/I_global[p,t]) - STC_b[u]*(STC_Tlm[u,T,p,t]^2/I_global[p,t]) 
+if Irr[p,t] >0 and STC_efficiency_ref[u] - STC_a[u]*(STC_Tlm[u,T,p,t]/Irr[p,t]) - STC_b[u]*(STC_Tlm[u,T,p,t]^2/Irr[p,t]) > 0 then
+	STC_efficiency_ref[u] - STC_a[u]*(STC_Tlm[u,T,p,t]/Irr[p,t]) - STC_b[u]*(STC_Tlm[u,T,p,t]^2/Irr[p,t])
 else 
 	0;
 
@@ -31,7 +31,7 @@ var STC_Area_T{u in UnitsOfType['ThermalSolar'],STCindex,p in Period,t in Time[p
 var STC_module_nbr{u in UnitsOfType['ThermalSolar']} >= 0, integer;
 
 subject to STC_energy_balance{h in House,u in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],T in STCindex,p in Period,t in Time[p]: T = Streams_Tin[st,p,t]}:
-sum{se in ServicesOfStream[st]} Streams_Q[se,st,p,t] = STC_Area_T[u,T,p,t]*STC_efficiency[u,T,p,t]*(I_global[p,t]/1000);
+sum{se in ServicesOfStream[st]} Streams_Q[se,st,p,t] = STC_Area_T[u,T,p,t]*STC_efficiency[u,T,p,t]*(Irr[p,t]/1000);
 
 #--Sizing
 subject to STC_c1{h in House,u in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:

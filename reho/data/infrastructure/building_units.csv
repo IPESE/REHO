@@ -11,7 +11,7 @@ ElectricalHeater_SH;kWth;0.1;100000;1000;50;100;5;20;ElectricalHeater;HeatCascad
 ElectricalHeater_DHW;kWth;0.1;100000;2000;100;200;5;20;ElectricalHeater;HeatCascade/ Electricity;DHW;h_ht;Electricity;;80;60;`SCDI <https://scdi.ch/fr/chauffe-eau-electrique-sur-socle-atlantic.html>`_
 PV;kWe;0.1;100000;10000;1300;200;1000;30;PV;Electricity;;;"";Electricity;;;`Helvetia Energy <https://www.helvetia-energy.ch/prix-moyen-panneaux-solaires-suisse/>`_
 ThermalSolar;m2;0.1;100000;6000;800;500;75;20;ThermalSolar;HeatCascade;DHW;h_ht;;;62;48;""
-Battery;kWh;0.1;100000;5000;550;100;100;15;Battery;Electricity;;;Electricity;Electricity;;;`Tesla Powerwall <https://www.tesla.com/fr_ch/powerwall>`_
+Battery;kWh;5;100000;5000;550;100;100;15;Battery;Electricity;;;Electricity;Electricity;;;`Tesla Powerwall <https://www.tesla.com/fr_ch/powerwall>`_
 WaterTankSH;L;0.1;100000;2000;2;200;1;20;WaterTankSH;HeatCascade;SH;h_ht/ c_lt;;;35/ 35;35/ 35;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
 WaterTankDHW;L;0.1;100000;2000;2;200;1;20;WaterTankDHW;HeatCascade;DHW;c_ht ;;;10;60;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
 DHN_hex;m2;0.1;100000;6000;500;400;100;20;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_ht;Heat;;80;60;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`

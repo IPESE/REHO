@@ -150,11 +150,12 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=No
     data_resources = data_resources.drop("PV", level='Layer')
 
     if 'mobility' in additional_data:
-        data_resources.loc[('costs', 'Gasoline'), :] = additional_data['mobility']
+        data_resources.loc[('costs', 'Gasoline_import'), :] = additional_data['mobility']
 
     if 'ict' in additional_data:
-        data_resources.loc[('costs', 'Data'), :] = additional_data['ict']
-        data_resources.loc[('revenues', 'Data'), :] = 0
+        data_resources.loc[('costs', 'Data_export'), :] = additional_data['ict']
+    if additional_data.get('no_ict_profit', False):
+        data_resources.loc[('revenues', 'Data_export'), :] = 0
 
     if neg:
         indices = data_resources.index.get_level_values(0)

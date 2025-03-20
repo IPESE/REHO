@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import reho.model.preprocessing.emissions_parser as emissions
-import reho.model.preprocessing.weather as weather
 
 __doc__ = """
 Calculates the KPIs resulting from the optimization.
@@ -96,8 +95,7 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
 
     # -----------------------------eta_II including PV
 
-    eta_carnot_irr = (1 - ((df_Weather['T_ext'] + 273.15) / (
-        6000)))  # Temperature sun 6000k - source: book: McEnvoy: Practical Handbook of Photovoltaics 2nd edition page 64
+    eta_carnot_irr = (1 - ((df_Weather['T_ext'] + 273.15) / 6000))
     E_irr = eta_carnot_irr * df_Weather['Irr'] / 1000  # kW/m2
     E_irr_p = E_irr.groupby(level='Period').sum()
     E_irr_a = E_irr_p.mul(df_Time.dp, axis=0)
@@ -268,7 +266,8 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
     return df_LCoE
 
 
-def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, cluster, timestamp_file, emissions_matrix):
+def postcompute_average_emission(local_data, df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, ):
+
     # Emissions
     em_supply_dy = df_profiles_net.GWP_supply.xs('Electricity')
     em_demand_dy = df_profiles_net.GWP_demand.xs('Electricity')
@@ -305,9 +304,8 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
     # --------------------------------------------------------------------
     df_el_net = df_profiles_net.xs('Electricity', level=0)
 
-    File_ID = weather.get_cluster_file_ID(cluster)
-    res_profile = emissions.return_typical_emission_profiles(df_Time, File_ID, 'method 1', timestamp_file, emissions_matrix)
-    res_av = emissions.find_average_value('CH', 'method 1', emissions_matrix)
+    res_profile = emissions.return_typical_emission_profiles(local_data, 'method 1', df_Time)
+    res_av = emissions.find_average_value('CH', 'method 1')
     s_RES_dy = pd.Series(dtype='float')
     s_RES_av = pd.Series(dtype='float')
 
@@ -344,6 +342,7 @@ def postcompute_average_emission(df_annual, df_annual_net, df_profiles, df_profi
 
     df = pd.concat([em_el_av, em_el_dy, s_RES_dy, s_RES_av], axis=1)
     df.columns = ['gwp_elec_av', 'gwp_elec_dy', 'RES_dy', 'RES_av']
+
     return df
 
 
@@ -492,7 +491,7 @@ def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
     return df_annual, df_annual_network
 
 
-def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestamp_file, emissions_matrix):
+def calculate_KPIs(df_Results, infrastructure, buildings_data):
     df_profiles = build_df_profiles_house(df_Results, infrastructure)
     df_profiles_network = df_Results["df_Grid_t"].xs('Network', level='Hub').copy()
 
@@ -529,8 +528,7 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestam
     df_AR = postcompute_annual_revenues(df_profiles, df_profiles_network, df_Time)
     df_KPI = pd.concat([df_KPI, df_AR.div(df_hsA.ERA, axis=0)], axis=1)
 
-    df_LCoE = postcompute_levelized_cost_electricity(df_Results["df_Unit"], df_annual, df_profiles, df_Time,
-                                                     infrastructure)
+    df_LCoE = postcompute_levelized_cost_electricity(df_Results["df_Unit"], df_annual, df_profiles, df_Time, infrastructure)
     df_KPI['LCoE1'] = df_LCoE.LCoE1
     df_KPI['LCoE2'] = df_LCoE.LCoE2
 
@@ -553,18 +551,15 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestam
     df_KPI['gwp_constr_m2'] = df_Results["df_Performance"]['GWP_constr'].div(df_hsA.ERA)
     df_KPI['gwp_tot_m2'] = df_KPI['gwp_op_m2'] + df_KPI['gwp_constr_m2']  # [kgCO2-eq/m2/yr]
 
-    df_G_RES = postcompute_average_emission(df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time, cluster, timestamp_file, emissions_matrix)
-    df_KPI = pd.concat([df_KPI, df_G_RES[['gwp_elec_av', 'gwp_elec_dy']].div(df_hsA.ERA, axis=0)], axis=1)
-    df_KPI = df_KPI.rename(
-        columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})  # gwp_elec_av_m2    gwp_elec_dy_m2
-    df_KPI = pd.concat([df_KPI, df_G_RES[['RES_dy', 'RES_av']]], axis=1)  # RES_dy    RES_av
+    # df_G_RES = postcompute_average_emission(local_data, df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time)  # TODO: fix
+    # df_G_RES = df_G_RES[['gwp_elec_av', 'gwp_elec_dy']].div(df_hsA.ERA, axis=0)
+    # df_G_RES.rename(columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})
 
     # ------------------------------------------------------------------------------------------------------
     # Technical KPIs
     # ------------------------------------------------------------------------------------------------------
-    #df_eta = postcompute_efficiency(df_Results["df_Unit"], buildings_data, df_annual, df_annual_network, df_profiles,
-    #                                df_Results["df_Weather"], df_Time)
-    #df_KPI = pd.concat([df_KPI, df_eta], axis=1)  # eta_I    eta_II   eta_Ipv  eta_IIpv
+    # d f_eta = postcompute_efficiency(df_Results["df_Unit"], buildings_data, df_annual, df_annual_network, df_profiles, df_Results["df_Weather"], df_Time)
+    # df_KPI = pd.concat([df_KPI, df_eta], axis=1)  # eta_I    eta_II   eta_Ipv  eta_IIpv
 
     if 'HeatPump' in infrastructure.UnitsOfType:  # Check if HP DHN is used
         df_COP = postcompute_annual_COP(df_Results["df_Annuals"], infrastructure)

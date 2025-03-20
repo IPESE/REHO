@@ -216,8 +216,8 @@ class SubProblem:
         clustering_directory = os.path.join(path_to_clustering, File_ID)
         ampl.cd(clustering_directory)
 
-        ampl.readData('frequency.dat')
-        ampl.readData('index.dat')
+        ampl.readData('frequency.csv')
+        ampl.readData('index.csv')
         self.parameters_to_ampl['T_ext'] = self.local_data["T_ext"]
         self.parameters_to_ampl['Irr'] = self.local_data["Irr"]
 

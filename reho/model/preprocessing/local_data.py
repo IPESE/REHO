@@ -1,6 +1,7 @@
+import pandas as pd
+
 from reho.model.preprocessing.QBuildings import *
 import reho.model.preprocessing.weather as weather
-from reho.model.preprocessing.emissions_parser import annual_to_typical_emissions
 
 __doc__ = """
 Handles data specific to the location.
@@ -21,29 +22,32 @@ def return_local_data(cluster, qbuildings_data):
     Returns
     -------
     dict
+        - Cluster (dict) to identify the location and clustering attributes
         - File_ID (string) to identify the location and clustering attritutes
-        - df_Timestamp
-        - df_Emissions
+        - T_ext (np.array) to represent the external temperature for typical days
+        - Irr (np.array) to represent the solar irradiance for typical days
+        - df_Timestamp (pd.DataFrame) to represent the timestamps for the typical days
     """
 
     local_data = dict()
 
+    # Cluster
+    local_data["Cluster"] = cluster
+
     # Weather
     File_ID = weather.get_cluster_file_ID(cluster)
-    local_data['File_ID'] = File_ID
+    local_data["File_ID"] = File_ID
 
     clustering_directory = os.path.join(path_to_clustering, File_ID)
     if not os.path.exists(clustering_directory):
         os.makedirs(clustering_directory)
-        weather_data = weather.generate_weather_data(cluster, qbuildings_data, clustering_directory)
-        weather_data.to_csv(os.path.join(clustering_directory, 'annual_data.csv'), index=False)
+        weather.generate_weather_data(cluster, qbuildings_data, clustering_directory)
 
-    local_data["T_ext"] = np.loadtxt(os.path.join(clustering_directory, 'Text.dat'))
-    local_data["Irr"] = np.loadtxt(os.path.join(clustering_directory, 'Irr.dat'))
-    local_data["df_Timestamp"] = pd.read_csv(os.path.join(clustering_directory, 'timestamp.dat'), delimiter='\t', parse_dates=[0])
+    typical_data = pd.read_csv(os.path.join(clustering_directory, 'typical_data.csv'))
+    local_data["T_ext"] = typical_data['Text'].values
+    local_data["Irr"] = typical_data['Irr'].values
 
-    # Carbon emissions
-    local_data["df_Emissions"] = file_reader(path_to_emissions, index_col=[0, 1, 2])
-    local_data["df_Emissions_GWP100a"] = annual_to_typical_emissions(cluster, 'CH', "GWP100a", local_data["df_Timestamp"], local_data["df_Emissions"])
+    local_data["df_Timestamp"] = pd.read_csv(os.path.join(clustering_directory, 'timestamp.csv'))
+    local_data["df_Timestamp"]["Date"] = pd.to_datetime(local_data["df_Timestamp"]["Date"])
 
     return local_data

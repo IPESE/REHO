@@ -458,8 +458,8 @@ class MasterProblem:
         clustering_directory = os.path.join(path_to_clustering, self.local_data['File_ID'])
         ampl_MP.cd(clustering_directory)
 
-        ampl_MP.readData('frequency.dat')
-        ampl_MP.readData('index.dat')
+        ampl_MP.readData('frequency.csv')
+        ampl_MP.readData('index.csv')
         ampl_MP.cd(path_to_ampl_model)
 
         # -------------------------------------------------------------------------------------------------------------

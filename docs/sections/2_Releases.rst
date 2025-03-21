@@ -111,6 +111,8 @@ Academic contributions
 .. dropdown:: :bdg-primary:`Conference` REHO - A Comprehensive Decision Support Tool for Sustainable Energy System Planning, Lepour 2024
     :icon: globe
 
+    *European Symposium on Computer Aided Process Engineering (Escape) - June 2-6, 2024, Florence, Italy*
+
     **Abstract**
 
     The transition to sustainable energy systems in the face of growing renewable energy adoption and electrification is a complex and critical challenge. The Renewable Energy Hub Optimizer (REHO) emerges as a powerful decision support tool designed to investigate the deployment of energy conversion and storage technologies in this evolving landscape. REHO leverages a Mixed-Integer Linear Programming (MILP) framework combined with a Dantzig-Wolfe decomposition to simultaneously address the optimal design and operation of energy communities, catering to multi-objective considerations across economic, environmental, and efficiency criteria. This paper introduces REHO and highlights its key features and contributions to the field of sustainable energy system planning.
@@ -118,6 +120,8 @@ Academic contributions
 
 .. dropdown:: :bdg-primary:`Conference` Impact of Industrial Waste Heat Recovery on Heat and Electricity Marginal Costs in an Energy Community, Terrier 2024
     :icon: globe
+
+    *European Symposium on Computer Aided Process Engineering (Escape) - June 2-6, 2024, Florence, Italy*
 
     **Abstract**
 
@@ -150,6 +154,8 @@ Academic contributions
 .. dropdown:: :bdg-primary:`Conference` Clustering and Typification of Urban Districts for Energy System Modelling, Loustau 2023 :cite:`loustauClusteringTypificationUrban2023`
     :icon: globe
 
+    *International Conference on Efficiency, Cost, Optimization, Simulation and Environmental Impact of Energy Systems (ECOS) - June 25-30, 2023, Gran Canaria, Spain*
+
     **Abstract**
 
     The interest in Urban Systems has been growing due to the necessary decarbonisation of city energy systems. Decision tools are developed using mathematical optimisation to enable proper decision-making in the transition process. The concept of energy communities - or district energy hub - is expected to have an impact on the energy system at both regional and national scales. However, the shift towards distributed energy systems complexifies the model due to more integrated subsystems and requires larger spatial boundaries to increase self-consumption and decrease grid stresses. The computational power required to model and optimise such systems is to rise drastically. This work proposes to curtail the large computing needs by typifying the districts of a city, using clustering techniques. Accordingly clustered districts can be optimised by solving a typical district from the group and scaling its solution to the others. The clustering features considered are the districts energetic characteristics: the energy demands on one side, and the endogenous resources on the other. Data are normalised and a principal component analysis is conducted. Two clustering algorithms are investigated: a centroid-based (Kmedoids) and a density-based (GaussianMixture). The ideal number of clusters is determined by maximising the intra-cluster similarity and minimising the inter-cluster similarity, and the final clustering stability is evaluated through the Rand Index. The method is applied on the case study of a typical European urban area and the two algorithms lead to two distinct typification. The clusterings are used to run an energy hub optimisation for the whole region and the results are compared to the one obtained without archetypes for validation. The results between the two approaches show no significant differences while a considerable computing time reduction is achieved.
@@ -171,12 +177,16 @@ Academic contributions
 .. dropdown:: :bdg-primary:`Conference` Decentralized ICT integration in residential buildings, Lepour 2022
     :icon: globe
 
+    *International Conference on Efficiency, Cost, Optimization, Simulation and Environmental Impact of Energy Systems (ECOS) - July 3-7, 2022, Copenhagen, Denmark*
+
     **Abstract**
 
     To answer the growing demand for data computing, data storage and data transmission, the current trend is to construct centralized hyperscale data centers, whose power usage effectiveness (PUE) has substantially improved in recent years. Still, the operation of hyperscale data centers has economic and environmental impacts on society, especially if their residual heat is not reused. This study aims to present the economic and environmental rationales of decentralized computing capacities integrated into the building stock. The proposed solution simultaneously tackles the mitigation of greenhouse gas emissions from the residential sector and the ever-increasing global data demand, by exploiting the synergy between domestic thermal needs and digital services, while integrating PV production. The originality of this work resides in its holistic approach and multi-services (data, heat and electricity) dimension. A Mixed Integer Linear Programming (MILP) energy modelling optimization framework is developed to assess the economic and environmental performance of centralized hyperscale infrastructures versus decentralized building-integrated computing units with heat recovery. Results for the decentralized solution underline the reduction of environmental impact (-16.3%) and global cost (-27.7%) for the benefits of the whole society. As part of an integrated system, these decentralized computing units foster PV penetration, avoid the oversizing of a heat pump, and achieve high self-consumption (96%), while preventing the installation of a battery through coordination between thermal storage, data services and solar availability. This efficient solution offering an unmatched energy reuse effectiveness (ERE) shows the whole potential of the digitalization of energy systems, is a key contribution to building energy systems design, and reveals a promising approach to mitigate the increasing energy consumption of the ICT sector.
 
 .. dropdown:: :bdg-primary:`Conference` Potential of electric mobility as service to the grid in renewable energy hubs, Terrier 2022
     :icon: globe
+
+    *International Conference on Efficiency, Cost, Optimization, Simulation and Environmental Impact of Energy Systems (ECOS) - July 3-7, 2022, Copenhagen, Denmark*
 
     **Abstract**
 
@@ -225,7 +235,6 @@ While the following reports did not experience a peer-review process, they still
 
     Based on the energy expenses reported in energy statistics for the last 20 years, it is possible to determine the cost of energy in constant Swiss francs of the energy used in buildings and therefore to calculate how much Swiss citizens have agreed to pay to be heated in the last years. Based on the building inventory and considering the reported heating system in the building, one can calculate for each building what would be the cost of heating the buildings based on the cost of the past. This allows indeed to calculate the cost of the business as usual case where the energy system and the building’s envelop are not retrofitted. This value is then used as a reference to test different business models for the renovation of the buildings.
 
-    https://ipese-web.epfl.ch/ipese-blog/urban_systems/2023-10-29-The-energy-cost-of-living/
 
 .. dropdown:: :bdg-primary-line:`Research` Techno-Economic Study of Local Energy Community in the Canton of Geneva, Suermondt 2023 :cite:`suermondtTechnoeconomicStudyLocal2023`
     :icon: organization

@@ -42,6 +42,7 @@ Directory for data-related files.
 - ``elcom/``
 - ``emissions/``
 - ``infrastructure/``
+- ``mobility/``
 - ``QBuildings/``
 - ``SIA/``
 - ``skydome/``

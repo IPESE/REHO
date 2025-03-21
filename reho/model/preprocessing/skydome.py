@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 import numpy as np
 import pandas as pd
 
@@ -49,44 +47,64 @@ def generate_skydome():
     df_dome.to_csv(os.path.join(path_to_skydome, 'skydome.csv'))
 
 
-def irradiation_to_df(ampl, local_data):
+def irradiation_to_df(local_data):
     """
-    Reads irradiation values of all 145 patches for the timesteps given in the csv file. Converts them to float and returns them as df
+    Reads irradiation values of all 145 patches for the timesteps given in the csv file.
+    Converts them to float and returns them as a DataFrame indexed by date and hour.
+
+    Parameters
+    ----------
+    local_data : dict
+        Dictionary containing the local data.
+
+    Returns
+    -------
+    df : pd.DataFrame
+        MultiIndexed DataFrame indexed by Patches, Period, Time with irradiation values.
     """
 
     df_normalized = pd.read_csv(os.path.join(path_to_skydome, 'normalized_irradiance.csv'))
     Irr = local_data['Irr']
     df_time = local_data['df_Timestamp']
 
-    df_irradiation = df_normalized.mul(Irr[:-2].max(), axis=0)
+    max_irradiation = Irr[:-2].max()
+    df_irradiation = df_normalized.mul(max_irradiation, axis=0)
 
-    # get relevant cluster information
-    PeriodDuration = ampl.getParameter('TimeEnd').getValues().toPandas()
+    PeriodDuration = local_data['Cluster']['PeriodDuration']
 
-    # construct Multiindex
+    # Handle normal periods
     df_p = pd.DataFrame()
-    list_timesteps = []
-
-    for p in df_time.index:
-        date1 = df_time.xs(p).Date
-        end = PeriodDuration.xs(p + 1).TimeEnd
-
-        date2 = date1 + timedelta(hours=int(end) - 1)
-        df_period = df_irradiation.loc[date1:date2]
-
-        for t in np.arange(1, int(end) + 1):
-            list_timesteps.append((p + 1, t))
-
+    start_idx = 0
+    for date in df_time['Date'][:-2]:
+        df_period = df_irradiation.iloc[start_idx:start_idx + PeriodDuration].copy()
+        df_period.index = pd.date_range(start=pd.to_datetime(date), periods=PeriodDuration, freq='H')
         df_p = pd.concat([df_p, df_period])
+        start_idx += PeriodDuration
 
-    idx = pd.MultiIndex.from_tuples(list_timesteps)
+    # Handle extreme periods
+    extreme_irradiations = Irr[-2:]
+    extreme_periods = [df_normalized.mul(val).iloc[0:1] for val in extreme_irradiations]
 
-    # marry index and data
-    df_irradiation = df_p.set_index(idx)
+    for df_extreme, date in zip(extreme_periods, df_time['Date'][-2:]):
+        df_extreme.index = [pd.to_datetime(date)]
+        df_p = pd.concat([df_p, df_extreme])
 
-    df = df_irradiation.stack()
-    df = df.reorder_levels([2, 0, 1])
-    df = pd.DataFrame(df)
-    df = df.rename(columns={0: 'Irr_patches'})
+    # Final MultiIndex construction without names
+    periods = np.repeat(range(1, len(df_time) - 1), PeriodDuration).tolist() + [len(df_time) - 1, len(df_time)]
+    hours = np.tile(range(1, PeriodDuration + 1), len(df_time) - 2).tolist() + [1, 1]
 
-    return df
+    df_p.index = pd.MultiIndex.from_arrays([periods, hours])
+
+    # Stack patches into final DataFrame with integer patch indices
+    df_final = df_p.stack().to_frame()
+    df_final.index = pd.MultiIndex.from_tuples(
+        [(int(patch), period, hour) for (period, hour, patch) in df_final.index],
+        names=[None, None, None]
+    )
+
+    # Sort index by Patch, Period, Hour
+    df_final = df_final.sort_index(level=[0, 1, 2])
+
+    df_final = df_final.rename(columns={0: 'Irr_patches'})
+
+    return df_final

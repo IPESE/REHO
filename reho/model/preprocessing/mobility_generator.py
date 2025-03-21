@@ -9,6 +9,7 @@ __doc__ = """
 Processes data for parameters related to the Mobility Layer. 
 """
 
+
 # PARAMETERS AND SETS =========================================================================================
 
 def generate_mobility_parameters(cluster, parameters, infrastructure, modal_split):
@@ -22,10 +23,10 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
         to get periods characterisations (p,t)
     parameters : dictionary
         From the parameters will be extracted values related to the mobility namely DailyDist, Mode_Speed and Population. Population is a float, DailyDist a dict of float, Mode_Speed is a dictionnary given by the user in the scenario initialisation. It can contain customed values for only some modes while the other remain default. 
-    transportunits : list
+    infrastructure : list
         a list of all infrastructure units providing Mobility + "Public_transport" => which is the Network_supply['Mobility']
     modal_split : df
-        a dataframe of the modal split for each categories of distance
+        a dataframe of the modal split for each category of distance
 
     Returns
     -------
@@ -42,12 +43,12 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
             parameters['DailyDist'] = pd.DataFrame.from_dict(parameters['DailyDist'], orient='index', columns=["DailyDist"])
         DailyDist = parameters['DailyDist']
     else:
-        DailyDist = pd.DataFrame([36.8], index=["all"], columns=["DailyDist"]) # km per day
+        DailyDist = pd.DataFrame([36.8], index=["all"], columns=["DailyDist"])  # km per day
 
     if "Population" in parameters:
         Population = parameters['Population']
     else:
-        Population = 10 # km per day
+        Population = 10  # km per day
 
     if "Mode_Speed" in parameters:
         mode_speed_custom = parameters['Mode_Speed']
@@ -60,13 +61,13 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
     File_ID = weather.get_cluster_file_ID(cluster)
     clustering_directory = os.path.join(path_to_clustering, File_ID)
 
-    df = pd.read_csv(os.path.join(clustering_directory, 'timestamp.csv'))
+    timestamp = pd.read_csv(os.path.join(clustering_directory, 'timestamp.csv'))
 
     if 'W' not in File_ID.split('_'):
-        timestamp = df.fillna(1)  # only weekdays
+        timestamp = timestamp.fillna(1)  # only weekdays
 
     days_mapping = {0: "wnd",  # Weekend
-                    1: "wdy"   # Weekday
+                    1: "wdy"  # Weekday
                     }
     modes = ['cars', 'PT', 'MD']
 
@@ -81,8 +82,9 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
     if modal_split is not None:
         d = set([x.split('_')[1] for x in modal_split.columns])
         d = d.difference(DailyDist.index)
-        if not(len(d)==0):
-            raise warnings.warn(f"reho.modal_split contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(DailyDist.index)}")
+        if not (len(d) == 0):
+            raise warnings.warn(
+                f"reho.modal_split contains invalid categories of distance {d}. \n Categories of distances labels should be in this list : {list(DailyDist.index)}")
 
     # Compute the parameters
     param_output['Domestic_energy_pkm'], param_output['Domestic_energy'] = get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Population)
@@ -103,7 +105,7 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
     return param_output
 
 
-def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Population):    
+def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Population):
     """
     Formatting of the parameters Domestic_energy_pkm and Domestic_energy
 
@@ -139,7 +141,7 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
                 profile.rename(columns={f"dem{days_mapping[day]}_{dist}": "Domestic_energy_pkm"}, inplace=True)
             except:
                 try:
-                    profile = profiles_demand[[f"dem{days_mapping[day]}_def" ]].copy() # default profile
+                    profile = profiles_demand[[f"dem{days_mapping[day]}_def"]].copy()  # default profile
                     profile.rename(columns={f"dem{days_mapping[day]}_def": "Domestic_energy_pkm"}, inplace=True)
                 except:
                     raise (f"Demand profile error : no default demand profile for {day} daytype")
@@ -156,15 +158,15 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
                                pd.DataFrame({"p": 12, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index)])
 
     extreme_hours.index.name = 'dist'
-    extreme_hours.reset_index(inplace = True)
+    extreme_hours.reset_index(inplace=True)
     demand_pkm = pd.concat([demand_pkm, extreme_hours])
     demand_pkm.set_index(['dist', 'p', 't'], inplace=True)
 
-    mobility_demand = demand_pkm.groupby(['p','t']).agg('sum')
+    mobility_demand = demand_pkm.groupby(['p', 't']).agg('sum')
     mobility_demand.reset_index(inplace=True)
     mobility_demand['l'] = "Mobility"
     mobility_demand.set_index(['l', 'p', 't'], inplace=True)
-    mobility_demand.rename(columns={"Domestic_energy_pkm" : "Domestic_energy"},inplace=True)
+    mobility_demand.rename(columns={"Domestic_energy_pkm": "Domestic_energy"}, inplace=True)
     return demand_pkm, mobility_demand
 
 
@@ -200,7 +202,7 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
         dd_filter = dd.astype('bool')
 
         profile = profiles_input.loc[:, profiles_input.columns.str.contains(f"prf{days_mapping[day]}")].copy()
-        profile = profile.multiply(dd_filter.iloc[:,0],axis = 'index')
+        profile = profile.multiply(dd_filter.iloc[:, 0], axis='index')
         profile.columns = [x.split('_')[0] + "_district" for x in profile.columns]
         missing_units = set(transportunits) - set(profile.columns) - {'Public_transport'}
         for unit in missing_units:
@@ -208,13 +210,13 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
 
         profile.index.name = 't'
         profile.columns.name = 'u'
-        profile = profile.stack().to_frame(name = "Daily_Profile")
+        profile = profile.stack().to_frame(name="Daily_Profile")
         profile.reset_index(inplace=True)
         profile['p'] = j + 1
         daily_profile = pd.concat([daily_profile, profile])
 
-    pd.concat([daily_profile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0},index=["extremehour1"])])
-    pd.concat([daily_profile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0},index=["extremehour2"])])
+    pd.concat([daily_profile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
+    pd.concat([daily_profile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
     return daily_profile.set_index(['u', 'p', 't'])
 
 
@@ -263,9 +265,11 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
         cpf['p'] = j + 1
         EV_charging_profile = pd.concat([EV_charging_profile, cpf])
 
-    aaa = pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 11, "t": 1, "EV_charging_profile": 0}, index=[f"{x}1" for x in EV_charging_profile.u.unique()])
+    aaa = pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 11, "t": 1, "EV_charging_profile": 0},
+                       index=[f"{x}1" for x in EV_charging_profile.u.unique()])
     EV_charging_profile = pd.concat([EV_charging_profile, aaa])
-    EV_charging_profile = pd.concat([EV_charging_profile, pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 12, "t": 1, "EV_charging_profile": 0}, index=[[f"{x}2" for x in EV_charging_profile.u.unique()]])])
+    EV_charging_profile = pd.concat([EV_charging_profile, pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 12, "t": 1, "EV_charging_profile": 0},
+                                                                       index=[[f"{x}2" for x in EV_charging_profile.u.unique()]])])
     return EV_charging_profile.set_index(['u', 'p', 't'])
 
 
@@ -310,8 +314,10 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping):
         out['p'] = j + 1
         EV_plugged_out = pd.concat([EV_plugged_out, out])
 
-    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 11, "t": 1, "EV_plugged_out": 0}, index=[[f"{x}1" for x in EV_plugged_out.u.unique()]])])
-    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 12, "t": 1, "EV_plugged_out": 0}, index=[[f"{x}2" for x in EV_plugged_out.u.unique()]])])
+    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 11, "t": 1, "EV_plugged_out": 0},
+                                                             index=[[f"{x}1" for x in EV_plugged_out.u.unique()]])])
+    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 12, "t": 1, "EV_plugged_out": 0},
+                                                             index=[[f"{x}2" for x in EV_plugged_out.u.unique()]])])
     return EV_plugged_out.set_index(['u', 'p', 't'])
 
 
@@ -335,7 +341,7 @@ def get_activity_profile(units, timestamp, profiles_input, days_mapping):
     activity_profile : df
        the parameter EV_activity[a,u,p,t] 
     """
-    
+
     activity_profile = pd.DataFrame(columns=['a', 'u', 'p', 't', 'EV_activity'])
     EV_units = list(units[units.UnitOfType == "EV"][['Unit', 'UnitOfType']].Unit)
 
@@ -362,7 +368,7 @@ def get_activity_profile(units, timestamp, profiles_input, days_mapping):
         act['p'] = j + 1
         activity_profile = pd.concat([activity_profile, act])
 
-    return activity_profile.set_index(['a','u', 'p', 't'])
+    return activity_profile.set_index(['a', 'u', 'p', 't'])
 
 
 def get_Ebike_charging(units, timestamp, profiles_input, days_mapping):
@@ -384,9 +390,9 @@ def get_Ebike_charging(units, timestamp, profiles_input, days_mapping):
     -------
     EBike_charging_profile : df
        the parameter EBike_charging_profile[u,p,t] 
-    """    
+    """
     EBike_charging_profile = pd.DataFrame(columns=['u', 'p', 't', 'EBike_charging_profile'])
-    EBike_units = list(units[units.UnitOfType == "EBike"][['Unit','UnitOfType']].Unit)
+    EBike_units = list(units[units.UnitOfType == "EBike"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
         try:
@@ -427,7 +433,7 @@ def get_mode_speed(units, mode_speed_custom):
     -------
     mode_speed : df
        the parameter Mode_Speed[u] 
-    """      
+    """
     default_speed = pd.DataFrame({"UnitOfType": ['Bike', 'EV', 'ICE', 'PT_train', 'PT_bus', "EBike"],
                                   "Mode_Speed": [13.3, 37, 37, 60, 18, 17]})
 
@@ -460,12 +466,12 @@ def get_min_share(modal_split, modes, transportunits):
        the parameter min_share[u,dist] 
     minshare_modes : df
        the parameter min_share_modes[u,dist] 
-    """        
-    minshare = modal_split.loc[:,modal_split.columns.str.startswith("min")]
+    """
+    minshare = modal_split.loc[:, modal_split.columns.str.startswith("min")]
     minshare.columns = [x.split('_')[1] for x in minshare.columns]
 
     minshare.columns.name = "dist"
-    minshare = minshare.join(pd.DataFrame(index = modes + list(transportunits)),how = 'outer').fillna(0)
+    minshare = minshare.join(pd.DataFrame(index=modes + list(transportunits)), how='outer').fillna(0)
     minshare = minshare.stack()
     minshare_modes = minshare[minshare.index.get_level_values(0).isin(modes)]
     minshare = minshare[minshare.index.get_level_values(0).isin(transportunits)]
@@ -493,12 +499,12 @@ def get_max_share(modal_split, modes, transportunits):
        the parameter max_share[u,dist] 
     maxshare_modes : df
        the parameter max_share_modes[u,dist] 
-    """     
-    maxshare = modal_split.loc[:,modal_split.columns.str.startswith("max")]
+    """
+    maxshare = modal_split.loc[:, modal_split.columns.str.startswith("max")]
     maxshare.columns = [x.split('_')[1] for x in maxshare.columns]
 
     maxshare.columns.name = "dist"
-    maxshare = maxshare.join(pd.DataFrame(index = modes + list(transportunits)),how = 'outer').fillna(1)
+    maxshare = maxshare.join(pd.DataFrame(index=modes + list(transportunits)), how='outer').fillna(1)
     maxshare = maxshare.stack()
     maxshare_modes = maxshare[maxshare.index.get_level_values(0).isin(modes)]
     maxshare = maxshare[maxshare.index.get_level_values(0).isin(transportunits)]
@@ -524,7 +530,7 @@ def generate_transport_units_sets(transportunits):
     transport_Units_cars :set
     """
     soft_mobility_UnitofType_all = {"Bike", "EBike"}
-    cars_UnitofType_all = {"EV","ICE"}
+    cars_UnitofType_all = {"EV", "ICE"}
 
     transport_Units_MD = list()
     for key in soft_mobility_UnitofType_all:
@@ -539,11 +545,12 @@ def generate_transport_units_sets(transportunits):
     transport_Units_cars = np.array(transport_Units_cars)
     transport_Units_MD = np.array(transport_Units_MD)
 
-    return transport_Units_MD,transport_Units_cars
+    return transport_Units_MD, transport_Units_cars
+
 
 # FUNCTIONS FOR CO-OPTIMIZATION =========================================================================================
 
-def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
+def rho_param(ext_districts, rho, activities=["work", "leisure", "travel"]):
     """
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
     
@@ -562,12 +569,12 @@ def rho_param(ext_districts,rho,activities = ["work","leisure","travel"]):
     
 
     """
-    share = pd.DataFrame(index=ext_districts,columns=activities).fillna(1/len(ext_districts))
+    share = pd.DataFrame(index=ext_districts, columns=activities).fillna(1 / len(ext_districts))
     for act in share.columns:
         if act in rho.columns:
             share[act] = rho[act] / rho[act][rho.index.isin(ext_districts)].sum()
-    share = share.stack().to_frame(name= "share_activity").reorder_levels([1,0])
-    share.loc['travel'] = 0 # additionnal precaution
+    share = share.stack().to_frame(name="share_activity").reorder_levels([1, 0])
+    share.loc['travel'] = 0  # additionnal precaution
     return share
 
 
@@ -618,14 +625,14 @@ def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters,
             EV_demand_ext = df_unit_t.loc[:, df_unit_t.columns.str.contains("EV_demand_ext")].xs("Electricity").xs("EV_district")
             activities = [x.split('[')[1].split(",")[0] for x in EV_demand_ext.columns]
             districts = [x.split('[')[1].split(",")[1].replace("]", "") for x in EV_demand_ext.columns]
-            EV_demand_ext.columns = pd.MultiIndex.from_arrays([activities, districts], names=['activity','district'])
+            EV_demand_ext.columns = pd.MultiIndex.from_arrays([activities, districts], names=['activity', 'district'])
             EV_demand_ext = EV_demand_ext.stack(level=1).reorder_levels([2, 0, 1]) * district_parameters[d]['f']
             EV_demand_ext = EV_demand_ext * district_parameters[d]['f']
-            df_load = pd.concat([df_load, EV_demand_ext]) # list of all external loads scaled to city level
+            df_load = pd.concat([df_load, EV_demand_ext])  # list of all external loads scaled to city level
 
         df_load = df_load.groupby(["district", "Period", "Time"]).sum()
         df_load = df_load.stack().unstack(level='district').reorder_levels([2, 0, 1])
-        df_load.columns = df_load.columns.astype(float).astype(int) # load per district and activity at the city level
+        df_load.columns = df_load.columns.astype(float).astype(int)  # load per district and activity at the city level
 
         for d in district_parameters.keys():
             parameters[d]["EV_supply_ext"] = df_load[[d]].rename(columns={d: "EV_supply_ext"}) / district_parameters[d]['f']
@@ -636,7 +643,7 @@ def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters,
 # FUNCTIONS PROCESSING OF WP1 DATA =======================================================================================
 # stored in the files WP1_distributionofdistances.csv and WP1_modalsharesbydistances (work and leisure)
 
-def linear_split_bin_table(df,col,lowerbound = None, upperbound = None):
+def linear_split_bin_table(df, col, lowerbound=None, upperbound=None):
     """
     Cuts off a discrete bin distribution data serie to the desired bounds. First and last bin are calculated proportionnally to the size of the bin. 
 
@@ -651,29 +658,29 @@ def linear_split_bin_table(df,col,lowerbound = None, upperbound = None):
     """
     if upperbound:
         if upperbound in df.index:
-            df_up = df.loc[df.index <= upperbound,:].copy()
+            df_up = df.loc[df.index <= upperbound, :].copy()
         else:
-            df_up = df.loc[df.index < upperbound,:].copy()
-            last_bin = df.loc[df.index > upperbound,:].iloc[0]
-            last_bin[col] = (upperbound - df_up.index[-1]) / (last_bin.name - df_up.index[-1] ) * last_bin[col]
+            df_up = df.loc[df.index < upperbound, :].copy()
+            last_bin = df.loc[df.index > upperbound, :].iloc[0]
+            last_bin[col] = (upperbound - df_up.index[-1]) / (last_bin.name - df_up.index[-1]) * last_bin[col]
             last_bin.name = upperbound
-            df_up = pd.concat([df_up,last_bin.to_frame().T])
-    
+            df_up = pd.concat([df_up, last_bin.to_frame().T])
+
     if lowerbound:
         if upperbound:
-            df_up = df_up.loc[df_up.index > lowerbound,:].copy()
+            df_up = df_up.loc[df_up.index > lowerbound, :].copy()
         else:
-            df_up = df.loc[df.index > lowerbound,:].copy()
+            df_up = df.loc[df.index > lowerbound, :].copy()
 
         if not lowerbound in df.index:
-            prev_bin = df.loc[df.index < lowerbound,:].iloc[-1]
+            prev_bin = df.loc[df.index < lowerbound, :].iloc[-1]
             weight = (df_up.index[0] - lowerbound) / (df_up.index[0] - prev_bin.name) * df_up.iloc[0][col]
-            df_up.at[df_up.index[0],col] = weight
+            df_up.at[df_up.index[0], col] = weight
 
     return df_up
 
 
-def mobility_demand_from_WP1data(pkm_demand,max_dist = 70 ,nbins = 1,modalwindow = 0.01,  share_cars = None,share_EV_infleet = None ):
+def mobility_demand_from_WP1data(pkm_demand, max_dist=70, nbins=1, modalwindow=0.01, share_cars=None, share_EV_infleet=None):
     """
     This functions computes parameters related to mobility from data tables provided by WP1 (OFS data). Parameters computed include : DailyDist and the modal_split dataframe. 
 
@@ -701,68 +708,66 @@ def mobility_demand_from_WP1data(pkm_demand,max_dist = 70 ,nbins = 1,modalwindow
     modal_split = pd.DataFrame()
     modal_split_custom = pd.DataFrame()
 
-    df_dist = pd.read_csv(os.path.join(path_to_mobility, 'WP1_distributionofdistances.csv'), index_col = 0)
-    df_modal_split = pd.read_csv(os.path.join(path_to_mobility, 'WP1_modalsharesbydistances_work.tsv'), sep = "\t",index_col = 0)
+    df_dist = pd.read_csv(os.path.join(path_to_mobility, 'WP1_distributionofdistances.csv'), index_col=0)
+    df_modal_split = pd.read_csv(os.path.join(path_to_mobility, 'WP1_modalsharesbydistances_work.tsv'), sep="\t", index_col=0)
 
     mapping_modesunits = {
-        "Marche"   :  "MD",
-        "Vélo"        : "MD",
-        "moto"        : "cars",
-        "voiture"     : "cars",
-        "tram/bus"    : "PT",
-        "train" : "PT"
+        "Marche": "MD",
+        "Vélo": "MD",
+        "moto": "cars",
+        "voiture": "cars",
+        "tram/bus": "PT",
+        "train": "PT"
     }
 
-    df_dist_inf = linear_split_bin_table(df_dist,"weight",upperbound=max_dist)
-    df_dist_inf.weight = df_dist_inf.weight /df_dist_inf.weight.sum()
+    df_dist_inf = linear_split_bin_table(df_dist, "weight", upperbound=max_dist)
+    df_dist_inf.weight = df_dist_inf.weight / df_dist_inf.weight.sum()
 
     df_dist_inf['up'] = df_dist_inf.index
-    df_dist_inf['low'] =   df_dist_inf.up.shift(1).fillna(0)
-    df_dist_inf['mean'] = (df_dist_inf.up + df_dist_inf.low)/2
+    df_dist_inf['low'] = df_dist_inf.up.shift(1).fillna(0)
+    df_dist_inf['mean'] = (df_dist_inf.up + df_dist_inf.low) / 2
     df_dist_inf['pkm'] = df_dist_inf['mean'] * df_dist_inf['weight']
-    df_dist_inf.pkm = df_dist_inf.pkm /df_dist_inf.pkm.sum()
+    df_dist_inf.pkm = df_dist_inf.pkm / df_dist_inf.pkm.sum()
 
     df_dist_inf = df_dist_inf.join(df_modal_split)
-    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].fillna(method = 'bfill').fillna(method = 'ffill')
+    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].fillna(method='bfill').fillna(method='ffill')
 
     lowerbound = 0
-    step = max_dist/nbins
+    step = max_dist / nbins
     for i in range(nbins):
         upperbound = lowerbound + step
-        df_bin = linear_split_bin_table(df_dist_inf,"pkm",lowerbound,upperbound)
+        df_bin = linear_split_bin_table(df_dist_inf, "pkm", lowerbound, upperbound)
         DailyDist[f"D{i}"] = df_bin.pkm.sum() * pkm_demand
 
-        df_ms = df_bin[df_modal_split.columns].mul(df_bin['pkm'],axis = 0).sum()
+        df_ms = df_bin[df_modal_split.columns].mul(df_bin['pkm'], axis=0).sum()
         df_ms = df_ms.div(df_ms.sum())
         df_ms.index = df_ms.index.map(mapping_modesunits)
         df_ms = df_ms.groupby(df_ms.index).agg("sum")
         df_ms_min = df_ms.copy()
 
-        modal_split[f"min_D{i}"] = df_ms_min.apply(lambda x : max(x-modalwindow,0))
-        modal_split[f"max_D{i}"] = df_ms.apply(lambda x : min(x+modalwindow,1))
+        modal_split[f"min_D{i}"] = df_ms_min.apply(lambda x: max(x - modalwindow, 0))
+        modal_split[f"max_D{i}"] = df_ms.apply(lambda x: min(x + modalwindow, 1))
         modal_split_custom[f"D{i}"] = df_ms
 
         lowerbound = upperbound
 
-    if not(share_cars is None):
-        mean_share = sum(modal_split.loc["cars",modal_split.columns.str.startswith("max")].values * list(DailyDist.values()))
-        mean_share = mean_share/sum(DailyDist.values())
-        modal_split_custom.loc['cars',:] = modal_split_custom.loc['cars',:].apply(lambda x : x*share_cars/mean_share)
-        
+    if not (share_cars is None):
+        mean_share = sum(modal_split.loc["cars", modal_split.columns.str.startswith("max")].values * list(DailyDist.values()))
+        mean_share = mean_share / sum(DailyDist.values())
+        modal_split_custom.loc['cars', :] = modal_split_custom.loc['cars', :].apply(lambda x: x * share_cars / mean_share)
+
         modal_split_custom = modal_split_custom.T
-        modal_split_custom[['MD','PT']] = modal_split_custom.apply(lambda x : (x.MD/(x.MD + x.PT) * (1-x.cars),x.PT/(x.MD + x.PT) * (1-x.cars)),axis = 1,result_type = 'expand')
+        modal_split_custom[['MD', 'PT']] = modal_split_custom.apply(lambda x: (x.MD / (x.MD + x.PT) * (1 - x.cars), x.PT / (x.MD + x.PT) * (1 - x.cars)),
+                                                                    axis=1, result_type='expand')
         modal_split_custom = modal_split_custom.T
 
         for D in modal_split_custom.columns:
-            modal_split[f"min_{D}"] = modal_split_custom[D].apply(lambda x : max(x-modalwindow,0))
-            modal_split[f"max_{D}"] = modal_split_custom[D].apply(lambda x : min(x+modalwindow,1))
+            modal_split[f"min_{D}"] = modal_split_custom[D].apply(lambda x: max(x - modalwindow, 0))
+            modal_split[f"max_{D}"] = modal_split_custom[D].apply(lambda x: min(x + modalwindow, 1))
 
-    if not(share_EV_infleet is None):
+    if not (share_EV_infleet is None):
         modal_split = modal_split.T
         modal_split['EV_district'] = share_EV_infleet * modal_split["cars"]
         modal_split = modal_split.T
 
     return DailyDist, modal_split
-
-
-

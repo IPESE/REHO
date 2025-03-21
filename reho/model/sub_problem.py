@@ -382,7 +382,7 @@ class SubProblem:
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
-        self.parameters_to_ampl['Irr_patches'] = irradiation_to_df(ampl, self.local_data)
+        self.parameters_to_ampl['Irr_patches'] = irradiation_to_df(self.local_data)
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])
         # Tilt = np.array([])

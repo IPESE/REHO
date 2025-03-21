@@ -332,7 +332,7 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
         Solar gains for each timesteps.
     """
 
-    irr = local_data["Irr"]
+    irr = local_data["Irr"] * 0.6  # factor to convert global to horizontal irradiance
 
     g = np.repeat(0.5, len(irr))  # g-value SIA 2024
     g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds

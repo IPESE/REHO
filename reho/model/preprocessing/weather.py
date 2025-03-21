@@ -99,9 +99,15 @@ def generate_weather_data(cluster, qbuildings_data):
         attributes.append('Weekday')
     if 'E' in cluster['Attributes']:
         attributes.append('Emissions')
+    if 'D' in cluster['Attributes']:
+        attributes.append('DataLoad')
+        df['DataLoad'] = pd.read_csv(
+            '/Users/eduardo/REHO_local/REHO/Projects/HeatingBits/data/profiles/yearly_data_centre_profile_repeated.csv')[
+            'Load_Profile']  # TO-DO: Automate this with custom_path
 
     # Execute clustering
     df = df[attributes]
+
     cl = Clustering(data=df, nb_clusters=[cluster['Periods']], period_duration=cluster['PeriodDuration'], options={"year-to-day": True, "extreme": []})
     cl.run_clustering()
 
@@ -223,6 +229,22 @@ def write_weather_files(attributes, cluster, values_cluster, index_inter):
     df_Irr = values_cluster['Irr']
     filename = os.path.join(path_to_clustering, 'Irr_' + File_ID + '.dat')
     df_Irr.to_csv(filename, index=False, header=False)
+
+    # -------------------------------------------------------------------------------------
+    # E
+    # -------------------------------------------------------------------------------------
+    if 'Emissions' in attributes:
+        df_E = values_cluster['Emissions']
+        filename = os.path.join(path_to_clustering, 'GWP_' + File_ID + '.dat')
+        df_E.to_csv(filename, index=False, header=False)
+
+    # -------------------------------------------------------------------------------------
+    # D
+    # -------------------------------------------------------------------------------------
+    if 'DataLoad' in attributes:
+        df_DL = values_cluster['DataLoad']
+        filename = os.path.join(path_to_clustering, 'DL_' + File_ID + '.dat')
+        df_DL.to_csv(filename, index=False, header=False)
 
     # -------------------------------------------------------------------------------------
     # frequency
@@ -353,8 +375,12 @@ def get_cluster_file_ID(cluster):
         E = '_E'
     else:
         E = ''
+    if 'D' in cluster['Attributes']:
+        D = '_D'
+    else:
+        D = ''
 
-    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + T + I + W + E
+    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + T + I + W + E + D
 
     return File_ID
 

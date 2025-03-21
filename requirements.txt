@@ -1,7 +1,7 @@
 amplpy
 --extra-index-url https://pypi.ampl.com
-ampl_module_base
-ampl_module_highs
+#ampl_module_base
+#ampl_module_highs
 coloredlogs
 geopandas<1.0.0
 kaleido

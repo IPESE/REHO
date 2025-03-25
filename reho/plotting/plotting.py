@@ -98,8 +98,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         showlegend = False
 
     elif plot == 'gwp':
-        change_data['FR'] = ['Capacités', 'Ressources', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', '']
-        change_data['EN'] = ['Capacities', 'Resources', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', '']
+        change_data['FR'] = ['Installation', 'Opération', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', '']
+        change_data['EN'] = ['Installation', 'Operation', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', '']
         df_impact = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
             df_impact = df_impact / era
@@ -116,8 +116,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         showlegend = False
 
     elif plot == 'combined':
-        change_data['FR'] = ['Capacités', 'Ressources', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', ' CHF', 'Impact carbone']
-        change_data['EN'] = ['Capacities', 'Resources', 'Costs [CHF/y]', 'Costs', 'TOTEX', ' CHF', 'Carbon impact']
+        change_data['FR'] = ['Installation', 'Opération', 'Coûts [CHF/an]', 'Coûts', 'TOTEX', ' CHF', 'Impact carbone']
+        change_data['EN'] = ['Installation', 'Operation', 'Costs [CHF/y]', 'Costs', 'TOTEX', ' CHF', 'Carbon impact']
 
         df_costs = df_Economics.xs('costs', level='Perf_type')
         df_impact = df_Economics.xs('impact', level='Perf_type')
@@ -157,8 +157,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
                        for cp in combined_capacities]
     text_resources = ["<b>" + change_data.loc['x_axis_2', lang] + "</b><br>" + str(custom_round(op, decimal))
                       for op in combined_resources]
-    pos_resources = data_resources[indexes][data_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True) + data_scc_resources[indexes][
-        data_scc_resources[indexes] > 0].sum(axis=0).astype(int).reset_index(drop=True)
+    pos_resources = data_resources[indexes][data_resources[indexes] > 0].sum(axis=0).reset_index(drop=True) + data_scc_resources[indexes][
+        data_scc_resources[indexes] > 0].sum(axis=0).reset_index(drop=True)
 
     fig = go.Figure()
     neg_resources = combined_resources - pos_resources
@@ -291,7 +291,7 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         return fig
 
 
-def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', premium_version=None, per_m2=False, additional_costs={}, additional_gwp={},
+def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False, include_avoided=False, additional_costs={}, additional_gwp={},
                   scc=0.177,
                   title=None, filename=None, export_format='html', scaling_factor=1, return_df=False):
     """
@@ -311,10 +311,12 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
         Whether the results should be grouped on *Scn_ID* or *Pareto_ID*.
     label: str
         Indicates the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
-    premium_version : list
-        If enabled, it should be an array containing the retail price and feed-in price of electricity.
+    add_annotation: bool
+        Adds the numerical values along the bar plots.
     per_m2: bool
         Set to True to obtain the results divided by the total ERA.
+    include_avoided : bool or dict
+        By default, avoided costs are not considered in Revenues. If True, avoided costs for electricity self-consumption are considered. Can also be a dict with key 'sc_premium' and value [retail, feed-in] prices of electricity for the self-consumption premium version.
     additional_costs: dict
         Additional costs to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
     additional_gwp: dict
@@ -352,8 +354,8 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
     lang = re.split('_', label)[0]
 
     if plot == 'costs':
-        change_data['FR'] = ['Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'Total', ' CHF', 'Capacités', 'Ressources', '']
-        change_data['EN'] = ['Costs', 'Revenues', '[CHF/y]', 'Costs', 'Total', ' CHF', 'Capacities', 'Resources', '']
+        change_data['FR'] = ['Coûts', 'Revenus', '[CHF/an]', 'Coûts', 'Total', ' CHF', 'Installation', 'Opération', '']
+        change_data['EN'] = ['Costs', 'Revenues', '[CHF/y]', 'Costs', 'Total', ' CHF', 'Installation', 'Operation', '']
         df_costs = df_Economics.xs('costs', level='Perf_type')
         if per_m2:
             df_costs = df_costs / era
@@ -361,14 +363,14 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
             change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=False,
-                                                               premium_version=premium_version, additional_data=additional_costs, scaling_factor=scaling_factor)
+                                                               include_avoided=include_avoided, additional_data=additional_costs, scaling_factor=scaling_factor)
 
         data_scc_resources = pd.DataFrame(0, columns=[indexes], index=data_resources.index)
         data_scc_capacities = pd.DataFrame(0, columns=[indexes], index=data_capacities.index)
 
     elif plot == 'gwp':
-        change_data['FR'] = ['Émissions', 'Évitées', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', 'Capacités', 'Ressources', '']
-        change_data['EN'] = ['Emissions', 'Avoided', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', 'Capacities', 'Resources', '']
+        change_data['FR'] = ['Émissions', 'Évitées', 'Émissions [kgCO2/an]', 'Émissions', 'Total', ' kgCO2', 'Installation', 'Opération', '']
+        change_data['EN'] = ['Emissions', 'Avoided', 'Emissions [kgCO2/y]', 'Emissions', 'Total', ' kgCO2', 'Installation', 'Operation', '']
         df_impact = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
             df_impact = df_impact / era
@@ -376,14 +378,14 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
             change_data.loc['y_axis']['EN'] = "Emissions [kgCO2/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_impact, indexed_on, neg=False,
-                                                               premium_version=premium_version, additional_data=additional_gwp, scaling_factor=scaling_factor)
+                                                               include_avoided=include_avoided, additional_data=additional_gwp, scaling_factor=scaling_factor)
 
         data_scc_resources = pd.DataFrame(0, columns=[indexes], index=data_resources.index)
         data_scc_capacities = pd.DataFrame(0, columns=[indexes], index=data_capacities.index)
 
     elif plot == 'combined':
-        change_data['FR'] = ['Coûts', 'Revenus', 'Coûts [CHF/an]', 'Coûts', 'Total', ' CHF', 'Capacités', 'Ressources', 'Impact carbone']
-        change_data['EN'] = ['Costs', 'Revenues', 'Costs [CHF/y]', 'Costs', 'Total', ' CHF', 'Capacities', 'Resources', 'Carbon impact']
+        change_data['FR'] = ['Coûts', 'Revenus', 'Coûts [CHF/an]', 'Coûts', 'Total', ' CHF', 'Installation', 'Opération', 'Impact carbone']
+        change_data['EN'] = ['Costs', 'Revenues', 'Costs [CHF/y]', 'Costs', 'Total', ' CHF', 'Installation', 'Operation', 'Carbon impact']
 
         df_costs = df_Economics.xs('costs', level='Perf_type')
         df_impact = df_Economics.xs('impact', level='Perf_type')
@@ -433,22 +435,24 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
                   for tot in combined_totex]
 
     fig = go.Figure()
-    for i in range(len(indexes)):
-        fig.add_annotation(x=x2[i], y=-0.04 * max(max(combined_revenues), max(combined_costs)),
-                           text=text_revenues[i], font=dict(size=10),
-                           textangle=0, align='center', valign='top',
-                           showarrow=False)
-        fig.add_annotation(x=x1[i], y=-0.04 * max(max(combined_revenues), max(combined_costs)),
-                           text=text_costs[i], font=dict(size=10),
-                           textangle=0, align='center', valign='top',
-                           showarrow=False
-                           )
-        fig.add_annotation(x=xtick[i], y=combined_costs[i] + 0.04 * max(max(combined_revenues), max(combined_costs)),
-                           text=text_totex[i],
-                           font=dict(size=10, color=layout.loc['TOTEX', "ColorPastel"]),
-                           textangle=0, align='center', valign='top',
-                           showarrow=False
-                           )
+    text_placeholder = 0.04 * max(max(combined_revenues), max(combined_costs))
+    if add_annotation:
+        for i in range(len(indexes)):
+            fig.add_annotation(x=x2[i], y=-text_placeholder,
+                               text=text_revenues[i], font=dict(size=10),
+                               textangle=0, align='center', valign='top',
+                               showarrow=False)
+            fig.add_annotation(x=x1[i], y=-text_placeholder,
+                               text=text_costs[i], font=dict(size=10),
+                               textangle=0, align='center', valign='top',
+                               showarrow=False
+                               )
+            fig.add_annotation(x=xtick[i], y=max(combined_costs[i], combined_revenues[i]) + text_placeholder,
+                               text=text_totex[i],
+                               font=dict(size=10, color=layout.loc['TOTEX', "ColorPastel"]),
+                               textangle=0, align='center', valign='top',
+                               showarrow=False
+                               )
 
     df_scc = costs_scc.xs('investment', level='Category')
     for line, tech in costs.xs('investment', level='Category').iterrows():

@@ -9,7 +9,6 @@ __doc__ = """
 Utilities for plotting functions.
 """
 
-
 # Definition of colors and labels
 cm = dict({'ardoise': '#413D3A', 'perle': '#CAC7C7', 'rouge': '#FF0000', 'groseille': '#B51F1F',
            'canard': '#007480', 'leman': '#00A79F', 'salmon': '#FEA993', 'green': '#69B58A', 'yellow': '#FFB100',
@@ -103,7 +102,7 @@ def divide_hours_into_months():
     return month_ranges
 
 
-def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=None, additional_data=None, scaling_factor=1):
+def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, include_avoided=False, additional_data=None, scaling_factor=1):
     """
     This function prepares the dataframes that will be needed for the plot_performance and plot_expenses
     """
@@ -139,13 +138,24 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, premium_version=No
 
     data_resources.index = pd.MultiIndex.from_tuples(new_indices, names=['type', 'Layer'])
 
-    if premium_version is not None:
-        data_resources.loc[('avoided', 'solar_premium'), :] = data_resources.loc[('avoided', 'PV_SC')] * (premium_version[0] - premium_version[1]) / \
-                                                              premium_version[0]
-        data_resources.loc[('revenues', 'solar_value'), :] = data_resources.loc[('revenues', 'Electricity_export')] + data_resources.loc[
-            ('avoided', 'PV_SC')] - data_resources.loc[('avoided', 'solar_premium')]
-        data_resources = data_resources.drop("PV_SC", level='Layer')
-        data_resources = data_resources.drop("Electricity_export", level='Layer')
+    if include_avoided is not False:
+
+        data_resources.loc[('costs', 'Electricity_import'), :] = data_resources.loc[('costs', 'Electricity_import'), :] + data_resources.loc[('avoided', 'PV_SC'), :]
+        if include_avoided is True:
+            pass
+        elif 'sc_premium' in include_avoided:
+            retail_price = include_avoided['sc_premium'][0]
+            feedin_price = include_avoided['sc_premium'][1]
+
+            data_resources.loc[('revenues', 'solar_value'), :] = data_resources.loc[('revenues', 'Electricity_export')] + feedin_price * data_resources.loc[
+                ('avoided', 'PV_SC')] / retail_price
+
+            data_resources.loc[('avoided', 'sc_premium'), :] = data_resources.loc[('avoided', 'PV_SC')] * (retail_price - feedin_price) / retail_price
+
+            data_resources = data_resources.drop("PV_SC", level='Layer')
+            data_resources = data_resources.drop("Electricity_export", level='Layer')
+    else:
+        data_resources.loc[('avoided', 'PV_SC'), :] = 0
 
     data_resources = data_resources.drop("PV", level='Layer')
 

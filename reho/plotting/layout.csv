@@ -36,8 +36,8 @@ ThermalSolar,Thermal solar panels,TS,Panneaux solaires thermiques,#FF8C00,orange
 PV,PV panel,PV,Panneaux photovoltaïques,#ffd980,yellow_light
 PV_roof,PV roof,PV,PV toiture,#ffd980,yellow_light
 PV_facades,PV facade,PV,PV façade,#ffc94d,yellow_medium
-solar_value,Solar value,Solar,Électricité solaire,#4d9ea6,canard_light
-solar_premium,Solar premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light
+solar_value,Solar electricity,Solar,Électricité solaire,#4d9ea6,canard_light
+sc_premium,Self-consumption premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light
 Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark
 ,,,,,
 HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon

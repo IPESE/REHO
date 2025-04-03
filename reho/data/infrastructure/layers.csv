@@ -1,5 +1,5 @@
 Grid;ref_unit;Network_demand_connection;Network_supply_connection;Cost_demand_cst;Cost_supply_cst;GWP_demand_cst;GWP_supply_cst;Cost_connection;Network_ext;ReinforcementOfNetwork;Cost_network_inv1;Cost_network_inv2;GWP_network_1;GWP_network_2;Network_lifetime
-Electricity;kWh;1;1;0.17;0.33;0.13;0.13;0;2000;400/600/1000/2000;15000;10;0;0;60
+Electricity;kWh;1;1;0.17;0.33;0.13;0.13;0;1e6;400/600/1000/2000/1e6;15000;10;0;0;60
 NaturalGas;kWh;0;1;0;0.14;0;0.23;0;2000;400/600/1000/2000;0;0;0;0;60
 Oil;kWh;0;1;0;0.14;0;0.28;0;2000;400/600/1000/2000;0;0;0;0;60
 Heat;kWh;1;1;0;0.15;0;0.23;0;2000;400/600/1000/2000;0;0;0;0;60

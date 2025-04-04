@@ -10,7 +10,7 @@ if __name__ == '__main__':
     qbuildings_data = reader.read_db(district_id=234, nb_buildings=1)
 
     # Select clustering options for weather data
-    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 12, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()

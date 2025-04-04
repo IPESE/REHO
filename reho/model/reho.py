@@ -53,10 +53,12 @@ class REHO(MasterProblem):
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
 
-    def single_optimization(self, Pareto_ID=0):
+    def single_optimization(self, iteration=0, Pareto_ID=0):
         Scn_ID = self.scenario['name']
         if self.method['district-scale'] or self.method['building-scale']:  # decomposition formulation
-            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
+            print("ITERATION FROM SINGLE OP")
+            print(iteration)
+            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID, iter=iteration)
 
         else:  # compact formulation
             if self.method['use_facades'] or self.method['use_pv_orientation']:
@@ -88,11 +90,11 @@ class REHO(MasterProblem):
         if exitcode == 'infeasible':
             sys.exit(exitcode)
 
-    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
+    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None, iter=0):
 
         # Initiation
         self.pool = mp.Pool(mp.cpu_count())
-        self.iter = 0  # new scenario has to start at iter = 0
+        self.iter = iter
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
         self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
@@ -100,8 +102,19 @@ class REHO(MasterProblem):
         self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
 
+        #if self.iter>0:
+            #from_es=True
+
+        max_iterations = self.iter if self.iter > 0 else self.DW_params['max_iter'] - 1  # Run only once unless iter=0
+        print("MAX ITER")
+        print(max_iterations)
+        print("ITER")
+        print(self.iter)
+
         # Iteration
-        while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
+        #while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
+        while self.iter <= max_iterations:
+
             self.iter += 1
             self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
             self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
@@ -113,6 +126,12 @@ class REHO(MasterProblem):
 
         # Finalization
         self.logger.info(self.stopping_criteria)
+
+        #if from_es==True:
+            #self.iter-=max_iterations
+
+        print("END ITER")
+        print(self.iter)
         self.iter += 1
         self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
@@ -437,6 +456,15 @@ class REHO(MasterProblem):
 
         # get the indexes of the SPs selected by the last MP
         last_results = self.results_MP[Scn_ID][Pareto_ID][self.iter]
+
+        # Get the dictionary containing self.iter
+        parent_dict = self.results_MP[Scn_ID][Pareto_ID]
+
+        # Print possible values for self.iter (i.e., dictionary keys)
+        print("Possible values for self.iter:", list(parent_dict.keys()))
+
+        print("ITER from res")
+        print(self.iter)
         lambdas = last_results["df_DW"]['lambda']
         MP_selection = lambdas[lambdas >= 0.999].index
 

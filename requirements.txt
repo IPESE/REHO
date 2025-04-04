@@ -25,3 +25,4 @@ setuptools
 shapely
 sqlalchemy<2.0.0
 urllib3
+jupyter

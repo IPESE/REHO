@@ -385,12 +385,15 @@ def plot_cluster_KPI_separate(df, save_fig=False):
 
     # Plot MAE
     fig, ax = plt.subplots()
-    fig.set_size_inches(4, 8)
-    df_irr[:, 'MAE'].plot(linestyle='--', color='black', label='MAE (Irr)', ax=ax)
-    df_T[:, 'MAE'].plot(linestyle='-', color='black', label='MAE (T)', ax=ax)
+    fig.set_size_inches(6.5, 5.5)
+    df_irr[:, 'MAE'].plot(linestyle='--', color='black', label='MAE (Irr)', ax=ax, marker='o')
+    df_T[:, 'MAE'].plot(linestyle='-', color='black', label='MAE (T)', ax=ax, marker='o')
+    df_irr[:, 'RMSD'].plot(linestyle='--', color='red', label='RMSD (Irr)', ax=ax, marker='o')
+    df_T[:, 'RMSD'].plot(linestyle='-', color='red', label='RMSD (T)', ax=ax, marker='o')
 
     plt.xlabel('Number of clusters [-]')
-    plt.ylabel('Mean average error (MAE) [-]')
+    plt.ylabel('Key performance indicator (KPI) [-]')
+    #plt.ylabel('Mean average error (MAE) [-]')
     plt.legend(title="KPI")
 
     if save_fig:
@@ -475,18 +478,70 @@ def plot_LDC(cl, save_fig=False):
     IRR_sort = IRR_org.sort_values(ascending=False, ignore_index=True)
 
     # Plot sorted LDC data
-    fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
-    ax[0].scatter(T_sort.index, T_sort.values, color='grey', alpha=0.5)
-    ax[0].scatter(df_T.index, df_T['Text'], c=df_T['Period'], cmap='viridis', s=20)
-    ax[1].scatter(IRR_sort.index, IRR_sort.values, color='grey', alpha=0.5)
-    ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap='viridis', s=20)
+    # fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
+    # sc3=ax[0].scatter(T_sort.index, T_sort.values, color='grey', alpha=0.5, label="Original Weather Data")
+    # sc=ax[0].scatter(df_T.index, df_T['Text'], c=df_T['Period'], cmap='viridis', s=20)
+    # ax[1].scatter(IRR_sort.index, IRR_sort.values, color='grey', alpha=0.5)
+    # sc2=ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap='viridis', s=20)
+    #
+    # ax[0].set_ylabel('Temperature [°C]')
+    # ax[1].set_ylabel('Global Irradiation [W/m$^2$]')
+    # plt.xlabel('Hours [h]')
+    # ax[0].legend(loc='upper left', title="Original Weather Data", ncol=2)
+    # legend2 = ax[0].legend(*sc.legend_elements(), loc='upper right', bbox_to_anchor=(1.0, 1.0), title="Period", ncol=2)
+    # ax[0].add_artist(legend2)
+    #
+    #
+    # legend3 = ax[0].legend(*sc2.legend_elements(), loc='upper right', bbox_to_anchor=(1.0, 1.0), title="Period", ncol=2)
+    # ax[0].add_artist(legend3)
+    #
+    # if save_fig:
+    #     plt.tight_layout()
+    #     plt.savefig('LDC.pdf', format='pdf', dpi=300)
+    # else:
+    #     plt.show()
+    fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 9.5))
 
+    # Scatter plots for first subplot (Temperature)
+    sc1 = ax[0].scatter(T_sort.index, T_sort.values, color='grey', alpha=0.5)
+    sc2 = ax[0].scatter(df_T.index, df_T['Text'], c=df_T['Period'], cmap='viridis', s=20)
+
+    # Scatter plots for second subplot (Irradiation)
+    sc3 = ax[1].scatter(IRR_sort.index, IRR_sort.values, color='grey', alpha=0.5)
+    sc4 = ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap='viridis', s=20)
+
+    # Set labels
     ax[0].set_ylabel('Temperature [°C]')
     ax[1].set_ylabel('Global Irradiation [W/m$^2$]')
     plt.xlabel('Hours [h]')
 
+    # Create the legend elements for both the grey and color-mapped scatter plots
+    # Original Data Legend for the first plot (Temperature)
+    handles_T, labels_T = sc2.legend_elements()
+    handles_T = [sc1] + handles_T  # Add grey scatter as the first handle
+    labels_T = ["Original weather data"] + [f"Period {label}" for label in
+                                            labels_T]  # Add "Period" in front of each label
+
+    # Period Legend for the first plot (Temperature)
+    legend2 = ax[0].legend(handles=handles_T, labels=labels_T, loc='upper right', ncol=2)
+    ax[0].add_artist(legend2)
+
+    # Original Data Legend for the second plot (Irradiation)
+    handles_IRR, labels_IRR = sc4.legend_elements()
+    handles_IRR = [sc3] + handles_IRR  # Add grey scatter as the first handle
+    labels_IRR = ["Original weather data"] + [f"Period {label}" for label in
+                                              labels_IRR]  # Add "Period" in front of each label
+
+    # Period Legend for the second plot (Irradiation)
+    legend3 = ax[1].legend(handles=handles_IRR, labels=labels_IRR, loc='upper right',
+                           ncol=2)
+    ax[1].add_artist(legend3)
+
+    # Tight layout and saving the figure
     if save_fig:
         plt.tight_layout()
         plt.savefig('LDC.pdf', format='pdf', dpi=300)
     else:
         plt.show()
+
+

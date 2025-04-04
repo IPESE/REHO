@@ -192,6 +192,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df2 = get_ampl_data(ampl, 'Grid_supply', multi_index=True)
 
         df_cs = get_ampl_data(ampl, 'Cost_supply', multi_index=True)
+        #print("Cost supply from ampl:")
+        #print(df_cs)
         df_cs = df_cs.reorder_levels((1, 0, 2, 3))
         df_cd = get_ampl_data(ampl, 'Cost_demand', multi_index=True)
         df_cd = df_cd.reorder_levels((1, 0, 2, 3))

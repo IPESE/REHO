@@ -82,6 +82,42 @@ class SubProblem:
         if self.method_sp['use_pv_orientation']:
             self.set_PV_models(ampl)
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
+
+        # # Accessing the sets: House, ResourceBalances, Period, Time
+        # house_values = ampl.getSet("House").getValues().toList()
+        # resource_balances_values = ampl.getSet("ResourceBalances").getValues().toList()
+        # period_values = ampl.getSet("Period").getValues().toList()
+        #
+        # # Access the parameter TimeStart correctly using getValues()
+        # time_start_value = ampl.getParameter("TimeStart").getValues().toList()[
+        #     0]  # Get the first value for TimeStart (which is 1)
+        #
+        # # Iterate over each combination of House, ResourceBalances, and Period
+        # for h in house_values:
+        #     for l in resource_balances_values:
+        #         for p in period_values:
+        #             # Directly access TimeEnd for the period p
+        #             time_end_value = ampl.getParameter("TimeEnd")[
+        #                 p]  # TimeEnd is a scalar parameter, so directly access it
+        #             time_values = list(range(int(time_start_value),
+        #                                      int(time_end_value) + 1))  # Time range from TimeStart to TimeEnd[p]
+        #
+        #             # Access Cost_supply for t = 1 as an example
+        #             t = time_values[0]  # Take the first time step (i.e., t = TimeStart)
+        #             try:
+        #                 # Access the Cost_supply directly, without using .getValue() since it's a float
+        #                 cost_value = ampl.getParameter("Cost_supply")[h, l, p, t]  # Direct access
+        #                 print(f"Cost_supply[{h}, {l}, {p}, {t}] = {cost_value}")
+        #             except Exception as e:
+        #                 print(f"Error accessing Cost_supply[{h}, {l}, {p}, {t}]: {e}")
+        #             try:
+        #                 # Access Cost_supply_cst for the resource balance l (this is a scalar parameter)
+        #                 cost_supply_cst_value = ampl.getParameter("Cost_supply_cst")[
+        #                     l]  # Access Cost_supply_cst for the resource balance l
+        #                 print(f"Cost_supply_cst[{l}] = {cost_supply_cst_value}")
+        #             except Exception as e:
+        #                 print(f"Error accessing Cost_supply_cst[{l}]: {e}")
+
         ampl = self.set_scenario(ampl)
         return ampl
 

@@ -5,7 +5,7 @@ if __name__ == '__main__':
     reader = QBuildingsReader()
     reader.establish_connection('Suisse')  # connect to QBuildings database
     #qbuildings_data = reader.read_db(district_id=5, egid=['2034144/2034143/2749579/2034146/2034145'])
-    qbuildings_data = reader.read_db(district_id=7306, nb_buildings=1000)
+    qbuildings_data = reader.read_db(district_id=16922, nb_buildings=1000)
 
     Attributes = ['Text', 'Irr']
     nb_clusters = [12, 24, 36, 48]

@@ -455,6 +455,12 @@ class MasterProblem:
 
         # assign data
         MP_parameters = {}
+        if 'Cost_supply_network' in self.parameters:
+            MP_parameters['Cost_supply_network'] = self.parameters['Cost_supply_network']
+
+        if 'Cost_demand_network' in self.parameters:
+            MP_parameters['Cost_demand_network'] = self.parameters['Cost_demand_network']
+
         MP_parameters['Costs_inv_rep_SPs'] = df_Performance.Costs_inv + df_Performance.Costs_rep
         MP_parameters['Costs_ft_SPs'] = pd.DataFrame(np.round(df_Performance.Costs_ft, 6)).set_axis(['Costs_ft_SPs'], axis=1)
         MP_parameters['GWP_house_constr_SPs'] = pd.DataFrame(df_Performance.GWP_constr).set_axis(['GWP_house_constr_SPs'], axis=1)

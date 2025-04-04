@@ -5,11 +5,11 @@ if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(district_id=234, nb_buildings=2)
+    reader.establish_connection('Suisse')
+    qbuildings_data = reader.read_db(district_id=118, nb_buildings=5)
 
     # Select clustering options for weather data
-    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 12, 'PeriodDuration': 24}
 
     # Set scenario
     scenario = dict()
@@ -32,4 +32,4 @@ if __name__ == '__main__':
     reho.generate_pareto_curve()
 
     # Save results
-    reho.save_results(format=['xlsx', 'pickle'], filename='2b')
+    reho.save_results(format=['xlsx', 'pickle'], filename='2bref')

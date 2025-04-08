@@ -3,10 +3,9 @@ import logging
 
 from amplpy import AMPL, Environment
 
-import reho.model.preprocessing.mobility_generator as EV_gen
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
-import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as weather
+from reho.model.preprocessing.skydome import irradiation_to_df
 from reho.model.preprocessing.QBuildings import *
 
 __doc__ = """
@@ -80,7 +79,7 @@ class SubProblem:
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
         if self.method_sp['use_pv_orientation']:
-            self.set_PV_models(ampl)
+            self.set_skydome_parameters(ampl)
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
         ampl = self.set_scenario(ampl)
         return ampl
@@ -217,10 +216,10 @@ class SubProblem:
         clustering_directory = os.path.join(path_to_clustering, File_ID)
         ampl.cd(clustering_directory)
 
-        ampl.readData('frequency.dat')
-        ampl.readData('index.dat')
-        self.parameters_to_ampl['T_ext'] = np.loadtxt(os.path.join(clustering_directory, 'Text.dat'))
-        self.parameters_to_ampl['I_global'] = np.loadtxt(os.path.join(clustering_directory, 'Irr.dat'))
+        ampl.readData('frequency.csv')
+        ampl.readData('index.csv')
+        self.parameters_to_ampl['T_ext'] = self.local_data["T_ext"]
+        self.parameters_to_ampl['Irr'] = self.local_data["Irr"]
 
         ampl.cd(path_to_ampl_model)
 
@@ -374,17 +373,16 @@ class SubProblem:
 
         self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
 
-    def set_PV_models(self, ampl):
+    def set_skydome_parameters(self, ampl):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
-        df_dome = skydome.skydome_to_df(self.local_data)
+        df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))
         self.parameters_to_ampl['Sin_a'] = df_dome.Sin_a.values
         self.parameters_to_ampl['Cos_a'] = df_dome.Cos_a.values
         self.parameters_to_ampl['Sin_e'] = df_dome.Sin_e.values
         self.parameters_to_ampl['Cos_e'] = df_dome.Cos_e.values
 
-        df_irr = skydome.irradiation_to_df(ampl, self.local_data["df_Irradiation"], self.local_data["df_Timestamp"])
-        self.parameters_to_ampl['Irr'] = df_irr
+        self.parameters_to_ampl['Irr_patches'] = irradiation_to_df(self.local_data)
         # On Flat Roofs optimal Orientation of PV panel is chosen by the solver, Construction of possible Configurations
         # Azimuth = np.array([])
         # Tilt = np.array([])
@@ -480,9 +478,9 @@ class SubProblem:
                 self.set_indexed_sp['Surface'] = np.append(self.set_indexed_sp['Surface'], np_facades)
 
     def send_parameters_and_sets_to_ampl(self, ampl):
-        # -----------------------------------------------------------------------------------------------------#
-        # Load data to AMPLPY depending on their type
-        # -----------------------------------------------------------------------------------------------------#
+        """
+        Load data to AMPL depending on their type
+        """
 
         for key in self.parameters_sp:
             self.parameters_to_ampl[key] = self.parameters_sp[key]

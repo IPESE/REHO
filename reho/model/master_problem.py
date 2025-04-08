@@ -8,8 +8,10 @@ import coloredlogs
 import pandas as pd
 
 import reho.model.infrastructure as infrastructure
-import reho.model.postprocessing.write_results as write_results
 from reho.model.preprocessing.local_data import *
+import reho.model.preprocessing.mobility_generator as mobility
+import reho.model.postprocessing.write_results as write_results
+
 from reho.model.sub_problem import *
 
 __doc__ = """
@@ -456,8 +458,8 @@ class MasterProblem:
         clustering_directory = os.path.join(path_to_clustering, self.local_data['File_ID'])
         ampl_MP.cd(clustering_directory)
 
-        ampl_MP.readData('frequency.dat')
-        ampl_MP.readData('index.dat')
+        ampl_MP.readData('frequency.csv')
+        ampl_MP.readData('index.csv')
         ampl_MP.cd(path_to_ampl_model)
 
         # -------------------------------------------------------------------------------------------------------------
@@ -499,7 +501,7 @@ class MasterProblem:
         MP_parameters['Area_tot'] = self.ERA
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            mobility_parameters = EV_gen.generate_mobility_parameters(self.cluster, self.parameters, self.infrastructure, self.modal_split)
+            mobility_parameters = mobility.generate_mobility_parameters(self.cluster, self.parameters, self.infrastructure, self.modal_split)
             for param in mobility_parameters:
                 MP_parameters[param] = mobility_parameters[param]
 
@@ -566,7 +568,7 @@ class MasterProblem:
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]),
                                                           ['PT_train', 'PT_bus'])
-            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars'] = EV_gen.generate_transport_units_sets(self.infrastructure.UnitsOfType)
+            MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars'] = mobility.generate_transport_units_sets(self.infrastructure.UnitsOfType)
             MP_set_indexed['Distances'] = np.array(MP_parameters['DailyDist'].index)
 
         if self.method['external_district']:

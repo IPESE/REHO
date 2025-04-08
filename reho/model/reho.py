@@ -621,8 +621,7 @@ class REHO(MasterProblem):
         return df
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
-        df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data, self.cluster,
-                                              self.local_data["df_Timestamp"], self.local_data["df_Emissions"])
+        df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data)
         self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
         self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_Economics
 

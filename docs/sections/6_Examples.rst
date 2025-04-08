@@ -129,11 +129,19 @@ Co-optimization
 ====================================
 Multiple districts can be optimized together in order to calculate EV charging exchanges between districts. 
 This feature can be used to conduct analyses on EV fleets at the city scale.  
-Examples 6b and 6c demonstrate how to use this feature step by step. In example 6b, only one district is optimized with external charging option available. The optimized district is also parametrized with a load on EV charger representing incoming EVs from other districts. Example 6c describes how to optimize a whole city based on 3 typical districts (resulting from clustering). 
+Example 6b demonstrates how to use this feature step by step. Only one district is optimized with external charging option available. The optimized district is also parameterized with a load on EV charger representing incoming EVs from other districts.
 
-.. figure:: ../images/cooptimization.svg
-   :width: 900
-   :align: center
-   :name: fig-cooptimization-flowchart
+7. Interperiod storage
+--------------------------
 
-   Flowchart process of a city co-optimization (example 6c)
+Investigate interperiod storage units in a building facing grid constraints (e.g. a building with limited import or export capacity).
+
+Hydrogen and biomethane storage
+====================================
+
+.. literalinclude:: ../../scripts/examples/7a_rSOC_IP.py
+
+Hydrogen production and export
+====================================
+
+.. literalinclude:: ../../scripts/examples/7b_rSOC_H2_export.py

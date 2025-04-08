@@ -13,12 +13,13 @@ from sqlalchemy import create_engine, MetaData, select
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import SAWarning
 
-import reho.model.preprocessing.skydome as skydome
 from reho.paths import *
 
 __doc__ = """
 Handles data for buildings characterization.
 """
+
+df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))
 
 
 class QBuildingsReader:
@@ -47,10 +48,6 @@ class QBuildingsReader:
         self.data = {}
         self.load_facades = load_facades
         self.load_roofs = load_roofs
-
-        self.local_data = dict()
-        self.local_data["df_Area"] = pd.read_csv(path_to_areas, header=None)
-        self.local_data["df_Cenpts"] = pd.read_csv(path_to_cenpts, header=None)
 
     def establish_connection(self, db):
         """
@@ -154,7 +151,7 @@ class QBuildingsReader:
             self.data['facades'] = read_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'], self.local_data)
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'])
 
         if self.load_roofs:
             self.data['roofs'] = file_reader(path_handler(roofs_filename))
@@ -277,7 +274,7 @@ class QBuildingsReader:
                 self.data['facades'].to_csv('facades.csv', index=False)
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'], self.local_data)
+            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
@@ -520,18 +517,15 @@ def get_facades(self, buildings):
     return self.data['facades']
 
 
-def calculate_id_building_shadows(df_angles, id_building, local_data):
+def calculate_id_building_shadows(df_angles, id_building):
     df_angles['to_id_building'] = pd.to_numeric(df_angles['to_id_building'])
     df_angles = df_angles.set_index('to_id_building')
     df_angles = df_angles.xs(id_building)
 
-    df_dome = skydome.skydome_to_df(local_data)
-
     df_shadow = pd.DataFrame()
 
     for az in df_dome.azimuth.unique():
-        df_angles.loc[:, 'cosa2'] = df_angles.apply(lambda x: skydome.f_cos([x['azimuth'], az]), axis=1)
-        # df_cosa2 = df_id_building.apply(lambda x: skydome.f_cos([x['azimuth'], az]), axis=1)
+        df_angles['cosa2'] = np.cos(np.radians(df_angles['azimuth'] - az))
         df = df_angles.loc[(df_angles['cosa2'] > 0)].copy()
         # filter buildings which are more than 180 degree apart from patch with az
         df.loc[:, 'tanba'] = df.tanb * df.cosa2
@@ -578,8 +572,10 @@ def neighbourhood_angles(buildings, facades):
             # facades.loc[f]['HEIGHT_Z'] + facades.loc[f]['HEIGHT'] #take foot of facades/ HEIGHT_Z is upperbound
             df_c['tanb'] = df_c.dz / df_c.dxy
             df_c['cosa'] = df_c.dy / df_c.dxy
-            df_c['azimuth'] = df_c[['dx', 'dy']].apply(skydome.f_atan, axis=1)
-            df_c['beta'] = df_c[['dz', 'dxy']].apply(skydome.f_atan, axis=1)
+            df_c['azimuth'] = np.degrees(np.arctan2(df_c['dx'], df_c['dy'])) % 360
+            df_c['azimuth'] = df_c['azimuth'].round().astype(int)
+            df_c['beta'] = np.degrees(np.arctan2(df_c['dz'], df_c['dxy'])) % 360
+            df_c['beta'] = df_c['beta'].round().astype(int)
             df_c = pd.concat([df_c], keys=[f], names=['UID'])
             df_BUI = pd.concat((df_BUI, df_c))
 
@@ -594,7 +590,7 @@ def neighbourhood_angles(buildings, facades):
     return df_angles
 
 
-def return_shadows_district(buildings, facades, local_data):
+def return_shadows_district(buildings, facades):
     df_shadows = pd.DataFrame()
 
     if os.path.exists('data/angles.csv'):
@@ -605,7 +601,7 @@ def return_shadows_district(buildings, facades, local_data):
     for b in buildings:
         id_building = int(buildings[b]['id_building'])
         if id_building in df_angles['id_building'].values:  # check if angle calculation for id_building exists
-            df_id_building = calculate_id_building_shadows(df_angles, id_building, local_data)
+            df_id_building = calculate_id_building_shadows(df_angles, id_building)
             idx = np.repeat(id_building, len(df_id_building))
             df_id_building = df_id_building.set_index(idx)
         else:
@@ -628,7 +624,6 @@ def return_shadows_id_building(id_building, df_district, local_data):
     else:
         df = df_district
     df = df.xs(id_building)
-    df_dome = skydome.skydome_to_df(local_data)
 
     df_beta_dome = pd.DataFrame()
     for az in df_dome.azimuth:

@@ -82,16 +82,11 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
     >>> people_gain, eud_dhw, eud_elec = eud_profiles(buildings_data, cluster, use_custom_profiles=my_profiles)
     """
     # get cluster information
-    df_Timestamp.Date = pd.to_datetime(df_Timestamp['Date'], format="%m/%d/%Y/%H")
+    df_Timestamp.Date = df_Timestamp['Date']
 
     np_gain_all = np.array([])
     np_dhw_all = np.array([])
     np_el_all = np.array([])
-
-    if use_custom_profiles:
-        # Replace filepath in dictionary to typical profiles
-        for key, val in use_custom_profiles.items():
-            use_custom_profiles[key] = annual_to_typical(cluster, annual_file=val, df_Timestamp=df_Timestamp)
 
     for b in buildings_data:  # iterate over buildings
         # get SIA Profiles
@@ -101,9 +96,9 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
         else:
             ratios = buildings_data[b]['ratio'].split('/')
         status_buildings = buildings_data[b]['status'].split(',')
-        np_gain_class = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
-        np_dhw_class = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
-        np_el_class = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
+        np_gain_b = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
+        np_dhw_b = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
+        np_el_b = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
             rooms = read_sia2024_rooms_sia380_1(class_380, df_SIA_380)
@@ -126,30 +121,11 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
                 if include_stochasticity:
                     df_profiles = apply_stochasticity(df_profiles, RV_scaling, SF)
 
-                df_custom_profiles = pd.DataFrame()
-                if use_custom_profiles:
-                    for key, df_key in use_custom_profiles.items():
-                        df_custom_profiles[key] = df_key.xs(i + 1, level='Period').loc[:, b]
-                    if include_stochasticity:
-                        df_custom_profiles = apply_stochasticity(df_custom_profiles, RV_scaling, SF)
+                elec_gain = df_profiles['elecgain_W/m2'] * area_net_floor
+                elec = df_profiles['electricity_W/m2'] * area_net_floor
 
-                if not df_custom_profiles.empty and 'electricity' in df_custom_profiles.columns:
-                    conv_heat_factor = 0.70
-                    elec_gain = conv_heat_factor * df_custom_profiles['electricity']
-                    elec = df_custom_profiles['electricity']
-                else:
-                    elec_gain = df_profiles['elecgain_W/m2'] * area_net_floor
-                    elec = df_profiles['electricity_W/m2'] * area_net_floor
-
-                if not df_custom_profiles.empty and 'occupancy' in df_custom_profiles.columns:
-                    people_gain = df_custom_profiles['occupancy']
-                else:
-                    people_gain = df_profiles['heatgainpeople_W/m2'] * area_net_floor
-
-                if not df_custom_profiles.empty and 'dhw' in df_custom_profiles.columns:
-                    hotwater = df_custom_profiles['dhw']
-                else:
-                    hotwater = df_profiles['hotwater_l/m2'] * area_net_floor
+                people_gain = df_profiles['heatgainpeople_W/m2'] * area_net_floor
+                hotwater = df_profiles['hotwater_l/m2'] * area_net_floor
 
                 heatgain_day = (people_gain + elec_gain) / 1000  # kW profiles for each typical day
                 hot_water_day = hotwater  # L profiles for each typical day
@@ -182,13 +158,39 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
                 np_dhw = np.concatenate((np_dhw, dhw_period))
                 np_el = np.concatenate((np_el, el_period))
 
-            np_gain_class += np_gain
-            np_dhw_class += np_dhw
-            np_el_class += np_el
+            # Sum values for all affectations of the building
+            np_gain_b += np_gain
+            np_dhw_b += np_dhw
+            np_el_b += np_el
 
-        np_gain_all = np.append(np_gain_all, np_gain_class)
-        np_dhw_all = np.append(np_dhw_all, np_dhw_class)
-        np_el_all = np.append(np_el_all, np_el_class)
+        # Append values for all buildings
+        np_gain_all = np.append(np_gain_all, np_gain_b)
+        np_dhw_all = np.append(np_dhw_all, np_dhw_b)
+        np_el_all = np.append(np_el_all, np_el_b)
+
+    # Overwrite with custom profiles if provided
+    if use_custom_profiles:
+
+        # Heat gains from people
+        conv_heat_factor = 0.70
+        np_gain_people = np.maximum(np_gain_all - conv_heat_factor * np_el_all, 0)
+
+        if 'electricity' in use_custom_profiles:
+            df = annual_to_typical(cluster, annual_file=use_custom_profiles['electricity'], df_Timestamp=df_Timestamp)
+            np_el_all = np.array([])
+            for b in buildings_data:
+                el_b = df[b].values / 1000
+                np_el_all = np.append(np_el_all, el_b)
+
+            # Correct total heat gains
+            np_gain_all = np_gain_people + conv_heat_factor * np_el_all
+
+        if 'dhw' in use_custom_profiles:
+            df = annual_to_typical(cluster, annual_file=use_custom_profiles['dhw'], df_Timestamp=df_Timestamp)
+            np_dhw_all = np.array([])
+            for b in buildings_data:
+                dhw_b = df[b].values
+                np_dhw_all = np.append(np_dhw_all, dhw_b)
 
     return np_gain_all, np_dhw_all, np_el_all
 
@@ -250,25 +252,61 @@ def create_random_var(sd_amplitude, sd_timeshift):
 def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     """
     From an annual profile (8760 values), extracts the values corresponding to the typical days.
+
+    Parameters
+    ----------
+    cluster : dict
+        Dictionary containing 'PeriodDuration' indicating number of hours per typical day.
+    annual_file : str
+        Path to annual CSV file containing at least a 'time(UTC)' column.
+    df_Timestamp : pd.DataFrame
+        DataFrame containing at least a 'Date' column indicating typical day dates.
+    typical_file : str, optional
+        Path to save the extracted typical day CSV file.
+
+    Returns
+    -------
+    df_typical : pd.DataFrame
+        DataFrame indexed by ['Period', 'Hour'] containing typical day data.
     """
 
-    # Get which days are the typical ones
-    typical_days = pd.Series([i.strftime("%m/%d/%Y") for i in df_Timestamp.Date]).values
-    df_annual = file_reader(annual_file)
-    t1 = pd.to_datetime('1/1/2005', dayfirst=True, infer_datetime_format=True)
+    # Load annual data
+    df_annual = pd.read_csv(annual_file, parse_dates=['time(UTC)'])
+    df_annual.set_index('time(UTC)', inplace=True)
 
-    # hour 1 is between 0:00 - 1:00 and is indexed with starting hour so 0:00
-    for h in df_annual.index.values:
-        df_annual.loc[h, 'h'] = t1 + timedelta(hours=(int(h) - 1))
+    # Ensure timezone consistency
+    # annual_tz = df_annual.index.tz
 
-    df_annual = df_annual.set_index('h')
+    typical_dates = pd.to_datetime(df_Timestamp['Date']).dt.normalize()
+
     df_typical = pd.DataFrame()
-    for i, td in enumerate(typical_days):
-        df_typical = pd.concat([df_typical, df_annual.loc[td]], sort=True)
-    periods = list(range(1, len(typical_days) + 1))
+
+    # Extract data for typical days (excluding extreme periods)
+    for date in typical_dates[:-2]:
+        day_data = df_annual[date:date + timedelta(hours=23)]
+        df_typical = pd.concat([df_typical, day_data])
+
+    # Handle extreme periods (minimum and maximum of the annual data)
+    min_values = df_annual.min().to_frame().T
+    max_values = df_annual.max().to_frame().T
+
+    df_typical = pd.concat([df_typical, min_values, max_values], ignore_index=True)
+
+    # Create multi-index [Period, Hour]
+    regular_periods = len(typical_dates) - 2
+    periods = list(range(1, regular_periods + 1))
     hours = list(range(1, cluster['PeriodDuration'] + 1))
-    df_typical = df_typical.reset_index(drop=True)
-    df_typical = df_typical.set_index(pd.MultiIndex.from_product([periods, hours], names=['Period', 'Hour']))
+
+    # Add extreme periods with duration = 1
+    periods += [regular_periods + 1, regular_periods + 2]
+    hours += [1, 1]
+
+    df_typical.index = pd.MultiIndex.from_tuples(
+        [(p, h) for p in range(1, regular_periods + 1) for h in range(1, cluster['PeriodDuration'] + 1)] +
+        [(regular_periods + 1, 1), (regular_periods + 2, 1)],
+        names=['Period', 'Hour']
+    )
+
     if typical_file:
         df_typical.to_csv(typical_file)
 
@@ -277,10 +315,7 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
 
 def solar_gains_profile(buildings_data, sia_data, local_data):
     """
-    Computes the solar heat gains from the irradiance.
-
-    It uses a typical irradiation file and uses `calc_orientation_profiles` to obtain the irradiation on the west
-    facades. Additionally, the solar gains depends on the facades and on a window fraction (obtained from SIA 2024).
+    Computes the solar heat gains from the irradiance. Heat gains depend on the facades surfaces and on a window fraction (obtained from SIA 2024).
 
     Parameters
     ----------
@@ -297,10 +332,10 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
         Solar gains for each timesteps.
     """
 
-    irr_west = local_data["df_Westfacades_irr"]
+    irr = local_data["Irr"] * 0.6  # factor to convert global to horizontal irradiance
 
-    g = np.repeat(0.5, len(irr_west))  # g-value SIA 2024
-    g[irr_west > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
+    g = np.repeat(0.5, len(irr))  # g-value SIA 2024
+    g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:
@@ -318,7 +353,7 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
             glass_fraction_2024 = df['Taux de surface vitrée']
             glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
             glass_fraction_building += glass_fraction_rooms * float(ratios[i])
-        gains = irr_west / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
+        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
         # glass fraction on facades from SIA 2024, 0.9 SIA 2024: acknowledge perpendicular rays
         np_gains = np.append(np_gains, gains)
 

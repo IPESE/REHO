@@ -14,10 +14,10 @@ Biomethane_export,Biomethane export,CH4 out,Biogaz (export),#8B4513,brown
 Hydrogen_import,Hydrogen import,H2 in,Hydrogène (import),#82a4d6,lightblue
 Hydrogen_export,Hydrogen export,H2 out,Hydrogène (export),#82a4d6,lightblue
 ,,,,,
-Oil_import,Oil,OIL,Mazout (import),#000000,dark
+Oil_import,Oil import,OIL,Mazout (import),#000000,dark
 NaturalGas_import,Natural gas import,NG,Gaz naturel (import),#413D3A,ardoise
 Wood_import,Wood import,WD,Bois (import),#8B4513,brown
-Gasoline_import,Gasoline,GAS,Essence (import),#55552b,kaki
+Gasoline_import,Gasoline import,GAS,Essence (import),#55552b,kaki
 Data_export,Data processing,ICT,Données traitées,#ffcc99,skin
 ,,,,,
 Boiler,Fossil-fuel boiler,BO,Chaudière fossile,#000000,dark
@@ -28,8 +28,8 @@ NG_Cogeneration_district,District cogeneration,COGEN,Cogénération (district),#
 WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown
 ,,,,,
 ElectricalHeater,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light
-ElectricalHeater_DHW,Electrical heater DHW,EH (DHW),Chauffage électrique (ECS),#ff6666,groseille_light
-ElectricalHeater_SH,Electrical heater SH,EH (SH),Chauffage électrique,#ff6666,groseille_light
+ElectricalHeater_DHW,Electrical heater (DHW),EH (DHW),Chauffage électrique (ECS),#ff6666,groseille_light
+ElectricalHeater_SH,Electrical heater (SH),EH (SH),Chauffage électrique,#ff6666,groseille_light
 ,,,,,
 ThermalSolar,Thermal solar panels,TS,Panneaux solaires thermiques,#FF8C00,orange
 ,,,,,
@@ -85,8 +85,8 @@ SH_heat,Space heating,SH,Chauffage,#FF8C00,orange
 DHW,Domestic hot water,DHW,Eau chaude sanitaire,#B22222,bordeaux
 ,,,,,
 Tank,Tank,Tank,Réservoir,#FF8C00,orange
-WaterTankSH,Water Tank SH,WT (SH),Ballon d'eau (chauffage),#FF8C00,orange
-WaterTankDHW,Water Tank DHW,WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux
+WaterTankSH,Water tank (SH),WT (SH),Ballon d'eau (chauffage),#FF8C00,orange
+WaterTankDHW,Water tank (DHW),WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux
 ,,,,,
 DataHeat_SH,Data centers,ICT,Centre de données,#ffcc99,skin
 DataHeat_DHW,Data centers (DHW),ICT,Centre de données (ECS),#ffcc99,skin

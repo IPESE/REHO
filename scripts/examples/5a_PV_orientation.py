@@ -20,7 +20,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'use_pv_orientation': True, 'building-scale': True}
+    method = {'use_pv_orientation': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()

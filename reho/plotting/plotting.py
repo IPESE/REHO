@@ -1430,7 +1430,7 @@ def plot_composite_curve(df_Results, cluster, periods=["Yearly"], filename=None,
     # get index typical periods
     File_ID = get_cluster_file_ID(cluster)
     clustering_directory = os.path.join(path_to_clustering, File_ID)
-    filename = os.path.join(clustering_directory, 'index.dat')
+    filename = os.path.join(clustering_directory, 'index.csv')
     df = np.loadtxt(filename, skiprows=1, max_rows=8760)
     df = pd.DataFrame(df).set_index(0)
 

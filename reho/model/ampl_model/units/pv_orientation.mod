@@ -28,7 +28,7 @@ param Cos_e{pt in Patches};
 
 param Sin_a{pt in Patches};
 param Cos_a{pt in Patches};
-param Irr{pt in Patches, p in Period, t in Time[p]};
+param Irr_patches{pt in Patches, p in Period, t in Time[p]};
 #--------------------------------------------------------------------------------------------------------------------#
 # aid parameter for trigonomie calculation
 param pi := 4*atan(1);
@@ -73,8 +73,8 @@ param unshaded_share{h in  House, s in SurfaceOfHouse[h], (az,ti) in ConfigOfSur
 #--------------------------------------------------------------------------------------------------------------------#
 #  Irradiation density on oriented panel W/m2
 #--------------------------------------------------------------------------------------------------------------------#
-param Irr_pv {h in House, s in SurfaceOfHouse[h], (az,ti)in ConfigOfSurface[s], p in Period, t in Time[p] } :=   sum{pt in Patches}unshaded_share[h,s,az,ti,pt] *Rotation[s,az,ti,pt]*Irr[pt,p,t] ; 
-param Irr_pv_without_loss {h in House, s in SurfaceOfHouse[h], (az,ti)in ConfigOfSurface[s], p in Period, t in Time[p] } :=   sum{pt in Patches}Rotation[s,az,ti,pt]*Irr[pt,p,t] ;
+param Irr_pv {h in House, s in SurfaceOfHouse[h], (az,ti)in ConfigOfSurface[s], p in Period, t in Time[p] } :=   sum{pt in Patches}unshaded_share[h,s,az,ti,pt] *Rotation[s,az,ti,pt]*Irr_patches[pt,p,t] ;
+param Irr_pv_without_loss {h in House, s in SurfaceOfHouse[h], (az,ti)in ConfigOfSurface[s], p in Period, t in Time[p] } :=   sum{pt in Patches}Rotation[s,az,ti,pt]*Irr_patches[pt,p,t] ;
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 # PV PANEL MODEL
@@ -94,15 +94,6 @@ param PVA_efficiency_ref{u in UnitsOfType['PV']} default 0.2;		#- 		[1]
 param PVA_efficiency_var{u in UnitsOfType['PV']} default 0.0012;	#- 		[1]
 
 param HouseSurfaceArea{h in House, s in SurfaceOfHouse[h]} default ERA[h]/3;
-
-																									
-#param PVA_temperature{u in UnitsOfType['PV'],p in Period,t in Time[p]} :=
-#	(PVA_U_h[u]*(T_ext[p,t]+273.15))/(PVA_U_h[u] - PVA_efficiency_var[u]*(I_global[p,t])) +
-#	(I_global[p,t])*(PVA_F[u] - PVA_efficiency_ref[u] - PVA_efficiency_var[u]*PVA_temperature_ref[u])/
-#	(PVA_U_h[u] - PVA_efficiency_var[u]*(I_global[p,t]));											#K
-
-#param PVA_efficiency{u in UnitsOfType['PV'],p in Period,t in Time[p]} :=
-#	PVA_efficiency_ref[u]-PVA_efficiency_var[u]*(PVA_temperature[u,p,t]-PVA_temperature_ref[u]); 	#-	
 
 param PVA_temperature{h in House, u in UnitsOfType['PV'],s in SurfaceOfHouse[h], (az,ti) in ConfigOfSurface[s], p in Period,t in Time[p]} :=
 	(PVA_U_h[u]*(T_ext[p,t]+273.15))/(PVA_U_h[u] - PVA_efficiency_var[u]*(Irr_pv[h,s,az,ti,p,t])) +

@@ -138,7 +138,6 @@ class MasterProblem:
                                                      'ExternalEV_Costs_positive']
 
         self.df_fix_Units = pd.DataFrame()
-        self.fix_units_list = []
 
     def initialize_optimization_tracking_attributes(self):
         # internal IT parameter
@@ -323,13 +322,13 @@ class MasterProblem:
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
-            for unit in self.fix_units_list:
-                if unit == 'PV':
-                    ampl.getVariable('Units_Mult').get('PV_' + h).fix(self.df_fix_Units.Units_Mult.loc['PV_' + h] * 0.999)
-                    ampl.getVariable('Units_Use').get('PV_' + h).fix(float(self.df_fix_Units.Units_Use.loc['PV_' + h]))
+            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
+                if unit == 'PV_' + h:
+                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
                 else:
-                    ampl.getVariable('Units_Mult').get(unit + '_' + h).fix(self.df_fix_Units.Units_Mult.loc[unit + '_' + h])
-                    ampl.getVariable('Units_Use').get(unit + '_' + h).fix(float(self.df_fix_Units.Units_Use.loc[unit + '_' + h]))
+                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
 
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
@@ -758,13 +757,13 @@ class MasterProblem:
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
-            for unit in self.fix_units_list:
-                if unit == 'PV':
-                    ampl.getVariable('Units_Mult').get('PV_' + h).fix(self.df_fix_Units.Units_Mult.loc['PV_' + h] * 0.999)
-                    ampl.getVariable('Units_Use').get('PV_' + h).fix(float(self.df_fix_Units.Units_Use.loc['PV_' + h]))
+            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
+                if unit == 'PV_' + h:
+                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
                 else:
-                    ampl.getVariable('Units_Mult').get(unit + '_' + h).fix(self.df_fix_Units.Units_Mult.loc[unit + '_' + h])
-                    ampl.getVariable('Units_Use').get(unit + '_' + h).fix(float(self.df_fix_Units.Units_Use.loc[unit + '_' + h]))
+                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
 
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
@@ -1220,7 +1219,10 @@ class MasterProblem:
                     parameters_SP[key] = self.parameters[key]
                 else:
                     if len(self.parameters[key]) == len(self.buildings_data):
-                        parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
+                        try:
+                            parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
+                        except:
+                            parameters_SP[key] = self.parameters[key].iloc[[ID]]  # one parameter per building
                     else:
                         try:
                             timesteps = int(len(self.parameters[key]) / len(self.buildings_data))

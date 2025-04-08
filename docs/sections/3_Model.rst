@@ -763,17 +763,17 @@ Their energy flows :math:`\boldsymbol{ \dot{E}_{b,l,u,p,t}^{\pm}}` are added in 
        \boldsymbol{E^{net,+}_{l,p,t}} - \boldsymbol{ E^{net,-}_{l,p,t} } = \Big(  \sum_{u \in \text{U}}\boldsymbol{ \dot{E}_{b,l,u,p,t}^{-}} - \boldsymbol{ \dot{E}_{b,l,u,p,t}^{+}} + \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot  \big(  \dot{E}^{gr,+}_{i,b,l,p,t}  -   \dot{E}^{gr,-}_{i,b,l,p,t} \big) \Big) \cdot d_p \cdot d_t   \quad \backsim [\pi_{l,p,t}]
 
 Investment in district-level units consider the existing capacity of the units :math:`f_u^{ex}` and the installed capacity :math:`\boldsymbol{f_u}`.
-When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_u}` and the additional capacity installed :math:`(\boldsymbol{f_{u}}-f^{ex}_{u}).
+When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_u}` and the additional capacity installed :math:`(\boldsymbol{f_{u}}-f^{ex}_{u})`.
 
 
 .. math::
     \begin{align}
         &\boldsymbol{C^{inv}}=\sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{inv} + \boldsymbol{\sum_{u\in U}}\left(i^{c1}_u\cdot \boldsymbol{y_{u}}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-f^{ex}_{u})\right) + \boldsymbol{C^{inv,net}}
-        \label{cinv}\\
+        \label{cinv_MP}\\
         &\boldsymbol{C^{rep}} = \sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{rep} + \sum_{\boldsymbol{u} \in \boldsymbol{U}} \sum_{\boldsymbol{r} \in \boldsymbol{R}} \frac{1}{(1+i)^{r\cdot l_u}} \cdot \left(i^{c1}_u\cdot \boldsymbol{y_u}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-f^{ex}_u)\right)
-        \label{crep}\\
+        \label{crep_MP}\\
         &\boldsymbol{y_u}\cdot F^{min}_u \leqslant \boldsymbol{f_{u}}-f^{ex}_u \leqslant \boldsymbol{y_u}\cdot (F^{max}_u-f^{ex}_{u})
-        \label{units_1}\\
+        \label{units_1_MP}\\
         &\forall b \in  \text{B} \quad l \in  \text{L} \quad u \in \text{U} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
     \end{align}
 

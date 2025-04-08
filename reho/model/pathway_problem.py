@@ -21,13 +21,99 @@ class PathwayProblem(REHO):
     -------
     This class is still under construction.
     """
-    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None):
+    def __init__(self, qbuildings_data, units, grids, pathway_parameters, pathway_data, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None, path_methods=None):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, scenario, solver, DW_params)
 
-    def execute_pathway_building_scale(self,pathway_data,existing_system):
+        # Initialize PathwayProblem-specific attributes
+        self.pathway_parameters = pathway_parameters
+        self.pathway_data = pathway_data
 
+    def get_max_pv_capacity(self):
+        print('Calculating maximum PV capacity')
+        # check if enforce_PV is in the scenario and remove if yes
+        dummy = False
+        if 'enforce_PV' in self.scenario['specific']:
+            self.scenario['specific'].remove('enforce_PV')
+            dummy = True
+        self.scenario['specific'].append('enforce_PV_max')
+        # Get the maximum PV capacity
+        self.single_optimization(Pareto_ID='PV_max')
+        REHO_max_PV = self.results[self.scenario['name']]['PV_max']['df_Unit']
+
+        #self.scenario['specific'].remove('enforce_PV_max')
+        # TO DO: See if necessary to append the enforce_PV again
+        #if dummy == True:
+        #    self.scenario['specific'].append('enforce_PV')
+
+        return REHO_max_PV
+
+
+
+    def execute_pathway_building_scale(self, pathway_data_2, existing_system):
+        """
         #TO DO: The initial scenario should be built here
+        # Set up initial scenario
+        self.scenario['specific'] = ['unique_heating_system', # Do not allow two different heating systems (Ex: not NG boiler and heatpump simultaneously)
+                                     'enforce_PV',            # Enforce PV Units_Use to 0 or 1 on all buildings
+                                     #'enforce_Battery'        # Enforce Battery Units_Use to 0 or 1 on all buildings
+                                     ]
+
+        # Check if the initial heating scenario is defined with
+        if f'heating_system_{self.pathway_parameters['y_start']}' in self.pathway_data.columns:
+            # Add enforce heating units in the scenario['specific']
+            Ext_heat_Units = list(self.pathway_data[f'heating_system_{self.pathway_parameters['y_start']}'].unique())
+            for unit in Ext_heat_Units:
+                if f'enforce_{unit}' not in self.scenario['specific']:
+                    self.scenario['specific'].append(f'enforce_{unit}')
+
+            # Add existing heating system in qbuildings_data based on the egid
+            for key in self.qbuildings_data['buildings_data'].keys():
+                # get egid of the building
+                egid = self.qbuildings_data['buildings_data'][key]['egid']
+                # Find matching row in pathway_data
+                match_row = self.pathway_data[self.pathway_data['egid'] == egid]
+                if not match_row.empty:
+                    # Get the data from match_row columns except for egid and add it to the qbuildings_data TO DO: check if I should add al info now or as needed. seems mo efficient to add all now, even if not used
+                    for i in match_row.columns:
+                        if i != 'egid':
+                            self.qbuildings_data['buildings_data'][key][i] = match_row[i].values[0]
+                else:
+                    # If no match found, give error message and end the program
+                    raise ValueError(f"No match found for egid {egid} in pathway_data.")
+
+            # Add the heating system to the parameters
+            for heating_system in Ext_heat_Units:
+                self.parameters['{}_install'.format(heating_system)] = np.array(
+                    [1 if self.qbuildings_data['buildings_data'][key][f'heating_system_{self.pathway_parameters['y_start']}'] == heating_system else 0
+                     for key in self.qbuildings_data['buildings_data'].keys()])
+
+        # TO DO: Add an if mult_heating_systemy_y_stat is in the data
+
+        else:
+            # If no heating system is defined, raise an error
+            raise ValueError(f"No heating system defined in pathway_data for year {self.pathway_parameters['y_start']}.") # TO DO: Instead of error, run REHO and use results as initial scenario
+
+        # Check if PV is in the initial scenario
+        if f'electric_system_{self.pathway_parameters['y_start']}' in self.pathway_data.columns:
+            self.parameters['PV_install'] = np.array(
+                [1 if self.qbuildings_data['buildings_data'][key][f'electric_system_{self.pathway_parameters['y_start']}'] == 'PV' else 0
+                 for key in self.qbuildings_data['buildings_data'].keys()])
+        else:
+            self.parameters['PV_install'] = np.array([[0] for key in self.qbuildings_data['buildings_data'].keys()])
+
+        if self.parameters['PV_install'].sum() > 0:
+            if f'mult_electric_system_{self.pathway_parameters['y_start']}' not in self.pathway_data.columns:
+            max_PV = self.get_max_pv_capacity()
+
+        existing_system = self.single_optimization(Pareto_ID=0)
+        """
+
+
+
+
+
+
 
         # Get the scenario name
         Scn_ID = self.scenario["name"]  # Do we need this scenario identification?
@@ -41,19 +127,18 @@ class PathwayProblem(REHO):
         #self.scenario['specific'] = []
 
         # If the set of time period is not given
-        if 'y_span' not in pathway_data.keys():
-            y_span = list(np.linspace(pathway_data['y_start'], pathway_data['y_end'], pathway_data['y_steps']))
-            #y_span = list(np.linspace(2025, 2050, len(pathway_data['EMOO'][list(pathway_data['EMOO'].keys())[0]])))
+        if 'y_span' not in pathway_data_2.keys():
+            y_span = list(np.linspace(pathway_data_2['y_start'], pathway_data_2['y_end'], pathway_data_2['y_steps']))
         else:
-                y_span = pathway_data['y_span']
+            y_span = pathway_data_2['y_span']
 
         # Loop through all time periods
         for i in range(1,len(y_span)):
             print(y_span[i])
             # Update the constraints
-            if 'EMOO' in pathway_data.keys():
-                if 'PV' in pathway_data['EMOO'].keys():
-                    self.parameters['PV_install'] = pathway_data['EMOO']['PV']['Units_Use'][i]
+            if 'EMOO' in pathway_data_2.keys():
+                if 'PV' in pathway_data_2['EMOO'].keys():
+                    self.parameters['PV_install'] = pathway_data_2['EMOO']['PV']['Units_Use'][i]
 
             # Update the existing conditions
             self.parameters['Units_Ext'] = self.results[Scn_ID][i-1]['df_Unit']['Units_Mult']* 0.99

@@ -597,7 +597,7 @@ Global warming potential
     \boldsymbol{G^{op}_b} = \sum_{l \in \text{L}} \sum_{p \in \text{P}} \sum_{t\in \text{T}}  \left( g^{l,+}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,+}_{b,l,p,t}} - g^{l,-}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,-}_{b,l,p,t}} \right) \cdot d_p \cdot d_t \quad \forall b \in  \text{B}
 
 .. math::
-    \boldsymbol{G^{bes}_b }= \sum_{u \in \text{U}}  \frac{1}{l_u}\cdot   \left( i^{g1}_u \cdot \boldsymbol{y_{b,u}} + i^{g2}_u\cdot \boldsymbol{f_{b,u}} \right) \quad \forall b \in \text{B}
+    \boldsymbol{G^{bes}_b }= \sum_{u \in \text{U}}  \frac{1}{l_u}\cdot   \left( i^{g1}_u \cdot \boldsymbol{y_{b,u}^{buy}} + i^{g2}_u\cdot (\boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u}) \right) \quad \forall b \in \text{B}
 
 .. math::
     \boldsymbol{G^{tot}_b} = \boldsymbol{G^{bes}_b} +  \boldsymbol{G^{op}_b} \quad \forall b \in \text{B}
@@ -610,21 +610,20 @@ Sizing constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 Investment in building-level units consider the existing capacity of the units :math:`f_{b,u}^{ex}` and the installed capacity :math:`\boldsymbol{f_{b,u}}`.
-When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_{b,u}}` and the additional capacity installed :math:`(\boldsymbol{f_{b,u}}-f^{ex}_{b,u}).
+When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_{b,u}^{buy}}` and the additional capacity installed :math:`(\boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u})`.
+The binary decision variable :math:`\boldsymbol{y_{b,u}^{ex,use}}` enables the decommissioning of existing units prior to their end of life.
 Upper and lower bounds for unit installations are necessary for identifying the validity range for the linearization of the cost function of the unit.
 
 .. math::
     \begin{align}
-        &\boldsymbol{C^{inv}}=  \sum_{b\in B}\sum_{u\in \text{U}}\left(i^{c1}_u\cdot \boldsymbol{y_{b,u}}+i^{c1}_u\cdot( \boldsymbol{f_{b,u}}-f^{ex}_{b,u})\right) + \boldsymbol{C^{inv,gr}}
+        &\boldsymbol{C^{inv}}=  \sum_{b\in B}\sum_{u\in \text{U}}\left(i^{c1}_u\cdot \boldsymbol{y_{b,u}^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u})\right) + \boldsymbol{C^{inv,gr}}
         \label{cinv}\\
-        &\boldsymbol{C^{rep}} = \sum_{b\in B} \sum_{u \in \text{U}} \sum_{r \in \text{R}} \frac{1}{(1+i)^{r\cdot l_u}} \cdot \left(i^{c1}_u\cdot \boldsymbol{y_u}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-f^{ex}_u)\right)
+        &\boldsymbol{C^{rep}} = \sum_{b\in B} \sum_{u \in \text{U}} \sum_{r \in \text{R}} \frac{1}{(1+i)^{r\cdot l_u}} \cdot \left(i^{c1}_u\cdot \boldsymbol{y_{b,u}^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_u)\right)
         \label{crep}\\
-        &\boldsymbol{y_{b,u}}\cdot F^{min}_u \leqslant \boldsymbol{f_{b,u}}-f^{ex}_{b,u} \leqslant \boldsymbol{y_{b,u}}\cdot (F^{max}_u-f^{ex}_{b,u})
+        &\boldsymbol{y_{b,u}^{buy}}\cdot F^{min}_u \leqslant \boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u} \leqslant \boldsymbol{y_{b,u}^{buy}}\cdot (F^{max}_u-f^{ex}_{b,u})
         \label{units_1}\\
         &\boldsymbol{f_{b,u,p,t}} \leq  \boldsymbol{f_{b,u}}
         \label{units_2}\\
-        &\boldsymbol{y_{b,u,p,t}} \leq  \boldsymbol{y_{b,u}}
-        \label{units_3}\\
         &\forall b \in  \text{B} \quad l \in  \text{L} \quad u \in \text{U} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
     \end{align}
 
@@ -763,16 +762,17 @@ Their energy flows :math:`\boldsymbol{ \dot{E}_{b,l,u,p,t}^{\pm}}` are added in 
        \boldsymbol{E^{net,+}_{l,p,t}} - \boldsymbol{ E^{net,-}_{l,p,t} } = \Big(  \sum_{u \in \text{U}}\boldsymbol{ \dot{E}_{b,l,u,p,t}^{-}} - \boldsymbol{ \dot{E}_{b,l,u,p,t}^{+}} + \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot  \big(  \dot{E}^{gr,+}_{i,b,l,p,t}  -   \dot{E}^{gr,-}_{i,b,l,p,t} \big) \Big) \cdot d_p \cdot d_t   \quad \backsim [\pi_{l,p,t}]
 
 Investment in district-level units consider the existing capacity of the units :math:`f_u^{ex}` and the installed capacity :math:`\boldsymbol{f_u}`.
-When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_u}` and the additional capacity installed :math:`(\boldsymbol{f_{u}}-f^{ex}_{u})`.
+When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_u^{buy}}` and the additional capacity installed :math:`(\boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_{u})`.
+The binary decision variable :math:`\boldsymbol{y_{u}^{ex,use}}` enables the decommissioning of existing units prior to their end of life.
 
 
 .. math::
     \begin{align}
-        &\boldsymbol{C^{inv}}=\sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{inv} + \boldsymbol{\sum_{u\in U}}\left(i^{c1}_u\cdot \boldsymbol{y_{u}}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-f^{ex}_{u})\right) + \boldsymbol{C^{inv,net}}
+        &\boldsymbol{C^{inv}}=\sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{inv} + \boldsymbol{\sum_{u\in U}}\left(i^{c1}_u\cdot \boldsymbol{y_{u}^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_{u})\right) + \boldsymbol{C^{inv,net}}
         \label{cinv_MP}\\
-        &\boldsymbol{C^{rep}} = \sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{rep} + \sum_{\boldsymbol{u} \in \boldsymbol{U}} \sum_{\boldsymbol{r} \in \boldsymbol{R}} \frac{1}{(1+i)^{r\cdot l_u}} \cdot \left(i^{c1}_u\cdot \boldsymbol{y_u}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-f^{ex}_u)\right)
+        &\boldsymbol{C^{rep}} = \sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{rep} + \sum_{\boldsymbol{u} \in \boldsymbol{U}} \sum_{\boldsymbol{r} \in \boldsymbol{R}} \frac{1}{(1+i)^{r\cdot l_u}} \cdot \left(i^{c1}_u\cdot \boldsymbol{y_u^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_u)\right)
         \label{crep_MP}\\
-        &\boldsymbol{y_u}\cdot F^{min}_u \leqslant \boldsymbol{f_{u}}-f^{ex}_u \leqslant \boldsymbol{y_u}\cdot (F^{max}_u-f^{ex}_{u})
+        &\boldsymbol{y_u^{buy}}\cdot F^{min}_u \leqslant \boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_u \leqslant \boldsymbol{y_u^{buy}}\cdot (F^{max}_u-f^{ex}_{u})
         \label{units_1_MP}\\
         &\forall b \in  \text{B} \quad l \in  \text{L} \quad u \in \text{U} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
     \end{align}

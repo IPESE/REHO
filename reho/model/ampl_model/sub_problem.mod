@@ -95,11 +95,20 @@ param Units_Ext{u in Units} default 0;
 var Units_Mult{u in Units} <= Units_Fmax[u];
 var Units_Use{u in Units} binary, default 0;
 
+var Units_Use_Ext{u in Units} binary, default 1;
+var Units_Buy{u in Units} binary, default 0;
+
 subject to Units_sizing_c1{u in Units}:
-Units_Mult[u]-Units_Ext[u] >= Units_Use[u]*Units_Fmin[u];
+Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u] >= Units_Buy[u]*Units_Fmin[u];
 
 subject to Units_sizing_c2{u in Units}:
-Units_Mult[u]-Units_Ext[u] <= Units_Use[u]*(Units_Fmax[u]-Units_Ext[u]);
+Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u] <= Units_Buy[u]*(Units_Fmax[u]-Units_Ext[u]);
+
+subject to Units_Use_constraint_c1{u in Units}:
+Units_Use[u]*Units_Fmax[u]>=Units_Mult[u];
+
+subject to Units_Use_constraint_c2{u in Units}:
+Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -271,7 +280,7 @@ subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]}(GWP_supply[l,p,t]*Network_supply[l,p,t]-GWP_demand[l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
 
 subject to Annual_CO2_construction_unit{u in Units}:
-GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Ext[u])*GWP_unit2[u])/lifetime[u];
+GWP_Unit_constr[u] = (Units_Buy[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
 GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]);
@@ -311,7 +320,7 @@ subject to line_additional_capacity_c2{l in ResourceBalances,hl in HousesOfLayer
 LineCapacity[l,hl]>=Line_ext[hl,l];
 
 subject to Costs_Unit_capex{u in Units}:
-Costs_Unit_inv[u] = Units_Use[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Ext[u])*Cost_inv2[u];
+Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);

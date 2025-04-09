@@ -141,7 +141,7 @@ class PathwayProblem(REHO):
                     self.parameters['PV_install'] = pathway_data_2['EMOO']['PV']['Units_Use'][i]
 
             # Update the existing conditions
-            self.parameters['Units_Ext'] = self.results[Scn_ID][i-1]['df_Unit']['Units_Mult']* 0.99
+            self.parameters['Units_Ext'] = self.results[Scn_ID][i-1]['df_Unit']['Units_Mult']
 
             # Optimize the new system
             self.single_optimization(Pareto_ID=i)

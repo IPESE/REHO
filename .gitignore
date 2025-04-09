@@ -327,3 +327,4 @@ scripts/examples/results
 *.txt
 *.pickle
 
+scripts/examples/data/clustering

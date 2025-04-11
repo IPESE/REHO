@@ -1,24 +1,24 @@
-Unit;ref_unit;Units_Fmin;Units_Fmax;Cost_inv1;Cost_inv2;GWP_unit1;GWP_unit2;lifetime;UnitOfType;UnitOfLayer;UnitOfService;StreamsOfUnit;Units_flowrate_in;Units_flowrate_out;stream_Tin;stream_Tout;References
-NG_Boiler;kWth;0.1;100000;5000;200;500;10;20;NG_Boiler;NaturalGas/ HeatCascade;DHW/ SH;h_ht;NaturalGas;;80;60;`Vaillant.ch <https://www.vaillant.ch/downloads/preisliste/franzoesisch-3/liste-de-prix-chaudires-murales-gaz-systmes-dvacuation-de-gaz-brls-prtirage-04-2021-2041428.pdf>`_
-OIL_Boiler;kWth;0.1;100000;5000;175;500;10;20;OIL_Boiler;Oil/ HeatCascade;DHW/ SH;h_ht;Oil;;80;60;`Vaillant.ch <https://www.vaillant.ch/downloads/preisliste/franzoesisch-3/liste-de-prix-chaudires-murales-gaz-systmes-dvacuation-de-gaz-brls-prtirage-04-2021-2041428.pdf>`_
-WOOD_Stove;kWth;0.1;100000;5000;150;400;10;20;WOOD_Stove;Wood /HeatCascade;SH;h_ht;Wood;;80;60;""
-HeatPump_Air;kWth;0.1;100000;17500;400;1500;20;20;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;`Vaillant.ch <https://www.vaillant.ch/particuliers/guide-du-chauffage/comprendre-le-chauffage/pompes-a-chaleur/kosten-warmepumpe/>`_
-HeatPump_Geothermal;kWth;0.1;100000;37500;300;2500;15;20;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;`Vaillant.ch <https://www.vaillant.ch/particuliers/guide-du-chauffage/comprendre-le-chauffage/pompes-a-chaleur/kosten-warmepumpe/>`_
-HeatPump_DHN;kWth;0.1;100000;17500;300;1500;15;20;HeatPump;HeatCascade/ Electricity/ Heat;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity/ Heat;;55/ 45/ 35;50/40/30;
-HeatPump_Lake;kWth;0.1;100000;17500;300;1500;15;20;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;""
-AirConditioner;kWth;0.1;100000;3000;200;500;20;20;AirConditioner;HeatCascade/ Electricity;Cooling;c_ht/ c_mt/ c_lt;Electricity;"";13/ 15/ 18;14/ 16/ 19;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
-ElectricalHeater_SH;kWth;0.1;100000;1000;50;100;5;20;ElectricalHeater;HeatCascade/ Electricity;SH;h_ht;Electricity;;80;60;`SCDI <https://www.scdi.ch/fr/naturay-ultime-connecte-3.html>`_
-ElectricalHeater_DHW;kWth;0.1;100000;2000;100;200;5;20;ElectricalHeater;HeatCascade/ Electricity;DHW;h_ht;Electricity;;80;60;`SCDI <https://scdi.ch/fr/chauffe-eau-electrique-sur-socle-atlantic.html>`_
-PV;kWe;0.1;100000;10000;1300;200;1000;30;PV;Electricity;;;"";Electricity;;;`Helvetia Energy <https://www.helvetia-energy.ch/prix-moyen-panneaux-solaires-suisse/>`_
-ThermalSolar;m2;0.1;100000;6000;800;500;75;20;ThermalSolar;HeatCascade;DHW;h_ht;;;62;48;""
-Battery;kWh;5;100000;5000;550;100;100;15;Battery;Electricity;;;Electricity;Electricity;;;`Tesla Powerwall <https://www.tesla.com/fr_ch/powerwall>`_
-WaterTankSH;L;0.1;100000;2000;2;200;1;20;WaterTankSH;HeatCascade;SH;h_ht/ c_lt;;;35/ 35;35/ 35;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
-WaterTankDHW;L;0.1;100000;2000;2;200;1;20;WaterTankDHW;HeatCascade;DHW;c_ht ;;;10;60;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
-DHN_hex;m2;0.1;100000;6000;500;400;100;20;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_ht;Heat;;80;60;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
-DHN_pipes;kW;0.1;100000;10000;200;2000;10;60;DHN_pipes;Heat;;;;;;;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
-DataHeat_SH;kWth;0.1;100000;1000;5000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;SH;h_ht;Electricity;Data;80;60;
-DataHeat_DHW;kWth;0.1;100000;1000;11000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;DHW;h_ht;Electricity;Data;80;60;
-MTR;kW;0.1;100000;15000;1000;2000;10;20;Methanator;Biomethane/ NaturalGas/ CO2/ Hydrogen/ Electricity/ HeatCascade;SH/ DHW;h_ht;Hydrogen/ CO2/ Electricity;Biomethane/ NaturalGas;280;80;`Energy Prod. <https://www.witpress.com/Secure/ejournals/papers/EQ050201f.pdf>`
-rSOC;kW;0.1;100000;20000;3000;3000;50;10;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ HeatCascade;SH/ DHW;h_ht;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen;120;60;`Joule <https://www.cell.com/joule/fulltext/S2542-4351(24)00425-2>`
-FC;kW;0.1;100000;15000;2000;2000;50;20;FuelCell;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen;Electricity;80;60;
-ETZ;kWh;0.1;100000;10000;1000;2000;50;10;Electrolyzer;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Electricity;Hydrogen;80;60;
+Unit;ref_unit;Units_Fmin;Units_Fmax;Cost_inv1;Cost_inv2;GWP_unit1;GWP_unit2;lifetime;s_curve_k_factor;s_curve_c_factor;UnitOfType;UnitOfLayer;UnitOfService;StreamsOfUnit;Units_flowrate_in;Units_flowrate_out;stream_Tin;stream_Tout;References
+NG_Boiler;kWth;0.1;100000;5000;200;500;10;20;0.1;2037;NG_Boiler;NaturalGas/ HeatCascade;DHW/ SH;h_ht;NaturalGas;;80;60;`Vaillant.ch <https://www.vaillant.ch/downloads/preisliste/franzoesisch-3/liste-de-prix-chaudires-murales-gaz-systmes-dvacuation-de-gaz-brls-prtirage-04-2021-2041428.pdf>`_
+OIL_Boiler;kWth;0.1;100000;5000;175;500;10;20;0.1;2037;OIL_Boiler;Oil/ HeatCascade;DHW/ SH;h_ht;Oil;;80;60;`Vaillant.ch <https://www.vaillant.ch/downloads/preisliste/franzoesisch-3/liste-de-prix-chaudires-murales-gaz-systmes-dvacuation-de-gaz-brls-prtirage-04-2021-2041428.pdf>`_
+WOOD_Stove;kWth;0.1;100000;5000;150;400;10;20;0.1;2037;WOOD_Stove;Wood /HeatCascade;SH;h_ht;Wood;;80;60;""
+HeatPump_Air;kWth;0.1;100000;17500;400;1500;20;20;0.1;2037;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;`Vaillant.ch <https://www.vaillant.ch/particuliers/guide-du-chauffage/comprendre-le-chauffage/pompes-a-chaleur/kosten-warmepumpe/>`_
+HeatPump_Geothermal;kWth;0.1;100000;37500;300;2500;15;20;0.1;2037;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;`Vaillant.ch <https://www.vaillant.ch/particuliers/guide-du-chauffage/comprendre-le-chauffage/pompes-a-chaleur/kosten-warmepumpe/>`_
+HeatPump_DHN;kWth;0.1;100000;17500;300;1500;15;20;0.1;2037;HeatPump;HeatCascade/ Electricity/ Heat;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity/ Heat;;55/ 45/ 35;50/40/30;
+HeatPump_Lake;kWth;0.1;100000;17500;300;1500;15;20;0.1;2037;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;""
+AirConditioner;kWth;0.1;100000;3000;200;500;20;20;0.1;2037;AirConditioner;HeatCascade/ Electricity;Cooling;c_ht/ c_mt/ c_lt;Electricity;"";13/ 15/ 18;14/ 16/ 19;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
+ElectricalHeater_SH;kWth;0.1;100000;1000;50;100;5;20;0.1;2037;ElectricalHeater;HeatCascade/ Electricity;SH;h_ht;Electricity;;80;60;`SCDI <https://www.scdi.ch/fr/naturay-ultime-connecte-3.html>`_
+ElectricalHeater_DHW;kWth;0.1;100000;2000;100;200;5;20;0.1;2037;ElectricalHeater;HeatCascade/ Electricity;DHW;h_ht;Electricity;;80;60;`SCDI <https://scdi.ch/fr/chauffe-eau-electrique-sur-socle-atlantic.html>`_
+PV;kWe;0.1;100000;10000;1300;200;1000;30;0.1;2037;PV;Electricity;;;"";Electricity;;;`Helvetia Energy <https://www.helvetia-energy.ch/prix-moyen-panneaux-solaires-suisse/>`_
+ThermalSolar;m2;0.1;100000;6000;800;500;75;20;0.1;2037;ThermalSolar;HeatCascade;DHW;h_ht;;;62;48;""
+Battery;kWh;5;100000;5000;550;100;100;15;0.1;2037;Battery;Electricity;;;Electricity;Electricity;;;`Tesla Powerwall <https://www.tesla.com/fr_ch/powerwall>`_
+WaterTankSH;L;0.1;100000;2000;2;200;1;20;0.1;2037;WaterTankSH;HeatCascade;SH;h_ht/ c_lt;;;35/ 35;35/ 35;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
+WaterTankDHW;L;0.1;100000;2000;2;200;1;20;0.1;2037;WaterTankDHW;HeatCascade;DHW;c_ht ;;;10;60;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
+DHN_hex;m2;0.1;100000;6000;500;400;100;20;0.1;2037;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_ht;Heat;;80;60;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
+DHN_pipes;kW;0.1;100000;10000;200;2000;10;60;0.1;2037;DHN_pipes;Heat;;;;;;;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
+DataHeat_SH;kWth;0.1;100000;1000;5000;1000;500;4;0.1;2037;DataHeat;Electricity/ Data/ HeatCascade;SH;h_ht;Electricity;Data;80;60;
+DataHeat_DHW;kWth;0.1;100000;1000;11000;1000;500;4;0.1;2037;DataHeat;Electricity/ Data/ HeatCascade;DHW;h_ht;Electricity;Data;80;60;
+MTR;kW;0.1;100000;15000;1000;2000;10;20;0.1;2037;Methanator;Biomethane/ NaturalGas/ CO2/ Hydrogen/ Electricity/ HeatCascade;SH/ DHW;h_ht;Hydrogen/ CO2/ Electricity;Biomethane/ NaturalGas;280;80;`Energy Prod. <https://www.witpress.com/Secure/ejournals/papers/EQ050201f.pdf>`
+rSOC;kW;0.1;100000;20000;3000;3000;50;10;0.1;2037;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ HeatCascade;SH/ DHW;h_ht;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen;120;60;`Joule <https://www.cell.com/joule/fulltext/S2542-4351(24)00425-2>`
+FC;kW;0.1;100000;15000;2000;2000;50;20;0.1;2037;FuelCell;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen;Electricity;80;60;
+ETZ;kWh;0.1;100000;10000;1000;2000;50;10;0.1;2037;Electrolyzer;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Electricity;Hydrogen;80;60;

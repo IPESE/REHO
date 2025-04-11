@@ -1,5 +1,7 @@
 import random
 
+import pandas as pd
+
 from reho.model.reho import *
 
 __doc__ = """
@@ -28,6 +30,13 @@ class PathwayProblem(REHO):
         # Initialize PathwayProblem-specific attributes
         self.pathway_parameters = pathway_parameters
         self.pathway_data = pathway_data
+        self.qbuildings_data = qbuildings_data
+
+        self.y_start = self.pathway_parameters['y_start']
+        self.y_end = self.pathway_parameters['y_end']
+
+        self.default_s_curve_factors = pd.read_csv(os.path.join(path_to_infrastructure, 'building_units.csv'), sep=';', usecols=['Unit', 's_curve_k_factor', 's_curve_c_factor'])
+
 
     def get_max_pv_capacity(self):
         print('Calculating maximum PV capacity')
@@ -48,10 +57,8 @@ class PathwayProblem(REHO):
 
         return REHO_max_PV
 
+    def execute_pathway_building_scale(self, pathway_data_2, pathway_unit_use=None):
 
-
-    def execute_pathway_building_scale(self, pathway_data_2, existing_system):
-        """
         #TO DO: The initial scenario should be built here
         # Set up initial scenario
         self.scenario['specific'] = ['unique_heating_system', # Do not allow two different heating systems (Ex: not NG boiler and heatpump simultaneously)
@@ -60,13 +67,7 @@ class PathwayProblem(REHO):
                                      ]
 
         # Check if the initial heating scenario is defined with
-        if f'heating_system_{self.pathway_parameters['y_start']}' in self.pathway_data.columns:
-            # Add enforce heating units in the scenario['specific']
-            Ext_heat_Units = list(self.pathway_data[f'heating_system_{self.pathway_parameters['y_start']}'].unique())
-            for unit in Ext_heat_Units:
-                if f'enforce_{unit}' not in self.scenario['specific']:
-                    self.scenario['specific'].append(f'enforce_{unit}')
-
+        if f'heating_system_{self.y_start}' in self.pathway_data.columns:
             # Add existing heating system in qbuildings_data based on the egid
             for key in self.qbuildings_data['buildings_data'].keys():
                 # get egid of the building
@@ -74,7 +75,7 @@ class PathwayProblem(REHO):
                 # Find matching row in pathway_data
                 match_row = self.pathway_data[self.pathway_data['egid'] == egid]
                 if not match_row.empty:
-                    # Get the data from match_row columns except for egid and add it to the qbuildings_data TO DO: check if I should add al info now or as needed. seems mo efficient to add all now, even if not used
+                    # Get the data from match_row columns except for egid and add it to the qbuildings_data TO DO: check if I should add all info now or as needed. seems more efficient to add all now, even if not used
                     for i in match_row.columns:
                         if i != 'egid':
                             self.qbuildings_data['buildings_data'][key][i] = match_row[i].values[0]
@@ -82,55 +83,75 @@ class PathwayProblem(REHO):
                     # If no match found, give error message and end the program
                     raise ValueError(f"No match found for egid {egid} in pathway_data.")
 
-            # Add the heating system to the parameters
-            for heating_system in Ext_heat_Units:
-                self.parameters['{}_install'.format(heating_system)] = np.array(
-                    [1 if self.qbuildings_data['buildings_data'][key][f'heating_system_{self.pathway_parameters['y_start']}'] == heating_system else 0
+            # Add enforce heating units in the scenario['specific']
+            Ext_heat_Units = np.array([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in self.qbuildings_data['buildings_data']])
+            for unit in list(np.unique(Ext_heat_Units)):
+                if f'enforce_{unit}' not in self.scenario['specific']:
+                    self.scenario['specific'].append(f'enforce_{unit}')
+                # Add the heating system to the parameters
+                self.parameters['{}_install'.format(unit)] = np.array(
+                    [[1] if self.qbuildings_data['buildings_data'][key][
+                                f'heating_system_{self.y_start}'] == unit else [0]
                      for key in self.qbuildings_data['buildings_data'].keys()])
-
-        # TO DO: Add an if mult_heating_systemy_y_stat is in the data
+        # TO DO: Add an if mult_heating_systemy_y_start is in the data
 
         else:
             # If no heating system is defined, raise an error
-            raise ValueError(f"No heating system defined in pathway_data for year {self.pathway_parameters['y_start']}.") # TO DO: Instead of error, run REHO and use results as initial scenario
+            raise ValueError(f"No heating system defined in pathway_data for year {self.y_start}.") # TO DO: Instead of error, run REHO and use results as initial scenario
 
         # Check if PV is in the initial scenario
-        if f'electric_system_{self.pathway_parameters['y_start']}' in self.pathway_data.columns:
+        if f'electric_system_{self.y_start}' in self.pathway_data.columns:
             self.parameters['PV_install'] = np.array(
-                [1 if self.qbuildings_data['buildings_data'][key][f'electric_system_{self.pathway_parameters['y_start']}'] == 'PV' else 0
+                [[1] if self.qbuildings_data['buildings_data'][key][f'electric_system_{self.y_start}'] == 'PV' else [0]
                  for key in self.qbuildings_data['buildings_data'].keys()])
         else:
             self.parameters['PV_install'] = np.array([[0] for key in self.qbuildings_data['buildings_data'].keys()])
 
         if self.parameters['PV_install'].sum() > 0:
-            if f'mult_electric_system_{self.pathway_parameters['y_start']}' not in self.pathway_data.columns:
-            max_PV = self.get_max_pv_capacity()
+            if f'mult_electric_system_{self.y_start}' not in self.pathway_data.columns:
+                max_PV = self.get_max_pv_capacity() # if a mult is not provided we install the max PV
+            # TO DO: add enforce PV_mult
 
-        existing_system = self.single_optimization(Pareto_ID=0)
-        """
-
-
-
-
-
-
-
-        # Get the scenario name
-        Scn_ID = self.scenario["name"]  # Do we need this scenario identification?
-
-        # Insert initial system as first result
-        self.results = {}
-        self.results[Scn_ID] = {}
-        self.results[Scn_ID][0] = existing_system
+        #existing_system = self.single_optimization(Pareto_ID=0) # TO DO: substitute Pareto_ID=0 by self.y_start, test if i need existing_system = self.single_optimization(Pareto_ID=0)
+        self.single_optimization(Pareto_ID=0) # TO DO: substitute Pareto_ID=0 by self.y_start
 
         # Remove all specific constraints
         #self.scenario['specific'] = []
 
         # If the set of time period is not given
-        if 'y_span' not in pathway_data_2.keys():
-            y_span = list(np.linspace(pathway_data_2['y_start'], pathway_data_2['y_end'], pathway_data_2['y_steps']))
+        if 'y_span' not in self.pathway_parameters.keys():
+            y_span = list(np.linspace(self.y_start, self.y_end, self.pathway_parameters['N_steps_pathway'], endpoint=True))
         else:
-            y_span = pathway_data_2['y_span']
+            y_span = self.pathway_parameters['y_span']
+
+        # Phasing out the heating systems method, when I know the final heating system. TO DO: Do the same when I don't know the final heating system, and or the method of increase coverage
+        heating_pathway = pd.DataFrame()
+        heating_pathway['id_building'] = pd.DataFrame([self.qbuildings_data['buildings_data'][key]['id_building'] for key in self.qbuildings_data['buildings_data']])
+        heating_pathway[self.y_start] = pd.DataFrame([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in self.qbuildings_data['buildings_data']])
+        heating_pathway[self.y_end] = pd.DataFrame([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_end}'] for key in self.qbuildings_data['buildings_data']])
+
+        # remove rows where heating_pathway[self.y_start] == heating_pathway[self.y_end]
+        units_phasing_out = heating_pathway[heating_pathway[self.y_start] != heating_pathway[self.y_end]]
+        pathway_use_unit = {}
+        for unit in list(np.unique(units_phasing_out[self.y_start])):
+            N_initial = units_phasing_out[units_phasing_out[self.y_start] == unit].shape[0]
+            N_final = 0
+            # Get the logistic curve parameters for the unit
+            if 'k_factor' in self.pathway_parameters and unit in self.pathway_parameters['k_factor']:
+                k_factor = self.pathway_parameters['k_factor'][unit]
+            else:
+                k_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == unit, 's_curve_k_factor'].values[0]
+            if 'c_factor' in self.pathway_parameters.keys() and unit in self.pathway_parameters['c_factor'].keys():
+                c_factor = self.pathway_parameters['c_factor'][unit]
+            else:
+                c_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == unit, 's_curve_c_factor'].values[0]
+                # Get the logistic curve for the unit
+            phase_out_list = self.get_logistic_2(E_start=N_initial, E_stop=N_final, k_factor=k_factor,c_factor=c_factor, y_span=y_span, final_value=True,starting_value=True)
+            phase_out_list = [int(np.round(i)) for i in phase_out_list]
+            # create a list with N_initial ones
+            initial_selection = [1 for i in range(N_initial)]
+            pathway_use_unit[unit] = self.select_unit_random(initial_selection,phase_out_list,method='unit_phase_out')
+
 
         # Loop through all time periods
         for i in range(1,len(y_span)):
@@ -141,12 +162,12 @@ class PathwayProblem(REHO):
                     self.parameters['PV_install'] = pathway_data_2['EMOO']['PV']['Units_Use'][i]
 
             # Update the existing conditions
-            self.parameters['Units_Ext'] = self.results[Scn_ID][i-1]['df_Unit']['Units_Mult']
+            self.parameters['Units_Ext'] = self.results[self.scenario["name"]][i-1]['df_Unit']['Units_Mult'] #TO DO: substitute i-1 by y_span[i-1]
 
             # Optimize the new system
-            self.single_optimization(Pareto_ID=i)
+            self.single_optimization(Pareto_ID=i) #TO DO: substitute i by y_span[i]
 
-    def get_logistic(self,E_start=1e-2,E_stop=1e-3,y_start=2024,y_stop=2050,k=1,c=2035,n=2, final_value=False,starting_value=True):
+    def get_logistic(self,E_start=1e-2,E_stop=1e-3,y_start=2024,y_stop=2050,k_factor=1,c_factor=2035,n_steps=2, final_value=False,starting_value=True):
         """
         Function to generate a logistic curve (S-curve) for the EMOO values
         Parameters:
@@ -163,26 +184,111 @@ class PathwayProblem(REHO):
         - EMOO_list: List of EMOO values
         - y_span: List of years
         """
-        y_span=np.linspace(start=y_start,stop=y_stop,num=n,endpoint=True)
+        y_span=np.linspace(start=y_start,stop=y_stop,num=n_steps,endpoint=True)
         if E_start==E_stop:
-            EMOO_list=[E_start for key in y_span]
+            EMOO_list = [E_start for key in y_span]
         else:
-            EMOO_list=E_stop+(E_start-E_stop)/(1+np.exp(-k*(c-y_span)))
+            EMOO_list = E_stop+(E_start-E_stop)/(1+np.exp(-k_factor*(c_factor-y_span)))
             if starting_value is True:
-                diff_start=E_start
+                diff_start = E_start
             else:
-                diff_start=EMOO_list[0]
+                diff_start = EMOO_list[0]
             if final_value is True:
                 diff_stop=E_stop
             else:
-                diff_stop=EMOO_list[-1]
-            EMOO_list=(EMOO_list-EMOO_list[0])*(diff_stop-diff_start)/(EMOO_list[-1]-EMOO_list[0])+diff_start# Stretching the curve
+                diff_stop = EMOO_list[-1]
+            EMOO_list = (EMOO_list-EMOO_list[0])*(diff_stop-diff_start)/(EMOO_list[-1]-EMOO_list[0]) + diff_start # Stretching the curve
         return EMOO_list, y_span
 
-    def select_values_random(self, values, initial_selection, steps):
+    def get_logistic_2(self,E_start=1e-2,E_stop=1e-3,k_factor=1,c_factor=2035, y_span=[2025, 2050], final_value=False,starting_value=True):
+        """
+        Function to generate a logistic curve (S-curve) for the EMOO values
+        Parameters:
+        - E_start: Initial value of the EMOO
+        - E_stop: Final value of the EMOO
+        - y_start: Initial year
+        - y_stop: Final year
+        - k: steepness of the curve
+        - c: inflection point of the curve
+        - y_span:
+        - final_value: If True, the final value is E_stop
+        - starting_value: If True, the starting value is E_start
+        Returns:
+        - EMOO_list: List of EMOO values
+        - y_span: List of years
+        """
+        if E_start==E_stop:
+            EMOO_list = [E_start for key in y_span]
+        else:
+            EMOO_list = E_stop+(E_start-E_stop)/(1+np.exp(-k_factor*(c_factor-y_span)))
+            if starting_value is True:
+                diff_start = E_start
+            else:
+                diff_start = EMOO_list[0]
+            if final_value is True:
+                diff_stop=E_stop
+            else:
+                diff_stop = EMOO_list[-1]
+            EMOO_list = (EMOO_list-EMOO_list[0])*(diff_stop-diff_start)/(EMOO_list[-1]-EMOO_list[0]) + diff_start # Stretching the curve
+        return EMOO_list
+
+    def select_unit_random(self, initial_selection, steps, method, mults=None): # TO DO: maybe we just nees one function that gets the mul or not depending on the method selected
+        """
+        Function to select random buildings to phase_out or phase_in a unit. It receives an array with the number of buildings with a unit in each step.
+        - EMOO_bool_tot: each key is a step of the pathway. For each key there is a boolean list of which building has PV installed (example: EMOO_data[0]=[1,0,0,0,0], EMOO_data[2]=[1,0,0,0,1])
+        - EMOO_bool: each key is a step of the pathway. For each key there is a boolean list of which building installed PV for the current step(example: EMOO_data[0]=[1,0,0,0,0], EMOO_data[2]=[0,0,0,0,1])
+        - EMOO_data: each key is a step of the pathway. For each key, there is the list of PV installed capacity for each building (example: EMOO_data[0]=[5,0,0,0,0], EMOO_data[2]=[5,0,0,0,10])
+        """
+        if method not in {"unit_phase_in", "unit_phase_out"}:
+            raise ValueError("Invalid method. Must be 'unit_phase_in' or 'unit_phase_out'.")
+
+        EMOO_bool = {}
+        EMOO_bool_tot = {}
+        random.seed(42)
+
+        j = 0
+        bool_selection = initial_selection
+        EMOO_bool[j] = np.array([[i] for i in bool_selection])
+        EMOO_bool_tot[j] = EMOO_bool[j]
+        if mults is not None:
+            EMOO_data = {}
+            EMOO_data[j] = np.array([[i] for i in np.array(mults) * np.array(bool_selection)])
+        previous_step = steps[0]
+        if method == "unit_phase_in":
+            position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 0] # if a building already has a unit, it cannot be selected
+        else:
+            position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+        for step in steps[1:]:
+            j += 1
+            nb_bui_to_select = abs(step - previous_step)
+            if nb_bui_to_select != 0:
+                position_selection = random.sample(position_list, k=nb_bui_to_select) # Return a list that contains any k number of the items from a list
+            else:
+                position_selection = []
+            if method == "unit_phase_in":
+                bool_selection = np.array(bool_selection) + np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
+                position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 0]
+                EMOO_bool[j] = np.array([[ii] for ii in [1 if i in position_selection else 0 for i in range(len(initial_selection))]])
+            else:
+                bool_selection = np.array(bool_selection) - np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
+                position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+                EMOO_bool[j] = np.array([[ii] for ii in [0 if i in position_selection else 1 for i in range(len(initial_selection))]])
+
+            EMOO_bool_tot[j] = np.array([[i] for i in bool_selection])
+            if mults is not None:
+                EMOO_data[j] = np.array([[i] for i in np.array(mults) * np.array(bool_selection)])
+            previous_step = step
+        if mults is None:
+            return EMOO_bool_tot
+        else:
+            return EMOO_data, EMOO_bool_tot
+
+
+
+    def select_values_random(self, initial_selection, steps, values=None):
         """
         This function is used to select random buildings for the pathway.
-        For instance, if you have 5 buildings and you want to gradually install PV in the buildings.
+        For instance, if you have 5 buildings, and you want to gradually install PV in the buildings.
         For each pathway step, you need to specify the number of buildings in which you want PV to be installed: steps=[1,1,2,3,4,4,5,5]
         Here is the list of PV capacity that you want to install: values=[5,5,5,10,10]
         Consider that the first building already has its 5kW installed: initial_selection=[1,0,0,0,0]
@@ -207,14 +313,14 @@ class PathwayProblem(REHO):
             j += 1
             nb_bui_to_select = step - previous_step
             if nb_bui_to_select != 0:
-                position_selection = random.sample(position_list, nb_bui_to_select)
+                position_selection = random.sample(position_list, k=nb_bui_to_select) #Return a list that contains any k of the items from a list
             else:
                 position_selection = []
-            bool_selection = np.array(bool_selection) + np.array(
-                [1 if i in position_selection else 0 for i in range(len(values))])
+            bool_selection = np.array(bool_selection) + np.array([1 if i in position_selection else 0 for i in range(len(values))])
             position_list = [i for i in np.array(range(len(values))) if np.array(bool_selection)[i] == 0]
             EMOO_bool[j] = np.array([[ii] for ii in [1 if i in position_selection else 0 for i in range(len(values))]])
-            EMOO_bool_tot[j] = np.array([[1 if i != 0 else 0] for i in np.array(values) * np.array(bool_selection)])
+            EMOO_bool_tot[j] = np.array([[i] for i in bool_selection])
             EMOO_data[j] = np.array([[i] for i in np.array(values) * np.array(bool_selection)])
             previous_step = step
+
         return EMOO_data, EMOO_bool, EMOO_bool_tot

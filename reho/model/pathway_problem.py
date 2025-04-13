@@ -125,17 +125,19 @@ class PathwayProblem(REHO):
             y_span = self.pathway_parameters['y_span']
 
         # Phasing out the heating systems method, when I know the final heating system. TO DO: Do the same when I don't know the final heating system, and or the method of increase coverage
+        # Create a DataFrame with initial and final heating system for each building
         heating_pathway = pd.DataFrame()
-        heating_pathway['id_building'] = pd.DataFrame([self.qbuildings_data['buildings_data'][key]['id_building'] for key in self.qbuildings_data['buildings_data']])
-        heating_pathway[self.y_start] = pd.DataFrame([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in self.qbuildings_data['buildings_data']])
-        heating_pathway[self.y_end] = pd.DataFrame([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_end}'] for key in self.qbuildings_data['buildings_data']])
+        heating_pathway['id_building'] = [b['id_building'] for b in self.qbuildings_data['buildings_data'].values()]
+        heating_pathway[self.y_start] = [b[f'heating_system_{self.y_start}'] for b in self.qbuildings_data['buildings_data'].values()]
+        heating_pathway[self.y_end] = [b[f'heating_system_{self.y_end}'] for b in self.qbuildings_data['buildings_data'].values()]
 
-        # remove rows where heating_pathway[self.y_start] == heating_pathway[self.y_end]
-        units_phasing_out = heating_pathway[heating_pathway[self.y_start] != heating_pathway[self.y_end]]
-        pathway_use_unit = {}
-        for unit in list(np.unique(units_phasing_out[self.y_start])):
-            N_initial = units_phasing_out[units_phasing_out[self.y_start] == unit].shape[0]
-            N_final = 0
+        final_pathways = []
+        for unit in heating_pathway[self.y_start].unique():
+            # Filter only buildings that start with this heating unit
+            unit_pathway = heating_pathway[heating_pathway[self.y_start] == unit].copy()
+            N_initial = len(unit_pathway)
+            N_final = (unit_pathway[self.y_end] == unit).sum()  # buildings still using this unit in the end
+
             # Get the logistic curve parameters for the unit
             if 'k_factor' in self.pathway_parameters and unit in self.pathway_parameters['k_factor']:
                 k_factor = self.pathway_parameters['k_factor'][unit]
@@ -145,13 +147,45 @@ class PathwayProblem(REHO):
                 c_factor = self.pathway_parameters['c_factor'][unit]
             else:
                 c_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == unit, 's_curve_c_factor'].values[0]
-                # Get the logistic curve for the unit
-            phase_out_list = self.get_logistic_2(E_start=N_initial, E_stop=N_final, k_factor=k_factor,c_factor=c_factor, y_span=y_span, final_value=True,starting_value=True)
-            phase_out_list = [int(np.round(i)) for i in phase_out_list]
-            # create a list with N_initial ones
-            initial_selection = [1 for i in range(N_initial)]
-            pathway_use_unit[unit] = self.select_unit_random(initial_selection,phase_out_list,method='unit_phase_out')
 
+            # Get phase-out timeline (number of buildings using the unit each year)
+            phase_out_schedule = self.get_logistic_2(E_start=N_initial,E_stop=N_final,k_factor=k_factor, c_factor=c_factor,y_span=y_span,final_value=True,starting_value=True)
+            phase_out_schedule = [int(round(v)) for v in phase_out_schedule]
+
+            # Start with all buildings using this unit (represented by 1)
+            initial_state = [1] * N_initial
+            # Use random logic to decide which buildings stop using the unit at each step
+            pathway_use_unit = self.select_unit_random(initial_state,phase_out_schedule, method='unit_phase_out')
+            #TO DO: test if select_unit_random works well when we have more NG, where some of them don't phase out
+            for i in range(1,len(y_span)):
+                year = y_span[i]
+                # Create column for this year based on phase-out logic
+                col = pd.Series(pathway_use_unit[i].flatten(), name=year)
+                # Replace 1s with the unit name (still in use), and 0s with the final heating system
+                col = col.replace(1, unit)
+                col = np.where(col == 0, unit_pathway[self.y_end], col)
+                # Add the column to the unit's pathway
+                unit_pathway[f'heating_system_{int(year)}'] = col
+            # Append the full pathway for this unit to the final list
+            final_pathways.append(unit_pathway)
+        # Combine all unit-level transitions into a complete DataFrame
+        df_pathway = pd.concat(final_pathways, axis=0).reset_index(drop=True)
+
+        # add the heating system pathway to the qbuildings_data
+        # loop trough df_pathway year columns
+        for key in self.qbuildings_data['buildings_data'].keys():
+            # get the id_building of the building
+            id_building = self.qbuildings_data['buildings_data'][key]['id_building']
+            # Find matching row in df_pathway
+            match_row = df_pathway[df_pathway['id_building'] == id_building]
+            if not match_row.empty:
+            # Get the data from match_row columns except for id_building and y_start and y_end and add it to the qbuildings_data
+                for i in match_row.columns:
+                    if i != 'id_building' and i != self.y_start and i != self.y_end:
+                        # check if the column is in the qbuildings_data
+                        if i not in self.qbuildings_data['buildings_data'][key].keys():
+                            # if not, add it
+                            self.qbuildings_data['buildings_data'][key][i] = match_row[i].values[0]
 
         # Loop through all time periods
         for i in range(1,len(y_span)):

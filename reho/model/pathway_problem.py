@@ -49,14 +49,14 @@ class PathwayProblem(REHO):
         self.single_optimization(Pareto_ID='PV_max')
         REHO_max_PV = self.results[self.scenario['name']]['PV_max']['df_Unit']
 
-        #self.scenario['specific'].remove('enforce_PV_max')
+        self.scenario['specific'].remove('enforce_PV_max')
         # TO DO: See if necessary to append the enforce_PV again
-        #if dummy == True:
-        #    self.scenario['specific'].append('enforce_PV')
+        if dummy == True:
+            self.scenario['specific'].append('enforce_PV')
 
         return REHO_max_PV
 
-    def execute_pathway_building_scale(self, pathway_data_2, pathway_unit_use=None):
+    def execute_pathway_building_scale(self, pathway_unit_use=None):
 
         #TO DO: The initial scenario should be built here
         # Set up initial scenario
@@ -83,16 +83,23 @@ class PathwayProblem(REHO):
                     raise ValueError(f"No match found for egid {egid} in pathway_data.")
 
             # Add enforce heating units in the scenario['specific']
-            Ext_heat_Units = np.array([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in self.qbuildings_data['buildings_data']])
+            Ext_heat_Units = np.array([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in self.qbuildings_data['buildings_data']]
+                            + [self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_end}'] for key in self.qbuildings_data['buildings_data']])
             for unit in list(np.unique(Ext_heat_Units)):
-                if f'enforce_{unit}' not in self.scenario['specific']:
-                    self.scenario['specific'].append(f'enforce_{unit}')
-                # Add the heating system to the parameters
-                self.parameters['{}_install'.format(unit)] = np.array(
-                    [[1] if self.qbuildings_data['buildings_data'][key][
-                                f'heating_system_{self.y_start}'] == unit else [0]
-                     for key in self.qbuildings_data['buildings_data'].keys()])
-        # TO DO: Add an if mult_heating_systemy_y_start is in the data
+                # check if the unit has HeatPump in a part of the name
+                if 'HeatPump' in unit:
+                    # check if the unit is not already in the scenario
+                    if 'enforce_HeatPump' not in self.scenario['specific']:
+                        self.scenario['specific'].append(f'enforce_HeatPump')
+                    # check if the unit is not already in the parameters
+                    if f'HeatPump_install' not in self.parameters.keys():
+                        self.parameters['HeatPump_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
+                else:
+                    if f'enforce_{unit}' not in self.scenario['specific']:
+                        self.scenario['specific'].append(f'enforce_{unit}')
+                    # Add the heating system to the parameters
+                    self.parameters['{}_install'.format(unit)] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
+            # TO DO: Add an if mult_heating_systemy_y_start is in the data
 
         else:
             # If no heating system is defined, raise an error
@@ -119,7 +126,7 @@ class PathwayProblem(REHO):
 
         # If the set of time period is not given
         if 'y_span' not in self.pathway_parameters.keys():
-            y_span = list(np.linspace(self.y_start, self.y_end, self.pathway_parameters['N_steps_pathway'], endpoint=True))
+            y_span = np.linspace(self.y_start, self.y_end, self.pathway_parameters['N_steps_pathway'], endpoint=True)
         else:
             y_span = self.pathway_parameters['y_span']
 
@@ -204,11 +211,15 @@ class PathwayProblem(REHO):
             if key_name_1 in  building_data and building_data[key_name_1] == 'PV':
                 PV_init_total +=1
                 PV_init_list = PV_init_list + [1]
+            else:
+                PV_init_list = PV_init_list + [0]
             key_name_2 = f'electric_system_{self.y_end}'
             # check if electric_system_{self.y_end} is in qbuildings_data
             if key_name_2 in building_data and building_data[key_name_2] == 'PV':
                 PV_final_tot += 1
                 PV_final_list = PV_final_list + [1]
+            else:
+                PV_final_list = PV_final_list + [0]
 
         if f'electric_system_{self.y_end}' in self.pathway_data.columns:
             elec_schedule = self.get_logistic_2(E_start=PV_init_total, E_stop=PV_final_tot, k_factor=pv_k_factor, c_factor=pv_c_factor, y_span=y_span, final_value=True,starting_value=True)
@@ -220,22 +231,30 @@ class PathwayProblem(REHO):
         # verify if max_PV has been defined
         if 'max_PV' in locals():
             # max_PV is defined in the local scope
-            x = 1
+            x = 1 # TO DO: correct this line
         else:
             # max_PV is not defined
             max_PV = self.get_max_pv_capacity()
         # TO DO: change the code for when there are PV installed (mults cannot be max_PV in this case)
-        mults = max_PV
+        # TO DO: simplify this, maybe put these two codes in get_max_pv_capacity
+        df_instalable_mults = max_PV.loc[(max_PV.index.str.contains('PV')) & ~(max_PV.index.str.contains('district'))]
+        instalable_mults_future = [np.sum([row['Units_Mult'] for index, row in df_instalable_mults.iterrows() if index.split('_')[-1] == h]) for h in self.infrastructure.House]
+
         # Get the pathway
-        pathway_elec_mul, pathway_elec_use = self.select_unit_random(PV_init_list, elec_schedule, method='unit_phase_in', mults=mults)
+        pathway_elec_mul, pathway_elec_use = self.select_unit_random(PV_init_list, elec_schedule, method='unit_phase_in', mults=instalable_mults_future)
 
         # Loop through all time periods
         for i in range(1,len(y_span)):
             print(y_span[i])
             # Update the constraints
-            if 'EMOO' in pathway_data_2.keys():
-                if 'PV' in pathway_data_2['EMOO'].keys():
-                    self.parameters['PV_install'] = pathway_data_2['EMOO']['PV']['Units_Use'][i]
+            self.parameters['PV_install'] = pathway_elec_use[i]
+
+            for unit in list(np.unique(Ext_heat_Units)):
+                if 'HeatPump' in unit:
+                    self.parameters['HeatPump_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{int(y_span[i])}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
+                else:
+                    self.parameters['{}_install'.format(unit)] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{int(y_span[i])}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
+
 
             # Update the existing conditions
             self.parameters['Units_Ext'] = self.results[self.scenario["name"]][i-1]['df_Unit']['Units_Mult'] #TO DO: substitute i-1 by y_span[i-1]

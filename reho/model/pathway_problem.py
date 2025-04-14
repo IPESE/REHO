@@ -171,21 +171,43 @@ class PathwayProblem(REHO):
         # Combine all unit-level transitions into a complete DataFrame
         df_pathway = pd.concat(final_pathways, axis=0).reset_index(drop=True)
 
-        # add the heating system pathway to the qbuildings_data
-        # loop trough df_pathway year columns
-        for key in self.qbuildings_data['buildings_data'].keys():
-            # get the id_building of the building
-            id_building = self.qbuildings_data['buildings_data'][key]['id_building']
-            # Find matching row in df_pathway
+        # Add the heating system pathway to the qbuildings_data
+        for key, building in self.qbuildings_data['buildings_data'].items():
+            id_building = building['id_building']
             match_row = df_pathway[df_pathway['id_building'] == id_building]
             if not match_row.empty:
-            # Get the data from match_row columns except for id_building and y_start and y_end and add it to the qbuildings_data
-                for i in match_row.columns:
-                    if i != 'id_building' and i != self.y_start and i != self.y_end:
-                        # check if the column is in the qbuildings_data
-                        if i not in self.qbuildings_data['buildings_data'][key].keys():
-                            # if not, add it
-                            self.qbuildings_data['buildings_data'][key][i] = match_row[i].values[0]
+                # Drop columns we don’t want to include
+                filtered_data = match_row.drop(columns=['id_building', self.y_start, self.y_end]).iloc[0].to_dict()
+                # Add remaining columns to the building data
+                building.update(filtered_data)
+
+        # Generate pathway for the electric system TO DO: adapt code to when I have more than one electric system
+        # Get the logistic curve parameters for PV
+        if 'k_factor' in self.pathway_parameters and 'PV' in self.pathway_parameters['k_factor']:
+            pv_k_factor = self.pathway_parameters['k_factor']['PV']
+        else:
+            pv_k_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == 'PV', 's_curve_k_factor'].values[0]
+        if 'c_factor' in self.pathway_parameters.keys() and 'PV' in self.pathway_parameters['c_factor'].keys():
+            pv_c_factor = self.pathway_parameters['c_factor']['PV']
+        else:
+            pv_c_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == 'PV', 's_curve_c_factor'].values[0]
+
+        # Get phase-in timeline (number of buildings using the unit each year)
+        # Get the number of house that currently installed a PV
+        PV_init_int = int(np.round(self.parameters['PV_install'].sum()))
+        # Get the number of house that can install a PV. TO DO: Some EGIDs might have almost no roof (this might also happen with the heating system), because the ratio is very small in this case mult will be 0.1 the Fmin. Check if we are getting these cases
+        # check if electric_system_{self.y_end} is in qbuildings_data
+        PV_tot_final = 0
+        for building, building_data in self.qbuildings_data['buildings_data'].items():
+            key_name = f'electric_system_{self.y_end}'
+            if key_name in building_data and building_data[key_name] == 'PV':
+                PV_tot_final += 1
+
+        if f'electric_system_{self.y_end}' in self.pathway_data.columns:
+            elec_schedule = self.get_logistic_2(E_start=PV_init_int, E_stop=PV_tot_final,k_factor=pv_k_factor,
+                                                     c_factor=pv_c_factor, y_span=y_span, final_value=True,
+                                                     starting_value=True)
+            elec_schedule = [int(round(v)) for v in elec_schedule]
 
         # Loop through all time periods
         for i in range(1,len(y_span)):

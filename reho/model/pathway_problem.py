@@ -37,7 +37,6 @@ class PathwayProblem(REHO):
 
         self.default_s_curve_factors = pd.read_csv(os.path.join(path_to_infrastructure, 'building_units.csv'), sep=';', usecols=['Unit', 's_curve_k_factor', 's_curve_c_factor'])
 
-
     def get_max_pv_capacity(self):
         print('Calculating maximum PV capacity')
         # check if enforce_PV is in the scenario and remove if yes
@@ -169,12 +168,12 @@ class PathwayProblem(REHO):
             # Append the full pathway for this unit to the final list
             final_pathways.append(unit_pathway)
         # Combine all unit-level transitions into a complete DataFrame
-        df_pathway = pd.concat(final_pathways, axis=0).reset_index(drop=True)
+        df_heat_pathway = pd.concat(final_pathways, axis=0).reset_index(drop=True)
 
         # Add the heating system pathway to the qbuildings_data
         for key, building in self.qbuildings_data['buildings_data'].items():
             id_building = building['id_building']
-            match_row = df_pathway[df_pathway['id_building'] == id_building]
+            match_row = df_heat_pathway[df_heat_pathway['id_building'] == id_building]
             if not match_row.empty:
                 # Drop columns we don’t want to include
                 filtered_data = match_row.drop(columns=['id_building', self.y_start, self.y_end]).iloc[0].to_dict()
@@ -193,21 +192,42 @@ class PathwayProblem(REHO):
             pv_c_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == 'PV', 's_curve_c_factor'].values[0]
 
         # Get phase-in timeline (number of buildings using the unit each year)
-        # Get the number of house that currently installed a PV
-        PV_init_int = int(np.round(self.parameters['PV_install'].sum()))
         # Get the number of house that can install a PV. TO DO: Some EGIDs might have almost no roof (this might also happen with the heating system), because the ratio is very small in this case mult will be 0.1 the Fmin. Check if we are getting these cases
-        # check if electric_system_{self.y_end} is in qbuildings_data
-        PV_tot_final = 0
+        PV_init_total = 0
+        PV_init_list = []
+        PV_final_tot = 0
+        PV_final_list = []
         for building, building_data in self.qbuildings_data['buildings_data'].items():
-            key_name = f'electric_system_{self.y_end}'
-            if key_name in building_data and building_data[key_name] == 'PV':
-                PV_tot_final += 1
+            # Get the number of house that currently installed a PV
+            key_name_1 = f'electric_system_{self.y_start}'
+            # check if electric_system_{self.y_start} is in qbuildings_data
+            if key_name_1 in  building_data and building_data[key_name_1] == 'PV':
+                PV_init_total +=1
+                PV_init_list = PV_init_list + [1]
+            key_name_2 = f'electric_system_{self.y_end}'
+            # check if electric_system_{self.y_end} is in qbuildings_data
+            if key_name_2 in building_data and building_data[key_name_2] == 'PV':
+                PV_final_tot += 1
+                PV_final_list = PV_final_list + [1]
 
         if f'electric_system_{self.y_end}' in self.pathway_data.columns:
-            elec_schedule = self.get_logistic_2(E_start=PV_init_int, E_stop=PV_tot_final,k_factor=pv_k_factor,
-                                                     c_factor=pv_c_factor, y_span=y_span, final_value=True,
-                                                     starting_value=True)
-            elec_schedule = [int(round(v)) for v in elec_schedule]
+            elec_schedule = self.get_logistic_2(E_start=PV_init_total, E_stop=PV_final_tot, k_factor=pv_k_factor, c_factor=pv_c_factor, y_span=y_span, final_value=True,starting_value=True)
+        else:
+            elec_schedule = self.get_logistic_2(E_start=PV_init_total, E_stop=PV_final_tot, k_factor=pv_k_factor, c_factor=pv_c_factor, y_span=y_span, final_value=False,starting_value=True)
+        elec_schedule = [int(round(v)) for v in elec_schedule]
+
+        # TO DO: adapt this for if there are mults or not, and if we want to install max or not
+        # verify if max_PV has been defined
+        if 'max_PV' in locals():
+            # max_PV is defined in the local scope
+            x = 1
+        else:
+            # max_PV is not defined
+            max_PV = self.get_max_pv_capacity()
+        # TO DO: change the code for when there are PV installed (mults cannot be max_PV in this case)
+        mults = max_PV
+        # Get the pathway
+        pathway_elec_mul, pathway_elec_use = self.select_unit_random(PV_init_list, elec_schedule, method='unit_phase_in', mults=mults)
 
         # Loop through all time periods
         for i in range(1,len(y_span)):

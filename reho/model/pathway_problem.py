@@ -160,8 +160,12 @@ class PathwayProblem(REHO):
 
             # Start with all buildings using this unit (represented by 1)
             initial_state = [1] * N_initial
+            # Final state is the final heating system (represented by 0)
+            #position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+            final_state = [1 if i == unit else 0 for i in unit_pathway[self.y_end].values]
+
             # Use random logic to decide which buildings stop using the unit at each step
-            pathway_use_unit = self.select_unit_random(initial_state,phase_out_schedule, method='unit_phase_out')
+            pathway_use_unit = self.select_unit_random(initial_state,phase_out_schedule, method='unit_phase_out', final_selection=final_state)
             #TO DO: test if select_unit_random works well when we have more NG, where some of them don't phase out
             for i in range(1,len(y_span)):
                 year = y_span[i]
@@ -327,7 +331,7 @@ class PathwayProblem(REHO):
             EMOO_list = (EMOO_list-EMOO_list[0])*(diff_stop-diff_start)/(EMOO_list[-1]-EMOO_list[0]) + diff_start # Stretching the curve
         return EMOO_list
 
-    def select_unit_random(self, initial_selection, steps, method, mults=None): # TO DO: maybe we just nees one function that gets the mul or not depending on the method selected
+    def select_unit_random(self, initial_selection, steps, method, final_selection=None, mults=None): # TO DO: maybe we just nees one function that gets the mul or not depending on the method selected
         """
         Function to select random buildings to phase_out or phase_in a unit. It receives an array with the number of buildings with a unit in each step.
         - EMOO_bool_tot: each key is a step of the pathway. For each key there is a boolean list of which building has PV installed (example: EMOO_data[0]=[1,0,0,0,0], EMOO_data[2]=[1,0,0,0,1])
@@ -342,7 +346,10 @@ class PathwayProblem(REHO):
         random.seed(42)
 
         j = 0
+
         bool_selection = initial_selection
+        if final_selection is not None:
+            bool_selection_dummy = final_selection
         EMOO_bool[j] = np.array([[i] for i in bool_selection])
         EMOO_bool_tot[j] = EMOO_bool[j]
         if mults is not None:
@@ -352,7 +359,10 @@ class PathwayProblem(REHO):
         if method == "unit_phase_in":
             position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 0] # if a building already has a unit, it cannot be selected
         else:
-            position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+            if final_selection is None:
+                position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+            else:
+                position_list = [i for i in np.array(range(len(final_selection))) if np.array(bool_selection_dummy)[i] == 0] # if a building will keep a unit, it cannot be selected
         for step in steps[1:]:
             j += 1
             nb_bui_to_select = abs(step - previous_step)
@@ -366,7 +376,11 @@ class PathwayProblem(REHO):
                 EMOO_bool[j] = np.array([[ii] for ii in [1 if i in position_selection else 0 for i in range(len(initial_selection))]])
             else:
                 bool_selection = np.array(bool_selection) - np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
-                position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+                if final_selection is None:
+                    position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+                else:
+                    bool_selection_dummy = np.array(bool_selection_dummy) + np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
+                    position_list = [i for i in np.array(range(len(final_selection))) if np.array(bool_selection_dummy)[i] == 0]
                 EMOO_bool[j] = np.array([[ii] for ii in [0 if i in position_selection else 1 for i in range(len(initial_selection))]])
 
             EMOO_bool_tot[j] = np.array([[i] for i in bool_selection])

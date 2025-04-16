@@ -155,7 +155,7 @@ class PathwayProblem(REHO):
                 c_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == unit, 's_curve_c_factor'].values[0]
 
             # Get phase-out timeline (number of buildings using the unit each year)
-            phase_out_schedule = self.get_logistic_2(E_start=N_initial,E_stop=N_final,k_factor=k_factor, c_factor=c_factor,y_span=y_span,final_value=True,starting_value=True)
+            phase_out_schedule = self.generate_s_curve(initial_value=N_initial, target_value=N_final, k_factor=k_factor, c_factor=c_factor, y_span=y_span, force_target=True, starting_value=True)
             phase_out_schedule = [int(round(v)) for v in phase_out_schedule]
 
             # Start with all buildings using this unit (represented by 1)
@@ -226,9 +226,9 @@ class PathwayProblem(REHO):
                 PV_final_list = PV_final_list + [0]
 
         if f'electric_system_{self.y_end}' in self.pathway_data.columns:
-            elec_schedule = self.get_logistic_2(E_start=PV_init_total, E_stop=PV_final_tot, k_factor=pv_k_factor, c_factor=pv_c_factor, y_span=y_span, final_value=True,starting_value=True)
+            elec_schedule = self.generate_s_curve(initial_value=PV_init_total, target_value=PV_final_tot, k_factor=pv_k_factor, c_factor=pv_c_factor, y_span=y_span, force_target=True, starting_value=True)
         else:
-            elec_schedule = self.get_logistic_2(E_start=PV_init_total, E_stop=PV_final_tot, k_factor=pv_k_factor, c_factor=pv_c_factor, y_span=y_span, final_value=False,starting_value=True)
+            elec_schedule = self.generate_s_curve(initial_value=PV_init_total, target_value=PV_final_tot, k_factor=pv_k_factor, c_factor=pv_c_factor, y_span=y_span, force_target=False, starting_value=True)
         elec_schedule = [int(round(v)) for v in elec_schedule]
 
         # TO DO: adapt this for if there are mults or not, and if we want to install max or not
@@ -252,6 +252,7 @@ class PathwayProblem(REHO):
             print(y_span[i])
             # Update the constraints
             self.parameters['PV_install'] = pathway_elec_use[i]
+            #TO DO: enforce PV_mult
 
             for unit in list(np.unique(Ext_heat_Units)):
                 if 'HeatPump' in unit:
@@ -266,170 +267,109 @@ class PathwayProblem(REHO):
             # Optimize the new system
             self.single_optimization(Pareto_ID=i) #TO DO: substitute i by y_span[i]
 
-    def get_logistic(self,E_start=1e-2,E_stop=1e-3,y_start=2024,y_stop=2050,k_factor=1,c_factor=2035,n_steps=2, final_value=False,starting_value=True):
+    def generate_s_curve(self, initial_value=1e-2, target_value=1e-3, k_factor=1, c_factor=2035, y_span=[2025, 2050], force_target=False, starting_value=True):
         """
-        Function to generate a logistic curve (S-curve) for the EMOO values
-        Parameters:
-        - E_start: Initial value of the EMOO
-        - E_stop: Final value of the EMOO
-        - y_start: Initial year
-        - y_stop: Final year
-        - k: steepness of the curve
-        - c: inflection point of the curve
-        - n: number of points
-        - final_value: If True, the final value is E_stop
-        - starting_value: If True, the starting value is E_start
-        Returns:
-        - EMOO_list: List of EMOO values
-        - y_span: List of years
-        """
-        y_span=np.linspace(start=y_start,stop=y_stop,num=n_steps,endpoint=True)
-        if E_start==E_stop:
-            EMOO_list = [E_start for key in y_span]
-        else:
-            EMOO_list = E_stop+(E_start-E_stop)/(1+np.exp(-k_factor*(c_factor-y_span)))
-            if starting_value is True:
-                diff_start = E_start
-            else:
-                diff_start = EMOO_list[0]
-            if final_value is True:
-                diff_stop=E_stop
-            else:
-                diff_stop = EMOO_list[-1]
-            EMOO_list = (EMOO_list-EMOO_list[0])*(diff_stop-diff_start)/(EMOO_list[-1]-EMOO_list[0]) + diff_start # Stretching the curve
-        return EMOO_list, y_span
+        Generates a logistic (S-curve) trend for EMOO values over a given year span.
 
-    def get_logistic_2(self,E_start=1e-2,E_stop=1e-3,k_factor=1,c_factor=2035, y_span=[2025, 2050], final_value=False,starting_value=True):
-        """
-        Function to generate a logistic curve (S-curve) for the EMOO values
         Parameters:
-        - E_start: Initial value of the EMOO
-        - E_stop: Final value of the EMOO
-        - y_start: Initial year
-        - y_stop: Final year
-        - k: steepness of the curve
-        - c: inflection point of the curve
-        - y_span:
-        - final_value: If True, the final value is E_stop
-        - starting_value: If True, the starting value is E_start
+        - initial_value (float): Starting EMOO value (low end of the S-curve).
+        - target_value (float): Ending EMOO value (high end of the S-curve).
+        - k_factor (float): Controls the steepness of the curve.
+        - c_factor (int): Year of the inflection point (center of the curve).
+        - y_span (list or np.array): Range of years for the curve.
+        - force_target (bool): If True, ensures the last value of the curve is exactly target_value.
+        - starting_value (bool): If True, ensures the first value of the curve is exactly initial_value.
+
         Returns:
-        - EMOO_list: List of EMOO values
-        - y_span: List of years
+        - EMOO_list (np.array): Logistic curve values.
         """
-        if E_start==E_stop:
-            EMOO_list = [E_start for key in y_span]
+        if initial_value == target_value:
+            EMOO_list = [initial_value for key in y_span]
         else:
-            EMOO_list = E_stop+(E_start-E_stop)/(1+np.exp(-k_factor*(c_factor-y_span)))
+            EMOO_list = target_value + (initial_value - target_value) / (1 + np.exp(-k_factor * (c_factor - y_span)))
+            # Determine what the start and stop should scale to
             if starting_value is True:
-                diff_start = E_start
+                start_val = initial_value
             else:
-                diff_start = EMOO_list[0]
-            if final_value is True:
-                diff_stop=E_stop
+                start_val = EMOO_list[0]
+            if force_target is True:
+                stop_val = target_value
             else:
-                diff_stop = EMOO_list[-1]
-            EMOO_list = (EMOO_list-EMOO_list[0])*(diff_stop-diff_start)/(EMOO_list[-1]-EMOO_list[0]) + diff_start # Stretching the curve
+                stop_val = EMOO_list[-1]
+            # Normalize and stretch the curve between desired start/stop
+            EMOO_list = (EMOO_list-EMOO_list[0])*(stop_val-start_val)/(EMOO_list[-1]-EMOO_list[0]) + start_val
         return EMOO_list
 
     def select_unit_random(self, initial_selection, steps, method, final_selection=None, mults=None): # TO DO: maybe we just nees one function that gets the mul or not depending on the method selected
         """
-        Function to select random buildings to phase_out or phase_in a unit. It receives an array with the number of buildings with a unit in each step.
-        - EMOO_bool_tot: each key is a step of the pathway. For each key there is a boolean list of which building has PV installed (example: EMOO_data[0]=[1,0,0,0,0], EMOO_data[2]=[1,0,0,0,1])
-        - EMOO_bool: each key is a step of the pathway. For each key there is a boolean list of which building installed PV for the current step(example: EMOO_data[0]=[1,0,0,0,0], EMOO_data[2]=[0,0,0,0,1])
-        - EMOO_data: each key is a step of the pathway. For each key, there is the list of PV installed capacity for each building (example: EMOO_data[0]=[5,0,0,0,0], EMOO_data[2]=[5,0,0,0,10])
+        Randomly selects buildings to phase in or phase out a unit over time steps.
+
+        Parameters:
+        - initial_selection (list): Boolean list where 1 means the building has a unit initially.
+        - steps (list): List of time steps indicating how many units should exist at each step.
+        - method (str): Either 'unit_phase_in' or 'unit_phase_out'.
+        - final_selection (list, optional): Boolean list of final unit configuration.
+        - mults (list, optional): Multiplier list (e.g. installed capacities) for buildings.
+
+        Returns:
+        - If mults is None: Dict of building unit statuses at each step.
+        - If mults is provided: Tuple of (capacities dict, unit statuses dict).
         """
         if method not in {"unit_phase_in", "unit_phase_out"}:
             raise ValueError("Invalid method. Must be 'unit_phase_in' or 'unit_phase_out'.")
 
-        EMOO_bool = {}
-        EMOO_bool_tot = {}
         random.seed(42)
+        unit_status_per_step = {} # Boolean status of buildings per step
+        total_status_per_step = {}
+        capacities_per_step = {} if mults is not None else None
+
+        current_status = initial_selection.copy()
+        final_dummy = final_selection.copy() if final_selection is not None else None
 
         j = 0
-
-        bool_selection = initial_selection
-        if final_selection is not None:
-            bool_selection_dummy = final_selection
-        EMOO_bool[j] = np.array([[i] for i in bool_selection])
-        EMOO_bool_tot[j] = EMOO_bool[j]
+        total_status_per_step[j] = unit_status_per_step[j] = np.array([[i] for i in current_status])
+        # Initialize capacity if applicable
         if mults is not None:
-            EMOO_data = {}
-            EMOO_data[j] = np.array([[i] for i in np.array(mults) * np.array(bool_selection)])
-        previous_step = steps[0]
+            capacities_per_step[j] = np.array([[i] for i in np.array(mults) * np.array(current_status)])
+
+        # Determine initial list of selectable building positions
         if method == "unit_phase_in":
-            position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 0] # if a building already has a unit, it cannot be selected
-        else:
+            selectable_positions = [i for i in np.array(range(len(initial_selection))) if np.array(current_status)[i] == 0] # if a building already has a unit, it cannot be selected
+        else:  # unit_phase_out
             if final_selection is None:
-                position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+                selectable_positions = [i for i in np.array(range(len(initial_selection))) if np.array(current_status)[i] == 1]
             else:
-                position_list = [i for i in np.array(range(len(final_selection))) if np.array(bool_selection_dummy)[i] == 0] # if a building will keep a unit, it cannot be selected
-        for step in steps[1:]:
+                selectable_positions = [i for i in np.array(range(len(final_selection))) if np.array(final_dummy)[i] == 0] # if a building will keep a unit, it cannot be selected
+
+        previous_step_value = steps[0]
+        # Iterate over remaining steps
+        for step_value in steps[1:]:
             j += 1
-            nb_bui_to_select = abs(step - previous_step)
-            if nb_bui_to_select != 0:
-                position_selection = random.sample(position_list, k=nb_bui_to_select) # Return a list that contains any k number of the items from a list
+            buildings_to_change = abs(step_value - previous_step_value)
+            if buildings_to_change > 0:
+                position_selection = random.sample(selectable_positions, k=buildings_to_change) # Return a list that contains any k number of the items from a list
             else:
                 position_selection = []
+            # Update the current status of the buildings
             if method == "unit_phase_in":
-                bool_selection = np.array(bool_selection) + np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
-                position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 0]
-                EMOO_bool[j] = np.array([[ii] for ii in [1 if i in position_selection else 0 for i in range(len(initial_selection))]])
-            else:
-                bool_selection = np.array(bool_selection) - np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
+                current_status = np.array(current_status) + np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
+                selectable_positions = [i for i in np.array(range(len(initial_selection))) if np.array(current_status)[i] == 0]
+                unit_status_per_step[j] = np.array([[ii] for ii in [1 if i in position_selection else 0 for i in range(len(initial_selection))]])
+            else: # unit_phase_out
+                current_status = np.array(current_status) - np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
                 if final_selection is None:
-                    position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
+                    selectable_positions = [i for i in np.array(range(len(initial_selection))) if np.array(current_status)[i] == 1]
                 else:
-                    bool_selection_dummy = np.array(bool_selection_dummy) + np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
-                    position_list = [i for i in np.array(range(len(final_selection))) if np.array(bool_selection_dummy)[i] == 0]
-                EMOO_bool[j] = np.array([[ii] for ii in [0 if i in position_selection else 1 for i in range(len(initial_selection))]])
+                    final_dummy = np.array(final_dummy) + np.array([1 if i in position_selection else 0 for i in range(len(initial_selection))])
+                    selectable_positions = [i for i in np.array(range(len(final_selection))) if np.array(final_dummy)[i] == 0]
+                unit_status_per_step[j] = np.array([[ii] for ii in [0 if i in position_selection else 1 for i in range(len(initial_selection))]])
 
-            EMOO_bool_tot[j] = np.array([[i] for i in bool_selection])
+            total_status_per_step[j] = np.array([[i] for i in current_status])
             if mults is not None:
-                EMOO_data[j] = np.array([[i] for i in np.array(mults) * np.array(bool_selection)])
-            previous_step = step
+                capacities_per_step[j] = np.array([[i] for i in np.array(mults) * np.array(current_status)])
+
+            previous_step_value = step_value
         if mults is None:
-            return EMOO_bool_tot
+            return total_status_per_step
         else:
-            return EMOO_data, EMOO_bool_tot
-
-
-
-    def select_values_random(self, initial_selection, steps, values=None):
-        """
-        This function is used to select random buildings for the pathway.
-        For instance, if you have 5 buildings, and you want to gradually install PV in the buildings.
-        For each pathway step, you need to specify the number of buildings in which you want PV to be installed: steps=[1,1,2,3,4,4,5,5]
-        Here is the list of PV capacity that you want to install: values=[5,5,5,10,10]
-        Consider that the first building already has its 5kW installed: initial_selection=[1,0,0,0,0]
-        Then, this function will return you 3 dictionaries:
-        - EMOO_data: each key is a step of the pathway. For each key, there is the list of PV installed capacity for each building (example: EMOO_data[0]=[5,0,0,0,0], EMOO_data[2]=[5,0,0,0,10])
-        - EMOO_bool_tot: each key is a step of the pathway. For each key there is a boolean list of which building has PV installed (example: EMOO_data[0]=[1,0,0,0,0], EMOO_data[2]=[1,0,0,0,1])
-        - EMOO_bool: each key is a step of the pathway. For each key there is a boolean list of which building installed PV for the current step(example: EMOO_data[0]=[1,0,0,0,0], EMOO_data[2]=[0,0,0,0,1])
-        """
-        EMOO_data = {}
-        EMOO_bool = {}
-        EMOO_bool_tot = {}
-        random.seed(42)
-
-        j = 0
-        bool_selection = initial_selection
-        EMOO_bool[j] = np.array([[i] for i in bool_selection])
-        EMOO_bool_tot[j] = EMOO_bool[j]
-        EMOO_data[j] = np.array([[i] for i in np.array(values) * np.array(bool_selection)])
-        previous_step = steps[0]
-        position_list = [i for i in np.array(range(len(values))) if np.array(bool_selection)[i] == 0]
-        for step in steps[1:]:
-            j += 1
-            nb_bui_to_select = step - previous_step
-            if nb_bui_to_select != 0:
-                position_selection = random.sample(position_list, k=nb_bui_to_select) #Return a list that contains any k of the items from a list
-            else:
-                position_selection = []
-            bool_selection = np.array(bool_selection) + np.array([1 if i in position_selection else 0 for i in range(len(values))])
-            position_list = [i for i in np.array(range(len(values))) if np.array(bool_selection)[i] == 0]
-            EMOO_bool[j] = np.array([[ii] for ii in [1 if i in position_selection else 0 for i in range(len(values))]])
-            EMOO_bool_tot[j] = np.array([[i] for i in bool_selection])
-            EMOO_data[j] = np.array([[i] for i in np.array(values) * np.array(bool_selection)])
-            previous_step = step
-
-        return EMOO_data, EMOO_bool, EMOO_bool_tot
+            return capacities_per_step, total_status_per_step

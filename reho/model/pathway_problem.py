@@ -85,6 +85,10 @@ class PathwayProblem(REHO):
             # Add enforce heating units in the scenario['specific']
             Ext_heat_Units = np.array([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in self.qbuildings_data['buildings_data']]
                             + [self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_end}'] for key in self.qbuildings_data['buildings_data']])
+
+            building_keys = list(self.qbuildings_data['buildings_data'].keys())
+            self.parameters['HeatPump_install'] = np.array([[0] for key in self.qbuildings_data['buildings_data'].keys()])
+
             for unit in list(np.unique(Ext_heat_Units)):
                 # check if the unit has HeatPump in a part of the name
                 if 'HeatPump' in unit:
@@ -92,8 +96,10 @@ class PathwayProblem(REHO):
                     if 'enforce_HeatPump' not in self.scenario['specific']:
                         self.scenario['specific'].append(f'enforce_HeatPump')
                     # check if the unit is not already in the parameters
-                    if f'HeatPump_install' not in self.parameters.keys():
-                        self.parameters['HeatPump_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
+                    for b_idx, key in enumerate(building_keys):
+                        heating_system = self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}']
+                        if heating_system == unit:
+                            self.parameters['HeatPump_install'][b_idx][0] += 1
                 else:
                     if f'enforce_{unit}' not in self.scenario['specific']:
                         self.scenario['specific'].append(f'enforce_{unit}')
@@ -191,6 +197,24 @@ class PathwayProblem(REHO):
                 # Add remaining columns to the building data
                 building.update(filtered_data)
 
+        # List of years you're interested in
+        years = ['heating_system_2025','heating_system_2030', 'heating_system_2035', 'heating_system_2040', 'heating_system_2045', 'heating_system_2050']
+
+        # Create a list of dicts for each building
+        data = []
+        for building_name, building_info in self.qbuildings_data['buildings_data'].items():
+            row = {'building': building_name}
+            for year in years:
+                row[year] = building_info.get(year, None)  # safely get the value or None if missing
+            data.append(row)
+
+        # Convert list of dicts to DataFrame
+        df = pd.DataFrame(data)
+
+        # Optionally, set the building name as index
+        df.set_index('building', inplace=True)
+
+
         # Generate pathway for the electric system TO DO: adapt code to when I have more than one electric system
         # Get the logistic curve parameters for PV
         if 'k_factor' in self.pathway_parameters and 'PV' in self.pathway_parameters['k_factor']:
@@ -248,24 +272,33 @@ class PathwayProblem(REHO):
         pathway_elec_mul, pathway_elec_use = self.select_unit_random(PV_init_list, elec_schedule, method='unit_phase_in', mults=instalable_mults_future)
 
         # Loop through all time periods
-        for i in range(1,len(y_span)):
-            print(y_span[i])
-            # Update the constraints
-            self.parameters['PV_install'] = pathway_elec_use[i]
-            #TO DO: enforce PV_mult
+        for t in range(1, len(y_span)):
+            year = int(y_span[t])
+            print(year)
 
-            for unit in list(np.unique(Ext_heat_Units)):
+            # Update constraints for the current time period
+            self.parameters['PV_install'] = pathway_elec_use[t]
+
+            # Initialize HeatPump_install with zeros
+            building_keys = list(self.qbuildings_data['buildings_data'].keys())
+            self.parameters['HeatPump_install'] = np.array([[0] for key in self.qbuildings_data['buildings_data'].keys()])
+
+            # Loop through each unit type
+            for unit in np.unique(Ext_heat_Units):
                 if 'HeatPump' in unit:
-                    self.parameters['HeatPump_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{int(y_span[i])}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
+                    for b_idx, key in enumerate(building_keys):
+                        heating_system = self.qbuildings_data['buildings_data'][key][f'heating_system_{year}']
+                        if heating_system == unit:
+                            self.parameters['HeatPump_install'][b_idx][0] += 1  # Increment if it matches
                 else:
-                    self.parameters['{}_install'.format(unit)] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{int(y_span[i])}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
-
+                    # For other units, create individual install arrays
+                    self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit else [0] for key in building_keys])
 
             # Update the existing conditions
-            self.parameters['Units_Ext'] = self.results[self.scenario["name"]][i-1]['df_Unit']['Units_Mult'] #TO DO: substitute i-1 by y_span[i-1]
+            self.parameters['Units_Ext'] = self.results[self.scenario["name"]][t-1]['df_Unit']['Units_Mult'] #TO DO: substitute t-1 by y_span[t-1]
 
             # Optimize the new system
-            self.single_optimization(Pareto_ID=i) #TO DO: substitute i by y_span[i]
+            self.single_optimization(Pareto_ID=t) #TO DO: substitute i by y_span[i]
 
     def generate_s_curve(self, initial_value=1e-2, target_value=1e-3, k_factor=1, c_factor=2035, y_span=[2025, 2050], force_target=False, starting_value=True):
         """

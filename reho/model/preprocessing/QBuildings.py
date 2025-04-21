@@ -96,7 +96,7 @@ class QBuildingsReader:
 
         return
 
-    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
+    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, egid=None, district=None, id_building=None, transformer=None, transformer_new=None, meteo_id=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
         """
         Reads buildings-related data from CSV files and prepare it for the REHO model.
 
@@ -139,6 +139,31 @@ class QBuildingsReader:
         """
         self.data['buildings'] = file_reader(buildings_filename)
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
+
+        if district is not None:
+            # Filter the buildings based on the specified district
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['NOMSECTEUR'] == district]
+
+        if transformer is not None:
+            # Filter the buildings based on the specified transformer
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['transformer'] == transformer]
+
+        if transformer_new is not None:
+            # Filter the buildings based on the specified transformer
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['transformer_new'] == transformer_new]
+
+        if meteo_id is not None:
+            # Filter the buildings based on the specified meteo_id
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['meteo_id'] == meteo_id]
+
+        if id_building is not None:
+            # Filter the buildings based on the specified id_building
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['id_building'] == id_building]
+
+        if egid is not None:
+            if type(egid) != list:
+                egid = [egid]
+            self.data['buildings'] = self.data['buildings'][self.data['buildings']['egid'].isin(egid)]
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
@@ -401,6 +426,9 @@ def translate_buildings_to_REHO(df_buildings):
         # Annual roof and facade irradiance
         'roof_annual_irr_kWh_y': 'roof_annual_irr_kWh_y',
         'facade_annual_irr_kWh_y': 'facade_annual_irr_kWh_y',
+
+        # to delete
+        'transformer_new': 'transformer_new',
     }
 
     try:

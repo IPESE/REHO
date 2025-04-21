@@ -322,6 +322,9 @@ scripts/*
 scripts/examples/results
 #!scripts/Lausanne/
 #!scripts/CRYOS/
+!scripts/Pathways/
+/scripts/Pathways/results/
+
 *.json
 *.dat
 *.txt

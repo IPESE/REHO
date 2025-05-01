@@ -37,28 +37,11 @@ class PathwayProblem(REHO):
 
         self.default_s_curve_factors = pd.read_csv(os.path.join(path_to_infrastructure, 'building_units.csv'), sep=';', usecols=['Unit', 's_curve_k_factor', 's_curve_c_factor'])
 
-    def get_max_pv_capacity(self):
-        print('Calculating maximum PV capacity')
-        # check if enforce_PV is in the scenario and remove if yes
-        dummy = False
-        if 'enforce_PV' in self.scenario['specific']:
-            self.scenario['specific'].remove('enforce_PV')
-            dummy = True
-        self.scenario['specific'].append('enforce_PV_max')
-        # Get the maximum PV capacity
-        self.single_optimization(Pareto_ID='PV_max')
-        REHO_max_PV = self.results[self.scenario['name']]['PV_max']['df_Unit']
-
-        self.scenario['specific'].remove('enforce_PV_max')
-        # TO DO: See if necessary to append the enforce_PV again
-        if dummy == True:
-            self.scenario['specific'].append('enforce_PV')
-
-        return REHO_max_PV
+        self.method = method
+        self.initialise_methods()
 
     def execute_pathway_building_scale(self, pathway_unit_use=None):
 
-        #TO DO: The initial scenario should be built here
         # Set up initial scenario
         self.scenario['specific'] = ['unique_heating_system', # Do not allow two different heating systems (Ex: not NG boiler and heatpump simultaneously)
                                      'enforce_PV',            # Enforce PV Units_Use to 0 or 1 on all buildings
@@ -124,7 +107,7 @@ class PathwayProblem(REHO):
                 max_PV = self.get_max_pv_capacity() # if a mult is not provided we install the max PV
             # TO DO: add enforce PV_mult
 
-        #existing_system = self.single_optimization(Pareto_ID=0) # TO DO: substitute Pareto_ID=0 by self.y_start, test if i need existing_system = self.single_optimization(Pareto_ID=0)
+        # Run optimization problem for the existing system
         self.single_optimization(Pareto_ID=0) # TO DO: substitute Pareto_ID=0 by self.y_start
 
         # Remove all specific constraints
@@ -300,21 +283,91 @@ class PathwayProblem(REHO):
             # Optimize the new system
             self.single_optimization(Pareto_ID=t) #TO DO: substitute i by y_span[i]
 
+    def get_max_pv_capacity(self):
+        """
+        Calculates the maximum photovoltaic (PV) capacity for the current scenario.
+
+        This function temporarily modifies the scenario configuration to enforce
+        the maximum PV constraint, performs a single optimization run, and retrieves
+        the resulting PV capacity. If the scenario initially had the `enforce_PV`
+        flag, it is removed before optimization and restored afterward.
+
+        Steps performed:
+        - Temporarily removes the 'enforce_PV' flag from the scenario if present.
+        - Adds the 'enforce_PV_max' flag to enforce maximum PV capacity.
+        - Runs a single optimization with the 'PV_max' identifier.
+        - Retrieves the PV capacity from the optimization results.
+        - Cleans up the scenario flags by removing 'enforce_PV_max' and restoring
+          'enforce_PV' if it was originally present.
+
+        Returns
+        -------
+        pandas.DataFrame
+            A DataFrame containing the maximum PV capacity (`df_Unit`) for the
+            current scenario.
+        """
+        print('Calculating maximum PV capacity')
+        # check if enforce_PV is in the scenario and remove if yes
+        dummy = False
+        if 'enforce_PV' in self.scenario['specific']:
+            self.scenario['specific'].remove('enforce_PV')
+            dummy = True
+        self.scenario['specific'].append('enforce_PV_max')
+        # Get the maximum PV capacity
+        self.single_optimization(Pareto_ID='PV_max')
+        REHO_max_PV = self.results[self.scenario['name']]['PV_max']['df_Unit']
+
+        self.scenario['specific'].remove('enforce_PV_max')
+        # TO DO: See if necessary to append the enforce_PV again
+        if dummy == True:
+            self.scenario['specific'].append('enforce_PV')
+
+        return REHO_max_PV
+
     def generate_s_curve(self, initial_value=1e-2, target_value=1e-3, k_factor=1, c_factor=2035, y_span=[2025, 2050], force_target=False, starting_value=True):
         """
-        Generates a logistic (S-curve) trend for EMOO values over a given year span.
+        Generate a logistic (S-curve) progression for EMOO values across a range of years.
 
-        Parameters:
-        - initial_value (float): Starting EMOO value (low end of the S-curve).
-        - target_value (float): Ending EMOO value (high end of the S-curve).
-        - k_factor (float): Controls the steepness of the curve.
-        - c_factor (int): Year of the inflection point (center of the curve).
-        - y_span (list or np.array): Range of years for the curve.
-        - force_target (bool): If True, ensures the last value of the curve is exactly target_value.
-        - starting_value (bool): If True, ensures the first value of the curve is exactly initial_value.
+        This function creates a smooth logistic transition from an initial value to a target value
+        across a specified year range, typically used for modeling gradual changes (e.g., emissions,
+        efficiency improvements, or technology uptake).
 
-        Returns:
-        - EMOO_list (np.array): Logistic curve values.
+        Parameters
+        ----------
+        initial_value : float, optional
+            Starting value of the curve (default is ``1e-2``).
+
+        target_value : float, optional
+            Ending value of the curve (default is ``1e-3``).
+
+        k_factor : float, optional
+            Steepness factor of the S-curve. Higher values lead to a sharper transition (default is ``1``).
+
+        c_factor : int, optional
+            Year of inflection (center point) where the curve changes most rapidly (default is ``2035``).
+
+        y_span : list or np.array, optional
+            A list or array of years over which to compute the S-curve (default is ``[2025, 2050]``).
+
+        force_target : bool, optional
+            If ``True``, explicitly sets the final value of the curve to match `target_value`
+            (default is ``False``).
+
+        starting_value : bool, optional
+            If ``True``, explicitly sets the first value of the curve to match `initial_value`
+            (default is ``True``).
+
+        Returns
+        -------
+        np.array
+            A NumPy array of EMOO values corresponding to the input year span, forming a logistic curve.
+
+        Notes
+        -----
+        - If `initial_value` equals `target_value`, the function returns a constant array.
+        - The curve is scaled to exactly match start and/or end values if `starting_value` or `force_target` are enabled.
+        - Internally, the function uses the logistic function:
+          ``f(x) = target + (initial - target) / (1 + exp(-k * (c - year)))``
         """
         if initial_value == target_value:
             EMOO_list = [initial_value for key in y_span]
@@ -335,18 +388,49 @@ class PathwayProblem(REHO):
 
     def select_unit_random(self, initial_selection, steps, method, final_selection=None, mults=None): # TO DO: maybe we just nees one function that gets the mul or not depending on the method selected
         """
-        Randomly selects buildings to phase in or phase out a unit over time steps.
+        Randomly select buildings to phase in or phase out a unit over a series of time steps.
 
-        Parameters:
-        - initial_selection (list): Boolean list where 1 means the building has a unit initially.
-        - steps (list): List of time steps indicating how many units should exist at each step.
-        - method (str): Either 'unit_phase_in' or 'unit_phase_out'.
-        - final_selection (list, optional): Boolean list of final unit configuration.
-        - mults (list, optional): Multiplier list (e.g. installed capacities) for buildings.
+        This function simulates the stepwise deployment or removal of units (e.g., technologies or systems)
+        across a set of buildings. The selection process is randomized but reproducible (seeded with 42).
+        It tracks both unit status and optionally associated capacities over time.
 
-        Returns:
-        - If mults is None: Dict of building unit statuses at each step.
-        - If mults is provided: Tuple of (capacities dict, unit statuses dict).
+        Parameters
+        ----------
+        initial_selection : list of int
+            A boolean-like list where `1` indicates the building initially has the unit, and `0` indicates absence.
+
+        steps : list of int
+            A list specifying the number of units that should exist at each time step.
+
+        method : str
+            The operation mode, either:
+            - ``'unit_phase_in'``: units are added over time,
+            - ``'unit_phase_out'``: units are removed over time.
+
+        final_selection : list of int, optional
+            Used only with ``'unit_phase_out'``. Indicates the desired final unit configuration. Buildings marked
+            with `1` will retain the unit and will not be selected for phase-out.
+
+        mults : list of float, optional
+            A list of multipliers representing capacity or weight per building. If provided, the function also returns
+            the evolving capacities over time.
+
+        Returns
+        -------
+        dict or tuple of dict
+            If `mults` is ``None``:
+                dict
+                    A dictionary mapping each step index to a NumPy array of unit statuses for all buildings.
+
+            If `mults` is provided:
+                tuple of (dict, dict)
+                    - A dictionary mapping step index to the capacity (multiplied unit status) per building.
+                    - A dictionary mapping step index to the boolean unit status per building.
+
+        Raises
+        ------
+        ValueError
+            If `method` is not one of ``'unit_phase_in'`` or ``'unit_phase_out'``.
         """
         if method not in {"unit_phase_in", "unit_phase_out"}:
             raise ValueError("Invalid method. Must be 'unit_phase_in' or 'unit_phase_out'.")
@@ -406,3 +490,34 @@ class PathwayProblem(REHO):
             return total_status_per_step
         else:
             return capacities_per_step, total_status_per_step
+
+    def initialise_methods(self):
+        """
+        Initialize the ``self.method`` dictionary with default values.
+
+        This method sets up default configuration flags used throughout the optimization process.
+        If a specific key is not already defined in ``self.method``, it will be initialized
+        with a default value. This ensures required options are always present with consistent defaults.
+
+        Default keys and values
+        ------------------------
+        - ``'install_PV_max'`` : ``False``
+            If False the system install the optimal PV capacity.
+
+        - ``'install_PV_mult'`` : ``False``
+            Indicates that PV installation based on a specified multiplier is disabled by default.
+
+        Notes
+        -----
+        - Existing keys in ``self.method`` are preserved and not overwritten.
+        - This method is typically called during model setup to ensure a consistent method dictionary.
+        """
+        # Define default values for method keys
+        defaults = {
+            'install_PV_max': False,  # Install maximum PV capacity
+            'install_PV_mult': False,  # Install PV capacity based on given mult
+        }
+
+        # Apply defaults to self.method if a key is missing
+        for key, value in defaults.items():
+            self.method.setdefault(key, value)

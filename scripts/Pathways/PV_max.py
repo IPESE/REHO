@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     # Set scenario
     scenario = dict()
-    scenario['Objective'] = 'CAPEX'
+    scenario['Objective'] = 'OPEX'
     scenario['name'] = 'pv_max'
     scenario['specific'] = ['enforce_PV_max']
     scenario['exclude_units'] = ['OIL_Boiler', 'WOOD_Stove', 'HeatPump', 'ThermalSolar', 'DataHeat','NG_Cogeneration', 'WaterTankSH', 'Battery','Battery']

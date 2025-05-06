@@ -2,10 +2,11 @@ from reho.model.reho import *
 from reho.plotting import plotting
 
 if __name__ == '__main__':
+    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'buildings_lausanne.csv')
 
     # Set building parameters
     reader = QBuildingsReader()
-    qbuildings_data = reader.read_csv(buildings_filename='../Pathways/QBuildings/buildings_lausanne.csv')
+    qbuildings_data = reader.read_csv(buildings_filename=buildings_filename)
 
     # Select clustering options for weather data
     cluster = {'custom_weather': 'data/profiles/Pully-hour.csv', 'Location': 'Pully', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}

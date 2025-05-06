@@ -7,7 +7,7 @@ import time
 
 if __name__ == '__main__':
     # read specific column from csv file
-    transf = pd.read_csv('../Pathways/QBuildings/QBuildings_SDEWES_updated_no_EH_2.csv', usecols=['transformer_new'])
+    transf = pd.read_csv('../Pathways/QBuildings/QBuildings_SDEWES_updated_2.csv', usecols=['transformer_new'])
     transf_list = transf['transformer_new'].unique().tolist()
 
     process_time_list = []
@@ -21,7 +21,7 @@ if __name__ == '__main__':
         try:
             # Set building parameters
             reader = QBuildingsReader()
-            qbuildings_data = reader.read_csv(buildings_filename='../Pathways/QBuildings/QBuildings_SDEWES_updated_no_EH_2.csv', transformer_new=transformer)
+            qbuildings_data = reader.read_csv(buildings_filename='../Pathways/QBuildings/QBuildings_SDEWES_updated_delete.csv', transformer_new=transformer, nb_buildings=5)
             nb_buildings = len(qbuildings_data['buildings_data'])
 
             # Select clustering options for weather data
@@ -40,11 +40,11 @@ if __name__ == '__main__':
             method = {'building-scale': True, 'parallel_computation': True}
 
             # Initialize available units and grids
-            grids = infrastructure.initialize_grids({'Electricity': {},
-                                                     'NaturalGas': {},
-                                                     'Oil': {},
-                                                     'Heat': {}
-                                                     })
+            grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.2810, "Cost_demand_cst": 0.1535}, # (23-04-2025) https://www.lausanne.ch/vie-pratique/energies-et-eau/services-industriels/particuliers/je-choisis-mon-offre/electricite.html?tab=tarifs
+                                                     'NaturalGas': {"Cost_supply_cst": 0.1511, "Cost_demand_cst": 0.0}, # (23-04-2025) https://www.lausanne.ch/vie-pratique/energies-et-eau/services-industriels/particuliers/je-choisis-mon-offre/gaz-naturel.html?tab=tarifs
+                                                     'Heat': {"Cost_supply_cst": 0.1609, "Cost_demand_cst": 0.000}, # (23-04-2025) https://www.lausanne.ch/vie-pratique/energies-et-eau/services-industriels/professionnels/les-offres/chaleur.html?tab=tarifs
+                                                     'Oil': {"Cost_supply_cst": 0.0941, "Cost_demand_cst": 0.000}, #  (23-04-2025) energy content of oil is 137,381 Btu per gallon or 10.63619997 kWh/l (https://www.eia.gov/energyexplained/units-and-calculators/)
+                                                     })                                                            # oil migros Lausanne 100.11	CHF/100 l (https://www.migrol.ch/fr/energie-chaleur/acheter-%C3%A9nergie/mazout/commander-mazout/?m=100&zip=1000&city=Lausanne#/)
 
             grids['Electricity']['ReinforcementOfNetwork'] = np.array([1E6])
             grids['NaturalGas']['ReinforcementOfNetwork'] = np.array([1E6])
@@ -67,13 +67,13 @@ if __name__ == '__main__':
             pathway_parameters['c_factor']['PV'] = 2037
 
             # Pathway data
-            pathway_data = pd.read_csv('../Pathways/QBuildings/Pathway_SDEWES_test.csv')
+            pathway_data = pd.read_csv('../Pathways/QBuildings/Pathway_SDEWES_test_no_EH.csv')
 
             reho_path = PathwayProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, pathway_parameters= pathway_parameters, pathway_data=pathway_data, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
             reho_path.execute_pathway_building_scale()
             #plotting.plot_performance(reho_path.results, plot='costs', indexed_on='Pareto_ID', label='EN_long',title="Economical performance").show()
             # Save results
-            reho_path.save_results(format=['xlsx'], filename=f'pathway_{transformer}')
+            reho_path.save_results(format=['pickle','xlsx'], filename=f'pathway_{transformer}')
         except Exception as e:
             error_transf.append(transformer)
             error_list.append(e)

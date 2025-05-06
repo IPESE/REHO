@@ -44,6 +44,7 @@ class PathwayProblem(REHO):
 
         # Set up initial scenario
         self.scenario['specific'] = ['unique_heating_system', # Do not allow two different heating systems (Ex: not NG boiler and heatpump simultaneously)
+                                     'no_ElectricalHeater_without_HP', # Do not allow Electrical Heater without Heat Pump
                                      'enforce_PV',            # Enforce PV Units_Use to 0 or 1 on all buildings
                                      #'enforce_Battery'        # Enforce Battery Units_Use to 0 or 1 on all buildings
                                      ]
@@ -96,19 +97,26 @@ class PathwayProblem(REHO):
 
         # Check if PV is in the initial scenario
         if f'electric_system_{self.y_start}' in self.pathway_data.columns:
-            self.parameters['PV_install'] = np.array(
-                [[1] if self.qbuildings_data['buildings_data'][key][f'electric_system_{self.y_start}'] == 'PV' else [0]
-                 for key in self.qbuildings_data['buildings_data'].keys()])
+            self.parameters['PV_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'electric_system_{self.y_start}'] == 'PV' else [0] for key in self.qbuildings_data['buildings_data'].keys()])
         else:
             self.parameters['PV_install'] = np.array([[0] for key in self.qbuildings_data['buildings_data'].keys()])
 
         if self.parameters['PV_install'].sum() > 0:
-            if f'mult_electric_system_{self.y_start}' not in self.pathway_data.columns:
+            if f'pv_mult_{self.y_start}' not in self.pathway_data.columns:
                 max_PV = self.get_max_pv_capacity() # if a mult is not provided we install the max PV
+            else:
+                #self.parameters['PV_mult'] = np.array([[self.qbuildings_data['buildings_data'][key][f'pv_mult_{self.y_start}']] for key in self.qbuildings_data['buildings_data'].keys()])
+                self.parameters['PV_mult'] = np.array([
+                    [self.qbuildings_data['buildings_data'][key][f'pv_mult_{self.y_start}']]
+                    if self.qbuildings_data['buildings_data'][key][f'pv_mult_{self.y_start}'] > 0
+                    else [-1]
+                    for key in self.qbuildings_data['buildings_data']
+                ], dtype=object)
+            self.scenario['specific'].append('enforce_PV_mult')
             # TO DO: add enforce PV_mult
 
         # Run optimization problem for the existing system
-        self.single_optimization(Pareto_ID=0) # TO DO: substitute Pareto_ID=0 by self.y_start
+        self.single_optimization(Pareto_ID=self.y_start)
 
         # Remove all specific constraints
         #self.scenario['specific'] = []
@@ -155,16 +163,16 @@ class PathwayProblem(REHO):
 
             # Use random logic to decide which buildings stop using the unit at each step
             pathway_use_unit = self.select_unit_random(initial_state,phase_out_schedule, method='unit_phase_out', final_selection=final_state)
-            #TO DO: test if select_unit_random works well when we have more NG, where some of them don't phase out
+            # Create a DataFrame for the unit's pathway
             for i in range(1,len(y_span)):
-                year = y_span[i]
+                year = int(y_span[i])
                 # Create column for this year based on phase-out logic
                 col = pd.Series(pathway_use_unit[i].flatten(), name=year)
                 # Replace 1s with the unit name (still in use), and 0s with the final heating system
                 col = col.replace(1, unit)
                 col = np.where(col == 0, unit_pathway[self.y_end], col)
                 # Add the column to the unit's pathway
-                unit_pathway[f'heating_system_{int(year)}'] = col
+                unit_pathway[f'heating_system_{year}'] = col
             # Append the full pathway for this unit to the final list
             final_pathways.append(unit_pathway)
         # Combine all unit-level transitions into a complete DataFrame
@@ -196,7 +204,6 @@ class PathwayProblem(REHO):
 
         # Optionally, set the building name as index
         df.set_index('building', inplace=True)
-
 
         # Generate pathway for the electric system TO DO: adapt code to when I have more than one electric system
         # Get the logistic curve parameters for PV
@@ -247,9 +254,16 @@ class PathwayProblem(REHO):
             # max_PV is not defined
             max_PV = self.get_max_pv_capacity()
         # TO DO: change the code for when there are PV installed (mults cannot be max_PV in this case)
-        # TO DO: simplify this, maybe put these two codes in get_max_pv_capacity
-        df_instalable_mults = max_PV.loc[(max_PV.index.str.contains('PV')) & ~(max_PV.index.str.contains('district'))]
-        instalable_mults_future = [np.sum([row['Units_Mult'] for index, row in df_instalable_mults.iterrows() if index.split('_')[-1] == h]) for h in self.infrastructure.House]
+        if 'enforce_PV_mult' in self.scenario['specific']:
+            PV_mult_raw = self.parameters['PV_mult']  # This is an array of lists, some empty
+            instalable_mults_future = []
+            for i, pv_list in enumerate(PV_mult_raw):
+                if pv_list:  # non-empty list means PV_mult was > 0
+                    instalable_mults_future.append(pv_list[0])
+                else:
+                    instalable_mults_future.append(max_PV[i])
+        else:
+            instalable_mults_future = max_PV
 
         # Get the pathway
         pathway_elec_mul, pathway_elec_use = self.select_unit_random(PV_init_list, elec_schedule, method='unit_phase_in', mults=instalable_mults_future)
@@ -257,7 +271,7 @@ class PathwayProblem(REHO):
         # Loop through all time periods
         for t in range(1, len(y_span)):
             year = int(y_span[t])
-            print(year)
+            print(f'Running optimisation for year {year}')
 
             # Update constraints for the current time period
             self.parameters['PV_install'] = pathway_elec_use[t]
@@ -278,49 +292,61 @@ class PathwayProblem(REHO):
                     self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit else [0] for key in building_keys])
 
             # Update the existing conditions
-            self.parameters['Units_Ext'] = self.results[self.scenario["name"]][t-1]['df_Unit']['Units_Mult'] #TO DO: substitute t-1 by y_span[t-1]
+            self.parameters['Units_Ext'] = self.results[self.scenario["name"]][int(y_span[t-1])]['df_Unit']['Units_Mult']
 
             # Optimize the new system
-            self.single_optimization(Pareto_ID=t) #TO DO: substitute i by y_span[i]
+            self.single_optimization(Pareto_ID=year)
 
     def get_max_pv_capacity(self):
         """
-        Calculates the maximum photovoltaic (PV) capacity for the current scenario.
+        Calculate the maximum photovoltaic (PV) capacity for each house in the current scenario.
 
-        This function temporarily modifies the scenario configuration to enforce
-        the maximum PV constraint, performs a single optimization run, and retrieves
-        the resulting PV capacity. If the scenario initially had the `enforce_PV`
-        flag, it is removed before optimization and restored afterward.
+        This function temporarily modifies the scenario configuration to enforce the maximum PV constraint,
+        performs an optimization run, and retrieves the maximum number of PV units per house. It ensures that
+        any pre-existing PV enforcement flags (`enforce_PV`, `enforce_PV_mult`) are removed before the run
+        and restored afterward.
 
         Steps performed:
-        - Temporarily removes the 'enforce_PV' flag from the scenario if present.
-        - Adds the 'enforce_PV_max' flag to enforce maximum PV capacity.
-        - Runs a single optimization with the 'PV_max' identifier.
-        - Retrieves the PV capacity from the optimization results.
-        - Cleans up the scenario flags by removing 'enforce_PV_max' and restoring
-          'enforce_PV' if it was originally present.
+        - Temporarily removes `'enforce_PV'` and `'enforce_PV_mult'` flags from the scenario if present.
+        - Adds `'enforce_PV_max'` to enforce a scenario with maximum PV installation.
+        - Runs a single optimization (`single_optimization`) with the `Pareto_ID='PV_max'`.
+        - Extracts unit-level results for PV technologies, excluding district-level systems.
+        - Sums the number of PV units installed per house based on the `Units_Mult` column.
+        - Restores any previously removed enforcement flags.
 
         Returns
         -------
-        pandas.DataFrame
-            A DataFrame containing the maximum PV capacity (`df_Unit`) for the
-            current scenario.
+        list of float
+            A list containing the maximum number of PV units installed per house, based on optimization results.
+
+        Notes
+        -----
+        - Only PV systems that are not part of a district-level system are considered.
+        - The function uses the `House` list from `self.infrastructure` to organize results per building.
+        - Existing scenario flags are preserved and restored to ensure scenario integrity.
         """
         print('Calculating maximum PV capacity')
         # check if enforce_PV is in the scenario and remove if yes
         dummy = False
+        dummy_2 = False
         if 'enforce_PV' in self.scenario['specific']:
             self.scenario['specific'].remove('enforce_PV')
             dummy = True
+        if 'enforce_PV_mult' in self.scenario['specific']:
+            self.scenario['specific'].remove('enforce_PV_mult')
+            dummy_2 = True
         self.scenario['specific'].append('enforce_PV_max')
         # Get the maximum PV capacity
         self.single_optimization(Pareto_ID='PV_max')
-        REHO_max_PV = self.results[self.scenario['name']]['PV_max']['df_Unit']
-
+        df_Unit = self.results[self.scenario['name']]['PV_max']['df_Unit']
+        df_max_PV = df_Unit.loc[(df_Unit.index.str.contains('PV')) & ~(df_Unit.index.str.contains('district'))]
+        REHO_max_PV = [np.sum([row['Units_Mult'] for index, row in df_max_PV.iterrows() if index.split('_')[-1] == h]) for h in self.infrastructure.House]
         self.scenario['specific'].remove('enforce_PV_max')
         # TO DO: See if necessary to append the enforce_PV again
         if dummy == True:
             self.scenario['specific'].append('enforce_PV')
+        if dummy_2 == True:
+            self.scenario['specific'].append('enforce_PV_mult')
 
         return REHO_max_PV
 

@@ -18,7 +18,8 @@ param PVA_temperature_ref{u in UnitsOfType['PV']} default 298;		#K 		[1]
 param PVA_efficiency_ref{u in UnitsOfType['PV']} default 0.2;		#- 		[1]
 param PVA_efficiency_var{u in UnitsOfType['PV']} default 0.0012;	#- 		[1]
 
-param PV_install{u in UnitsOfType['PV']} default 0;
+param PV_install{u in UnitsOfType['PV']} default 0; # Mirco has param PV_install{h in House} default 0;
+param PV_mult{h in House} default 0;
 																									
 param PVA_temperature{u in UnitsOfType['PV'],p in Period,t in Time[p]} :=
 	(PVA_U_h[u]*(T_ext[p,t]+273.15))/(PVA_U_h[u] - PVA_efficiency_var[u]*Irr[p,t]) +
@@ -48,3 +49,7 @@ sum{ui in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h]}(Units_Mult[ui]) + s
 # constraint to enforce the installation of PV panels
 subject to enforce_PV{u in UnitsOfType['PV']}:
 Units_Use[u] = PV_install[u];
+
+# constraint to enforce the installation of PV panels with specific multiplier
+subject to enforce_PV_mult{h in House: PV_mult[h] >= 0}: # for each house, if PV_mult <0 it will not enforce the constraint
+sum{uj in UnitsOfType['PV'] inter UnitsOfHouse[h]}(Units_Mult[uj]) = PV_mult[h];

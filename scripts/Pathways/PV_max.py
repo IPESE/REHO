@@ -24,6 +24,10 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
+    grids['Electricity']['ReinforcementOfNetwork'] = np.array([1E6])
+    grids['NaturalGas']['ReinforcementOfNetwork'] = np.array([1E6])
+    grids['Electricity']['Network_ext'] = 1E6
+    grids['NaturalGas']['Network_ext'] = 1E6
     units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization

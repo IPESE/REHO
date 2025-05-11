@@ -2,7 +2,7 @@ from reho.model.reho import *
 from reho.plotting import plotting
 
 if __name__ == '__main__':
-    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'buildings_lausanne.csv')
+    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'buildings_lausanne_2_no_hosp.csv')
 
     # Set building parameters
     reader = QBuildingsReader()

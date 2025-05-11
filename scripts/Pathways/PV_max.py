@@ -20,7 +20,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'building-scale': True}
+    method = {'building-scale': True, 'parallel_computation': True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()

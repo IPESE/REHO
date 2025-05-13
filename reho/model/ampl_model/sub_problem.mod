@@ -232,13 +232,17 @@ sum{st in HC_Cold_loc_SQ[h,sq]: Streams_Tout_corr[st,p,t]>=k+epsilon} (Streams_M
 #--------------------------------------------------------------------------------------------------------------------#
 param dt{Period} default 1;		#h
 param dp{Period} default 1;		#days
-param lifetime{u in Units} default 20;	
+
+param lifetime{u in Units} default 20;
+param n_years_ins default 50;
+
 param GWP_supply_cst{l in ResourceBalances} default 0.100;
 param GWP_demand_cst{l in ResourceBalances} default 0.0; 						#-
 param GWP_supply{l in ResourceBalances,p in Period,t in Time[p]} default GWP_supply_cst[l];
 param GWP_demand{l in ResourceBalances,p in Period,t in Time[p]} default GWP_demand_cst[l];											# kgCO2/unit
 param GWP_unit1{u in Units} default 0;
 param GWP_unit2{u in Units} default 0;
+param GWP_ins{h in House} default 0;
 var GWP_house_op{h in House};
 var GWP_op;
 var GWP_Unit_constr{u in Units} >= 0;
@@ -255,10 +259,10 @@ subject to Annual_CO2_construction_unit{u in Units}:
 GWP_Unit_constr[u] = (Units_Use[u]*GWP_unit1[u] + Units_Mult[u]*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
-GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u]);
+GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u]) + GWP_ins[h]/n_years_ins;
 
 subject to Annual_CO2_construction:
-GWP_constr = sum{ u in Units} GWP_Unit_constr[u];
+GWP_constr = sum{u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_ins[h])/n_years_ins; 
 
 
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
@@ -298,13 +302,12 @@ param Costs_House_limit{h in House} default 0;						# CHF/yr
 param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
 param Costs_ins{h in House} default 0;
-param Costs_house_initiation default 7759;
+param Costs_House_upfront default 7759;
 
 param n_years default 25;
 param i_rate default 0.02;
 param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
 
-param n_years_ins default 50;
 param tau_ins := i_rate*(1+i_rate)^n_years_ins/(((1+i_rate)^n_years_ins)-1);
 
 

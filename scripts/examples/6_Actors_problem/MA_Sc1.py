@@ -4,9 +4,9 @@ if __name__ == '__main__':
 
     cluster_num = 6
     location = 'Lugano'
-    nb_buildings = 10
+    nb_buildings = 3
     risk_factor = 0.031457
-    n_samples = 48
+    n_samples = 2
     Owner_portfolio = False
     Utility_portfolio = True
     Owner_PIR = False

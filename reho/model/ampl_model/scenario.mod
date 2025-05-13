@@ -41,8 +41,6 @@ lca_tot["Human_toxicity"] + penalties;
 #--------------------------------------------------------------------------------------------------------------------#
 
 set Obj_fct := Lca_kpi union {'TOTEX', 'OPEX', 'CAPEX', 'GWP'};
-# set actors_dual := {'nu_owner', 'nu_renters', 'nu_utility'};
-# set actors := House union {'Owner', 'Utility'};
 
 param beta_duals{o in Obj_fct} default 0;
 param nu_renters{h in House} default 0;
@@ -57,11 +55,10 @@ param Cost_demand_district{h in House, l in ResourceBalances} default Cost_deman
 param renter_subsidies{h in House} default 0;
 param owner_subsidies{h in House} default 0;
 
+var cost_actors;
 
-minimize SP_obj_fct:
-beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau * (Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
-sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties 
-+ sum{h in House} (nu_renters[h] * (C_rent_fix[h] 
+subject to actors_costs_SP:
+cost_actors = sum{h in House} (nu_renters[h] * (C_rent_fix[h] 
     + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply_district[h,l] * Grid_supply[l,h,p,t]) 
     + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h]))
     - renter_subsidies[h])
@@ -69,10 +66,14 @@ sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties
     + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])  
     + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand_district[h,l] * Grid_demand[l,h,p,t])  
     - (Costs_House_inv[h] * tau)
-    - (ERA[h] * Costs_house_initiation / ((1-((1+i_rate)^(-70)))/i_rate))
+    - (ERA[h] * Costs_House_upfront / ((1-((1+i_rate)^(-70)))/i_rate))
     + owner_subsidies[h]))
 + nu_utility * (sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply_district[h,l] * Grid_supply[l,h,p,t])
     - sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand_district[h,l] * Grid_demand[l,h,p,t]));
+
+minimize SP_obj_fct:
+beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau * (Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
+sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties + cost_actors;
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#

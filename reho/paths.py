@@ -51,6 +51,11 @@ path_to_weather = os.path.join(path_to_data, 'weather')
 path_to_actor = os.path.join(path_to_data, 'actor')
 path_to_income = os.path.join(path_to_actor, 'income_percentile.csv')
 path_to_rent = os.path.join(path_to_actor, 'rent_proportion.csv')
+path_to_risk = os.path.join(path_to_actor, 'risk_parameters.csv')
+
+path_to_refurbishment = os.path.join(path_to_data, 'refurbishment')
+path_to_refurbishment_data = os.path.join(path_to_refurbishment, 'refurbishment.csv')
+path_to_refurbishment_index = os.path.join(path_to_refurbishment, 'refurbishment_index.csv')
 
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')

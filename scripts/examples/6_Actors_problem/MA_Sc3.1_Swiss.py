@@ -31,9 +31,8 @@ def filter_nan(qbuildings_data):
     return qbuildings_data
 
 if __name__ == '__main__':
-
+    run_id = 5
     clusters_data = pd.read_csv("./clusters_data.csv")
-    run_id = 1
     runs = [[0, 1, 2], [3], [4], [5], [6], [7]][run_id]
 
     for i in runs:
@@ -61,6 +60,7 @@ if __name__ == '__main__':
             reader = QBuildingsReader(load_roofs=True)
             reader.establish_connection('Suisse')
             qbuildings_data = reader.read_db(transformer, nb_buildings=nb_buildings)
+            qbuildings_data = filter_nan(qbuildings_data)
             #qbuildings_data = build_district(transformer, nb_buildings)
 
             # Set specific parameters
@@ -84,7 +84,7 @@ if __name__ == '__main__':
             units = infrastructure.initialize_units(scenario, grids)
 
             DW_params={}
-            DW_params['max_iter'] = 2
+            DW_params['max_iter'] = 4
 
             # Initiate the actor-based problem formulation
             reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobiasl", DW_params=DW_params)
@@ -131,7 +131,12 @@ if __name__ == '__main__':
             # Run actor-based optimization
             reho.scenario["name"] = "MOO_actors"
             #reho.set_actors_boundary(bounds=bounds, n_sample=n_samples, risk_factor=risk_factor)
-            reho.set_actors_boundary_CH(bounds=bounds, step=0.02, risk_factor=risk_factor)
+            if i == 2:
+                reho.set_actors_boundary_CH(bounds={"Utility": [0,0.000001], "Owners": [0.17, 0.37], "PIR": [0.99, 1]}, start =0.17, step=0.02, risk_factor=risk_factor)
+            elif i == 1:
+                reho.set_actors_boundary_CH(bounds={"Utility": [0,0.000001], "Owners": [0.0, 0.3], "PIR": [0.99, 1]}, start =0.0, step=0.01, risk_factor=risk_factor)
+            else:
+                reho.set_actors_boundary_CH(bounds=bounds, step=0.02, risk_factor=risk_factor)
 
             #reho.save_samples_parameters(df_name='samples', file_name='samples_{}'.format(transformer))
 

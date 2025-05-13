@@ -1,6 +1,4 @@
 from scipy.stats import qmc
-
-#from reho.model.plot3 import Owner_Epsilon
 from reho.model.reho import *
 
 __doc__ = """
@@ -30,11 +28,10 @@ class ActorsProblem(REHO):
     def execute_actors_problem(self, n_sample=10, bounds=None, actor="Owners"):
         self.method["actors_problem"] = True
         self.method["include_all_solutions"] = True
-        # self.method['building-scale'] = True
         self.method['district-scale'] = True
         self.scenario["Objective"] = "TOTEX_bui"
         self.set_indexed["ActorObjective"] = np.array([actor])
-        self.samples = pd.DataFrame([[None, None]] * n_sample, columns=['utility_portfolio', 'owner_portfolio_rate'])
+        self.samples = pd.DataFrame([[None, None]] * n_sample, columns=['utility_portfolio', 'PIR'])
 
         Scn_ID = self.scenario['name']
         results = self.run_actors_optimization(self.samples, 0)
@@ -51,14 +48,17 @@ class ActorsProblem(REHO):
             if self.results_MP[self.scenario["name"]][i] is not None:
                 self.samples.loc[i, "objective"] = self.results_MP[self.scenario["name"]][i][0]["df_District"]["Objective"]["Network"]
 
-        #self.pool.close()
         gc.collect()  # free memory
 
     def run_actors_optimization(self, samples, ids):
         if any([samples[col][0] for col in samples]):  # if samples contain values
             param = samples.iloc[ids]
-            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'owner_portfolio_rate': param['owner_portfolio_rate']}
+            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'PIR': param['PIR']}
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
+
+        if 'Renter_noSub' not in scenario.get('specific', []):
+            scenario['specific'] = scenario.get('specific', []) + ['Renter_noSub']
+
         try:
             scn = self.scenario["name"]
             self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=0)
@@ -68,6 +68,16 @@ class ActorsProblem(REHO):
             return None, None
 
     def read_configurations(self, path=None):
+        """
+
+        Parameters
+        ----------
+        path
+
+        Returns
+        -------
+
+        """
         if path is None:
             filename = 'tr_' + str(self.buildings_data["Building1"]["transformer"]) + '_' + str(len(self.buildings_data)) + '.pickle'
             path = os.path.join(path_to_configurations, filename)
@@ -110,23 +120,36 @@ class ActorsProblem(REHO):
                 if self.method['parallel_computation']:
                     results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(SP_scenario_init, Scn_ID, s, h, None, beta)) for h in
                                self.infrastructure.houses}
+                    while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                        time.sleep(1)
+                    for h in self.infrastructure.houses:
+                        df_Results, attr = results[h].get()
+                        self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
+
                     if self.method['refurbishment']:
-                        while len(results[list(self.buildings_data.keys())[-1]].get()) != 3:
-                            time.sleep(1)
-                        for h in self.infrastructure.houses:
-                            df_Results, df_Results2,attr = results[h].get()
-                            self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
-                            self.feasible_solutions += 1
-                            self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results2, attr)
-                            self.feasible_solutions -= 1
                         self.feasible_solutions += 1
-                    else:
-                        while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
-                            time.sleep(1)
+                        self.refurbishment = True
+                        results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(SP_scenario_init, Scn_ID, s, h, None, beta)) for h in
+                                   self.infrastructure.houses}
                         for h in self.infrastructure.houses:
                             df_Results, attr = results[h].get()
                             self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
-                self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increases
+
+                else:
+                    for id, h in enumerate(self.infrastructure.houses):
+                        df_Results, attr = self.SP_initiation_execution(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=s,
+                                                                        h=h, epsilon_init=None, beta=beta)
+                        self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
+
+                    if self.method['refurbishment']:
+                        self.feasible_solutions += 1
+                        self.refurbishment = True
+                        df_Results, attr = self.SP_initiation_execution(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=s,
+                                                                        h=h, epsilon_init=None, beta=beta)
+                        self.add_df_Results_SP(Scn_ID, s, self.iter, h, df_Results, attr)
+
+                self.refurbishment = False
+                self.feasible_solutions += 1
         self.pool.close()
     
         if not os.path.exists(path_to_configurations):
@@ -136,34 +159,21 @@ class ActorsProblem(REHO):
         writer = open(os.path.join(path_to_configurations, filename), 'wb')
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], writer)
 
-    def set_actors_boundary(self, bounds, n_sample=1, risk_factor=0):
+    def set_actors_boundary(self, bounds, n_sample=1, risk_factor=0, mode='default', start=0.01, step=0.02):
+        self.parameters['risk_factor'] = risk_factor
+
+        if mode =='CH':
+            n_sample = math.ceil((bounds["Owners"][1] - bounds["Owners"][0]) / step) + 1
         sampler = qmc.Sobol(d=3)
         sample = sampler.random(n=n_sample)
         l_bound = [bounds[key][0] for key in ["Utility", "Owners", "PIR"]]
         u_bound = [bounds[key][1] for key in ["Utility", "Owners", "PIR"]]
-        samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio','owner_portfolio_rate'])
-        samples = samples.sort_values(by='utility_portfolio').reset_index(drop=True)
+        samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio','PIR'])
         self.samples = samples.round(4)
-        self.parameters['risk_factor'] = risk_factor
-
-    def set_actors_boundary_CH(self, bounds, step=0.02, risk_factor=0):
-        self.parameters['risk_factor'] = risk_factor
-        n_sample =  math.ceil((bounds["Owners"][1] - bounds["Owners"][0]) / step) + 1
-        sampler = qmc.Sobol(d=3)
-        sample = sampler.random(n=n_sample)
-        l_bound = [bounds[key][0] for key in ["Utility", "Owners", "PIR"]]
-        u_bound = [bounds[key][1] for key in ["Utility", "Owners", "PIR"]]
-        samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound),
-                               columns=['utility_portfolio', 'owner_portfolio', 'owner_portfolio_rate'])
-        for i in range(n_sample):
-            samples.iloc[i].owner_portfolio = i * step
-        samples = samples.sort_values(by='owner_portfolio').reset_index(drop=True)
-        self.samples = samples.round(4)
-        self.parameters['risk_factor'] = risk_factor
-
 
     def actor_decomposition_optimization(self, scenario, actor='Renters'):
         self.scenario["Objective"] = scenario["Objective"]
+        self.scenario["specific"] = scenario["specific"]
         self.method['building-scale'] = False
         self.method['district-scale'] = True
         self.set_indexed["ActorObjective"] = np.array([actor])
@@ -176,7 +186,6 @@ class ActorsProblem(REHO):
                 self.results[Scn_ID][ids] = None
 
         self.logger.info('OPTIMIZATION FINISHED')
-
 
     def run_actor_decomposition_optimization(self, samples, Scn_ID, ids):
         self.iter = 0
@@ -192,7 +201,7 @@ class ActorsProblem(REHO):
                                                       / self.results_MP["Owners"][0][0]['df_Actors_expense']['renter_expense'][building]
                                                       for idx, building in enumerate(list(self.buildings_data.keys()))])
 
-        self.parameters['owner_portfolio_rate'] = param['owner_portfolio_rate']
+        self.parameters['PIR'] = param['PIR']
 
         self.pool = mp.Pool(mp.cpu_count())
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
@@ -219,45 +228,30 @@ class ActorsProblem(REHO):
 
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=ids)
         self.add_df_Results(None, Scn_ID, ids, self.scenario)
-        self.add_sample_Data(Scn_ID=Scn_ID, Pareto_ID=ids)
+        self.results[Scn_ID][ids]['Samples']['Owner_Epsilon_percentage'] = param['owner_portfolio'] #lower bound percentage
         self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
-        self.get_KPIs(Scn_ID, ids)# process results based on results MP
-        del self.results_MP['MOO_actors'], self.results_SP['MOO_actors']
-
-    def add_sample_Data(self, Scn_ID, Pareto_ID):
-        self.results[Scn_ID][Pareto_ID]['Samples']['Owner_Epsilon_percentage'] = self.samples['owner_portfolio'][Pareto_ID]
+        self.get_KPIs(Scn_ID, ids)
+        #del self.results_MP['MOO_actors'], self.results_SP['MOO_actors']
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
-        self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'] = pd.DataFrame()
-        self.results[Scn_ID][Pareto_ID]['df_Utility_Duals'] = pd.DataFrame()
-        self.results[Scn_ID][Pareto_ID]['df_Owners_Duals'] = pd.DataFrame()
-        self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'].index.name = 'iter'
-        self.results[Scn_ID][Pareto_ID]['df_Utility_Duals'].index.name = 'iter'
-        self.results[Scn_ID][Pareto_ID]['df_Owners_Duals'].index.name = 'iter'
-
-        self.results[Scn_ID][Pareto_ID]['df_Duals_t'] = {}
-        self.results[Scn_ID][Pareto_ID]['df_mu'] = {}
-        self.results[Scn_ID][Pareto_ID]['Epsilon'] = {}
-
+        self.results[Scn_ID][Pareto_ID]['df_Dual'] = {}
+        results = self.results[Scn_ID][Pareto_ID]['df_Dual']
+        results.update({
+            'df_Actors_dual': {},
+            'df_Dual_t': {},
+            'df_Dual': {},
+        })
         for i in range(self.iter):
-            for a in self.results_MP[Scn_ID][Pareto_ID][i].keys():
-                if a == 'df_Dual':
-                    self.results[Scn_ID][Pareto_ID]['df_mu']['Iter.{}'.format(i)]= self.results_MP[Scn_ID][Pareto_ID][i][a]
-                elif a == 'df_Dual_t':
-                    self.results[Scn_ID][Pareto_ID]['df_Duals_t']['Iter.{}'.format(i)] = self.results_MP[Scn_ID][Pareto_ID][i][a]
-                elif a == 'df_renters_dual':
-                    for b in self.results_MP[Scn_ID][Pareto_ID][i][a].index:
-                        self.results[Scn_ID][Pareto_ID]['df_Renters_Duals'].loc[i, b] = self.results_MP[Scn_ID][Pareto_ID][i][a].loc[b][0]
-                elif a == 'df_owner_dual':
-                    for b in self.results_MP[Scn_ID][Pareto_ID][i][a].index:
-                        self.results[Scn_ID][Pareto_ID]['df_Owners_Duals'].loc[i, b] = self.results_MP[Scn_ID][Pareto_ID][i][a].loc[b][0]
-                elif a == 'df_utility_dual':
-                    self.results[Scn_ID][Pareto_ID]['df_Utility_Duals'].loc[i, 'Utility'] = self.results_MP[Scn_ID][Pareto_ID][i][a].iloc[0][0]
+            mp_results = self.results_MP[Scn_ID][Pareto_ID][i]
+            for key, df in mp_results.items():
+                if key == 'df_Dual' or key == 'df_Actors_dual' or key == 'df_Dual_t':
+                    results[key][f'Iter.{i}'] = df
+        self.results[Scn_ID][Pareto_ID]['df_Dual'] = results
 
     def get_portfolio_ratio(self):
         Costs_inv = self.results['Owners'][0]['df_Performance']['Costs_inv']
-        Costs_House_init = self.results['Owners'][0]['df_Performance']['Costs_House_init']
+        Costs_House_upfront = self.results['Owners'][0]['df_Performance']['Costs_House_upfront']
         owner_portfolio = self.results['Owners'][0]['df_Performance']['owner_portfolio']
-        opr = (owner_portfolio / (Costs_inv + Costs_House_init)).mean()
+        opr = (owner_portfolio / (Costs_inv + Costs_House_upfront)).mean()
         return opr
 

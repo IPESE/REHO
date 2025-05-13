@@ -7,15 +7,15 @@ if __name__ == '__main__':
     nb_buildings = 10
     risk_factor = 0.278
     n_samples = 64
-    Owner_portfolio = False
+    Owner_portfolio = True
     Utility_portfolio = False
-    Owner_PIR = True
+    Owner_PIR = False
 
     # Set scenario
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['specific'] = ['Owner_Sub_bigM_ub', 'Owner2', 'Insulation_enforce', 'Renovation_Improvement']
+    scenario['specific'] = ['Renter_noSub', 'Owner_Sub_bigM_ub', 'Insulation_enforce', 'Renovation_Improvement']
 
     # Set building parameters
     reader = QBuildingsReader(load_roofs=True)
@@ -59,27 +59,18 @@ if __name__ == '__main__':
         reho.scenario["name"] = "Utility"
         print("Calculate boundary for Utility")
         reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Utility")
-        bound_d = reho.results["Utility"][0]["df_Actors"].loc["Utility"][0]
+        bound_d = [0, -reho.results["Utility"][0]["df_Actors"].loc["Utility"][0]]
     else:
         print("Calculate boundary for Utility: DEFAULT 0")
-        bound_d = np.array(0.00001)
+        bound_d = [0 ,0.000001]
 
-        # Define boundaries
-    if Utility_portfolio:
-        reho.scenario["name"] = "Utility"
-        print("Calculate boundary for Utility")
-        reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Utility")
-        bound_d = [0, -np.array([reho.results[i][0]["df_Actors"].loc["Utility"][0] for i in reho.results]).max() / 2]
-    else:
-        print("Calculate boundary for Utility: DEFAULT 0")
-        bound_d = [0, 0.000001]
 
         # Define owner boundaries
     if Owner_portfolio:
         reho.scenario["name"] = "Owners"
         print("Calculate boundary for Owners")
         reho.execute_actors_problem(n_sample=n_samples, bounds=None, actor="Owners")
-        bound_o = [0, 1]
+        bound_o = [0, 0.5]
     else:
         print("Calculate boundary for Owners: DEFAULT 0")
         bound_o = [0, 0.000001]
@@ -94,6 +85,7 @@ if __name__ == '__main__':
     else:
         print("Calculate PIR boundary for Owners: DEFAULT 1")
         bound_pir = [0.99, 1]
+
 
     bounds = {"Utility": bound_d, "Owners": bound_o, "PIR": bound_pir}
 

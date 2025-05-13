@@ -37,7 +37,6 @@ param PV_self_consummed{f in FeasibleSolutions, h in House, p in Period, t in Ti
 var objective_functions{a in Actors};
 
 param renter_expense_max{h in House} default 1e10; 
-param renter_subsidies_bound default 1e7;
 var renter_expense{h in House};
 var C_rent_fix{h in House} >= 0;
 var C_op_renters_to_utility{h in House} >= 0;
@@ -57,9 +56,6 @@ subject to Rent_fix{h in House, i in House : h != i}:
 
 subject to Rent_fix2{h in House, i in House : h != i}:
 (C_rent_fix[h] / ERA[h]) >= 0.8 * (C_rent_fix[i] / ERA[i]);
-
-subject to Renter_subsidies_interval{h in House}:
-renter_subsidies[h] <= renter_subsidies_bound;
 
 subject to Renter_noSub{h in House}:
 renter_subsidies[h] = 0;
@@ -92,13 +88,13 @@ objective_functions["Utility"] = - utility_portfolio;
 #--------------------------------------------------------------------------------------------------------------------#
 # Owners constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param Costs_House_init{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
+param Costs_House_upfront{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
 param owner_portfolio_min{h in House} default 0;
 var owner_portfolio{h in House};
 
 param Uh{h in House} default 0;
 param Uh_ins{f in FeasibleSolutions,h in House} default 0;
-param owner_portfolio_rate default 1;
+param PIR default 1;
 var is_ins{h in House} binary; 
 
 #Scenario 3 (Insulation_enforce)
@@ -120,11 +116,11 @@ subject to Owner_Sub_bigM_ub{h in House}:
 owner_subsidies[h] <= 1e10 * is_ins[h];
 
 subject to Owner1{h in House}:
-owner_portfolio[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_init[h];
+owner_portfolio[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_upfront[h];
 
 #Scenario 2.1 (Owner2)
 subject to Owner2{h in House}:
-owner_portfolio[h] <= owner_portfolio_rate * (Costs_House_inv[h] + Costs_House_init[h]);
+owner_portfolio[h] <= PIR * (Costs_House_inv[h] + Costs_House_upfront[h]);
 
 subject to Owner_noSub{h in House}:
 owner_subsidies[h] = 0;

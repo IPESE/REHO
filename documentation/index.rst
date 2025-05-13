@@ -75,7 +75,6 @@ Contents
    sections/6_Examples
    sections/7_Contribute
    sections/Appendix
-   sections/Notebook
 
 
 .. Indices and tables
@@ -107,7 +106,6 @@ Downloading REHO
 
         REHO is an open-source and collaborative Python library.
         Full code can be accessed from the `REHO repository <https://github.com/IPESE/REHO>`__ and project cloned using the command:
-
         ++++
 
         .. code-block:: bash

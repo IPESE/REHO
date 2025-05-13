@@ -254,7 +254,8 @@ class MasterProblem:
                            self.infrastructure.houses}
 
                 # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
-                while len(results[list(self.buildings_data.keys())[-1]].get(timeout=360)) != 2:
+                #while len(results[list(self.buildings_data.keys())[-1]].get(timeout=360)) != 2:
+                while len(results[list(self.buildings_data.keys())[-1]].get(timeout=1200)) != 2: # waiting time 20 min
                     time.sleep(1)
 
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation

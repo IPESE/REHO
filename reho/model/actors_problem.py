@@ -25,45 +25,37 @@ class ActorsProblem(REHO):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, scenario, solver, DW_params)
 
-    def execute_actors_problem(self, n_sample=10, bounds=None, actor="Owners"):
+    def execute_actors_initiation(self, Scn_ID="Owners"):
         self.method["actors_problem"] = True
         self.method["include_all_solutions"] = True
         self.method['district-scale'] = True
         self.scenario["Objective"] = "TOTEX_bui"
-        self.set_indexed["ActorObjective"] = np.array([actor])
-        self.samples = pd.DataFrame([[None, None]] * n_sample, columns=['utility_portfolio', 'PIR'])
+        self.set_indexed["ActorObjective"] = np.array([Scn_ID])
+        self.samples = pd.DataFrame([[None, None, None]], columns=['utility_profit', 'owner_profit', 'PIR'])
+        ids = 0
 
-        Scn_ID = self.scenario['name']
-        results = self.run_actors_optimization(self.samples, 0)
-
-        for ids in self.samples.index:
-            df_Results, df_Results_MP, solver_attributes = results
-            solver_attributes = solver_attributes.droplevel('Iter').iloc[[-1]].copy()
-            self.add_df_Results_MP(Scn_ID, ids, self.iter, df_Results_MP, solver_attributes)    # store results MP (pool.apply_async don't store it)
-            self.add_df_Results(None, Scn_ID, ids, self.scenario)   # process results based on results MP
-            self.get_KPIs(Scn_ID, ids)
+        results = self.run_actors_initiation(ids=ids)
+        df_Results, df_Results_MP, solver_attributes = results
+        solver_attributes = solver_attributes.droplevel('Iter').iloc[[-1]].copy()
+        self.add_df_Results_MP(Scn_ID, ids, self.iter, df_Results_MP, solver_attributes)    # store results MP (pool.apply_async don't store it)
+        self.add_df_Results(None, Scn_ID, ids, self.scenario)   # process results based on results MP
+        self.get_KPIs(Scn_ID, ids)
 
         self.samples["objective"] = None
-        for i in self.results_MP[self.scenario["name"]]:
-            if self.results_MP[self.scenario["name"]][i] is not None:
-                self.samples.loc[i, "objective"] = self.results_MP[self.scenario["name"]][i][0]["df_District"]["Objective"]["Network"]
 
+        if self.results_MP[self.scenario["name"]][ids] is not None:
+            self.samples.loc[ids, "objective"] = self.results_MP[self.scenario["name"]][ids][0]["df_District"]["Objective"]["Network"]
         gc.collect()  # free memory
 
-    def run_actors_optimization(self, samples, ids):
-        if any([samples[col][0] for col in samples]):  # if samples contain values
-            param = samples.iloc[ids]
-            self.parameters = {'utility_portfolio_min': param['utility_portfolio'], 'PIR': param['PIR']}
+    def run_actors_initiation(self, ids):
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
-
         if 'Renter_noSub' not in scenario.get('specific', []):
             scenario['specific'] = scenario.get('specific', []) + ['Renter_noSub']
-
         try:
             scn = self.scenario["name"]
-            self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=0)
-            self.add_df_Results(None, scn, 0, self.scenario)
-            return self.results[scn][0], self.results_MP[scn][0][self.iter], self.solver_attributes_MP
+            self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=ids)
+            self.add_df_Results(None, scn, ids, self.scenario)
+            return self.results[scn][ids], self.results_MP[scn][ids][self.iter], self.solver_attributes_MP
         except:
             return None, None
 
@@ -159,17 +151,65 @@ class ActorsProblem(REHO):
         writer = open(os.path.join(path_to_configurations, filename), 'wb')
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], writer)
 
-    def set_actors_boundary(self, bounds, n_sample=1, risk_factor=0, mode='default', start=0.01, step=0.02):
-        self.parameters['risk_factor'] = risk_factor
+    def set_actors_epsilon(self, actors_epsilon=None, n_samples=1, mode='default'):
+        if actors_epsilon is None:
+            actors_epsilon = {}
+        # allowed keys and their mapping to scenario actors
+        _key_map = {
+            'utility_profit_lb': 'Utility',
+            'owner_profit_lb': 'Owners',
+            'owner_PIR_ub': 'PIR',
+            'renter_risk_factor': None
+        }
+        # quick unknown‐key check
+        extra = set(actors_epsilon) - set(_key_map)
+        if extra:
+            warnings.warn(f"Unknown ε‐keys: {sorted(extra)}")
+            sys.exit(1)
 
-        if mode =='CH':
-            n_sample = math.ceil((bounds["Owners"][1] - bounds["Owners"][0]) / step) + 1
-        sampler = qmc.Sobol(d=3)
-        sample = sampler.random(n=n_sample)
-        l_bound = [bounds[key][0] for key in ["Utility", "Owners", "PIR"]]
-        u_bound = [bounds[key][1] for key in ["Utility", "Owners", "PIR"]]
-        samples = pd.DataFrame(qmc.scale(sample, l_bound, u_bound), columns=['utility_portfolio', 'owner_portfolio','PIR'])
-        self.samples = samples.round(4)
+        delta = 1e-6
+        bounds = {}  #hold [lower, upper] for 'Utility','Owners','PIR'
+
+        # Utility & Owners profit‐lb share:
+        for eps_key in ('utility_profit_lb', 'owner_profit_lb'):
+            actor = _key_map[eps_key]
+            lb, ub = actors_epsilon.get(eps_key, [0, delta])
+            if ub > 0:
+                print(f"Calculate boundary for {actor} …")
+                self.scenario['name'] = actor
+                self.execute_actors_initiation(Scn_ID=actor)
+            else:
+                print(f"Calculate boundary for {actor}: DEFAULT 0")
+                if actor == 'Utility' and ub <= 0:
+                    self.parameters["renter_expense_max"] = [1e7] * len(self.buildings_data)
+            bounds[actor] = [lb, ub if ub > 0 else delta]
+
+        # Copy PIR upper‐bound
+        bounds['PIR'] = actors_epsilon.get('owner_PIR_ub', [0, delta])
+
+        # Renter risk no bound sampling needed
+        if 'renter_risk_factor' in actors_epsilon:
+            self.parameters['risk_factor'] = actors_epsilon['renter_risk_factor']
+
+        # CH-mode override on number of samples
+        if mode == 'CH':
+            step = 0.02
+            low, high = bounds['Owners']
+            n_samples = math.ceil((high - low) / step) + 1
+
+        # Build Sobol sampler & draw
+        dims = ['Utility', 'Owners', 'PIR']
+        sampler = qmc.Sobol(d=len(dims), scramble=True)
+        k = math.ceil(math.log2(n_samples))
+        pts = sampler.random_base2(m=k)[:n_samples]
+
+        # Scale into real bounds and label
+        l_bound = [bounds[a][0] for a in dims]
+        u_bound = [bounds[a][1] for a in dims]
+        cols = ['utility_profit', 'owner_profit', 'PIR']
+        df = pd.DataFrame(qmc.scale(pts, l_bound, u_bound), columns=cols)
+
+        self.samples = df.round(4)
 
     def actor_decomposition_optimization(self, scenario, actor='Renters'):
         self.scenario["Objective"] = scenario["Objective"]
@@ -189,19 +229,23 @@ class ActorsProblem(REHO):
 
     def run_actor_decomposition_optimization(self, samples, Scn_ID, ids):
         self.iter = 0
-
         param = samples.iloc[ids]
-        self.parameters['utility_portfolio_min'] = param['utility_portfolio']
+
+        self.parameters['PIR'] = param['PIR']
         self.parameters["renter_expense_max"] = actors.generate_renter_expense_max(self.buildings_data, self.parameters)
-        if param['owner_portfolio'] <= 0.001:
-            self.parameters['owner_portfolio_min'] = [0] * len(self.buildings_data)
+
+        if param['utility_profit'] <= 0.001:
+            self.parameters['utility_profit_min'] = param['utility_profit'] * 0
         else:
-            self.parameters['owner_portfolio_min'] = param['owner_portfolio'] * np.array([self.results_MP["Owners"][0][0]['df_Actors_expense']['owner_portfolio'][building]
+            self.parameters['utility_profit_min'] = param['utility_profit'] * - self.results['Utility'][0]["df_Actors"].loc['Utility'][0]
+
+        if param['owner_profit'] <= 0.001:
+            self.parameters['owner_profit_min'] = [0] * len(self.buildings_data)
+        else:
+            self.parameters['owner_profit_min'] = param['owner_profit'] * np.array([self.results_MP["Owners"][0][0]['df_Actors_expense']['owner_profit'][building]
                                                       * self.parameters["renter_expense_max"][idx]
                                                       / self.results_MP["Owners"][0][0]['df_Actors_expense']['renter_expense'][building]
                                                       for idx, building in enumerate(list(self.buildings_data.keys()))])
-
-        self.parameters['PIR'] = param['PIR']
 
         self.pool = mp.Pool(mp.cpu_count())
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
@@ -228,7 +272,7 @@ class ActorsProblem(REHO):
 
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=ids)
         self.add_df_Results(None, Scn_ID, ids, self.scenario)
-        self.results[Scn_ID][ids]['Samples']['Owner_Epsilon_percentage'] = param['owner_portfolio'] #lower bound percentage
+        self.results[Scn_ID][ids]['Samples']['Sampling_result'] = param
         self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
         self.get_KPIs(Scn_ID, ids)
         #del self.results_MP['MOO_actors'], self.results_SP['MOO_actors']
@@ -248,10 +292,10 @@ class ActorsProblem(REHO):
                     results[key][f'Iter.{i}'] = df
         self.results[Scn_ID][Pareto_ID]['df_Dual'] = results
 
-    def get_portfolio_ratio(self):
+    def get_profit_ratio(self):
         Costs_inv = self.results['Owners'][0]['df_Performance']['Costs_inv']
         Costs_House_upfront = self.results['Owners'][0]['df_Performance']['Costs_House_upfront']
-        owner_portfolio = self.results['Owners'][0]['df_Performance']['owner_portfolio']
-        opr = (owner_portfolio / (Costs_inv + Costs_House_upfront)).mean()
+        owner_profit = self.results['Owners'][0]['df_Performance']['owner_profit']
+        opr = (owner_profit / (Costs_inv + Costs_House_upfront)).mean()
         return opr
 

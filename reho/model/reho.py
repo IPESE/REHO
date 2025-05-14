@@ -449,7 +449,7 @@ class REHO(MasterProblem):
             #TODO: Add variables
             df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][
                 ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
-                 'owner_portfolio', 'C_rent_fix', 'renter_expense','renter_subsidies','owner_subsidies', 'Costs_House_upfront', 'is_ins']]
+                 'owner_profit', 'C_rent_fix', 'renter_expense','renter_subsidies','owner_subsidies', 'Costs_House_upfront', 'is_ins']]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
             df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors_tariff"]
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
@@ -526,8 +526,6 @@ class REHO(MasterProblem):
                 if item in df_Buildings.columns:
                     df_Buildings.drop([item], axis=1)
 
-        df_Buildings = df.sort_index(level='Hub')
-
         if self.method['use_pv_orientation'] or self.method['use_facades']:
             # PV_Surface
             df_PV_Surface = self.get_final_SPs_results(MP_selection, 'df_PV_Surface')
@@ -548,9 +546,9 @@ class REHO(MasterProblem):
         df_Results["df_Unit"] = df_Unit
         df_Results["df_Grid_t"] = df_Grid_t
         df_Results["df_Time"] = df_Time
+        df_Results["df_Buildings"] = df_Buildings
 
         if self.method["save_data_input"]:
-            df_Results["df_Buildings"] = df_Buildings
 
             # df_Weather
             ids = self.number_SP_solutions.iloc[0]

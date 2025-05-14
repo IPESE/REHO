@@ -591,8 +591,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     if method["actors_problem"]:
         # Renters’ expenses and the profits of Owners and the Utility (inc. subsidies)
         df1 = get_ampl_data(ampl, 'renter_expense')
-        df2 = get_ampl_data(ampl, 'utility_portfolio')
-        df3 = get_ampl_data(ampl, 'owner_portfolio')
+        df2 = get_ampl_data(ampl, 'utility_profit')
+        df3 = get_ampl_data(ampl, 'owner_profit')
         df_Results["df_Actors_expense"] = pd.concat([df1, df2, df3], axis=1)
 
         df1 = get_ampl_data(ampl, 'Cost_demand_district', multi_index=True).groupby(level=(0, 2)).sum()
@@ -618,7 +618,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         df4 = get_ampl_data(ampl, 'Costs_House_inv') # total investment of units of the buildings (exc. Costs_House_init)
         df4.columns = ["owner_inv"]
-        df5 = get_ampl_data(ampl, 'owner_portfolio') # owners' profits without subsidies
+        df5 = get_ampl_data(ampl, 'owner_profit') # owners' profits without subsidies
         df6 = get_ampl_data(ampl, 'renter_expense') # renters' expenses with subsidies
         df7 = get_ampl_data(ampl, 'C_rent_fix')
         df8 = get_ampl_data(ampl, 'renter_subsidies')
@@ -644,7 +644,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Actors_dual"] = pd.concat([df1, df2, df3], axis=1)
 
         df_Results["Samples"] = dict()
-        df_Results["Samples"]["Owner_Epsilon"] = get_ampl_data(ampl, 'owner_portfolio_min')
+        df_Results["Samples"]["Owner_Epsilon"] = get_ampl_data(ampl, 'owner_profit_min')
         df_Results["Samples"]["Renter_Epsilon"] = get_ampl_data(ampl, 'renter_expense_max')
         df_Results["Samples"]["PIR"] = get_ampl_data(ampl, 'PIR').squeeze().item()
 

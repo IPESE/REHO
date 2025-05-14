@@ -69,28 +69,28 @@ objective_functions["Renters"] = sum{h in House}(renter_expense[h]);
 #--------------------------------------------------------------------------------------------------------------------#
 # Utility constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param utility_portfolio_min default -1e6;
-var utility_portfolio;
+param utility_profit_min default -1e6;
+var utility_profit;
 var C_op_utility_to_owners{h in House};
 
 subject to Utility1{h in House}: 
 C_op_utility_to_owners[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_demand_district[l,f,h] * Grid_demand[l,f,h,p,t] * dp[p] * dt[p]);
 
 subject to Utility2:
-utility_portfolio = sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units} Costs_Unit_inv[u] - Costs_rep;
+utility_profit = sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units} Costs_Unit_inv[u] - Costs_rep;
 
 subject to Utility_epsilon: # nu_utility
-utility_portfolio >= utility_portfolio_min;
+utility_profit >= utility_profit_min;
 
 subject to obj_fct2:
-objective_functions["Utility"] = - utility_portfolio;
+objective_functions["Utility"] = - utility_profit;
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Owners constraints
 #--------------------------------------------------------------------------------------------------------------------#
 param Costs_House_upfront{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
-param owner_portfolio_min{h in House} default 0;
-var owner_portfolio{h in House};
+param owner_profit_min{h in House} default 0;
+var owner_profit{h in House};
 
 param Uh{h in House} default 0;
 param Uh_ins{f in FeasibleSolutions,h in House} default 0;
@@ -103,33 +103,30 @@ is_ins[h] = 1;
 
 var renovation{h in House};
 
-subject to Renovation_Improvement{h in House}:
-renovation[h] = Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]); 
-
 subject to Insulation1{h in House}:
-renovation[h]  >= 0.000009 - 10000 * (1 - is_ins[h]);
+Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= 0.000009 - 10000 * (1 - is_ins[h]);
 subject to Insulation2{h in House}:
-renovation[h] <= 0.000009 + 10000 * is_ins[h];
+Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 0.000009 + 10000 * is_ins[h];
 
 #Scenario 2 & 2.1 & 3 (Owner_Sub_bigM_ub)
-subject to Owner_Sub_bigM_ub{h in House}:
+subject to Owner_Link_Subsidy_to_Insulation{h in House}:
 owner_subsidies[h] <= 1e10 * is_ins[h];
 
-subject to Owner1{h in House}:
-owner_portfolio[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_upfront[h];
+subject to Owner_profit{h in House}:
+owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_upfront[h];
 
 #Scenario 2.1 (Owner2)
-subject to Owner2{h in House}:
-owner_portfolio[h] <= PIR * (Costs_House_inv[h] + Costs_House_upfront[h]);
+subject to Owner_profit_max_PIR{h in House}:
+owner_profit[h] <= PIR * (Costs_House_inv[h] + Costs_House_upfront[h]);
 
 subject to Owner_noSub{h in House}:
 owner_subsidies[h] = 0;
 
 subject to Owner_epsilon{h in House}: #nuH_owner
-owner_portfolio[h] + owner_subsidies[h] >= owner_portfolio_min[h];
+owner_profit[h] + owner_subsidies[h] >= owner_profit_min[h];
 
 subject to obj_fct3:
-objective_functions["Owners"] = - sum{h in House} (owner_portfolio[h]);
+objective_functions["Owners"] = - sum{h in House}(owner_profit[h]);
 
 
 #--------------------------------------------------------------------------------------------------------------------#

@@ -115,11 +115,11 @@ class MasterProblem:
             self.DW_params = DW_params
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
-        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'renter_subsidies_bound','risk_factor', 'renter_expense_max','utility_portfolio_min', 'PIR', 'owner_portfolio_min','EMOO_totex_renter', 'TransformerCapacity',
+        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'renter_subsidies_bound','risk_factor', 'renter_expense_max','utility_profit_min', 'PIR', 'owner_profit_min','EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
                          "list_constraints_MP": [],
-                         "list_constraints_Actors": ['Insulation_enforce', 'Owner_Sub_bigM_ub', 'Owner2', 'Owner_noSub', 'Renter_noSub', 'Renovation_Improvement']
+                         "list_constraints_Actors": ['Insulation_enforce', 'Owner_Link_Subsidy_to_Insulation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub']
                          }
 
 

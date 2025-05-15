@@ -323,13 +323,12 @@ class MasterProblem:
                               self.method, self.solver)
 
         if self.refurbishment:
-            U_h = refurbishment.U_h_insulation(self.buildings_data)
-            Cost_ins, CO2_ins = refurbishment.refurbishment_cost_co2(self.buildings_data, U_h)
-            parameters_SP['n_years_ins'] = float(pd.read_csv(path_to_refurbishment_index)['lifetime'][0])
-            for i in buildings_data_SP:
-                buildings_data_SP[i]['U_h'] = U_h[i]
-                parameters_SP['Costs_ins'] = Cost_ins[i]
-                parameters_SP['GWP_ins'] = CO2_ins[i]
+            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2(
+                self.buildings_data[h],
+                self.local_data['df_Refurbishment'],
+                self.local_data['df_Refurbishment_index'],
+            )
+            parameters_SP['n_years_ins'] = float(self.local_data['df_Refurbishment_index']['lifetime'][0])
 
         ampl = REHO.build_model_without_solving()
 
@@ -757,13 +756,12 @@ class MasterProblem:
         parameters_SP['beta_duals'] = beta_list
 
         if self.refurbishment:
-            U_h = refurbishment.U_h_insulation(self.buildings_data)
-            Cost_ins, CO2_ins = refurbishment.refurbishment_cost_co2(self.buildings_data, U_h)
-            parameters_SP['n_years_ins'] = float(pd.read_csv(path_to_refurbishment_index)['lifetime'][0])
-            for i in buildings_data_SP:
-                buildings_data_SP[i]['U_h'] = U_h[i]
-                parameters_SP['Costs_ins'] = Cost_ins[i]
-                parameters_SP['GWP_ins'] = CO2_ins[i]
+            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2(
+                self.buildings_data[h],
+                self.local_data['df_Refurbishment'],
+                self.local_data['df_Refurbishment_index'],
+            )
+            parameters_SP['n_years_ins'] = float(self.local_data['df_Refurbishment_index']['lifetime'][0])
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:

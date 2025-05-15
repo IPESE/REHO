@@ -32,7 +32,7 @@ if __name__ == '__main__':
     actors_epsilon = {"renter_risk_factor": risk_factor,
                       "utility_profit_lb": [0, 0],
                       "owner_profit_lb": [0, 1],
-                      "owner_PIR_ub": [0.99, 1],
+                      "owner_profit_ub": [0.99, 1],
                       }
 
     # Set scenario

@@ -25,40 +25,6 @@ class ActorsProblem(REHO):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, scenario, solver, DW_params)
 
-    def execute_actors_initiation(self, Scn_ID="Owners"):
-        self.method["actors_problem"] = True
-        self.method["include_all_solutions"] = True
-        self.method['district-scale'] = True
-        self.scenario["Objective"] = "TOTEX_bui"
-        self.set_indexed["ActorObjective"] = np.array([Scn_ID])
-        self.samples = pd.DataFrame([[None, None, None]], columns=['utility_profit', 'owner_profit', 'PIR'])
-        ids = 0
-
-        results = self.run_actors_initiation(ids=ids)
-        df_Results, df_Results_MP, solver_attributes = results
-        solver_attributes = solver_attributes.droplevel('Iter').iloc[[-1]].copy()
-        self.add_df_Results_MP(Scn_ID, ids, self.iter, df_Results_MP, solver_attributes)    # store results MP (pool.apply_async don't store it)
-        self.add_df_Results(None, Scn_ID, ids, self.scenario)   # process results based on results MP
-        self.get_KPIs(Scn_ID, ids)
-
-        self.samples["objective"] = None
-
-        if self.results_MP[self.scenario["name"]][ids] is not None:
-            self.samples.loc[ids, "objective"] = self.results_MP[self.scenario["name"]][ids][0]["df_District"]["Objective"]["Network"]
-        gc.collect()  # free memory
-
-    def run_actors_initiation(self, ids):
-        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
-        if 'Renter_noSub' not in scenario.get('specific', []):
-            scenario['specific'] = scenario.get('specific', []) + ['Renter_noSub']
-        try:
-            scn = self.scenario["name"]
-            self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=ids)
-            self.add_df_Results(None, scn, ids, self.scenario)
-            return self.results[scn][ids], self.results_MP[scn][ids][self.iter], self.solver_attributes_MP
-        except:
-            return None, None
-
     def read_configurations(self, path=None):
         """
 
@@ -151,6 +117,40 @@ class ActorsProblem(REHO):
         writer = open(os.path.join(path_to_configurations, filename), 'wb')
         pickle.dump([self.results_SP, self.feasible_solutions, self.number_SP_solutions], writer)
 
+    def execute_actors_initiation(self, Scn_ID="Owners"):
+        self.method["actors_problem"] = True
+        self.method["include_all_solutions"] = True
+        self.method['district-scale'] = True
+        self.scenario["Objective"] = "TOTEX_bui"
+        self.set_indexed["ActorObjective"] = np.array([Scn_ID])
+        self.samples = pd.DataFrame([[None, None, None]], columns=['utility_profit', 'owner_profit', 'PIR'])
+        ids = 0
+
+        results = self.run_actors_initiation(ids=ids)
+        df_Results, df_Results_MP, solver_attributes = results
+        solver_attributes = solver_attributes.droplevel('Iter').iloc[[-1]].copy()
+        self.add_df_Results_MP(Scn_ID, ids, self.iter, df_Results_MP, solver_attributes)    # store results MP (pool.apply_async don't store it)
+        self.add_df_Results(None, Scn_ID, ids, self.scenario)   # process results based on results MP
+        self.get_KPIs(Scn_ID, ids)
+
+        self.samples["objective"] = None
+
+        if self.results_MP[self.scenario["name"]][ids] is not None:
+            self.samples.loc[ids, "objective"] = self.results_MP[self.scenario["name"]][ids][0]["df_District"]["Objective"]["Network"]
+        gc.collect()  # free memory
+
+    def run_actors_initiation(self, ids):
+        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
+        if 'Renter_noSub' not in scenario.get('specific', []):
+            scenario['specific'] = scenario.get('specific', []) + ['Renter_noSub']
+        try:
+            scn = self.scenario["name"]
+            self.MP_iteration(scenario, Scn_ID=scn, binary=True, Pareto_ID=ids)
+            self.add_df_Results(None, scn, ids, self.scenario)
+            return self.results[scn][ids], self.results_MP[scn][ids][self.iter], self.solver_attributes_MP
+        except:
+            return None, None
+
     def set_actors_epsilon(self, actors_epsilon=None, n_samples=1, mode='default'):
         if actors_epsilon is None:
             actors_epsilon = {}
@@ -158,7 +158,7 @@ class ActorsProblem(REHO):
         _key_map = {
             'utility_profit_lb': 'Utility',
             'owner_profit_lb': 'Owners',
-            'owner_PIR_ub': 'PIR',
+            'owner_profit_ub': 'PIR',
             'renter_risk_factor': None
         }
         # quick unknown‐key check
@@ -185,11 +185,11 @@ class ActorsProblem(REHO):
             bounds[actor] = [lb, ub if ub > 0 else delta]
 
         # Copy PIR upper‐bound
-        bounds['PIR'] = actors_epsilon.get('owner_PIR_ub', [0, delta])
+        bounds['PIR'] = actors_epsilon.get('owner_profit_ub', [0, delta])
 
         # Renter risk no bound sampling needed
-        if 'renter_risk_factor' in actors_epsilon:
-            self.parameters['risk_factor'] = actors_epsilon['renter_risk_factor']
+        if 'renter_expense_ub' in actors_epsilon:
+            self.parameters['risk_factor'] = actors_epsilon['renter_expense_ub']
 
         # CH-mode override on number of samples
         if mode == 'CH':
@@ -218,64 +218,34 @@ class ActorsProblem(REHO):
         self.method['district-scale'] = True
         self.set_indexed["ActorObjective"] = np.array([actor])
 
-        Scn_ID = self.scenario['name']
         for ids in self.samples.index:
+            self.iter = 0
+            param = self.samples.iloc[ids]
+            self.parameters['PIR'] = param['PIR']
+            self.parameters["renter_expense_max"] = actors.generate_renter_expense_max(self.buildings_data,
+                                                                                       self.parameters)
+            if param['utility_profit'] <= 0.001:
+                self.parameters['utility_profit_min'] = param['utility_profit'] * 0
+            else:
+                self.parameters['utility_profit_min'] = param['utility_profit'] * - \
+                self.results['Utility'][0]["df_Actors"].loc['Utility'][0]
+
+            if param['owner_profit'] <= 0.001:
+                self.parameters['owner_profit_min'] = [0] * len(self.buildings_data)
+            else:
+                self.parameters['owner_profit_min'] = param['owner_profit'] * np.array(
+                    [self.results_MP["Owners"][0][0]['df_Actors_expense']['owner_profit'][building]
+                     * self.parameters["renter_expense_max"][idx]
+                     / self.results_MP["Owners"][0][0]['df_Actors_expense']['renter_expense'][building]
+                     for idx, building in enumerate(list(self.buildings_data.keys()))])
             try:
-                self.run_actor_decomposition_optimization(self.samples, Scn_ID, ids)
-            except:
-                self.results[Scn_ID][ids] = None
-
-        self.logger.info('OPTIMIZATION FINISHED')
-
-    def run_actor_decomposition_optimization(self, samples, Scn_ID, ids):
-        self.iter = 0
-        param = samples.iloc[ids]
-
-        self.parameters['PIR'] = param['PIR']
-        self.parameters["renter_expense_max"] = actors.generate_renter_expense_max(self.buildings_data, self.parameters)
-
-        if param['utility_profit'] <= 0.001:
-            self.parameters['utility_profit_min'] = param['utility_profit'] * 0
-        else:
-            self.parameters['utility_profit_min'] = param['utility_profit'] * - self.results['Utility'][0]["df_Actors"].loc['Utility'][0]
-
-        if param['owner_profit'] <= 0.001:
-            self.parameters['owner_profit_min'] = [0] * len(self.buildings_data)
-        else:
-            self.parameters['owner_profit_min'] = param['owner_profit'] * np.array([self.results_MP["Owners"][0][0]['df_Actors_expense']['owner_profit'][building]
-                                                      * self.parameters["renter_expense_max"][idx]
-                                                      / self.results_MP["Owners"][0][0]['df_Actors_expense']['renter_expense'][building]
-                                                      for idx, building in enumerate(list(self.buildings_data.keys()))])
-
-        self.pool = mp.Pool(mp.cpu_count())
-        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(self.scenario)
-
-        self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
-        self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=ids, epsilon_init=None)
-        self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=ids)
-
-        while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
-            self.iter += 1
-            self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
-            self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=ids)
-            self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
-            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=ids)
-
-            if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=ids) and (self.iter > 3):
-                break
-
-        # Finalization
-        self.logger.info(self.stopping_criteria)
-        self.iter += 1
-        self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(ids))
-
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=ids)
-        self.add_df_Results(None, Scn_ID, ids, self.scenario)
-        self.results[Scn_ID][ids]['Samples']['Sampling_result'] = param
-        self.add_dual_Results(Scn_ID=Scn_ID, Pareto_ID=ids)
-        self.get_KPIs(Scn_ID, ids)
-        #del self.results_MP['MOO_actors'], self.results_SP['MOO_actors']
+                self.single_optimization(Pareto_ID=ids)
+                self.results[self.scenario['name']][ids]['Samples']['Sampling_result'] = param
+                self.add_dual_Results(Scn_ID=self.scenario['name'], Pareto_ID=ids)
+                self.logger.info(f"Sample {ids}: Optimization completed.")
+            except Exception as e:
+                self.results[self.scenario['name']][ids] = None
+                self.logger.error(f"Sample {ids}: Optimization failed with error: {e}", exc_info=True)
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
         self.results[Scn_ID][Pareto_ID]['df_Dual'] = {}
@@ -298,4 +268,3 @@ class ActorsProblem(REHO):
         owner_profit = self.results['Owners'][0]['df_Performance']['owner_profit']
         opr = (owner_profit / (Costs_inv + Costs_House_upfront)).mean()
         return opr
-

@@ -61,4 +61,8 @@ def return_local_data(cluster, qbuildings_data):
     local_data["df_Emissions"] = file_reader(path_to_emissions, index_col=[0, 1, 2])
     local_data["df_Emissions_GWP100a"] = annual_to_typical_emissions(cluster, 'CH', "GWP100a", local_data["df_Timestamp"], local_data["df_Emissions"])
 
+    # Refurbishment
+    local_data["df_Refurbishment"] = pd.read_csv(path_to_refurbishment_data)
+    local_data["df_Refurbishment_index"] = pd.read_csv(path_to_refurbishment_index)
+
     return local_data

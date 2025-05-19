@@ -49,7 +49,7 @@ subject to Costs_opex_renter2{h in House}:
 C_op_renters_to_owners[h] = sum{f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_self_consumption[f,h] * PV_self_consummed[f,h,p,t] * dp[p] * dt[p] );
 
 subject to Renter1{h in House}:
-renter_expense[h] = C_rent_fix[h] + C_op_renters_to_utility[h] + C_op_renters_to_owners[h] - renter_subsidies[h] ;
+renter_expense[h] = C_rent_fix[h] + C_op_renters_to_utility[h] + C_op_renters_to_owners[h];
 
 subject to Rent_fix{h in House, i in House : h != i}:
 (C_rent_fix[h] / ERA[h]) <= 1.2 * (C_rent_fix[i] / ERA[i]); 
@@ -61,7 +61,7 @@ subject to Renter_noSub{h in House}:
 renter_subsidies[h] = 0;
 
 subject to Renter_epsilon{h in House}: #nu_renters
-renter_expense[h] <= renter_expense_max[h];
+renter_expense[h] - renter_subsidies[h] <= renter_expense_max[h];
 
 subject to obj_fct1:
 objective_functions["Renters"] = sum{h in House}(renter_expense[h]);
@@ -69,7 +69,7 @@ objective_functions["Renters"] = sum{h in House}(renter_expense[h]);
 #--------------------------------------------------------------------------------------------------------------------#
 # Utility constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param utility_profit_min default -1e6;
+param utility_profit_min default -1e-6;
 var utility_profit;
 var C_op_utility_to_owners{h in House};
 
@@ -89,12 +89,13 @@ objective_functions["Utility"] = - utility_profit;
 # Owners constraints
 #--------------------------------------------------------------------------------------------------------------------#
 param Costs_House_upfront{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
-param owner_profit_min{h in House} default 0;
+param owner_PIR_min default 0;
+param owner_PIR_max default 0.3;
+
 var owner_profit{h in House};
 
 param Uh{h in House} default 0;
 param Uh_ins{f in FeasibleSolutions,h in House} default 0;
-param PIR default 1;
 var is_ins{h in House} binary; 
 
 #Scenario 3 (Insulation_enforce)
@@ -117,13 +118,13 @@ owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_ow
 
 #Scenario 2.1 (Owner2)
 subject to Owner_profit_max_PIR{h in House}:
-owner_profit[h] <= PIR * (Costs_House_inv[h] + Costs_House_upfront[h]);
+owner_profit[h] <= owner_PIR_max * (Costs_House_inv[h] + Costs_House_upfront[h]);
+
+subject to Owner_epsilon{h in House}: #nuH_owner
+owner_profit[h] + owner_subsidies[h] >= owner_PIR_min * (Costs_House_inv[h] + Costs_House_upfront[h]); #owner_profit_min[h];
 
 subject to Owner_noSub{h in House}:
 owner_subsidies[h] = 0;
-
-subject to Owner_epsilon{h in House}: #nuH_owner
-owner_profit[h] + owner_subsidies[h] >= owner_profit_min[h];
 
 subject to obj_fct3:
 objective_functions["Owners"] = - sum{h in House}(owner_profit[h]);

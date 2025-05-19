@@ -45,7 +45,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
 
         df_N1 = get_ampl_data(ampl, 'Costs_op')  # without the comfort penalty costs
         df_N2 = get_ampl_data(ampl, 'Costs_inv')
-        df_N2['Costs_inv'] = df_N2['Costs_inv'] * tau[0]
+        df_N2['Costs_inv'] = df_N2['Costs_inv'] * tau[0] # include refurbishment
         df_N2['ANN_factor'] = tau[0]
         df_N2['Costs_grid_connection'] = get_ampl_data(ampl, 'Costs_grid_connection').sum().values / 2  # TODO enhance
         df_N3 = get_ampl_data(ampl, 'Costs_rep')
@@ -589,7 +589,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_lca_operation"] = LCA_op
 
     if method["actors_problem"]:
-        # Renters’ expenses and the profits of Owners and the Utility (inc. subsidies)
+        # Renters’ expenses and the profits of Owners and the Utility
         df1 = get_ampl_data(ampl, 'renter_expense')
         df2 = get_ampl_data(ampl, 'utility_profit')
         df3 = get_ampl_data(ampl, 'owner_profit')
@@ -644,9 +644,12 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Actors_dual"] = pd.concat([df1, df2, df3], axis=1)
 
         df_Results["Samples"] = dict()
-        df_Results["Samples"]["Owner_Epsilon"] = get_ampl_data(ampl, 'owner_profit_min')
+        df_Results["Samples"]["Owner_PIR_min"] = get_ampl_data(ampl, 'owner_PIR_min')
+        df_Results["Samples"][("Owner_PIR_max")] = get_ampl_data(ampl, 'owner_PIR_max')
         df_Results["Samples"]["Renter_Epsilon"] = get_ampl_data(ampl, 'renter_expense_max')
-        df_Results["Samples"]["PIR"] = get_ampl_data(ampl, 'PIR').squeeze().item()
+        renter_series = get_ampl_data(ampl, 'renter_expense_max')['renter_expense_max']
+        network_total = pd.Series({'Network': renter_series.sum()}, name='renter_expense_max')
+        df_Results["Samples"]["Renter_Epsilon"] = pd.concat([renter_series, network_total])
 
     return df_Results
 

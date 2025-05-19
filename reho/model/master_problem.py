@@ -115,7 +115,7 @@ class MasterProblem:
             self.DW_params = DW_params
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
-        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'renter_subsidies_bound','risk_factor', 'renter_expense_max','utility_profit_min', 'PIR', 'owner_profit_min','EMOO_totex_renter', 'TransformerCapacity',
+        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'renter_subsidies_bound','risk_factor', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min','EMOO_totex_renter', 'TransformerCapacity',
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', 'EV_displacement_init', 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn"],
                          "list_constraints_MP": [],
@@ -537,7 +537,6 @@ class MasterProblem:
             # MP_parameters['Costs_tot_actors_min'] = df_Performance[["Costs_op", "Costs_inv", "Costs_rep"]].sum(axis=1).groupby("house").min()
             MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
 
-            #TODO: adapt in a function of  actors.py
             df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
             df_PV_t = pd.DataFrame()
             for bui in self.infrastructure.houses:
@@ -545,12 +544,7 @@ class MasterProblem:
                 df_PV_t = pd.concat([df_PV_t, dummy])
             MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
 
-            self.parameters["renter_expense_max"] = actors.generate_renter_expense_max(self.buildings_data, self.parameters)
-            MP_parameters["renter_expense_max"] = [
-                self.parameters["renter_expense_max"][h]
-                for h in range(len(self.buildings_data))
-            ]
-
+            #MP_parameters["renter_expense_max"] = self.parameters["renter_expense_max"]
             MP_parameters["Uh"] = np.asarray([self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()])
             MP_parameters["Uh_ins"] = df_Buildings.U_h
 

@@ -723,6 +723,8 @@ def initialize_default_methods(method):
         method['actors_problem'] = False
     if method['actors_problem']:
         method["include_all_solutions"] = True
+        method["district-scale"] = True
+
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False
 

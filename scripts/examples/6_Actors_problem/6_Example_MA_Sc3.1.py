@@ -25,15 +25,8 @@ if __name__ == '__main__':
     cluster_num = 1
     location = 'Zurich'
     nb_buildings = 5
-    risk_factor = 0.277933
-    n_samples = 2
-
-    # Set value / sampling range for actors epsilon
-    actors_epsilon = {"renter_risk_factor": risk_factor,
-                      "utility_profit_lb": [0, 0],
-                      "owner_profit_lb": [0, 1],
-                      "owner_profit_ub": [0.99, 1],
-                      }
+    renter_expense_ub = 100000
+    n_samples = 3
 
     # Set scenario
     scenario = dict()
@@ -57,14 +50,13 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'actors_problem': True, "print_logs": True, "refurbishment": True, "include_all_solutions": False,
+    method = {'actors_problem': True, "print_logs": True, "refurbishment": True,
               'use_pv_orientation': True, 'use_facades': False, "use_dynamic_emission_profiles": True,
               "save_streams": False, "save_timeseries": False, "save_data_input": False, "parallel_computation": True}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids({'Electricity': {"Cost_demand_cst": 0.1, "Cost_supply_cst": 0.3346},  'NaturalGas': {"Cost_supply_cst": 0.14}})
     units = infrastructure.initialize_units(scenario, grids)
-
     DW_params={}
     DW_params['max_iter'] = 3
     # Initiate the actor-based problem formulation
@@ -78,7 +70,14 @@ if __name__ == '__main__':
     except FileNotFoundError:
         reho.generate_configurations(n_sample=n_samples, tariffs_ranges=tariffs_ranges)
 
-    reho.set_actors_epsilon(actors_epsilon=actors_epsilon, n_samples=3)
+    # Set value / sampling range for actors epsilon
+    actors_epsilon = {"renter_expense_max": renter_expense_ub,
+                      #"utility_profit_min": [0, 200],
+                      "owner_PIR_min": [0, 0.1],
+                      }
+
+    bounds = reho.set_actors_epsilon(actors_epsilon)
+    reho.sample_actors_epsilon(bounds=bounds, n_samples= n_samples, linear=False)
 
     #Run actor-based optimization
     reho.scenario["name"] = "MOO_actors"

@@ -13,9 +13,22 @@ from collections import defaultdict
 __doc__ = """
 Generate maximum rental values
 """
-# TODO: The risk factor need to be a dictionary with 4 columns
+def generate_renter_expense_max_new(buildings, income=None, limit=False):
+    #TODO Change name and be Careful: per person or per household!
+    max_rent_pp = 1e7
+    renter_expense_max = []
+    if limit:
+        rent_percentage = pd.read_csv(path_to_rent)
+        income_thresholds_rent = rent_percentage["Income"].to_numpy() * 12
+        income_percentage_rent = rent_percentage["Percentage"].to_numpy()
 
-def generate_renter_expense_max(buildings,parameters):
+        power_params, _ = curve_fit(power_law, income_thresholds_rent, income_percentage_rent)
+        max_rent_pp = power_law(income, power_params[0], power_params[1]) * income
+    for b in buildings.keys():
+        renter_expense_max.append(max_rent_pp * buildings[b]['n_p'])
+    return renter_expense_max
+
+def generate_renter_expense_max_old(buildings,parameters):
     # check if risk_factor in parameter
     if 'risk_factor' in parameters and 'renter_expense_max' in parameters:
         if parameters['renter_expense_max'] == [1e7] * len(buildings):
@@ -182,8 +195,6 @@ def get_actor_parameters(result, Scn_ID, Pareto_ID, iter = 0, h = str):
     params['Cost_demand_district'] = cost_demand_district[[h]]
 
     return params
-
-import pandas as pd
 
 def get_actor_expenses(actor, last_MP_results=None, last_SP_results=None):
     last_MP_results = last_MP_results or {}

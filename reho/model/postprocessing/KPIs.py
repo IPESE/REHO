@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from prometheus_client.samples import Sample
+
 import reho.model.preprocessing.emissions_parser as emissions
 import reho.model.preprocessing.weather as weather
 
@@ -399,6 +401,18 @@ def postcompute_annual_COP(df_annuals, infrastructure):
 
     return df
 
+def postcompute_actors_KPI(df_Performance, Samples):
+    owner_profit = df_Performance['owner_profit']
+    owner_subsidies = df_Performance['owner_subsidies']
+    owner_expense = df_Performance['Costs_inv'] + df_Performance['Costs_House_upfront']
+    df_PIR = (owner_profit + owner_subsidies) / owner_expense
+    df_Rent_Budget_Ratio = df_Performance['renter_expense'] / Samples['Renter_Epsilon']
+    df = pd.concat([df_PIR, df_Rent_Budget_Ratio], axis=1)
+    df.columns=['PIR', 'Rent_Budget_Ratio']
+
+    return df
+
+
 
 def build_df_profiles_house(df_Results, infrastructure):
     """
@@ -567,6 +581,13 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data, cluster, timestam
     df_KPI = df_KPI.rename(
         columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})  # gwp_elec_av_m2    gwp_elec_dy_m2
     df_KPI = pd.concat([df_KPI, df_G_RES[['RES_dy', 'RES_av']]], axis=1)  # RES_dy    RES_av
+
+    # ------------------------------------------------------------------------------------------------------
+    # Actor KPIs
+    # ------------------------------------------------------------------------------------------------------
+    if "df_Actors" in df_Results:
+        df_Actor_KPI = postcompute_actors_KPI(df_Results['df_Performance'], df_Results['Samples'])
+        df_KPI = pd.concat([df_KPI, df_Actor_KPI], axis=1)  # RES_dy    RES_av
 
     # ------------------------------------------------------------------------------------------------------
     # Technical KPIs

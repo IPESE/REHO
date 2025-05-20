@@ -229,6 +229,8 @@ class QBuildingsReader:
             id_key = "transformer"
         elif district_boundary == "geo_girec":
             id_key = "geo_girec"
+        elif district_boundary == "neighborhoods":
+            id_key = "id_neighborhood"
         else:
             raise Exception("The district boundary is not recognized.")
 

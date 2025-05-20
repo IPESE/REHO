@@ -54,6 +54,8 @@ path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
 
 path_to_skydome = os.path.join(path_to_data, 'skydome')
 
+path_to_actor = os.path.join(path_to_data, 'actor')
+
 # scripts specific paths
 path_to_clustering = os.path.join(os.getcwd(), 'data', 'clustering')
 path_to_configurations = os.path.join(os.getcwd(), 'results', 'configurations')

@@ -14,7 +14,8 @@ set Services;			# Set of services (2nd clusters)
 set Period;				# Set of periods (days)
 set PeriodStandard;		# Set of standard periods (not extreme) 
 set PeriodExtreme := {Period diff PeriodStandard};
-set HP_Tsupply default {35,45,55};																	#-
+set HP_Tsupply default {35,45,55};
+set ActorObjective;																#-
 
 #-TIME SETS
 param TimeStart default 1;
@@ -260,13 +261,17 @@ param Line_lifetime{h in House, l in ResourceBalances} default 20;
 #--------------------------------------------------------------------------------------------------------------------#
 param dt{Period} default 1;		#h
 param dp{Period} default 1;		#days
-param lifetime{u in Units} default 20;	
+
+param lifetime{u in Units} default 20;
+param n_years_ins default 50;
+
 param GWP_supply_cst{l in ResourceBalances} default 0.100;
 param GWP_demand_cst{l in ResourceBalances} default 0.0; 						#-
 param GWP_supply{l in ResourceBalances,p in Period,t in Time[p]} default GWP_supply_cst[l];
 param GWP_demand{l in ResourceBalances,p in Period,t in Time[p]} default GWP_demand_cst[l];											# kgCO2/unit
 param GWP_unit1{u in Units} default 0;
 param GWP_unit2{u in Units} default 0;
+param GWP_ins{h in House} default 0;
 var GWP_house_op{h in House};
 var GWP_op;
 var GWP_Unit_constr{u in Units} >= 0;
@@ -283,10 +288,12 @@ subject to Annual_CO2_construction_unit{u in Units}:
 GWP_Unit_constr[u] = (Units_Buy[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*GWP_unit2[u])/lifetime[u];
 
 subject to Annual_CO2_construction_house{h in House}:
-GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]);
+GWP_house_constr[h] = sum{u in UnitsOfHouse[h]}(GWP_Unit_constr[u]) + GWP_ins[h]/n_years_ins +
+					sum{l in ResourceBalances: h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]);
 
 subject to Annual_CO2_construction:
-GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]);
+GWP_constr = sum{u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_ins[h])/n_years_ins+
+			sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]); 
 
 
 ######################################################################################################################
@@ -301,10 +308,13 @@ GWP_constr = sum{ u in Units} (GWP_Unit_constr[u])+sum{l in ResourceBalances, h 
 param Costs_House_limit{h in House} default 0;						# CHF/yr
 param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
+param Costs_ins{h in House} default 0;
+param Costs_House_upfront default 7759;
 
 param n_years default 25;
 param i_rate default 0.02;
 param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
+param tau_ins := i_rate*(1+i_rate)^n_years_ins/(((1+i_rate)^n_years_ins)-1);
 
 var Costs_Unit_inv{u in Units} >= 0;
 var Costs_Unit_rep{u in Units} >= 0;
@@ -323,7 +333,8 @@ subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u])+sum{l in ResourceBalances: h in HousesOfLayer[l]}(Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + Costs_ins[h] * tau_ins / tau+
+					sum{l in ResourceBalances: h in HousesOfLayer[l]}(Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);
 
 subject to Costs_Unit_replacement{u in Units}:
 Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
@@ -332,7 +343,8 @@ subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 subject to Costs_Grid_supply:
-Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{l in ResourceBalances, h in HousesOfLayer[l]} (Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (Cost_network_inv1[l]*Use_Network_capacity[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l]));
+Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{h in House}(Costs_ins[h]) * tau_ins / tau + 
+			sum{l in ResourceBalances, h in HousesOfLayer[l]} (Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (Cost_network_inv1[l]*Use_Network_capacity[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l]));
 
 subject to Costs_replacement:
 Costs_rep =  sum{u in Units} Costs_Unit_rep[u];
@@ -348,7 +360,7 @@ param Cost_supply{h in House,l in ResourceBalances,p in Period,t in Time[p]} def
 param Cost_demand_network{l in ResourceBalances,p in Period,t in Time[p]} default Cost_demand_cst[l];
 param Cost_supply_network{l in ResourceBalances,p in Period,t in Time[p]} default Cost_supply_cst[l];
 
-var Costs_House_op{House};
+var Costs_House_op{h in House};
 var Costs_op;
 
 subject to Costs_house_opex{h in House}:

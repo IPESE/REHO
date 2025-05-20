@@ -22,6 +22,27 @@ def U_h_insulation(buildings_data, refurbishment_data):
     return U_h_ins_data
 
 def refurbishment_cost_co2(buildings_data, refurbishment_data, refurbishment_index):
+    """
+    Calculate the insulation-adjusted U-value, total refurbishment cost, and CO2-equivalent for one building.
+
+    Parameters
+    ----------
+    buildings_data : dictionary
+        Data of one single building from QBuildings
+    refurbishment_data : DataFrame
+        Period-specific refurbishment parameters (e.g., requirements, costs and CO₂ factors), loaded from a CSV for parametrization.
+    refurbishment_index : DataFrame
+        Market, exchange, and price indices
+
+    Returns
+    -------
+    Uh_ins : float
+        Adjusted U-value after insulation (m²·K/W).
+    total_cost : float
+        Total refurbishment cost converted to CHF.
+    total_co2 : float
+        Total CO₂-equivalent emissions for the refurbishment.
+    """
     Uh_ins = U_h_insulation(buildings_data, refurbishment_data)
     renovation_info = pd.Series({
         'U_h': buildings_data['U_h'],

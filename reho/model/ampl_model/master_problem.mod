@@ -320,12 +320,6 @@ sum{f in FeasibleSolutions, h in House} (Grid_supply[l,f,h,p,t] * lambda[f,h]*dp
 subject to disallow_exchanges_2{l in ResourceBalances, p in PeriodStandard,t in Time[p]: l =  'Electricity'}:
 sum{f in FeasibleSolutions, h in House} (Grid_demand[l,f,h,p,t] * lambda[f,h]*dp[p]*dt[p]) = Network_demand[l,p,t];
 
-#subject to EMOO_c2 {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
-#Network_supply[l,p,t] <=  if EMOO_grid!=0 then EMOO_grid*sum{tau in Time[p]}(Network_supply[l,p,tau]*dt[p]/card(Time[p])) else 1e9;
-
-#subject to EMOO_c3 {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
-#Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{tau in Time[p]}(Network_demand[l,p,tau]*dt[p]/card(Time[p])) else 1e9;
-
 #--------------------------------------------------------------------------------------------------------------------#
 # Multi objective optimization
 #--------------------------------------------------------------------------------------------------------------------#
@@ -347,9 +341,13 @@ sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]} ( Network_demand[l,
 param penalty_ratio default 1e-6;
 var penalties default 0;
 
+var renter_subsidies{h in House} >= 0;
+var owner_subsidies{h in House} >= 0;
+
 subject to penalties_contraints:
 penalties = penalty_ratio * (Costs_inv + Costs_op +
-            sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]) );
+            sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
+             + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]);
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Objective functions

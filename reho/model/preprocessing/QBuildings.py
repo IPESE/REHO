@@ -365,6 +365,7 @@ def translate_buildings_to_REHO(df_buildings):
         'area_era_m2': 'ERA',
         'area_roof_solar_m2': 'SolarRoofArea',
         'area_facade_m2': 'area_facade_m2',
+        'area_footprint_m2': 'area_footprint_m2',
         'height_m': 'height_m',  # only for use_facades
         'count_floor': 'count_floor',
 

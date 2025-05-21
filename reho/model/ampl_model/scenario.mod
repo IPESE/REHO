@@ -35,10 +35,39 @@ minimize MAX_EXPORT:
 #--------------------------------------------------------------------------------------------------------------------#
 
 set Obj_fct := {'TOTEX', 'OPEX', 'CAPEX', 'GWP'};
+
 param beta_duals{o in Obj_fct} default 0;
+param nu_renters{h in House} default 0;
+param nu_owner{h in House}  default 0;
+param nu_utility default 0;
+
+param C_rent_fix{h in House} default 0;
+param Cost_self_consumption{h in House} default Cost_supply_cst['Electricity'];
+param Cost_supply_district{h in House, l in ResourceBalances} default Cost_supply_cst[l];
+param Cost_demand_district{h in House, l in ResourceBalances} default Cost_demand_cst[l];
+
+param renter_subsidies{h in House} default 0;
+param owner_subsidies{h in House} default 0;
+
+var cost_actors;
+
+subject to actors_costs_SP:
+cost_actors = sum{h in House} (nu_renters[h] * (C_rent_fix[h] 
+    + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply_district[h,l] * Grid_supply[l,h,p,t]) 
+    + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h]))
+    - renter_subsidies[h])
++ sum{h in House} (nu_owner[h] * (C_rent_fix[h] 
+    + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])  
+    + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand_district[h,l] * Grid_demand[l,h,p,t])  
+    - (Costs_House_inv[h] * tau)
+    - (ERA[h] * Costs_House_upfront / ((1-((1+i_rate)^(-70)))/i_rate))
+    + owner_subsidies[h]))
++ nu_utility * (sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_supply_district[h,l] * Grid_supply[l,h,p,t])
+    - sum{h in House, l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand_district[h,l] * Grid_demand[l,h,p,t]));
 
 minimize SP_obj_fct:
-beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau*(Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) + penalties;
+beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau * (Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
+penalties + cost_actors;
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#

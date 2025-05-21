@@ -16,6 +16,7 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
     scenario['specific'] = ['Renter_noSub', 'Owner_Link_Subsidy_to_Insulation']
+    scenario["name"] = "actors"
 
     # Choose energy system structure options
     scenario['exclude_units'] = ['ThermalSolar', 'NG_Cogeneration', 'Battery']
@@ -28,26 +29,17 @@ if __name__ == '__main__':
     grids = infrastructure.initialize_grids()
     units = infrastructure.initialize_units(scenario, grids)
 
-    # Initiate the actor-based problem formulation
+    # Define maximum rent affordable (optional)
     reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params={'max_iter': 3}, solver="gurobiasl")
-
-    # Generate configurations
-    tariffs_ranges = {'Electricity': {"Cost_supply_cst": [0.15, 0.45]},
-                      'NaturalGas': {"Cost_supply_cst": [0.10, 0.30]}}
-    try:
-        reho.read_configurations()  # if configurations were already generated, simply import them
-    except FileNotFoundError:
-        reho.generate_configurations(n_sample=3, tariffs_ranges=tariffs_ranges)
+    reho.parameters['renter_expense_max'] = actors.generate_renter_expense_max_new(qbuildings_data, income=70000)
 
     # Set value / sampling range for actors epsilon
-    actors_epsilon = {"renter_expense_max": 100000, "owner_PIR_min": [0, 0.1]}
-
-    bounds = reho.set_actors_epsilon(actors_epsilon)
-    reho.sample_actors_epsilon(bounds=bounds, n_samples=3, linear=False)
+    max_profit_utility = reho.get_max_profit_actor("Utility")
+    bounds = {"Owners": [0.0, 0.1], "Utility": [0.0, max_profit_utility]}
+    reho.sample_actors_epsilon(bounds=bounds, n_samples=3)
 
     #Run actor-based optimization
-    reho.scenario["name"] = "MOO_actors"
-    reho.actor_decomposition_optimization(scenario)
+    reho.actor_decomposition_optimization()
 
     # Save results
     reho.save_results(format=["pickle"], filename='6a')

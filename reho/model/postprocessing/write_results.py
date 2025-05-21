@@ -670,16 +670,17 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_network = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
         df_Actors = pd.concat([df_Actors, df_network], axis=0)
         df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)
-        df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
+        if scenario["Objective"] == "TOTEX_actor":
+            df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_actor").getValues().toList()[0]
 
         df1 = get_ampl_dual_values_in_pandas(ampl, 'Renter_epsilon', multi_index=False)
-        df1.columns = ['nu_renters']
+        df1.columns = ['nu_Renters']
 
         df2 = get_ampl_dual_values_in_pandas(ampl, 'Owner_epsilon', multi_index=False)
-        df2.columns = ['nu_owner']
+        df2.columns = ['nu_Owners']
 
         df3 = get_ampl_dual_values_in_pandas(ampl, 'Utility_epsilon', multi_index=False)
-        df3.columns = ['nu_utility']
+        df3.columns = ['nu_Utility']
 
         df_Results["df_Actors_dual"] = pd.concat([df1, df2, df3], axis=1)
 

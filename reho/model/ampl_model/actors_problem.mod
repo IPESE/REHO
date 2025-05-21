@@ -1,9 +1,6 @@
 set Actors default {"Owners", "Renters", "Utility"};
 set ActorObjective;
 
-# Risk factor (listed but unused)
-param risk_factor default 0;
-
 # Energy tariffs
 var Cost_supply_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
 var Cost_demand_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
@@ -133,7 +130,7 @@ objective_functions["Owners"] = - sum{h in House}(owner_profit[h]);
 #--------------------------------------------------------------------------------------------------------------------#
 # Objectives
 #--------------------------------------------------------------------------------------------------------------------#
-minimize TOTEX_bui:
-sum {a in ActorObjective} objective_functions[a];
+minimize TOTEX_actor:
+sum {a in ActorObjective} objective_functions[a] + penalty_ratio * (Costs_inv + Costs_op + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]));
 # - sum{h in House} (C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] + owner_subsidies[h]);
 # - (sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units} Costs_Unit_inv[u] - Costs_rep);

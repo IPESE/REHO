@@ -3,7 +3,6 @@ import gc
 import time
 import warnings
 from itertools import groupby
-from tkinter.font import names
 
 import coloredlogs
 import pandas as pd
@@ -122,7 +121,7 @@ class MasterProblem:
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
 
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
-        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'renter_subsidies_bound','risk_factor', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
+        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'renter_subsidies_bound', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
                                                 'Network_ext',
                                                 'monthly_grid_connection_cost',
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
@@ -242,9 +241,9 @@ class MasterProblem:
             Epsilon constraints to apply for the initialization
         """
         # check if TOTEX, OPEX or multi-objective optimization -> init with beta
-        if self.method['building-scale']:
+        if self.method['building-scale'] or self.method['actors_problem']:
             init_beta = [None]  # keep same objective function
-        elif not self.method["actors_problem"] and (not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0):
+        elif not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0:
             self.flags[scenario['Objective']] = 1  # never been optimized with this objective previously
             init_beta = [1000.0, 1, 0.001]
         else:
@@ -268,7 +267,7 @@ class MasterProblem:
                 if self.method['refurbishment']:
                     self.feasible_solutions += 1
                     self.refurbishment = True
-                    results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h))
+                    results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h))
                                for h in self.infrastructure.houses}
                     for h in self.infrastructure.houses:
                         df_Results, attr = results[h].get()
@@ -574,17 +573,14 @@ class MasterProblem:
         MP_set_indexed['FeasibleSolutions'] = df_Performance.index.unique('FeasibleSolution').to_numpy()  # index to array as set
 
         if self.method['actors_problem']:
-            # MP_parameters['Costs_tot_actors_min'] = df_Performance[["Costs_op", "Costs_inv", "Costs_rep"]].sum(axis=1).groupby("house").min()
-            MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
+            if "ActorObjective" in self.set_indexed:
+                MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
 
             df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
             df_PV_t = pd.DataFrame()
             for bui in self.infrastructure.houses:
-                dummy = df_Unit_t.xs("PV_" + bui, level="Unit")
-                df_PV_t = pd.concat([df_PV_t, dummy])
+                df_PV_t = pd.concat([df_PV_t, df_Unit_t.xs("PV_" + bui, level="Unit")])
             MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
-
-            #MP_parameters["renter_expense_max"] = self.parameters["renter_expense_max"]
             MP_parameters["Uh"] = np.asarray([self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()])
             MP_parameters["Uh_ins"] = df_Buildings.U_h
 
@@ -787,7 +783,7 @@ class MasterProblem:
                          }
 
         if self.method['actors_problem']:
-            parameters_SP.update(actors.get_actor_parameters(self.results_MP, Scn_ID, Pareto_ID, self.iter, h))
+            parameters_SP.update(actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID, self.iter, h))
         # find district structure, objective, beta and parameter for one single building
         buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
@@ -897,14 +893,15 @@ class MasterProblem:
             Cinv_h.index = Cop_h.index
             Cinv = pd.concat([Cinv, Cinv_h])
             if self.method['actors_problem']:
-                nu_renters = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'nu_renters').dropna()
-                nu_utility = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'nu_utility').dropna().iat[0]
-                nu_owner = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'nu_owner').dropna()
-
-                rc_actors[h] = sum(nu_renters * actors.get_actor_expenses('Renters', last_MP_results=last_MP_results, last_SP_results=last_SP_results)+
-                             nu_utility * actors.get_actor_expenses('Utility', last_MP_results=last_MP_results, last_SP_results=last_SP_results)+
-                             sum(nu_owner * actors.get_actor_expenses('Owner', last_MP_results=last_MP_results, last_SP_results=last_SP_results)))
-
+                nu = {}
+                nu["Renters"] = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'nu_Renters').dropna()
+                nu["Utility"] = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'nu_Utility').dropna().iat[0]
+                nu["Owners"] = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'nu_Owners').dropna()
+                if scenario['Objective'] == "TOTEX_actor":
+                    nu[self.set_indexed["ActorObjective"][0]] = 1.0
+                rc_actors[h] = sum(nu["Renters"] * actors.get_actor_expenses('Renters', last_MP_results=last_MP_results, last_SP_results=last_SP_results))\
+                               +nu["Utility"] * actors.get_actor_expenses('Utility', last_MP_results=last_MP_results, last_SP_results=last_SP_results)\
+                               +sum(nu["Owners"] * actors.get_actor_expenses('Owner', last_MP_results=last_MP_results, last_SP_results=last_SP_results))
 
         # calculate objective function for each Pareto_ID with latest dual values
         reduced_cost = pd.DataFrame()
@@ -922,9 +919,13 @@ class MasterProblem:
             beta_penalty = sum(beta * obj_fct)
 
             Costs_ft = last_SP_results[h]["df_Performance"].iloc[0].Costs_ft
-            reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu
             if self.method['actors_problem']:
-                reduced_cost_h -= rc_actors[h]
+                if scenario['Objective'] == "TOTEX_actor":
+                    reduced_cost_h = Costs_ft + beta_penalty - mu - rc_actors[h]
+                else:
+                    reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu - rc_actors[h]
+            else:
+                reduced_cost_h = obj_fct[scenario['Objective']] + Costs_ft + beta_penalty - mu
             reduced_cost.at[h, 'Reduced_cost'] = reduced_cost_h
 
         if (reduced_cost.Reduced_cost >= self.DW_params['threshold_subP_value']).all():
@@ -1083,7 +1084,7 @@ class MasterProblem:
             raise warnings.warn("Wrong type beta")
 
         # select objective using beta values
-        if scenario['Objective'] in ['TOTEX', 'TOTEX_bui']:
+        if scenario['Objective'] in ['TOTEX', 'TOTEX_actor']:
             beta_list[['CAPEX', 'OPEX']] = 1
         else:
             beta_list[scenario['Objective']] = 1
@@ -1149,7 +1150,7 @@ class MasterProblem:
             attribute = 'df_beta'
         elif dual_variable in ['mu']:
             attribute = 'df_Dual'
-        elif dual_variable in ['nu_renters', 'nu_owner','nu_utility']:
+        elif dual_variable in ['nu_Renters', 'nu_Owners','nu_Utility']:
             attribute = 'df_Actors_dual'
 
         df = self.results_MP[Scn_ID][Pareto_ID][iter][attribute]

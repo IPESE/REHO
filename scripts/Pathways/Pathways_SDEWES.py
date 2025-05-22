@@ -6,8 +6,11 @@ from reho.plotting import plotting
 import time
 
 if __name__ == '__main__':
+    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'QBuildings_SDEWES_updated_2_60B.csv')
+    pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_SDEWES_partial_curve.csv')
+
     # read specific column from csv file
-    transf = pd.read_csv('../Pathways/QBuildings/QBuildings_SDEWES_updated_2_60B.csv', usecols=['transformer_new'])
+    transf = pd.read_csv(buildings_filename, usecols=['transformer_new'])
     transf_list = transf['transformer_new'].unique().tolist()
 
     process_time_list = []
@@ -21,7 +24,7 @@ if __name__ == '__main__':
         try:
             # Set building parameters
             reader = QBuildingsReader()
-            qbuildings_data = reader.read_csv(buildings_filename='../Pathways/QBuildings/QBuildings_SDEWES_updated_2_60B.csv',transformer_new=transformer)
+            qbuildings_data = reader.read_csv(buildings_filename=buildings_filename,transformer_new=transformer)
             nb_buildings = len(qbuildings_data['buildings_data'])
 
             # Select clustering options for weather data
@@ -64,7 +67,7 @@ if __name__ == '__main__':
 
             # Pathway data
             #pathway_data = pd.read_csv('../Pathways/QBuildings/Pathway_SDEWES_test_no_EH_change_PV_300000871_886466.csv')
-            pathway_data = pd.read_csv('../Pathways/QBuildings/System_pathway_SDEWES_partial_curve.csv')
+            pathway_data = pd.read_csv(pathways_filename)
 
             reho_path = PathwayProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, pathway_parameters= pathway_parameters, pathway_data=pathway_data, cluster=cluster, scenario=scenario, method=method, solver="gurobi", group=transformer)
             reho_path.execute_pathway_building_scale(pathway_unit_use=True)

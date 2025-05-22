@@ -341,4 +341,8 @@ scripts/Pathways/test_2.csv
 scripts/Pathways/test.csv
 scripts/Pathways/pathway.csv
 scripts/Pathways/Pathways_test_HP.py
+/scripts/Pathways/data/preprocessing/
+scripts/Pathways/Generate_Pathways_SDEWES.py
+scripts/Pathways/Pathways_SDEWES_old.py
+scripts/Pathways/Pathways_test_HP.py
 scripts/Pathways/data/preprocessing

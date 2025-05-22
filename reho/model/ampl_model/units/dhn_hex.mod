@@ -29,4 +29,4 @@ subject to HEX_heating2{h in House,u in {'DHN_hex_'&h},p in Period,t in Time[p]}
 
 # constraint to enforce the use of DHN_hex
 subject to enforce_DHN_hex{h in House,u in {'DHN_hex_'&h}}:
-Units_Use[u] = DHN_hex_install[h];
+	Units_Use[u] = DHN_hex_install[h];

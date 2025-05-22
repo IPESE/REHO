@@ -141,8 +141,9 @@ Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
 # Costs
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
+param eps >= 0 := 1e-8;
 
-param Costs_inv_rep_SPs{f in FeasibleSolutions, h in House} >= 0;
+param Costs_inv_rep_SPs{f in FeasibleSolutions, h in House} >= -eps; #tells AMPL to accept tiny negative values as essentially zero.
 param Costs_ft_SPs{f in FeasibleSolutions, h in House} >= 0;
 param GWP_house_constr_SPs{f in FeasibleSolutions, h in House} >= 0;
 

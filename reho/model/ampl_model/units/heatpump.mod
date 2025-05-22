@@ -142,7 +142,14 @@ subject to DHN_heat{h in House, u in {'HeatPump_DHN_'&h}, p in Period, t in Time
 subject to enforce_DHN{h in House, u in {'DHN_hex_'&h}, v in {'HeatPump_DHN_'&h}}:
 	0.95 * sum{p in PeriodStandard, t in Time[p]}(House_Q_heating[h,p,t]* dp[p] * dt[p]) <= sum{p in PeriodStandard, t in Time[p]} (Units_demand['Heat',u,p,t]  * dp[p] * dt[p] + sum{st in StreamsOfUnit[v], se in ServicesOfStream[st]} (Streams_Q[se,st,p,t] * dp[p] * dt[p]));
 
-param HeatPump_install{h in House} default 0;
+param HeatPump_Air_install{h in House} default 0;
+param HeatPump_Geothermal_install{h in House} default 0;
 
-subject to enforce_HeatPump{h in House}:
-sum{u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]: u not in {'HeatPump_DHN_'&h}} Units_Use[u] = HeatPump_install[h];
+#subject to enforce_HeatPump{h in House}:
+	#sum{u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]: u not in {'HeatPump_DHN_'&h}} Units_Use[u] = HeatPump_install[h];
+
+subject to enforce_HeatPump_Air{h in House,u in {'HeatPump_Air_'&h}}:
+	Units_Use[u] = HeatPump_Air_install[h];
+
+subject to enforce_HeatPump_Geothermal{h in House,u in {'HeatPump_Geothermal_'&h}}:
+	Units_Use[u] = HeatPump_Geothermal_install[h];

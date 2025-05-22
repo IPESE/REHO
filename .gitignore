@@ -331,3 +331,14 @@ scripts/examples/results
 *.pickle
 
 scripts/examples/data/clustering
+scripts/Pathways/QBuildings/Pathway_SDEWES_test_no_EH_change_PV_300000871_886466.csv
+scripts/Pathways/QBuildings/Pathway_SDEWES_test_no_EH_change_PV_300000871_886466_no_PV.csv
+scripts/Pathways/QBuildings/QBuildings_SDEWES_updated_2_G1.csv
+scripts/Pathways/PV_max_group.py
+scripts/Pathways/Pathway_test_empty_enforce.py
+scripts/Pathways/Pathways_SDEWES_old.py
+scripts/Pathways/test_2.csv
+scripts/Pathways/test.csv
+scripts/Pathways/pathway.csv
+scripts/Pathways/Pathways_test_HP.py
+scripts/Pathways/data/preprocessing

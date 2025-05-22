@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 from reho.model.pathway_problem import *
 from reho.plotting import plotting
@@ -85,7 +86,7 @@ if __name__ == '__main__':
 
     # save the process time in a csv file
     process_time_df = pd.DataFrame({'Transformer': transf_list, 'N Buildings': n_build_list, 'Process time': process_time_list})
-    process_time_df.to_csv('../Pathways/results/process_time.csv', index=False)
+    process_time_df.to_csv(str(Path(__file__).parent /'results'/'process_time.csv', index=False))
 
     error_transf_df = pd.DataFrame({'Transformers': error_transf, 'Error': error_list})
-    error_transf_df.to_csv('../Pathways/results/error_transf.csv', index=False)
+    error_transf_df.to_csv(str(Path(__file__).parent /'results'/'error_transf.csv', index=False))

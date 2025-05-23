@@ -373,9 +373,9 @@ def plot_cluster_KPI_separate(df, save_fig=False):
     df_irr[:, 'LDC'].plot(linestyle='--', color="red", label='LDC (Irr)', ax=ax)
     df_T[:, 'LDC'].plot(linestyle='-', color="red", label='LDC (T)', ax=ax)
 
-    plt.xlabel('Number of clusters [-]')
-    plt.ylabel('Key performance indicator (KPI) [-]')
-    plt.legend(title="KPI")
+    plt.xlabel('Number of clusters [-]', fontsize=12)
+    plt.ylabel('Key performance indicator (KPI) [-]', fontsize=12)
+    plt.legend(title="KPI", fontsize=12)
 
     if save_fig:
         plt.tight_layout()
@@ -385,20 +385,20 @@ def plot_cluster_KPI_separate(df, save_fig=False):
 
     # Plot MAE
     fig, ax = plt.subplots()
-    fig.set_size_inches(6.5, 5.5)
+    fig.set_size_inches(5, 4)
     df_irr[:, 'MAE'].plot(linestyle='--', color='black', label='MAE (Irr)', ax=ax, marker='o')
     df_T[:, 'MAE'].plot(linestyle='-', color='black', label='MAE (T)', ax=ax, marker='o')
     df_irr[:, 'RMSD'].plot(linestyle='--', color='red', label='RMSD (Irr)', ax=ax, marker='o')
     df_T[:, 'RMSD'].plot(linestyle='-', color='red', label='RMSD (T)', ax=ax, marker='o')
 
-    plt.xlabel('Number of clusters [-]')
-    plt.ylabel('Key performance indicator (KPI) [-]')
+    plt.xlabel('Number of clusters [-]', fontsize=10)
+    plt.ylabel('Key performance indicator (KPI) [-]', fontsize=10)
     #plt.ylabel('Mean average error (MAE) [-]')
-    plt.legend(title="KPI")
+    plt.legend(title="KPI", fontsize=8)
 
     if save_fig:
         plt.tight_layout()
-        plt.savefig('MAE_KPIs.pdf', format='pdf', dpi=300)
+        plt.savefig('MAE_KPIs.png', format='png', dpi=300)
     else:
         plt.show()
 
@@ -408,9 +408,9 @@ def plot_cluster_KPI_separate(df, save_fig=False):
     df_irr[:, 'MAPE'].plot(linestyle='--', color='black', label='MAPE (Irr)', ax=ax)
     df_T[:, 'MAPE'].plot(linestyle='-', color='black', label='MAPE (T)', ax=ax)
 
-    plt.xlabel('Number of clusters [-]')
-    plt.ylabel('Mean average percentage error (MAPE) [-]')
-    plt.legend(title="KPI")
+    plt.xlabel('Number of clusters [-]', fontsize=12)
+    plt.ylabel('Mean average percentage error (MAPE) [-]', fontsize=12)
+    plt.legend(title="KPI", fontsize=12)
 
     if save_fig:
         plt.tight_layout()
@@ -455,7 +455,7 @@ def plot_LDC(cl, save_fig=False):
     ax[1].set_ylabel('Global Irradiation [W/m$^2$]')
 
     # Add period legend
-    legend1 = ax[0].legend(*sc.legend_elements(), loc='upper right', bbox_to_anchor=(1.0, 1.0), title="Period", ncol=2)
+    legend1 = ax[0].legend(*sc.legend_elements(), loc='upper right', bbox_to_anchor=(1.0, 1.0), title="Period", ncol=2, fontsize=10)
     ax[0].add_artist(legend1)
 
     if save_fig:
@@ -511,9 +511,9 @@ def plot_LDC(cl, save_fig=False):
     sc4 = ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap='viridis', s=20)
 
     # Set labels
-    ax[0].set_ylabel('Temperature [°C]')
-    ax[1].set_ylabel('Global Irradiation [W/m$^2$]')
-    plt.xlabel('Hours [h]')
+    ax[0].set_ylabel('Temperature [°C]', fontsize=14)
+    ax[1].set_ylabel('Global Irradiation [W/m$^2$]', fontsize=14)
+    plt.xlabel('Hours [h]', fontsize=14)
 
     # Create the legend elements for both the grey and color-mapped scatter plots
     # Original Data Legend for the first plot (Temperature)
@@ -523,7 +523,7 @@ def plot_LDC(cl, save_fig=False):
                                             labels_T]  # Add "Period" in front of each label
 
     # Period Legend for the first plot (Temperature)
-    legend2 = ax[0].legend(handles=handles_T, labels=labels_T, loc='upper right', ncol=2)
+    legend2 = ax[0].legend(handles=handles_T, labels=labels_T, loc='upper right', ncol=2, fontsize=10)
     ax[0].add_artist(legend2)
 
     # Original Data Legend for the second plot (Irradiation)
@@ -534,7 +534,7 @@ def plot_LDC(cl, save_fig=False):
 
     # Period Legend for the second plot (Irradiation)
     legend3 = ax[1].legend(handles=handles_IRR, labels=labels_IRR, loc='upper right',
-                           ncol=2)
+                           ncol=2, fontsize=11)
     ax[1].add_artist(legend3)
 
     # Tight layout and saving the figure
@@ -543,5 +543,93 @@ def plot_LDC(cl, save_fig=False):
         plt.savefig('LDC.pdf', format='pdf', dpi=300)
     else:
         plt.show()
+
+# Uncomment this to plot plots for all typical days.
+# def plot_LDC(cl, save_fig=True):
+#     for nbr_plot in [12,24,36,48]:  # Ensure this list exists with all desired cluster values
+#         cl.nbr_opt = nbr_plot
+#         print('Plotting for number of typical days:', nbr_plot)
+#
+#         # Get original data
+#         T_org = cl.data_org['Text']
+#         IRR_org = cl.data_org['Irr']
+#
+#         # Clustered data (unnormalized)
+#         df_clu = cl.attr_clu.xs(str(nbr_plot))
+#         T_clu = df_clu['Text'] * (T_org.max() - T_org.min()) + T_org.min()
+#         IRR_clu = df_clu['Irr'] * (IRR_org.max() - IRR_org.min()) + IRR_org.min()
+#
+#         # Assigned periods
+#         res = cl.results['idx'][str(nbr_plot)]
+#         for i, d in enumerate(res.unique()):
+#             res = np.where(res == d, i + 1, res)
+#         res = np.repeat(res, cl.period_duration)
+#         modulo = cl.data_org.shape[0] % cl.period_duration
+#         res = np.append(res, np.repeat(int(nbr_plot) + 1, modulo))
+#
+#         # Sort data
+#         df_T = pd.DataFrame(T_clu, columns=['Text'])
+#         df_T['Period'] = res
+#         df_T = df_T.sort_values(by=['Text'], ascending=False, ignore_index=True)
+#
+#         df_Irr = pd.DataFrame(IRR_clu, columns=['Irr'])
+#         df_Irr['Period'] = res
+#         df_Irr = df_Irr.sort_values(by=['Irr'], ascending=False, ignore_index=True)
+#
+#         T_sort = T_org.sort_values(ascending=False, ignore_index=True)
+#         IRR_sort = IRR_org.sort_values(ascending=False, ignore_index=True)
+#
+#         # Plot
+#         fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 5.5))
+#         sc1 = ax[0].scatter(T_sort.index, T_sort.values, color='grey', alpha=0.5)
+#         sc2 = ax[0].scatter(df_T.index, df_T['Text'], c=df_T['Period'], cmap='viridis', s=15)
+#         sc3 = ax[1].scatter(IRR_sort.index, IRR_sort.values, color='grey', alpha=0.5)
+#         sc4 = ax[1].scatter(df_Irr.index, df_Irr['Irr'], c=df_Irr['Period'], cmap='viridis', s=15)
+#
+#         ax[0].set_ylabel('Temperature [°C]', fontsize=10)
+#         ax[1].set_ylabel('Global Irradiation [W/m$^2$]', fontsize=10)
+#         plt.xlabel('Hours [h]', fontsize=10)
+#
+#         # # Legends
+#         # handles_T, labels_T = sc2.legend_elements()
+#         # handles_T = [sc1] + handles_T
+#         # labels_T = ["Original weather data"] + [f"Period {label}" for label in labels_T]
+#         # ax[0].legend(handles=handles_T, labels=labels_T, loc='upper right', ncol=2, fontsize=7)
+#         #
+#         # handles_IRR, labels_IRR = sc4.legend_elements()
+#         # handles_IRR = [sc3] + handles_IRR
+#         # labels_IRR = ["Original weather data"] + [f"Period {label}" for label in labels_IRR]
+#         # ax[1].legend(handles=handles_IRR, labels=labels_IRR, loc='upper right', ncol=2, fontsize=7)
+#
+#         def remove_fraction(handles, labels, fraction=1 / 3):
+#             n = len(labels)
+#             step = max(1, int(1 / fraction))  # e.g., 3 for 1/3 removal
+#             # Keep first handle (original data), then pick others skipping some
+#             new_handles = [handles[0]] + [h for i, h in enumerate(handles[1:], start=1) if i % step != 0]
+#             new_labels = [labels[0]] + [l for i, l in enumerate(labels[1:], start=1) if i % step != 0]
+#             return new_handles, new_labels
+#
+#         # For Temperature plot legend
+#         handles_T, labels_T = sc2.legend_elements()
+#         handles_T = [sc1] + handles_T  # add original data handle
+#         labels_T = ["Original weather data"] + [f"Period {label}" for label in labels_T]
+#         handles_T, labels_T = remove_fraction(handles_T, labels_T, fraction=1 / 3)
+#         ax[0].legend(handles=handles_T, labels=labels_T, loc='upper right', ncol=2, fontsize=8)
+#
+#         # For Irradiation plot legend
+#         handles_IRR, labels_IRR = sc4.legend_elements()
+#         handles_IRR = [sc3] + handles_IRR  # add original data handle
+#         labels_IRR = ["Original weather data"] + [f"Period {label}" for label in labels_IRR]
+#         handles_IRR, labels_IRR = remove_fraction(handles_IRR, labels_IRR, fraction=1 / 3)
+#         ax[1].legend(handles=handles_IRR, labels=labels_IRR, loc='upper right', ncol=2, fontsize=8)
+#
+#         plt.tight_layout()
+#
+#         if save_fig:
+#             filename = f"LDC_{nbr_plot}_typical_days.png"
+#             plt.savefig(filename, format='png', dpi=300)
+#             plt.close(fig)  # Avoid display and memory overload
+#         else:
+#             plt.show()
 
 

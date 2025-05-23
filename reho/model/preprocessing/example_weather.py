@@ -8,7 +8,7 @@ if __name__ == '__main__':
     qbuildings_data = reader.read_db(district_id=16922, nb_buildings=1000)
 
     Attributes = ['Text', 'Irr']
-    nb_clusters = [12, 24, 36, 48]
+    nb_clusters = [12,24,36,48]
 
     df_annual = get_weather_data(qbuildings_data).reset_index(drop=True)
     df_annual = df_annual[Attributes]
@@ -16,5 +16,5 @@ if __name__ == '__main__':
     cl = Clustering(data=df_annual, nb_clusters=nb_clusters, period_duration=24, options={"year-to-day": True, "extreme": []})
     cl.run_clustering()
 
-    plot_cluster_KPI_separate(cl.kpis_clu, save_fig=False)
-    plot_LDC(cl, save_fig=False)
+    plot_cluster_KPI_separate(cl.kpis_clu, save_fig=True)
+    plot_LDC(cl, save_fig=True)

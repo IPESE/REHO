@@ -93,11 +93,12 @@ var owner_profit{h in House};
 
 param Uh{h in House} default 0;
 param Uh_ins{f in FeasibleSolutions,h in House} default 0;
+param ins_target default 0;
 var is_ins{h in House} binary; 
 
-#Scenario 3 (Insulation_enforce)
-subject to Insulation_enforce{h in House}:
-is_ins[h] = 1;
+
+subject to Insulation_rate:
+sum{h in House} (is_ins[h] * ERA[h]) >= ins_target * sum{h in House} (ERA[h]);
 
 var renovation{h in House};
 

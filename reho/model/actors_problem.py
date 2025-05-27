@@ -99,9 +99,6 @@ class ActorsProblem(REHO):
         self.samples = df_samples.loc[df_samples.index.repeat(len(ins_target))].reset_index(drop=True)
         self.samples['ins_target'] = np.tile(ins_target, n_samples)
 
-
-
-
     def actor_decomposition_optimization(self):
         """
         Run the single_optimization with DWD for each sampled actor epsilon.
@@ -114,7 +111,6 @@ class ActorsProblem(REHO):
             sample_param = self.samples.iloc[ids]
             for param in sample_param.index:
                 self.parameters[param] = sample_param[param]
-
             self.single_optimization(Pareto_ID=ids)
             self.results[self.scenario['name']][ids]['Samples']['Sampling_result'] = sample_param
             self.add_dual_Results(Scn_ID=self.scenario['name'], Pareto_ID=ids)

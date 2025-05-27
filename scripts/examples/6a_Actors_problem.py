@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(district_id=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
+    qbuildings_data = reader.read_db(district_id=234, nb_buildings=40) #egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'actors_problem': True, "refurbishment": True}
+    method = {'actors_problem': True, "refurbishment": False}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # Set value / sampling range for actors epsilon
     #max_profit_utility = reho.get_max_profit_actor("Utility")
     bounds = {"Owners": [0.0, 0.1], "Utility": [0.0, 100]}
-    reho.sample_actors_epsilon(bounds=bounds, n_samples=3, ins_target = [0.1, 0.2, 0.4, 1])
+    reho.sample_actors_epsilon(bounds=bounds, n_samples=3, ins_target = [0,0.1,0.2])
 
     #Run actor-based optimization
     reho.actor_decomposition_optimization()

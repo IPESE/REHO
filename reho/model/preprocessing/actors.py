@@ -13,14 +13,17 @@ from collections import defaultdict
 __doc__ = """
 Generate maximum rental values
 """
-def generate_renter_expense_max_new(qbuildings, income=None):
+def generate_renter_expense_max_new(qbuildings, income=None, rent_income_ratio = None):
     #TODO Change name and be Careful: per person or per household!
     renter_expense_max = []
     rent_percentage = pd.read_csv(os.path.join(path_to_actor, 'rent_proportion.csv'))
     income_thresholds_rent = rent_percentage["Income"].to_numpy() * 12
-    income_percentage_rent = rent_percentage["Percentage"].to_numpy()
+    if rent_income_ratio != None:
+        rent_income_ratio =  np.array(rent_income_ratio)
+    else:
+        rent_income_ratio = rent_percentage["Percentage"].to_numpy()
 
-    power_params, _ = curve_fit(power_law, income_thresholds_rent, income_percentage_rent)
+    power_params, _ = curve_fit(power_law, income_thresholds_rent, rent_income_ratio)
     max_rent_pp = power_law(income, power_params[0], power_params[1]) * income
     for b in qbuildings["buildings_data"].keys():
         renter_expense_max.append(max_rent_pp * qbuildings["buildings_data"][b]['n_p'])

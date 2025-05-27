@@ -267,8 +267,12 @@ class MasterProblem:
                 if self.method['refurbishment']:
                     self.feasible_solutions += 1
                     self.refurbishment = True
-                    results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h))
+                    results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta))
                                for h in self.infrastructure.houses}
+
+                    while len(results[list(self.buildings_data.keys())[-1]].get(timeout=360)) != 2:
+                        time.sleep(1)
+
                     for h in self.infrastructure.houses:
                         df_Results, attr = results[h].get()
                         self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
@@ -281,8 +285,9 @@ class MasterProblem:
                 if self.method['refurbishment']:
                     self.feasible_solutions += 1
                     self.refurbishment = True
-                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
-                    self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                    for id, h in enumerate(self.infrastructure.houses):
+                        df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
+                        self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
             self.refurbishment = False
             self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
@@ -724,6 +729,9 @@ class MasterProblem:
                 self.feasible_solutions += 1
                 self.refurbishment = True
                 results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.infrastructure.houses}
+                while len(results[list(self.buildings_data.keys())[-1]].get(timeout=360)) != 2:
+                    time.sleep(1)
+
                 for h in self.infrastructure.houses:
                     (df_Results, attr) = results[h].get()
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
@@ -733,11 +741,13 @@ class MasterProblem:
                 df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
                 self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
-                if self.method['refurbishment']:
-                    self.feasible_solutions += 1
-                    self.refurbishment = True
+            if self.method['refurbishment']:
+                self.feasible_solutions += 1
+                self.refurbishment = True
+                for h in self.infrastructure.houses:
                     df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+
         self.refurbishment = False
         self.feasible_solutions += 1
 
@@ -767,12 +777,13 @@ class MasterProblem:
         ------
         ValueError: If the SP optimization did not converge
         """
-        self.logger.info('iterate HOUSE: ' + h + 'iteration: ' + str(self.iter))
+        self.logger.info('iterate HOUSE: ' + h + ' Iteration: ' + str(self.iter))
 
         # Give dual variables to Subproblem
         pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
         pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
         pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
+        #TODO: instead of pi use other values
 
         parameters_SP = {'Cost_supply_network': pi,
                          'Cost_demand_network': pi * (1 - 1e-9),

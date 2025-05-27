@@ -11,10 +11,14 @@
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-param SOFC_elec_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.65; # (elec output/H2 LHV) eff
-param SOFC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.3; # (elec output/H2 LHV) eff
-param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.85; # (H2 LHV/elec output) eff
-param SOEC_therm_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.1; # (H2 LHV/elec output) efff
+# These efficiencies come from Aspen/OSMOSE modelling (Arthur Waeber / Xinyi Wei / Shivom Sharma)
+param SOFC_elec_eff_H2{u in UnitsOfType['rSOC']} >=0, <=1 default 0.60; # (elec output/H2 LHV) Optimal design, rounded down
+param SOFC_elec_eff_CH4{u in UnitsOfType['rSOC']} >=0, <=1 default 0.65; # (elec output/CH4 LHV) Optimal design rounded down
+param SOFC_therm_eff_H2{u in UnitsOfType['rSOC']} >=0, <=1 default 0.744; # (heat output/H2 LHV) including condensation of produced steam
+param SOFC_therm_eff_CH4{u in UnitsOfType['rSOC']} >=0, <=1 default 0.516; # (heat output/CH4 LHV) including condensation of produced steam
+
+param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.975; # (H2 LHV/elec input) eff (includes heat that is provided through electrical heaters)
+param SOEC_therm_eff{u in UnitsOfType['rSOC']} <=1 default -0.179; # (H2 LHV/elec output) eff # Requires Heat (since Methanator is modelled appart) rounded up since heat required
 
 param SOEC_power_max_limit_in{u in UnitsOfType['rSOC']} >=0 default 3;
 param SOFC_power_max_limit_out{u in UnitsOfType['rSOC']} >=0 default 1;
@@ -23,7 +27,7 @@ param SOFC_power_min_limit_out{u in UnitsOfType['rSOC']} >=0 default 0;
 
 param bigM_rSOC >= 0 default 1e6;
 
-param mol_h_CO2_per_kW_CH4{u in UnitsOfType['rSOC']} >=0 default 4.405796988*1.014890593; # (from Aspen calculations)
+param mol_h_CO2_per_kW_CH4{u in UnitsOfType['rSOC']} >=0 default 4.405796988*1.014890593; # (from Aspen calculations), precise to avoid convergence issue with CO2/CH4 storage
 
 #   param rSOC_eff_degradation{u in UnitsOfType['rSOC']} >=0, <=1 default 0.005;#/1000H
 #   param rSOC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=rSOC_conv_eff_basis[u] := rSOC_conv_eff_basis[u]-rSOC_eff_degradation[u]*8760*lifetime[u]/2/1000; # (elec output/H2 LHV) eff
@@ -33,21 +37,29 @@ var mode_SOEC{u in UnitsOfType['rSOC'], p in Period, t in Time[p]} binary := 0;
 
 subject to SOFC_energy_balance{u in UnitsOfType['rSOC'], p in Period,t in Time[p]}:
     Units_supply['Electricity',u,p,t] =
-    SOFC_elec_eff[u]*Units_demand['Hydrogen',u,p,t] +
-    SOFC_elec_eff[u]*Units_demand['Biomethane',u,p,t];
+    SOFC_elec_eff_H2[u]*Units_demand['Hydrogen',u,p,t] +
+    SOFC_elec_eff_CH4[u]*Units_demand['Biomethane',u,p,t];
 
 subject to SOEC_energy_balance{u in UnitsOfType['rSOC'], p in Period,t in Time[p]}:
     Units_supply['Hydrogen',u,p,t] = SOEC_conv_eff[u]*Units_demand['Electricity',u,p,t];
 
 subject to SOFC_energy_balance_2{u in UnitsOfType['rSOC'], p in Period,t in Time[p]}:
-    Units_supply['CO2',u,p,t] = mol_h_CO2_per_kW_CH4[u]*Units_demand['Biomethane',u,p,t];
+    Units_supply['CO2',u,p,t] <= mol_h_CO2_per_kW_CH4[u]*Units_demand['Biomethane',u,p,t];
 
 #-hot stream heat leaving
 subject to SOFC_Usable_heat_computation{u in UnitsOfType['rSOC'],p in Period,t in Time[p]}:
-    Units_demand['Hydrogen',u,p,t]*SOFC_therm_eff[u] +
-    Units_demand['Biomethane',u,p,t]*SOFC_therm_eff[u] +
-    Units_demand['Electricity',u,p,t]*SOEC_therm_eff[u]
+    Units_demand['Hydrogen',u,p,t]*SOFC_therm_eff_H2[u] +
+    Units_demand['Biomethane',u,p,t]*SOFC_therm_eff_CH4[u]
     >= Units_supply["Heat",u,p,t];
+
+# Hard-coding where this heat can come from ! (Only methanator_district or electricalHeater_district as Temperature
+# has to be greater than 100°C for water evaporation at atmospheric pressure)
+
+subject to SOEC_required_heat_computation_1{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
+   -Units_demand['Electricity',u,p,t]*SOEC_therm_eff[u] = Units_demand["Heat",u,p,t];
+
+subject to SOEC_required_heat_computation_2{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:
+   Units_demand["Heat",u,p,t] = Units_supply['Heat','ElectricalHeater_other_district', p, t] + Units_supply['Heat','MTR_district', p, t];
 
 # Force mode_SOFC to be 1 when power is supplied
 subject to SOFC_mode_on{u in UnitsOfType['rSOC'], p in Period, t in Time[p]}:

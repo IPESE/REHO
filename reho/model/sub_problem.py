@@ -251,7 +251,7 @@ class SubProblem:
         all_units = [unit for unit, value in ampl.getVariable('Units_Use').instances()]
         for i in all_units:
             for u in self.scenario_sp['exclude_units']:
-                if 'district' not in i and u in i:  # unit at the building scale
+                if ('district' not in i) and ('IP' not in i) and (u in i):  # unit at the building scale
                     ampl.getVariable('Units_Use').get(str(i)).fix(0)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(0)
@@ -358,7 +358,7 @@ class SubProblem:
         for bui in self.infrastructure_sp.houses:
             for unit_data in self.infrastructure_sp.houses[bui]["units"]:
                 for i, T_level in enumerate(unit_data["StreamsOfUnit"]):
-                    stream = unit_data["name"] + '_' + bui + '_' + T_level
+                    stream = unit_data['Unit'] + '_' + bui + '_' + T_level
                     df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
                     df["Streams_Tout"] = unit_data["stream_Tout"][i]
                     df["Streams_Tin"] = unit_data["stream_Tin"][i]

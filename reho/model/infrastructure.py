@@ -46,7 +46,12 @@ class Infrastructure:
         self.LayersOfType = {'HeatCascade': np.array(['HeatCascade']),  # default: each building has a heat cascade
                              'ResourceBalance': np.array(list(self.grids.keys()))}
         self.Layers = np.array(list(self.grids.keys()) + ['HeatCascade'])
+
         self.Services = np.array(['DHW', 'SH', 'Cooling'])
+
+        ## Avoid warning if rSOC is not used but defined as a service. Still results are untouched, as the service is simply ignored.
+        if 'rSOC' in self.UnitTypes:
+            self.Services = np.append(self.Services,'rSOC_heat')
 
         self.UnitsOfType = {}
         for u in self.UnitTypes:
@@ -106,7 +111,7 @@ class Infrastructure:
         for h in self.House:
             # Units
             for u in self.houses[h]['units']:
-                complete_name = u['name'] + '_' + h
+                complete_name = u['Unit'] + '_' + h
 
                 self.Units = np.append(self.Units, [complete_name])
                 self.UnitsOfType[u['UnitOfType']] = np.append(self.UnitsOfType[u['UnitOfType']], [complete_name])
@@ -121,7 +126,7 @@ class Infrastructure:
                     [h + '_c_lt', h + '_c_mt', h + '_h_lt'])  # c_mt  c_lt - space heat demand discretized in 2 streams, _- h_lt for cooling
                 self.StreamsOfUnit[complete_name] = np.array([])
                 for s in u['StreamsOfUnit']:
-                    stream = u['name'] + '_' + h + '_' + s
+                    stream = u['Unit'] + '_' + h + '_' + s
                     self.StreamsOfUnit[complete_name] = np.append(self.StreamsOfUnit[complete_name], stream)
 
             # Layers
@@ -130,7 +135,7 @@ class Infrastructure:
                 
         # District units
         for u in self.district_units:
-            name = u['name']
+            name = u['Unit']
             self.Units = np.append(self.Units, [name])
             self.UnitsOfDistrict = np.append(self.UnitsOfDistrict, [name])
             self.UnitsOfType[u['UnitOfType']] = np.append(self.UnitsOfType[u['UnitOfType']], [name])
@@ -142,7 +147,7 @@ class Infrastructure:
 
             self.StreamsOfUnit[name] = np.array([])
             for s in u['StreamsOfUnit']:
-                stream = u['name'] + '_' + s
+                stream = u['Unit'] + '_' + s
                 self.StreamsOfUnit[name] = np.append(self.StreamsOfUnit[name], stream)
 
         self.__generate_set_dict()  # generate dictionary containing all sets for AMPL
@@ -175,24 +180,38 @@ class Infrastructure:
     def generate_parameter(self):
         # Units Flows -----------------------------------------------------------
 
-        df_out = {unit["name"]: unit["Units_flowrate_out"] for unit in self.houses[self.House[0]]['units']}
-        df_out = pd.DataFrame.from_dict(df_out).stack()
-        df_in = {unit["name"]: unit["Units_flowrate_in"] for unit in self.houses[self.House[0]]['units']}
-        df_in = pd.DataFrame.from_dict(df_in).stack()
-        Units_flowrate = pd.concat([df_out, df_in], axis=1)
-        Units_flowrate.columns = ['Units_flowrate_out', 'Units_flowrate_in']
-        Units_flowrate.index = Units_flowrate.index.remove_unused_levels()
+        all_units_flowrate = []
 
         for h in self.House:
-            Units_flowrate_h = Units_flowrate.copy()
-            Units_flowrate_h.index = Units_flowrate_h.index.set_levels(Units_flowrate.index.get_level_values(1).unique() + "_" + h, level=1)
-            self.Units_flowrate = pd.concat([self.Units_flowrate, Units_flowrate_h])
-        self.Units_flowrate.index.names = ['Layer', 'Unit']
+            units = self.houses[h]['units']
+            for unit in units:
+                unit_name = unit['Unit'] + "_" + h
+                for layer, val in unit['Units_flowrate_out'].items():
+                    all_units_flowrate.append({
+                        'House': h,
+                        'Unit': unit_name,
+                        'Layer': layer,
+                        'Direction': 'out',
+                        'Flowrate': val
+                    })
+                for layer, val in unit['Units_flowrate_in'].items():
+                    all_units_flowrate.append({
+                        'House': h,
+                        'Unit': unit_name,
+                        'Layer': layer,
+                        'Direction': 'in',
+                        'Flowrate': val
+                    })
+
+        df = pd.DataFrame(all_units_flowrate)
+        self.Units_flowrate = df.pivot_table(index=['Layer', 'Unit'], columns='Direction', values='Flowrate',
+                                             fill_value=0)
+        self.Units_flowrate.columns = ['Units_flowrate_in', 'Units_flowrate_out']
 
         for u in self.district_units:
             df_i = pd.DataFrame()
             df_o = pd.DataFrame()
-            name = u['name']
+            name = u['Unit']
             for i in u['Units_flowrate_in']:
                 idx = pd.MultiIndex.from_tuples([(i, name)], names=['Layer', 'Unit'])
                 df = pd.DataFrame(u['Units_flowrate_in'][i], index=idx, columns=['Units_flowrate_in'])
@@ -207,7 +226,7 @@ class Infrastructure:
 
         # Units Costs -----------------------------------------------------------
         for u in self.houses[self.House[0]]['units']:
-            self.add_unit_parameters(u['name'] + '_' + self.House[0], u)
+            self.add_unit_parameters(u['Unit'] + '_' + self.House[0], u)
 
         Units_Parameters_0 = self.Units_Parameters.copy()
         for h in self.House[1:]:
@@ -217,10 +236,10 @@ class Infrastructure:
             self.Units_Parameters = pd.concat([self.Units_Parameters, Units_Parameters_h])
 
         for u in self.district_units:
-            self.add_unit_parameters(u['name'], u)
+            self.add_unit_parameters(u['Unit'], u)
 
         # Grids
-        keys = [key for key in self.grids["Electricity"] if key not in ["ref_unit", "name", "ReinforcementOfNetwork"]]
+        keys = [key for key in self.grids["Electricity"] if key not in ["ref_unit", 'Grid', "ReinforcementOfNetwork"]]
 
         for g in self.grids:
             df = pd.DataFrame([[self.grids[g][key] for key in keys]], index=[g], columns=keys)
@@ -231,7 +250,7 @@ class Infrastructure:
 
             for u in self.houses[h]['units']:
                 if u['UnitOfType'] == 'AirConditioner' or u['UnitOfType'] == 'HeatPump':
-                    complete_name = u['name'] + '_' + h
+                    complete_name = u['Unit'] + '_' + h
                     if u['UnitOfType'] == 'AirConditioner':
                         file = os.path.join(path_to_infrastructure, 'AC_parameters.txt')
                     elif u['UnitOfType'] == 'HeatPump':
@@ -284,9 +303,10 @@ class Infrastructure:
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])
 
 
-def prepare_units_array(file, exclude_units=[], grids=None):
+
+def prepare_units_df(file, exclude_units=[], grids=None):
     """
-    Prepares the array that will be used by initialize_units.
+    Prepares the df that will be used by initialize_units.
 
     Parameters
     ----------
@@ -299,8 +319,8 @@ def prepare_units_array(file, exclude_units=[], grids=None):
 
     Returns
     -------
-    np.array
-        Contains one dictionary in each cell, with the parameters for a specific unit.
+    pd.DataFrame()
+        Representation of the units' data.
 
     See also
     --------
@@ -331,49 +351,52 @@ def prepare_units_array(file, exclude_units=[], grids=None):
             row['stream_Tout'] = [row['stream_Tout'][0] for el in row['StreamsOfUnit']]
         return row
 
-    unit_data = file_reader(file)
-    unit_data = unit_data.set_index("Unit")
+    def add_flowrate_values(row):
 
-    list_of_columns = ['UnitOfLayer', 'UnitOfService', 'StreamsOfUnit', 'Units_flowrate_in', 'Units_flowrate_out',
+        flow_in = {}
+        flow_out = {}
+
+        for layer in row['Units_flowrate_in']:
+            flow_in[layer] = 1e6
+            if layer not in row['Units_flowrate_out']:
+                flow_out[layer] = 0
+
+        for layer in row['Units_flowrate_out']:
+            flow_out[layer] = 1e6
+            if layer not in row['Units_flowrate_in']:
+                flow_in[layer] = 0
+
+        row['Units_flowrate_in'] = flow_in
+        row['Units_flowrate_out'] = flow_out
+
+        return row
+
+    unit_data = file_reader(file)
+
+    list_of_columns = ['Unit', 'UnitOfLayer', 'UnitOfService', 'StreamsOfUnit', 'Units_flowrate_in', 'Units_flowrate_out',
                        'stream_Tin', 'stream_Tout']
     try:
         unit_data[list_of_columns] = unit_data[list_of_columns].fillna('').astype(str)
-        unit_data[list_of_columns].apply(transform_into_list)
+        unit_data[list_of_columns[1:]].apply(transform_into_list) # keep Unit as str
     except KeyError:
         raise KeyError('There is a name in the columns of your csv. Make sure the columns correspond to the default'
                        ' files in data/infrastructure.')
 
+    # Apply stream validity checks
     unit_data = unit_data.apply(check_validity, axis=1)
 
-    units = []
-    if grids is None:
-        grid_layers = ['Electricity', 'NaturalGas', 'Oil', 'Wood', 'Data', 'Heat', 'HeatCascade']
-    else:
-        grid_layers = list(grids.keys()) + ['HeatCascade']
-
-    # Some units need to be defined for thermodynamical reasons in the model. They can still be set to 0.
+    # Determine valid grid layers
+    grid_layers = list(grids.keys()) + ['HeatCascade'] if grids else ['Electricity', 'NaturalGas', 'HeatCascade']
     units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "ThermalSolar"]
 
-    for idx, row in unit_data.iterrows():
-        if all([layer in grid_layers for layer in row["UnitOfLayer"]]):
-            if idx not in exclude_units or row['UnitOfType'] in units_to_keep:
-                unit_dict = row.to_dict()
-                unit_dict['name'] = idx
-                flow_in = {}
-                flow_out = {}
-                for el in row['Units_flowrate_in']:
-                    flow_in[el] = 1e6
-                    if el not in row['Units_flowrate_out']:
-                        flow_out[el] = 0
-                for el in row['Units_flowrate_out']:
-                    flow_out[el] = 1e6
-                    if el not in row['Units_flowrate_in']:
-                        flow_in[el] = 0
-                unit_dict['Units_flowrate_in'] = flow_in
-                unit_dict['Units_flowrate_out'] = flow_out
-                units = np.concatenate([units, [unit_dict]])
+    # Filter valid units first
+    valid_units = unit_data[
+        unit_data['UnitOfLayer'].apply(lambda layers: all(layer in grid_layers for layer in layers)) &
+        (~unit_data['Unit'].isin(exclude_units) | unit_data['UnitOfType'].isin(units_to_keep))
+        ]
 
-    return units
+    valid_units = valid_units.apply(add_flowrate_values, axis=1)
+    return valid_units
 
 
 def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"), district_data=None, interperiod_data=None):
@@ -391,7 +414,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     district_data : str or bool or None, optional
         Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
         If None, district units will not be considered. Default is None.
-    interperiod_data : dict or bool or None, optional
+    interperiod_data : dict or bool or str, None, optional TODO A. Waeber
         Paths to the CSV file(s) containing inter-period storage units data. If True, units are initialized with 'building_units_IP.csv' and 'district_units_IP.csv'.
         If None, storage units won't be considered. Default is None.
 
@@ -421,25 +444,41 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     else:
         exclude_units = scenario["exclude_units"] + default_units_to_exclude
 
-    building_units = prepare_units_array(building_data, exclude_units, grids)
+    building_units = prepare_units_df(building_data, exclude_units, grids)
 
-    if interperiod_data is True:
-        building_units = np.concatenate([building_units, prepare_units_array(os.path.join(path_to_infrastructure, "building_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
-    elif isinstance(interperiod_data, dict):
-        building_units = np.concatenate([building_units, prepare_units_array(interperiod_data["building_units_IP"], exclude_units=exclude_units, grids=grids)])
+    if 'rSOC' not in building_units['Unit'].values:
+        building_units['UnitOfService'] = building_units['UnitOfService'].apply(
+            lambda services: [s for s in services if s != 'rSOC_heat'])
+
+    building_units= np.array(building_units.to_dict(orient="records"))
+
+    if interperiod_data != 'district' and interperiod_data is not None:
+        building_units_IP = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "building_units_IP.csv"), exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
+    elif isinstance(interperiod_data, dict) and 'building_units_IP' in interperiod_data:
+        building_units_IP = np.array(prepare_units_df(interperiod_data["building_units_IP"], exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
+    else:
+        building_units_IP = []
+
+    if len(building_units_IP) > 0:
+        building_units = np.concatenate([building_units, building_units_IP])
 
     if district_data is True:
-        district_units = prepare_units_array(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids)
+        district_units = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids).to_dict(orient="records"))
     elif isinstance(district_data, str):
-        district_units = prepare_units_array(district_data, exclude_units, grids=grids)
+        district_units = np.array(prepare_units_df(district_data, exclude_units, grids=grids).to_dict(orient="records"))
     else:
         district_units = []
 
     if district_data is not None:
-        if interperiod_data is True:
-            district_units = np.concatenate([district_units, prepare_units_array(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units, grids=grids)])
-        elif isinstance(interperiod_data, dict):
-            district_units = np.concatenate([district_units, prepare_units_array(interperiod_data["district_units_IP"], exclude_units=exclude_units, grids=grids)])
+        if interperiod_data != 'building' and interperiod_data is not None:
+            district_units_IP = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units,grids=grids).to_dict(orient="records"))
+        elif isinstance(interperiod_data, dict) and 'district_units_IP' in interperiod_data:
+            district_units_IP = np.array(prepare_units_df(interperiod_data["district_units_IP"], exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
+        else:
+            district_units_IP = []
+
+        if len(district_units_IP) > 0:
+            district_units = np.concatenate([district_units,district_units_IP])
 
     units = {"building_units": building_units, "district_units": district_units}
 
@@ -487,7 +526,7 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
     for idx, row in grid_data.iterrows():
         if idx in available_grids.keys():
             grid_dict = row.to_dict()
-            grid_dict['name'] = idx
+            grid_dict['Grid'] = idx
             grid_dict['Network_demand_connection'] = 1e6 * grid_dict['Network_demand_connection']
             grid_dict['Network_supply_connection'] = 1e6 * grid_dict['Network_supply_connection']
             grid_dict["ReinforcementOfNetwork"] = np.array(grid_dict["ReinforcementOfNetwork"].split("/")).astype(float)

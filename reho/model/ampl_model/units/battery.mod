@@ -41,3 +41,11 @@ Units_supply['Electricity',u,p,t]*dt[p] <= (BAT_limit_ch[u]-BAT_limit_di[u])*Uni
 subject to BAT_EB_cyclic1{u in UnitsOfType['Battery'],p in Period}:
 (BAT_E_stored[u,p,first(Time[p])] - BAT_efficiency[u]*BAT_E_stored[u,p,last(Time[p])]) =
 	(BAT_eff_ch[u]*Units_demand['Electricity',u,p,last(Time[p])] - (1/BAT_eff_di[u])*Units_supply['Electricity',u,p,last(Time[p])])*dt[p];
+
+var BAT_E_init{u in UnitsOfType['Battery']} >= 0;
+
+subject to BAT_EB_uniform_start{u in UnitsOfType['Battery'], p in Period}:
+    BAT_E_stored[u, p, first(Time[p])] = BAT_E_init[u];
+
+subject to BAT_EB_uniform_end{u in UnitsOfType['Battery'], p in Period}:
+    BAT_E_stored[u, p, last(Time[p])] = BAT_E_init[u];

@@ -1,6 +1,7 @@
 import re
 import pandas as pd
 import numpy as np
+
 from reho.paths import *
 
 __doc__ = """
@@ -36,264 +37,6 @@ def update_label(source_name, target_name, df_label):
     return df_label
 
 
-def handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, elec_storage_use, mol_storage_use):
-    """
-    This function is used to handle the layout of the Sankey diagram when electricity storage is active, to avoid false
-    representation of electricity exports to the grid.
-    Parameters
-    ----------
-    df_annuals: pandas.DataFrame, that gathers annual balance for all the layers and the corresponding units
-    df_label: Names of layers and units for the Sankey diagram
-    df_stv: pandas.DataFrame, containing all information about the streams and the numerical values in the Sankey diagram
-    elec_storage_list: list that contains all the units related to electricity storage (interperiod or not)
-    elec_storage_use: Boolean to check whether electricity storage is active.
-    mol_storage_use: Boolean to check whether molecular storage is active.
-
-    Returns
-    -------
-    updated: df_label and df_stv
-    """
-    # Handle exports between PV panels and Battery (long-term storage especially). first calculate total electricity consumed onsite (incl. for storage purpose).
-    # Then define PV to elec-onsite as the diff between elec_onsite and Network_supply. Then calculate PV to Network as the difference between PV production and PV cosnumed onsite.
-    # Then calculate longterm storage to network as the difference between total Network demand and PV_to_network. This should all be done manually I guess.
-
-    elec_dem_units = df_annuals[df_annuals['Layer'] == "Electricity"]["Hub"].tolist()
-    end_use_elec_unit = [item for item in elec_dem_units if (item not in elec_storage_list) and (item != "Network")]
-    end_use_elec_demand = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'].isin(end_use_elec_unit))]["Demand_MWh"].sum()
-    elec_to_storage = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'].isin(elec_storage_list))]["Demand_MWh"].sum()
-    elec_tot_onsite = end_use_elec_demand + elec_to_storage
-    storage_to_Network = elec_tot_onsite - end_use_elec_demand
-
-    PV_to_elec_onsite = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "PV")]["Supply_MWh"].sum()
-    to_Network = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "Network")]["Demand_MWh"].sum()
-    from_network_onsite = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "Network")]["Supply_MWh"].sum()
-
-    if elec_storage_use:
-        dest = "Electrical_consumption"
-    else:
-        dest = "Electrical_consumption"
-
-    if (not elec_storage_use) and (not mol_storage_use):
-        df_label = update_label("PV", dest, df_label)
-        df_stv["PV_to_elec_onsite"] = [df_label.loc['PV', 'pos'],  # source, create a source to target column
-                                       df_label.loc[dest, 'pos'],  # target
-                                       float(PV_to_elec_onsite - to_Network)]  # value
-
-        df_label = update_label("PV", "Electricity_export", df_label)
-        df_stv["to_Network"] = [df_label.loc["PV", 'pos'],  # source, create a source to target column
-                                df_label.loc['Electricity_export', 'pos'],  # target
-                                float(to_Network)]  # value
-
-    else:
-        df_label = update_label("PV", dest, df_label)
-        df_stv["PV_to_elec_onsite"] = [df_label.loc['PV', 'pos'],  # source, create a source to target column
-                                       df_label.loc[dest, 'pos'],  # target
-                                       float(PV_to_elec_onsite)]  # value
-
-        df_label = update_label(dest, "Electricity_export", df_label)
-        df_stv["to_Network"] = [df_label.loc[dest, 'pos'],  # source, create a source to target column
-                                df_label.loc['Electricity_export', 'pos'],  # target
-                                float(to_Network)]  # value
-
-    if elec_storage_use:
-        energy_stored_loop = 0
-        for elec_storage in elec_storage_list:
-            # 8 Electrical cons before elec storage to storage device
-            df_label, df_stv, dev_flow_in = add_flow('Electrical_consumption', elec_storage, 'Electricity', elec_storage,
-                                                     'Demand_MWh', df_annuals, df_label, df_stv)
-
-            df_label, df_stv, dev_stor_out = add_flow(elec_storage, 'Electrical_consumption', 'Electricity',
-                                                      elec_storage,
-                                                      'Supply_MWh', df_annuals, df_label, df_stv)
-
-            energy_stored_loop += dev_stor_out
-
-        # 10 Electrical cons after elec storage to Electr cons
-        rSOC_to_elec_onsite = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "rSOC")][
-            "Supply_MWh"].sum()  # elec_tot_onsite - df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "Network")]["Supply_MWh"].sum()
-
-        #df_label = update_label('Electrical_consumption', 'Electrical_consumption', df_label)
-        #df_stv['Electrical_consumption_to_Electrical_consumption'] = [
-        #    df_label.loc['Electrical_consumption', 'pos'],
-        #    df_label.loc['Electrical_consumption', 'pos'],
-        #    float(from_network_onsite + PV_to_elec_onsite + rSOC_to_elec_onsite - elec_to_storage - to_Network + energy_stored_loop)]
-
-    return df_stv, df_label
-
-
-def handle_biometh_h2_import_export(df_label, df_stv, df_annuals):
-    # Check if rSOC district is implemented (or if grid import/export should be routed to rSOC building)
-    if len(df_annuals.loc[(df_annuals['Layer'] == "Biomethane") & (df_annuals['Hub'] == "rSOC_district")]) > 0:
-        # Biomethane to rSOC
-        df_label, df_stv, _ = add_flow('Biomethane_import', 'rSOC_district', 'Biomethane', 'Network', 'Supply_MWh',
-                                       df_annuals, df_label, df_stv)
-    else:
-        # Biomethane to rSOC
-        df_label, df_stv, _ = add_flow('Biomethane_import', 'rSOC', 'Biomethane', 'Network', 'Supply_MWh',
-                                       df_annuals, df_label, df_stv)
-
-    if len(df_annuals.loc[(df_annuals['Layer'] == "Biomethane") & (df_annuals['Hub'] == "MTR_district")]) > 0:
-        # 10 Device to CH4
-        df_label, df_stv, _ = add_flow('MTR_district', 'Biomethane_export', 'Biomethane', 'Network', 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
-    else:
-        # 10 Device to CH4
-        df_label, df_stv, _ = add_flow('MTR', 'Biomethane_export', 'Biomethane', 'Network', 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
-
-    if len(df_annuals.loc[(df_annuals['Layer'] == "Hydrogen") & (df_annuals['Hub'] == "rSOC_district")]) > 0:
-
-        # H2 to rSOC
-        df_label, df_stv, _ = add_flow('Hydrogen_import', 'rSOC_district', 'Hydrogen', 'Network', 'Supply_MWh',
-                                       df_annuals, df_label, df_stv)
-        # 10 Device to CH4
-        df_label, df_stv, _ = add_flow('rSOC_district', 'Hydrogen_export', 'Hydrogen', 'Network', 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
-    else:
-        # H2 to rSOC
-        df_label, df_stv, _ = add_flow('Hydrogen_import', 'rSOC', 'Hydrogen', 'Network', 'Supply_MWh',
-                                       df_annuals, df_label, df_stv)
-
-        # 10 Device to CH4
-        df_label, df_stv, _ = add_flow('rSOC', 'Hydrogen_export', 'Hydrogen', 'Network', 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
-
-    return df_label, df_stv
-
-
-def add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use):
-    """
-    This function is called to add all the streams/units that are related to molecule (interperiod storage) to the sankey diagram.
-
-    Parameters
-    ----------
-    df_annuals: pandas.DataFrame, that gathers annual balance for all the layers and the corresponding units
-    df_label: Names of layers and units for the Sankey diagram
-    df_stv: pandas.DataFrame, containing all information about the streams and the numerical values in the Sankey diagram
-    FC_or_ETZ_use: Variable to check whether other electrolyzer types (than the usual) are considered
-
-    Returns
-    -------
-    updated: df_label and df_stv
-    """
-    if FC_or_ETZ_use:
-        H2_stor_to_FC = df_annuals.loc[(df_annuals['Layer'] == "Hydrogen") & (df_annuals['Hub'] == "FC")][
-            "Demand_MWh"].sum()
-        ETZ_to_H2_stor = df_annuals.loc[(df_annuals['Layer'] == "Hydrogen") & (df_annuals['Hub'] == "ETZ")][
-            "Supply_MWh"].sum()
-    else:
-        H2_stor_to_FC = 0
-        ETZ_to_H2_stor = 0
-        # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('H2_storage_IP', 'rSOC', 'Hydrogen', 'H2_storage_IP', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv, False, None, -H2_stor_to_FC)
-
-    # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('rSOC', 'H2_storage_IP', 'Hydrogen', 'H2_storage_IP', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv, False, None, -ETZ_to_H2_stor)
-
-    # Electricity consumption for H2 storage
-    df_label, df_stv, _ = add_flow('Electrical_consumption', 'H2_storage_IP', 'Electricity', 'H2_storage_IP',
-                                   'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # Electricity consumption for CH4 & CO2 storage
-    elec_CO2_IP = df_annuals.loc[(df_annuals['Layer'] == "Electricity") & (df_annuals['Hub'] == "CO2_storage_IP")][
-        "Demand_MWh"].sum()
-
-    df_label, df_stv, _ = add_flow('Electrical_consumption', 'Hybrid_storage_IP', 'Electricity', 'CH4_storage_IP',
-                                   'Demand_MWh',
-                                   df_annuals, df_label, df_stv, adjustment=+elec_CO2_IP)
-
-    # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('Hybrid_storage_IP', 'rSOC', 'Biomethane', 'CH4_storage_IP', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 9 Device to H2
-    df_label, df_stv, _ = add_flow('rSOC', 'MTR', 'Hydrogen', 'MTR', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('MTR', 'Hybrid_storage_IP', 'Biomethane', 'MTR', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    df_label, df_stv, _ = add_flow('H2_storage_IP_district', 'rSOC_district', 'Hydrogen', 'H2_storage_IP_district', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv, False, None, -H2_stor_to_FC)
-
-    # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('rSOC_district', 'H2_storage_IP_district', 'Hydrogen', 'H2_storage_IP_district', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv, False, None, -ETZ_to_H2_stor)
-
-    # 8 rSOC to CH4_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('Hybrid_storage_IP_district', 'rSOC_district', 'Biomethane', 'CH4_storage_IP_district', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 9 Device to H2
-    df_label, df_stv, _ = add_flow('rSOC_district', 'MTR_district', 'Hydrogen', 'MTR_district', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 10 Device to CH4
-    df_label, df_stv, _ = add_flow('MTR_district', 'Hybrid_storage_IP_district', 'Biomethane', 'MTR_district', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    df_label, df_stv = handle_biometh_h2_import_export(df_label, df_stv, df_annuals)
-
-    if df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == "MTR")]["Supply_MWh"].sum() > 0:
-
-        units_on_bio_CH4_1 = df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals["Demand_MWh"] > 0)]["Hub"]
-        NG_use = 0
-        for u in units_on_bio_CH4_1:
-            df_label, df_stv, _ = add_flow('MTR', u, 'NaturalGas', 'MTR',
-                                           'Demand_MWh', df_annuals, df_label, df_stv, adjustment=NG_use)
-
-            NG_use = NG_use + df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == u)][
-                "Demand_MWh"].sum()
-
-    if df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == "MTR_district")]["Supply_MWh"].sum() > 0:
-
-        units_on_bio_CH4_2 = df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals["Demand_MWh"] > 0)]["Hub"]
-        NG_use = 0
-        for u in units_on_bio_CH4_2:
-            df_label, df_stv, _ = add_flow('MTR_district', u, 'NaturalGas', 'MTR_district',
-                                           'Supply_MWh', df_annuals, df_label, df_stv, adjustment=NG_use)
-
-            NG_use = NG_use + df_annuals.loc[(df_annuals['Layer'] == "NaturalGas") & (df_annuals['Hub'] == u)]["Demand_MWh"].sum()
-
-    return df_label, df_stv
-
-
-def add_ETZ_FC_to_sankey(df_annuals, df_label, df_stv):
-    # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('H2_storage', 'FC', 'Hydrogen', 'FC', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    # 8 rSOC to H2_grid or storage  (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('ETZ', 'H2_storage', 'Hydrogen', 'ETZ', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    return df_label, df_stv
-
-
-def add_DHN_units(df_annuals, DHN_units, df_label, df_stv):
-    for unit in DHN_units:
-        df_label, df_stv, _ = add_flow(unit, 'DHN', 'Heat', unit, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv)
-
-    df_label, df_stv, _ = add_flow('Heat_import', 'DHN', 'Heat', 'Network', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    df_label, df_stv, _ = add_flow('DHN', 'Heat_export', 'Heat', 'Network', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    df_label, df_stv, _ = add_flow('DHN', 'DHN_hex', 'Heat', 'DHN_hex', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    df_label, df_stv, _ = add_flow('DHN', 'HeatPump_DHN', 'Heat', 'HeatPump_DHN', 'Demand_MWh',
-                                   df_annuals, df_label, df_stv)
-
-    return df_label, df_stv
-
-
 def add_label_value(df_label, df_stv, precision, units):
     """
     Adds the values from df_stv to the labels of df_labels.
@@ -313,7 +56,7 @@ def add_label_value(df_label, df_stv, precision, units):
     Returns
     _______
     pd.DataFrame
-        df_label pdated with the label values
+        df_label updated with the label values
     """
     df_source_value = pd.DataFrame()
     df_source_value.index = df_label.pos
@@ -383,6 +126,41 @@ def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, ch
     return df_label, df_stv, fact * source_to_dest + adjustment
 
 
+def add_base_flows(df_annuals, df_label, df_stv):
+    # Check if WaterTankSH is used
+    watertank_sh = len(df_annuals[(df_annuals['Layer'] == 'SH') & (df_annuals['Hub'] == 'WaterTankSH')]) != 0
+
+    # Base flows
+    df_label, df_stv, _ = add_flow('Electricity_import', 'Electrical_consumption', 'Electricity', 'Network', 'Supply_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    # Base flows
+    df_label, df_stv, _ = add_flow('Electrical_consumption', 'Electricity_export', 'Electricity', 'Network',
+                                   'Demand_MWh',
+                                   df_annuals, df_label, df_stv)
+
+    df_label, df_stv, _ = add_flow('Electrical_consumption', 'Electrical_appliances', 'Electricity', 'Building',
+                                   'Demand_MWh', df_annuals, df_label, df_stv)
+
+    df_label, df_stv, _ = add_flow('PV', 'Electrical_consumption', 'Electricity', 'PV',
+                                   'Supply_MWh', df_annuals, df_label, df_stv)
+
+    df_label, df_stv, wtsh_to_sh = add_flow('WaterTankSH', 'SH', 'SH', 'WaterTankSH', 'Supply_MWh',
+                                            df_annuals, df_label, df_stv)
+
+    heat_tot_sh = df_annuals[(df_annuals['Layer'] == 'SH') & (df_annuals['Hub'] == 'Building')].Demand_MWh.sum()
+    heat_tot_sup = df_annuals[df_annuals['Layer'] == 'SH'].Supply_MWh.sum() - wtsh_to_sh
+    heat_loss_wt = heat_tot_sup - heat_tot_sh
+
+    df_label, df_stv, _ = add_flow('SH_heat', 'WaterTankSH', 'SH', 'WaterTankSH', 'Supply_MWh',
+                                   df_annuals, df_label, df_stv, adjustment=heat_loss_wt)
+
+    df_label, df_stv, _ = add_flow('SH_heat', 'SH', 'SH', 'WaterTankSH', 'Supply_MWh',
+                                   df_annuals, df_label, df_stv, adjustment=heat_tot_sup - heat_loss_wt, fact=-1)
+
+    return df_label, df_stv, watertank_sh
+
+
 def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, units='MWh', display_label_value=True, scaling_factor=1):
     """
     Builds the Sankey dataframe.
@@ -411,210 +189,219 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
 
     """
 
-    # Hypotheses :
-    #   1. DHW demand is taken as the supply of the watertank DHW
-    #   2. no flow: electrical storage system to grid feed in, all to 'feed in electrical grid ' is from PV
-    #   3. Small losses of NG, heat, wood,... between network and devices not accounted
-    #   4. Electricity for 'Data heat' fully accounted as electricity consumption (Layer Data: not in sankey)
-    #   5. Electricity produced by technologies can be stored (e.g. NG_cogen elec -> battery)
-    # ! Make sure that all the possible technologies/sources/demands are in the list below.
-    # If not, risk that something will be not displayed, there is no check provided by this function for that.
-
-    # Manual handled devices (list below not used, just here for the information)
-    # manual_device = ['PV', 'WaterTankSH']
-
-    # Electrical storage device
-    elec_storage_list = ['Battery', "Battery_district", "Battery_IP", "Battery_IP_district", 'EV_district']
-
-    EV_device = ["EV_district", "EV_charger_district"]
-
-    mol_storage_list = ['H2_storage_IP', 'CH4_storage_IP']
-    # Semi automatic handled devices
-    semi_auto_device = [
-        'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'DataHeat_DHW', 'DataHeat_SH',
-        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'AirConditioner',
-        'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district', 'DHN_hex',
-        'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district',
-    ]
-
-    DHN_units = ["HeatPump_Geothermal_district", "rSOC_district", "NG_Boiler_district", "MTR_district"]
-
-    # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
-
-    # Select only not null lines in df_annuals
+    # Select and clean data
     df_annuals = scaling_factor * df_Results['df_Annuals']
     df_annuals = df_annuals.replace(0, np.nan)
     df_annuals = df_annuals.loc[df_annuals['Demand_MWh'].notnull() | df_annuals['Supply_MWh'].notnull()]
     df_annuals = df_annuals.replace(np.nan, 0).reset_index()
 
-    # "Building" string management in data to deal with data uniformly regarding buildings
     for x in list(df_annuals.index):
-        if df_annuals.loc[x, "Hub"].startswith('Building'):  # all Buildingx -> Building
+        if df_annuals.loc[x, "Hub"].startswith('Building'):
             df_annuals.loc[x, "Hub"] = "Building"
-        else:  # else remove '_Buildingx' of the hub name
+        else:
             df_annuals.loc[x, "Hub"] = re.sub("_Building\d+", "", df_annuals.loc[x, "Hub"])
 
-    # Creating the dataframe for the following
-    df_label = pd.DataFrame(columns=['pos'])  # df for labels, position number (pos) and colors
-    df_stv = pd.DataFrame(index=['source', 'target', 'value'])  # df for source,target,value
+    df_label = pd.DataFrame(columns=['pos'])
+    df_stv = pd.DataFrame(index=['source', 'target', 'value'])
 
-    # check if electricity storage
-    elec_storage_use = False
-    for elec_storage in elec_storage_list:
-        if len(df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] == elec_storage)]) != 0:
-            elec_storage_use = True
+    df_label, df_stv, watertank_sh = add_base_flows(df_annuals, df_label, df_stv)
 
-    # check if molecule storage
-    mol_storage_use = False
-    for mol_storage in mol_storage_list:
-        if len(df_annuals.loc[(df_annuals['Layer'] == 'Hydrogen') | (df_annuals['Layer'] == 'Biomethane')]) != 0:
-            mol_storage_use = True
+    # Semi-automatically handled devices
+    semi_auto_device = [
+        'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'ElectricalHeater_other',
+        'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
+        'AirConditioner', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district',
+        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district',
+    ]
 
-    FC_or_ETZ_use = False
-    if len(df_annuals.loc[(df_annuals['Layer'] == 'Hydrogen') & ((df_annuals['Hub'] == "ETZ") | (df_annuals['Hub'] == "FC"))]) != 0:
-        FC_or_ETZ_use = True
+    # Services that can be provided by the devices: ['SH', 'DHW', 'Cooling', 'rSOC_heat']
 
-    # check if watertank SH
-    watertank_sh = False
-    if len(df_annuals.loc[(df_annuals['Layer'] == 'SH') & (df_annuals['Hub'] == 'WaterTankSH')]) != 0:
-        watertank_sh = True
+    flow_templates = [
+        # EXAMPLE #
+        # ('Source_in_sankey', 'Destination_in_sankey', 'Layer_in_df_annuals', 'Hub_in_df_annuals 'Supply/Demand_MWh_in_df_annuals', bool_second_destination, second_destination_sankey, offset, mult_factor),
 
-    # 1 Elec Grid to Elec Consumption of the building(s) or before electricity storage (=Before Phase, bp) if present
-    df_label, df_stv, _ = add_flow('Electricity_import', 'Electrical_consumption', 'Electricity', 'Network', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv, elec_storage_use, 'Electrical_consumption')
+        # Handle all imports
+        ("NaturalGas_import", "{device}", "NaturalGas", "{device}", "Demand_MWh", False, None, 0, 1),
+        ("Wood_import", "{device}", "Wood", "{device}", "Demand_MWh", False, None, 0, 1),
+        ("Oil_import", "{device}", "Oil", "{device}", "Demand_MWh", False, None, 0, 1),
+        ("Gasoline_import", "{device}", "Gasoline", "{device}", "Demand_MWh", False, None, 0, 1),
 
-    # 2 Elec Cons to Elec Appliances
-    df_label, df_stv, _ = add_flow('Electrical_consumption', 'Electrical_appliances', 'Electricity', 'Building',
-                                   'Demand_MWh', df_annuals, df_label, df_stv)
+        ("Electrical_consumption", "{device}", "Electricity", "{device}", "Demand_MWh", False, None, 0, 1),
+        ("{device}", "DHW", "DHW", "{device}", "Supply_MWh", False, None, 0, 1),
+        ("{device}", "SH", "SH", "{device}", "Supply_MWh", watertank_sh, "SH_heat", 0, 1),
+        ("{device}", "Electrical_consumption", "Electricity", "{device}", "Supply_MWh", False, None, 0, 1),
+        ("{device}", "Cooling", "Cooling", "{device}", "Supply_MWh", False, None, 0, 1),
+        ("{device}", "rSOC", "rSOC_heat", "{device}", "Supply_MWh", False, None, 0, 1),
 
-    # Handle PV, electricity storage and Network
-    df_stv, df_label = handle_PV_battery_network(df_annuals, df_stv, df_label, elec_storage_list, elec_storage_use, mol_storage_use)
+    ]
 
-    # 5 WaterTankSH to SH
-    df_label, df_stv, wtsh_to_sh = add_flow('WaterTankSH', 'SH', 'SH', 'WaterTankSH', 'Supply_MWh',
-                                            df_annuals, df_label, df_stv)
-
-    # Calculation of Losses in the watertank
-    heat_tot_sh = df_annuals.loc[(df_annuals['Layer'] == 'SH') & (df_annuals['Hub'] == 'Building')].Demand_MWh.sum()
-    heat_tot_sup = df_annuals.loc[(df_annuals['Layer'] == 'SH')].Supply_MWh.sum() - wtsh_to_sh
-    heat_loss_wt = heat_tot_sup - heat_tot_sh
-
-    # 6 SH Heat to Watertank SH if watertank
-    df_label, df_stv, _ = add_flow('SH_heat', 'WaterTankSH', 'SH', 'WaterTankSH', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv, adjustment=heat_loss_wt)
-
-    # 7 SH Heat to SH if watertank
-    df_label, df_stv, _ = add_flow('SH_heat', 'SH', 'SH', 'WaterTankSH', 'Supply_MWh',
-                                   df_annuals, df_label, df_stv, adjustment=heat_tot_sup - heat_loss_wt, fact=-1)
-
-    elec_storage_energy_in = 0
-    elec_storage_energy_out = 0
-    for elec_storage in elec_storage_list:
-        # 8 Electrical cons before elec storage to storage device
-        df_label, df_stv, dev_flow_in = add_flow('Electrical_consumption', elec_storage, 'Electricity', elec_storage,
-                                                 'Demand_MWh', df_annuals, df_label, df_stv)
-        elec_storage_energy_in += dev_flow_in
-
-        # 9 storage device to Electrical cons
-        df_label, df_stv, dev_flow_out = add_flow(elec_storage, 'Electrical_consumption', 'Electricity', elec_storage,
-                                                  'Supply_MWh', df_annuals, df_label, df_stv)
-        elec_storage_energy_out += dev_flow_out
-
-    # 10 Electrical cons before elec storage to Electr cons
-    #if elec_storage_use:
-    #    df_label = update_label('Electrical_consumption', 'Electrical_consumption', df_label)
-    #    Ec_after_bp = df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] != 'Network')].Demand_MWh.sum()
-    #    Ec_after_bp -= elec_storage_energy_out
-    #    df_stv['Electrical_consumption_to_Electrical_consumption'] = [df_label.loc['Electrical_consumption', 'pos'],
-    #                                                                     df_label.loc['Electrical_consumption', 'pos'],
-    #                                                                     float(Ec_after_bp - elec_storage_energy_in)]
-
-    # 11 EV and charging station infrastructure
-    # check if EV device
-    EV_device_use = False
-    for device in EV_device:
-        if len(df_annuals.loc[(df_annuals['Layer'] == 'Electricity') & (df_annuals['Hub'] == device)]) != 0:
-            EV_device_use = True
-
-    if EV_device_use:
-        for device in EV_device:
-            # 1 Ele Cons to Device (for charging stations)
-            df_label, df_stv, _ = add_flow('Electrical_consumption', "Total_EV_fleet", 'Electricity', device, 'Demand_MWh',
-                                           df_annuals, df_label, df_stv)
-            # 2 Device to Ele Cons
-            df_label, df_stv, _ = add_flow('Total_EV_fleet', "Electrical_consumption", 'Electricity', device, 'Supply_MWh',
-                                           df_annuals, df_label, df_stv)
-            # 3 Device to Mobility
-            df_label, df_stv, _ = add_flow("Total_EV_fleet", 'Mobility', 'Mobility', device, 'Supply_MWh',
-                                           df_annuals, df_label, df_stv, fact=1 / 9.37)
-
-    # Semi-Auto for the followings devices
     for device in semi_auto_device:
-        # 1 Ele Cons to Device
-        df_label, df_stv, _ = add_flow('Electrical_consumption', device, 'Electricity', device, 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
+        for flow in flow_templates:
+            if device == 'rSOC_district' or device == 'MTR_district' or device == 'ElectricalHeater_other_district':
+                device_sankey = device.removesuffix('_district')
+            else:
+                device_sankey = device
+            src, dst, layer, hub, dem_sup, check_dest_2, dest_2, offset, factor = flow
+            df_label, df_stv, _ = add_flow(
+                src.format(device=device_sankey),
+                dst.format(device=device_sankey),
+                layer,
+                hub.format(device=device),
+                dem_sup,
+                df_annuals,
+                df_label,
+                df_stv,
+                check_dest_2=check_dest_2,
+                dest_2=dest_2.format(device=dest_2) if dest_2 else None,
+                adjustment=offset,
+                fact=factor
+            )
 
-        # 2 Heat to Device
-        #df_label, df_stv, _ = add_flow('Heat', device, 'Heat', device, 'Demand_MWh',
-        #                               df_annuals, df_label, df_stv)
+    electrical_storage_devices = ['Battery', 'Battery_IP', 'Battery_district', 'Battery_IP_district', 'EV_district']  # example list
+    # Flow templates for electrical storage
+    storage_flow_templates = [
+        # Charging flow: electricity used to charge the battery
+        ("Electrical_consumption", "{device}", "Electricity", "{device}", "Demand_MWh", False, None, 0, 1),
 
-        # 3 NG to Device
-        df_label, df_stv, _ = add_flow('NaturalGas_import', device, 'NaturalGas', device, 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
+        # Discharging flow: battery supplies electricity back
+        ("{device}", "Electrical_consumption", "Electricity", "{device}", "Supply_MWh", False, None, 0, 1),
+    ]
 
-        # 3 Wood to Device
-        df_label, df_stv, _ = add_flow('Wood_import', device, 'Wood', device, 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
+    for device in electrical_storage_devices:
+        for flow in storage_flow_templates:
+            source, target, layer, hub, dem_sup, check_dest_2, dest_2, offset, factor = [f.format(device=device) if isinstance(f, str) else f for f in flow]
+            df_label, df_stv, _ = add_flow(
+                source,
+                target,
+                layer,
+                hub,
+                dem_sup,
+                df_annuals,
+                df_label,
+                df_stv,
+                check_dest_2=check_dest_2,
+                dest_2=dest_2 if check_dest_2 else None,
+                adjustment=offset,
+                fact=factor
+            )
 
-        # 4 Oil to Device
-        df_label, df_stv, _ = add_flow('Oil_import', device, 'Oil', device, 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
+    rSOC_distr_heat_need = df_annuals.loc[(df_annuals['Layer'] == "Heat") & (df_annuals['Hub'] == "rSOC_district")]["Demand_MWh"].sum()
+    elec_heater_to_rSOC_distr = df_annuals.loc[(df_annuals['Layer'] == "Heat") & (df_annuals['Hub'] == "ElectricalHeater_other_district")]["Supply_MWh"].sum()
 
-        # 4.1 Gasoline to Device
-        df_label, df_stv, _ = add_flow('Gasoline_import', device, 'Gasoline', device, 'Demand_MWh',
-                                       df_annuals, df_label, df_stv)
+    # keys are layers, and then same structured information as above
+    non_default_layers = {
+        'Heat': {
+            'flows': [
+                # EXAMPLE #
+                # ('Source_in_sankey', 'Destination_in_sankey', 'Hub_in_df_annuals 'Supply/Demand_MWh_in_df_annuals', bool_second_destination, second_destination_sankey, offset, mult_factor),
 
-        # 5 Device to DHW
-        df_label, df_stv, _ = add_flow(device, 'DHW', 'DHW', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv)
+                # Network imports/exports
+                ('Heat_import', 'DHN', 'Network', 'Supply_MWh', False, None, 0, 1),
+                ('DHN', 'Heat_export', 'Network', 'Demand_MWh', False, None, 0, 1),
 
-        # 6 Device to SH Heat (if watertank) or to SH (if no watertank)
-        df_label, df_stv, _ = add_flow(device, 'SH', 'SH', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv, watertank_sh, 'SH_heat')
+                # Internal flows
+                ('DHN', 'DHN_hex', 'DHN_hex', 'Demand_MWh', False, None, 0, 1),
+                ('DHN', 'HeatPump_DHN', 'HeatPump_DHN', 'Demand_MWh', False, None, 0, 1),
+                ('HeatPump_Geothermal_district', 'DHN', 'HeatPump_Geothermal_district', 'Supply_MWh', False, None, 0, 1),
+                ('rSOC', 'DHN', 'rSOC_district', 'Supply_MWh', False, None, 0, 1),
+                ('NG_Boiler_district', 'DHN', 'NG_Boiler_district', 'Supply_MWh', False, None, 0, 1),
+                ('MTR', 'rSOC', 'rSOC_district', 'Demand_MWh', False, None, -elec_heater_to_rSOC_distr, 1),
+                ('MTR', 'DHN', 'MTR_district', 'Supply_MWh', False, None, -rSOC_distr_heat_need + elec_heater_to_rSOC_distr, 1),
+                ('ElectricalHeater_other', 'rSOC', 'ElectricalHeater_other_district', 'Supply_MWh', False, None, 0, 1),
+            ],
+            'electricity_consumption': [
+            ]
+        },
+        'Hydrogen': {
+            'flows': [
+                # Network imports/exports
+                ('Hydrogen_import', 'rSOC', 'Network', 'Supply_MWh', False, None, 0, 1),
+                ('rSOC', 'Hydrogen_export', 'Network', 'Demand_MWh', False, None, 0, 1),
 
-        # 7 Device to Elec Consumption (or before electricity storage if present)
-        df_label, df_stv, _ = add_flow(device, 'Electrical_consumption', 'Electricity', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv, elec_storage_use, 'Electrical_consumption')
+                # Internal flows
+                ('H2_storage_IP', 'rSOC', 'H2_storage_IP', 'Supply_MWh', False, None, 0, 1),
+                ('rSOC', 'H2_storage_IP', 'H2_storage_IP', 'Demand_MWh', False, None, 0, 1),
+                ('rSOC', 'MTR', 'MTR', 'Demand_MWh', False, None, 0, 1),
+                ('H2_storage_IP', 'rSOC', 'H2_storage_IP_district', 'Supply_MWh', False, None, 0, 1),
+                ('rSOC', 'H2_storage_IP', 'H2_storage_IP_district', 'Demand_MWh', False, None, 0, 1),
+                ('rSOC', 'MTR', 'MTR_district', 'Demand_MWh', False, None, 0, 1),
+            ],
+            'electricity_consumption': [
+                ('Electrical_consumption', 'H2_storage_IP', 'Electricity', 'H2_storage_IP', 'Demand_MWh', False, None, 0, 1),
+                ('Electrical_consumption', 'H2_storage_IP', 'Electricity', 'H2_storage_IP_district', 'Demand_MWh', False, None, 0, 1),
+            ],
+        },
+        'Biomethane': {
+            'flows': [
+                # Network imports/exports
+                ('Biomethane_import', 'rSOC', 'Network', 'Supply_MWh', False, None, 0, 1),
+                ('rSOC', 'Biomethane_export', 'Network', 'Demand_MWh', False, None, 0, 1),
 
-        # 8 Device to Cooling
-        df_label, df_stv, _ = add_flow(device, 'Cooling', 'Cooling', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv)
+                # internal flows
+                ('CH4_storage_IP', 'rSOC', 'CH4_storage_IP', 'Supply_MWh', False, None, 0, 1),
+                ('MTR', 'CH4_storage_IP', 'CH4_storage_IP', 'Demand_MWh', False, None, 0, 1),
+                ('CH4_storage_IP', 'rSOC', 'CH4_storage_IP_district', 'Supply_MWh', False, None, 0, 1),
+                ('MTR', 'CH4_storage_IP', 'CH4_storage_IP_district', 'Demand_MWh', False, None, 0, 1),
+            ],
+            'electricity_consumption': [
+                # from CO2 storage electricity logic
+                ('Electrical_consumption', 'CH4_storage_IP', 'Electricity', 'CH4_storage_IP', 'Demand_MWh', False, None, 0, 1),
+                ('Electrical_consumption', 'CH4_storage_IP', 'Electricity', 'CH4_storage_IP_district', 'Demand_MWh', False, None, 0, 1),
+            ]
+        },
+        'CO2': {
+            'electricity_consumption': [
+                ('Electrical_consumption', 'CH4_storage_IP', 'Electricity', 'CO2_storage_IP', 'Demand_MWh', False, None, 0, 1),
+                ('Electrical_consumption', 'CH4_storage_IP', 'Electricity', 'CO2_storage_IP_district', 'Demand_MWh', False, None, 0, 1),
+            ]
+        },
+        'Mobility': {
+            'flows': [
+                # Only include if the device exists (done in logic block below)
+                ('Total_EV_fleet', 'Mobility', 'EV_district', 'Supply_MWh', False, None, 0, 1 / 9.37),
+                ('Total_EV_fleet', 'Mobility', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1 / 9.37),
+            ],
+            'electricity_consumption': [
+                ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_district', 'Demand_MWh', False, None, 0, 1),
+                ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_district', 'Supply_MWh', False, None, 0, 1),
+                ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_charger_district', 'Demand_MWh', False, None, 0, 1),
+                ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1)
 
-        # 9 Device to Mobility
-        df_label, df_stv, _ = add_flow(device, 'Mobility', 'Mobility', device, 'Supply_MWh',
-                                       df_annuals, df_label, df_stv, fact=1 / 9.37)
+            ]
 
-    if mol_storage_use:
-        df_label, df_stv = add_mol_storages_to_sankey(df_annuals, df_label, df_stv, FC_or_ETZ_use)
+        }
+    }
 
-    if FC_or_ETZ_use:
-        df_label, df_stv = add_ETZ_FC_to_sankey(df_annuals, df_label, df_stv)
+    df_label, df_stv = apply_non_default_layers(df_annuals, df_label, df_stv, non_default_layers)
 
-    if df_annuals["Layer"].isin(["Heat"]).sum() > 0:
-        add_DHN_units(df_annuals, DHN_units, df_label, df_stv)
-
-    # df_label : add the label to display, the color and the label (node) values if selected
+    # Final label formatting
     df_label['label'] = layout[label]
     df_label['color'] = layout[color]
     if display_label_value:
         df_label = add_label_value(df_label, df_stv, precision, units)
 
-    # data to export
     source = list(df_stv.loc['source'])
     target = list(df_stv.loc['target'])
-    value = list(df_stv.loc['value'])
-    value = [round(x, precision) for x in value]  # precision
+    value = [round(v, precision) for v in df_stv.loc['value']]
     label = list(df_label.label)
     color = list(df_label.color)
 
     return source, target, value, label, color
+
+
+def apply_non_default_layers(df_annuals, df_label, df_stv, molecule_flows):
+    for layer, data in molecule_flows.items():
+        # Add basic flows
+        for src, dst, hub, column, check_dest_2, dest_2, offset, factor in data.get('flows', []):
+            df_label, df_stv, _ = add_flow(
+                src, dst, layer, hub, column, df_annuals, df_label, df_stv,
+                check_dest_2=check_dest_2, dest_2=dest_2 if check_dest_2 else None, adjustment=offset, fact=factor)
+
+        # Add electricity consumption if defined
+        for elec in data.get('electricity_consumption', []):
+            src, dst, elec_layer, hub, column, check_dest_2, dest_2, offset, factor = elec
+            df_label, df_stv, _ = add_flow(
+                src, dst, elec_layer, hub, column, df_annuals, df_label, df_stv,
+                check_dest_2=check_dest_2, dest_2=dest_2 if check_dest_2 else None, adjustment=offset, fact=factor)
+
+    return df_label, df_stv

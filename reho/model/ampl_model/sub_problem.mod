@@ -176,7 +176,7 @@ subject to Streams_Q_def{sq in Services,s in StreamsOfService[sq],p in Period,t 
 Streams_Q[sq,s,p,t] = Streams_Mcp[s,p,t] * HC_Streams_Mult[sq,s,p,t] * abs(Streams_Tin[s,p,t] - Streams_Tout[s,p,t]);
 
 #--------------------------------------------------------------------------------------------------------------------#
-#-HEAT CASCADE
+#-HEAT CASCADE (refer to Stadler 2019, p.23)
 #--------------------------------------------------------------------------------------------------------------------#
 set HC_TempIntervals_SQ{h in House,sq in Services,p in Period,t in Time[p]} ordered by Reals :=
 setof {s in HC_Hot_loc_SQ[h,sq] union HC_Cold_loc_SQ[h,sq]} Streams_Tin_corr[s,p,t] union 
@@ -186,9 +186,9 @@ param Min_T{h in House,sq in Services,p in Period,t in Time[p]} := min{k in HC_T
 param Max_T{h in House,sq in Services,p in Period,t in Time[p]} := max{k in HC_TempIntervals_SQ[h,sq,p,t]} k; 
 param epsilon := 1e-5;
 
-var HC_Rk{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}>=0;
+var HC_Rk{h in House,sq in Services, p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}>=0;
 
-subject to HC_heat_cascade{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}:
+subject to HC_heat_cascade{h in House,sq in Services, p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}:
 sum{st in HC_Hot_loc_SQ[h,sq]:Streams_Tout_corr[st,p,t]>= k + epsilon} 
      (Streams_Mcp[st,p,t]*HC_Streams_Mult[sq,st,p,t]*(Streams_Tin_corr[st,p,t]-Streams_Tout_corr[st,p,t])) -
 	 
@@ -504,5 +504,3 @@ sum{h in House} (Grid_supply[l,h,p,t]) = Network_supply[l,p,t];
 
 subject to disallow_exchanges_2{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 sum{h in House} (Grid_demand[l,h,p,t]) = Network_demand[l,p,t];
-
-

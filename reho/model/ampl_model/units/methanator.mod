@@ -23,7 +23,7 @@ subject to MTZ_Usable_heat_computation{h in House,u in UnitsOfType['Methanator']
     Units_demand['Hydrogen',u,p,t]*MTZ_heat_recovery_eff[u] >= sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t];
 
 subject to MTZ_CH4_production{u in UnitsOfType['Methanator'], p in Period,t in Time[p]}:
-    Units_supply['Biomethane',u,p,t] + Units_supply['NaturalGas',u,p,t] = MTZ_conv_eff_basis[u]*Units_demand['Hydrogen',u,p,t];
+    Units_supply['Biomethane',u,p,t] = MTZ_conv_eff_basis[u]*Units_demand['Hydrogen',u,p,t]; #
 
 subject to MTZ_elec_consumption{u in UnitsOfType['Methanator'], p in Period,t in Time[p]}:
     Units_demand['Electricity',u,p,t] = MTZ_elec_cons_15_bars[u]*Units_demand['Hydrogen',u,p,t];

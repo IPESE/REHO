@@ -28,6 +28,7 @@ NG_Cogeneration_district,District cogeneration,COGEN,Cogénération (district),#
 WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown
 ,,,,,
 ElectricalHeater,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light
+ElectricalHeater_other,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light
 ElectricalHeater_DHW,Electrical heater (DHW),EH (DHW),Chauffage électrique (ECS),#ff6666,groseille_light
 ElectricalHeater_SH,Electrical heater (SH),EH (SH),Chauffage électrique,#ff6666,groseille_light
 ,,,,,
@@ -65,13 +66,13 @@ Battery_IP,Battery,Bat,Batterie,#A57300,lightblue
 Battery_IP_district,District battery,Bat,Batterie (district),#A57300,lightblue
 ,,,,,
 H2_storage_IP,Hydrogen storage,H2,Stockage hydrogène,#82a4d6,lightblue
-H2_storage_IP_district,District hydrogen storage,H2,Stockage hydrogène,#82a4d6,lightblue
+H2_storage_IP_district,hydrogen storage,H2,Stockage hydrogène,#82a4d6,lightblue
 CH4_storage_IP,Biomethane storage,CH4,Stockage biogaz,#D7B652,darkyellow
-CH4_storage_IP_district,District biomethane storage,CH4,Stockage biogaz,#D7B652,darkyellow
+CH4_storage_IP_district,biomethane storage,CH4,Stockage biogaz,#D7B652,darkyellow
 CO2_storage_IP,CO2 storage,CO2,Stockage CO2,#D2363E,brightred
-CO2_storage_IP_district,District CO2 storage,CO2,Stockage CO2,#D2363E,brightred
-Hybrid_storage_IP,Hybrid (CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
-Hybrid_storage_IP_district,District hybrid (CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
+CO2_storage_IP_district,CO2 storage,CO2,Stockage CO2,#D2363E,brightred
+Hybrid_storage_IP,(CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
+Hybrid_storage_IP_district,hybrid (CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
 Compressor_IP,Storage compressor,COMP,Compresseur stockage,#82a4d6,lightblue
 ,,,,,
 Electricity,Electrical grid,Elec,Électricité,#007480,canard
@@ -83,6 +84,7 @@ PV_SC,Electricity self-consumption,Elec SC,Électricité (auto-consommation),#ff
 SH,Space heating,SH,Chauffage,#FF8C00,orange
 SH_heat,Space heating,SH,Chauffage,#FF8C00,orange
 DHW,Domestic hot water,DHW,Eau chaude sanitaire,#B22222,bordeaux
+rSOC_heat,water evaporation,Wevap,Evaporation Eau, #B22222,bordeaux
 ,,,,,
 Tank,Tank,Tank,Réservoir,#FF8C00,orange
 WaterTankSH,Water tank (SH),WT (SH),Ballon d'eau (chauffage),#FF8C00,orange

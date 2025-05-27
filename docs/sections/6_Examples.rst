@@ -136,7 +136,7 @@ Example 6b demonstrates how to use this feature step by step. Only one district 
 
 Investigate interperiod storage units in a building facing grid constraints (e.g. a building with limited import or export capacity).
 
-Hydrogen and biomethane storage
+Hybrid biomethane/CO2 storage
 ====================================
 
 .. literalinclude:: ../../scripts/examples/7a_rSOC_IP.py
@@ -145,3 +145,8 @@ Hydrogen production and export
 ====================================
 
 .. literalinclude:: ../../scripts/examples/7b_rSOC_H2_export.py
+
+District-scale rSOC with IP storage
+====================================
+
+.. literalinclude:: ../../scripts/examples/7c_district_IP.py

@@ -207,8 +207,9 @@ class MasterProblem:
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
         profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
         max_DEL = profile_building_x.max(axis=1).sum()
-        SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
-        SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
+        if not self.method['interperiod_storage']:
+            SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
+            SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -223,7 +224,7 @@ class MasterProblem:
         In case the optimization includes an epsilon constraint, there are two ways to initialize.
         Either the epsilon constraint is applied on the SPs, or the initialization is done with beta.
         The former has the risk to be infeasible for certain SPs, therefore the latter is preferred.
-        Three beta values are given to mark the extreme points and an average point.
+        Five beta values are given to mark the extreme points and an average point.
         Sets up the parallel optimization if needed
 
         Parameters
@@ -440,6 +441,8 @@ class MasterProblem:
                 ampl_MP.read('rsoc_district.mod')
             if "MTR_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('methanator_district.mod')
+            if "ElectricalHeater_other_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('electrical_heater_district.mod')
         if read_DHN:
             ampl_MP.read('dhn.mod')
 
@@ -582,7 +585,7 @@ class MasterProblem:
             MP_set_indexed['UnitTypes'] = np.array([])
             MP_set_indexed['UnitsOfType'] = {}
             for u in self.infrastructure.district_units:
-                name = u['name']
+                name = u['Unit']
                 MP_set_indexed['Units'] = np.append(MP_set_indexed['Units'], [name])
                 if not u['UnitOfType'] in MP_set_indexed['UnitTypes']:
                     MP_set_indexed['UnitTypes'] = np.append(MP_set_indexed['UnitTypes'], u['UnitOfType'])

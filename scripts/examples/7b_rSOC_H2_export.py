@@ -15,8 +15,8 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
-    scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP", "CO2_storage_IP", "CH4_storage_IP"]
-    scenario['enforce_units'] = ["rSOC"]
+    scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP", "Battery", "HeatPump_Geothermal"]
+    scenario['enforce_units'] = []
 
     # Set method options
     method = {'interperiod_storage': True}
@@ -24,8 +24,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
     grids = infrastructure.initialize_grids({'Electricity': {},
-                                             'NaturalGas': {},
-                                             'Hydrogen': {"Cost_supply_cst": 0.45, "Cost_demand_cst": 0.15}, # default export price = 0.15 CHF/kWh (5 CHF/kg H2)
+                                             'Hydrogen': {"Cost_supply_cst": 0.45, "Cost_demand_cst": 0.2},  # default export price = 0.15 CHF/kWh (5 CHF/kg H2)
                                              'Biomethane': {},
                                              'CO2': {},
                                              })
@@ -42,7 +41,7 @@ if __name__ == '__main__':
     # parameters['HydrogenAnnualExport'] = 20e3  # kWh
     # scenario['specific'] = ['forced_H2_annual_export']
 
-    # A continuous daily hydrogen export can be forced (value is a variable in the optimization)
+    # A continuous daily hydrogen export can be forced (value is a variable in the optimization) it can be 0 actually if not attractive
     scenario['specific'] = ['forced_H2_fixed_daily_export']
 
     # Run optimization

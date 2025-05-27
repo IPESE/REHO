@@ -1,6 +1,6 @@
 Unit;ref_unit;Units_Fmin;Units_Fmax;Cost_inv1;Cost_inv2;GWP_unit1;GWP_unit2;lifetime;UnitOfType;UnitOfLayer;UnitOfService;StreamsOfUnit;Units_flowrate_in;Units_flowrate_out;stream_Tin;stream_Tout
 Battery_IP;kWh;0.1;100000;5000;550;100;100;15;Battery_interperiod;Electricity;;;Electricity;Electricity;0;0
-CH4_storage_IP;kWh;0.1;10000000;1000;4.6;200;2;20;CH4storage;Biomethane/ Electricity;;;Biomethane/ Electricity;Biomethane;0;0
-H2_storage_IP;kWh;0.1;10000000;2000;13.5;200;2;20;H2storage;Hydrogen/ Electricity;;;Hydrogen/ Electricity; Hydrogen;0;0
-CO2_storage_IP;mol;0.1;10000000;0;0.1;0;0.1;20;CO2storage;CO2/ Electricity;;;CO2/ Electricity;CO2;0;0
+CH4_storage_IP;kWh;0.1;10000000;10000;0.1;200;2;20;CH4storage;Biomethane/ Electricity;;;Biomethane/ Electricity;Biomethane;0;0
+H2_storage_IP;kWh;0.1;10000000;10000;10;200;2;20;H2storage;Hydrogen/ Electricity;;;Hydrogen/ Electricity; Hydrogen;0;0
+CO2_storage_IP;mol;0.1;10000000;0;0.0001;0;0.1;20;CO2storage;CO2/ Electricity;;;CO2/ Electricity;CO2;0;0
 Compressor_IP;kW;0.1;10000000;2500;750;100;20;20;Compressor;;;;;;0;0

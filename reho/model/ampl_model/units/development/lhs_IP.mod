@@ -8,7 +8,6 @@
 # Storage temperature is constant (no exergy degradation)
 
 param LHS_T_Fusion default 52; # degC
-param LHS_dTmin_exchange default 1; # degC
 param Unit_capacity default 1;
 param Unit_capacity_kJ := Unit_capacity*3600  ; #kJ 
 param LHS_fusion_enthalpy default 245; #KJ/Kg from stadlerThermalEnergyStorage2019

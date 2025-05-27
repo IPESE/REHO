@@ -7,6 +7,7 @@ HeatPump_Geothermal;kWth;0.1;100000;37500;300;2500;15;20;HeatPump;HeatCascade/ E
 HeatPump_DHN;kWth;0.1;100000;17500;300;1500;15;20;HeatPump;HeatCascade/ Electricity/ Heat;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity/ Heat;;55/ 45/ 35;50/40/30;
 HeatPump_Lake;kWth;0.1;100000;17500;300;1500;15;20;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;""
 AirConditioner;kWth;0.1;100000;3000;200;500;20;20;AirConditioner;HeatCascade/ Electricity;Cooling;c_ht/ c_mt/ c_lt;Electricity;"";13/ 15/ 18;14/ 16/ 19;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
+ElectricalHeater_other;kWth;0.1;100000;1000;50;100;5;20;ElectricalHeater;HeatCascade/ Electricity;rSOC_heat;h_ht;Electricity;;80;60;
 ElectricalHeater_SH;kWth;0.1;100000;1000;50;100;5;20;ElectricalHeater;HeatCascade/ Electricity;SH;h_ht;Electricity;;80;60;`SCDI <https://www.scdi.ch/fr/naturay-ultime-connecte-3.html>`_
 ElectricalHeater_DHW;kWth;0.1;100000;2000;100;200;5;20;ElectricalHeater;HeatCascade/ Electricity;DHW;h_ht;Electricity;;80;60;`SCDI <https://scdi.ch/fr/chauffe-eau-electrique-sur-socle-atlantic.html>`_
 PV;kWe;0.1;100000;10000;1300;200;1000;30;PV;Electricity;;;"";Electricity;;;`Helvetia Energy <https://www.helvetia-energy.ch/prix-moyen-panneaux-solaires-suisse/>`_
@@ -18,7 +19,7 @@ DHN_hex;m2;0.1;100000;6000;500;400;100;20;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_ht
 DHN_pipes;kW;0.1;100000;10000;200;2000;10;60;DHN_pipes;Heat;;;;;;;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
 DataHeat_SH;kWth;0.1;100000;1000;5000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;SH;h_ht;Electricity;Data;80;60;
 DataHeat_DHW;kWth;0.1;100000;1000;11000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;DHW;h_ht;Electricity;Data;80;60;
-MTR;kW;0.1;100000;15000;1000;2000;10;20;Methanator;Biomethane/ NaturalGas/ CO2/ Hydrogen/ Electricity/ HeatCascade;SH/ DHW;h_ht;Hydrogen/ CO2/ Electricity;Biomethane/ NaturalGas;280;80;`Energy Prod. <https://www.witpress.com/Secure/ejournals/papers/EQ050201f.pdf>`
-rSOC;kW;0.1;100000;20000;3000;3000;50;10;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ HeatCascade;SH/ DHW;h_ht;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen;120;60;`Joule <https://www.cell.com/joule/fulltext/S2542-4351(24)00425-2>`
+MTR;kW;0.1;100000;15000;1000;2000;10;20;Methanator;Biomethane/ CO2/ Hydrogen/ Electricity/ HeatCascade;SH/ DHW/ rSOC_heat;h_ht;Hydrogen/ CO2/ Electricity;Biomethane;80;60;`Energy Prod. <https://www.witpress.com/Secure/ejournals/papers/EQ050201f.pdf>`
+rSOC;kW;0.1;100000;20000;3000;3000;50;10;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ HeatCascade;SH/ DHW/ rSOC_heat;h_ht/ c_ht;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen;80/ 60;60/ 80;`Joule <https://www.cell.com/joule/fulltext/S2542-4351(24)00425-2>`
 FC;kW;0.1;100000;15000;2000;2000;50;20;FuelCell;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen;Electricity;80;60;
 ETZ;kWh;0.1;100000;10000;1000;2000;50;10;Electrolyzer;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Electricity;Hydrogen;80;60;

@@ -194,7 +194,7 @@ class SensitivityAnalysis:
 
                 elif "___" in parameter:
                     for unit_id in range(len(units['building_units'])):
-                        if units['building_units'][unit_id]['name'] == parameter.split("___")[0]:
+                        if units['building_units'][unit_id]['Unit'] == parameter.split("___")[0]:
                             units['building_units'][unit_id][parameter.split("___")[1]] = value
                 else:
                     if parameter in self.reho.lists_MP["list_parameters_MP"]:

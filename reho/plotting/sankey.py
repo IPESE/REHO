@@ -313,7 +313,7 @@ def add_label_value(df_label, df_stv, precision, units):
     Returns
     _______
     pd.DataFrame
-        df_label pdated with the label values
+        df_label updated with the label values
     """
     df_source_value = pd.DataFrame()
     df_source_value.index = df_label.pos
@@ -431,7 +431,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     mol_storage_list = ['H2_storage_IP', 'CH4_storage_IP']
     # Semi automatic handled devices
     semi_auto_device = [
-        'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'DataHeat_DHW', 'DataHeat_SH',
+        'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH','ElectricalHeater_other', 'DataHeat_DHW', 'DataHeat_SH',
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN', 'AirConditioner',
         'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district', 'DHN_hex',
         'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district',
@@ -439,6 +439,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
 
     DHN_units = ["HeatPump_Geothermal_district", "rSOC_district", "NG_Boiler_district", "MTR_district"]
 
+    special_heat_service = ['rSOC_heat']
     # Network (electrical grid, oil network...) and end use demand (DHW, SH, elec appliances) handled automatically
 
     # Select only not null lines in df_annuals
@@ -603,6 +604,16 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     if df_annuals["Layer"].isin(["Heat"]).sum() > 0:
         add_DHN_units(df_annuals, DHN_units, df_label, df_stv)
 
+    for sp in special_heat_service:
+        try:
+            dest_sp = df_annuals[(df_annuals["Layer"] == sp) & (df_annuals["Hub"] == 'rSOC')]['Hub'].iloc[0]
+            sources_sp = list(df_annuals[(df_annuals["Layer"] == sp) & (df_annuals["Hub"] != 'rSOC')]['Hub'])
+            for source in sources_sp:
+                # 7 Device to Elec Consumption (or before electricity storage if present)
+                df_label, df_stv, _ = add_flow(source, dest_sp, sp, source, 'Supply_MWh',
+                                           df_annuals, df_label, df_stv)
+        except:
+            pass
     # df_label : add the label to display, the color and the label (node) values if selected
     df_label['label'] = layout[label]
     df_label['color'] = layout[color]

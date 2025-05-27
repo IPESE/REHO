@@ -7,7 +7,7 @@ Extracts the results from the AMPL model and converts it to Python dictionary an
 """
 
 
-def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
+def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, tolerance_filtering=1e-4):
     def set_df_performance(ampl, scenario):
         df1 = get_ampl_data(ampl, 'Costs_House_op')  # without the comfort penalty costs
         df1 = df1.rename(columns={'Costs_House_op': 'Costs_op'})
@@ -109,6 +109,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         hubs = [s for s in df_Annuals.index.levels[1] if s.startswith("Building")]
         for h in hubs:
             df_Annuals.loc[('DHW', h), 'Demand_MWh'] = df_Annuals.loc[('DHW', 'WaterTankDHW_' + h), 'Supply_MWh']
+
+        # Correction for new service (for instance rSOC_heat for the rSOC)
+        mask = (df_Annuals.index.get_level_values(0) == 'rSOC_heat') & \
+               (df_Annuals.index.get_level_values(1).str.contains('rSOC_Building'))
+
+        df_Annuals.loc[mask, 'Demand_MWh'] = df_Annuals.loc[mask, 'Supply_MWh']
+        df_Annuals.loc[mask, 'Supply_MWh'] = 0
 
         return df_Annuals
 
@@ -405,10 +412,14 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
             df = df.fillna(0)  # replace all NaN with zeros
             df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros
 
+    for key, df in df_Results.items():
+        df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
+
+
     return df_Results
 
 
-def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}):
+def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}, tolerance_filtering = 1e-4):
     df_Results = dict()
 
     # Dantzig Wolfe algorithm
@@ -576,6 +587,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Unit.at["DHN_pipes_district", ("Units_Use", "Units_Mult", "Costs_Unit_inv")] = [1, 1, get_ampl_data(ampl, 'DHN_inv')["DHN_inv"][0]]
     df_Results["df_Unit"] = df_Unit.sort_index()
 
+    if method['print_logs']:
+        print(df_Unit)
+
     # Unit_t
     if len(district.UnitsOfDistrict) > 0:
         df1 = get_ampl_data(ampl, 'Units_demand', multi_index=True)
@@ -634,6 +648,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Actors = pd.concat([df_Actors, df_6], axis=0)
         df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)
         df_Results["df_District"].loc["Network", "Objective"] = ampl.getObjective("TOTEX_bui").getValues().toList()[0]
+
+    for key, df in df_Results.items():
+        df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
 
     return df_Results
 
@@ -707,3 +724,21 @@ def get_ampl_dual_values_in_pandas(ampl, ampl_name, multi_index):
         df.index = pd.MultiIndex.from_tuples(df.index)
 
     return df
+
+
+def filter_numerical_instabilities(df, threshold=1e-4):
+    """
+    Return a copy of df where any numeric cell with |value| < threshold
+    has been replaced by exact 0.
+    """
+    df_clean = df.copy()
+
+    # select only the numeric columns
+    num_cols = df_clean.select_dtypes(include=[np.number]).columns
+
+    # where absolute value is below threshold, set to 0
+    df_clean[num_cols] = (
+        df_clean[num_cols]
+        .where(df_clean[num_cols].abs() >= threshold, 0)
+    )
+    return df_clean

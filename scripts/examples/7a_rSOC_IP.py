@@ -15,8 +15,8 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
-    scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP"]
-    scenario['enforce_units'] = ["rSOC", "MTR", "CO2_storage_IP", "CH4_storage_IP"]
+    scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP","rSOC", "H2_storage_IP", "HeatPump_Geothermal"]
+    scenario['enforce_units'] = []
 
     # Set method options
     method = {'interperiod_storage': True}
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
     grids = infrastructure.initialize_grids({'Electricity': {},
-                                             'NaturalGas': {},
+                                             #'NaturalGas': {},
                                              'Hydrogen': {},
                                              'Biomethane': {},
                                              'CO2': {},

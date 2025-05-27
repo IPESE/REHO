@@ -166,4 +166,4 @@ HydrogenAnnualExport = sum{p in PeriodStandard,t in Time[p]} Network_demand['Hyd
 var HydrogenDailyExport >= 0;  # set as a variable for an optimal daily H2 export [kWh]
 
 subject to forced_H2_fixed_daily_export{p in PeriodStandard}:
-HydrogenDailyExport = sum{t in Time[p]} Network_demand['Hydrogen',p,t]*dt[p];
+    HydrogenDailyExport = sum{t in Time[p]} Network_demand['Hydrogen',p,t]*dt[p];

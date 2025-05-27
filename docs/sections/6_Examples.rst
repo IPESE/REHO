@@ -87,6 +87,11 @@ Include capacities of networks for imports and exports
 .. literalinclude:: ../../scripts/examples/3j_Transformer_capacities.py
    :language: python
 
+Modeling rSOC with pre-heating demand
+===========================================================
+.. literalinclude:: ../../scripts/examples/3k_rSOC_preheating.py
+   :language: python
+
 4. Global features
 --------------------
 
@@ -145,3 +150,14 @@ Hydrogen production and export
 ====================================
 
 .. literalinclude:: ../../scripts/examples/7b_rSOC_H2_export.py
+
+TITLE
+====================================
+
+Load the interperiod data for building or district...
+
+.. literalinclude:: ../../scripts/examples/7b_rSOC_H2_export.py
+
+
+
+TODO ATHUR

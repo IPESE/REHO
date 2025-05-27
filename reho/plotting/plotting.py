@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from plotly.subplots import make_subplots
 
 from reho.plotting import sankey
+from reho.plotting import sankey_new
 from reho.plotting.utils import *
 
 
@@ -595,7 +596,7 @@ def plot_sankey(df_Results, label='EN_long', color='ColorPastel', title=None, fi
     pd.DataFrame
         (Optional) A dataframe for further post-processing or reporting purposes.
     """
-    source, target, value, label_, color_ = sankey.df_sankey(df_Results, label=label, color=color, precision=2,
+    source, target, value, label_, color_ = sankey_new.df_sankey(df_Results, label=label, color=color, precision=2,
                                                              units='MWh', display_label_value=True,
                                                              scaling_factor=scaling_factor)
 
@@ -929,7 +930,7 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
     hover_template = []
     values_sun = []
     for i in range(len(classes)):
-        [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "Elec"]]
+        [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW","rSOC", "Elec"]]
         [parents_name.append(element) for element in
          ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],
           data_to_plot.iloc[i]['class_' + label]]]
@@ -1484,11 +1485,6 @@ def plot_composite_curve(df_Results, cluster, periods=["Yearly"], filename=None,
 def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
     def plot_storage_sep(storage_SOC_tot, counter, fig, stor_var, items_average):
 
-        time_index = np.arange(0, 8760)
-
-        SOC_average = moving_average(storage_SOC_tot[stor_var], items_average)
-        time_index_average = moving_average(time_index, items_average)
-
         mol = stor_var.split("_")[0]
         if mol == "BAT":
             mol = "Battery"
@@ -1498,6 +1494,12 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
             mol = "CH4_storage_IP"
         elif mol == "CO2":
             mol = "CO2_storage_IP"
+            storage_SOC_tot[stor_var] = storage_SOC_tot[stor_var] * 16/1000 * 50/3.6 #transform from mol to kWh CH4-eq
+
+        time_index = np.arange(0, 8760)
+
+        SOC_average = moving_average(storage_SOC_tot[stor_var], items_average)
+        time_index_average = moving_average(time_index, items_average)
 
         fig.add_trace(go.Scatter(
             x=time_index_average,
@@ -1533,7 +1535,7 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
             for storage in list_stor:
                 fig = plot_storage_sep(storage_SOC_tot, counter, fig, storage, items_average)
                 if "CO2" in storage:
-                    fig.update_yaxes(title_text="SOC, mol", row=counter, col=1)
+                    fig.update_yaxes(title_text="SOC, kWh CH4-eq", row=counter, col=1)
                 else:
                     fig.update_yaxes(title_text="SOC, kWh", row=counter, col=1)
 
@@ -1550,7 +1552,7 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
             for storage in list_stor:
                 fig = plot_storage_sep(storage_SOC_tot, counter, fig, storage, items_average)
                 if "CO2" in storage:
-                    fig.update_yaxes(title_text="SOC, mol", row=counter, col=1)
+                    fig.update_yaxes(title_text="SOC, kWh CH4-eq", row=counter, col=1)
                 else:
                     fig.update_yaxes(title_text="SOC, kWh", row=counter, col=1)
 
@@ -1708,13 +1710,35 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
             )
 
         fig.update_yaxes(title_text="State of Charge of storage technologies, %", row=2, col=1)
+    if sum(df_Results['df_Unit_t'].index.get_level_values(1).str.contains("Battery")) > 0:
+        df = df_Results['df_Unit_t']
+        df_electricity = df.xs('Electricity', level=0)  # Drop first level
+        battery_mask = df_electricity.index.get_level_values(0).str.contains("Battery")
+        df_battery = df_electricity[battery_mask]
+
+        merged_df = pd.merge(TD_time, df_battery, on=['Period', 'Time'], how='left')
+        max_storage = df_battery['BAT_E_stored'].max()
+        if merged_df["BAT_E_stored"].any():
+            fig.add_trace(go.Scatter(
+                x=list(TD_time.index),
+                y=merged_df["BAT_E_stored"]/max_storage * 100,
+                mode="lines",
+                name='Battery',
+                line=dict(color=layout.loc['Battery', color]),
+                fill='tozeroy',
+                fillcolor=hex_to_rgb(layout.loc['Battery', "ColorPastel"])
+            ),
+                row=2,
+                col=1
+            )
+        fig.update_yaxes(title_text="SoC of storage technologies, %", row=2, col=1)
 
     fig.update_yaxes(title_text="Electricity flows, kW", row=1, col=1)
     fig.update_layout(
         title="Electricity flows and long term storage behaviour for " + str(time_range) + " starting from day: " + str(day_of_the_year),
         xaxis=dict(
             dtick=24 if time_range in ['month', '2 weeks', 'week'] else 4),
-        yaxis2=dict(range=[0, 100])
+        yaxis2=dict(range=[0, 105])
     )
 
     return fig

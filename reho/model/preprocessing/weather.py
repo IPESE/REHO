@@ -95,7 +95,7 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
 
     # Execute clustering
     cl_data = weather_data[attributes].reset_index(drop=True)
-    cl = Clustering(data=cl_data, nb_clusters=[cluster['Periods']], period_duration=cluster['PeriodDuration'], options={"year-to-day": True, "extreme": []})
+    cl = Clustering(data=cl_data, nb_clusters=[cluster['Periods']], period_duration=cluster['PeriodDuration'], cluster=cluster, options={"year-to-day": True, "extreme": []})
     cl.run_clustering()
 
     # Construct cluster data

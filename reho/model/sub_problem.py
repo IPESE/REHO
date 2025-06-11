@@ -655,6 +655,8 @@ def initialize_default_methods(method):
         method['parallel_computation'] = True
     if 'switch_off_second_objective' not in method:
         method['switch_off_second_objective'] = False
+    if 'skip_initiation' not in method:
+        method['skip_initiation'] = False
 
     if 'fix_units' not in method:
         method['fix_units'] = False

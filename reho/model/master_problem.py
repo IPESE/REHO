@@ -71,7 +71,6 @@ class MasterProblem:
         if method['use_facades'] or method['use_pv_orientation']:
             self.qbuildings_data = qbuildings_data
         self.buildings_data = qbuildings_data['buildings_data']
-        self.refurbishment = False
         self.ERA = sum([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
 
         self.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
@@ -241,7 +240,9 @@ class MasterProblem:
             Epsilon constraints to apply for the initialization
         """
         # check if TOTEX, OPEX or multi-objective optimization -> init with beta
-        if self.method['building-scale'] or self.method['actors_problem']:
+        if self.method["skip_initiation"]:
+            init_beta = []
+        elif self.method['building-scale'] or self.method['actors_problem']:
             init_beta = [None]  # keep same objective function
         elif not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0:
             self.flags[scenario['Objective']] = 1  # never been optimized with this objective previously
@@ -256,7 +257,7 @@ class MasterProblem:
                            self.infrastructure.houses}
 
                 # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
-                while len(results[list(self.buildings_data.keys())[-1]].get(timeout=360)) != 2:
+                while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
                     time.sleep(1)
 
                 # the memory to write and share results is not parallel -> results have to be stored outside calculation
@@ -266,11 +267,14 @@ class MasterProblem:
 
                 if self.method['refurbishment']:
                     self.feasible_solutions += 1
-                    self.refurbishment = True
-                    results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h))
+                    results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, None, None, True))
                                for h in self.infrastructure.houses}
+
+                    while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                        time.sleep(1)
+
                     for h in self.infrastructure.houses:
-                        df_Results, attr = results[h].get()
+                        (df_Results, attr) = results[h].get()
                         self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
             else:
@@ -280,15 +284,13 @@ class MasterProblem:
 
                 if self.method['refurbishment']:
                     self.feasible_solutions += 1
-                    self.refurbishment = True
-                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta)
+                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, h=h, epsilon_init=epsilon_init, beta=beta, refurbishment=True)
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
-            self.refurbishment = False
             self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
         return
 
-    def SP_initiation_execution(self, scenario, Scn_ID=0, Pareto_ID=1, h=None, epsilon_init=None, beta=None):
+    def SP_initiation_execution(self, scenario, Scn_ID=0, Pareto_ID=1, h=None, epsilon_init=None, beta=None, refurbishment=False):
         """
         Adapts the model depending on the method, execute the optimization and get the results
 
@@ -340,7 +342,7 @@ class MasterProblem:
             REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method,
                               self.solver)
 
-        if self.refurbishment:
+        if refurbishment:
             buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2( self.buildings_data[h], self.local_data['df_Refurbishment'], self.local_data['df_Refurbishment_index'])
             parameters_SP['n_years_ins'] = float(self.local_data['df_Refurbishment_index']['lifetime'][0])
 
@@ -546,7 +548,7 @@ class MasterProblem:
             if "area_district" in MP_parameters:
                 del MP_parameters["area_district"]
 
-        for key in self.lists_MP['list_parameters_MP']:
+        for key in self.lists_MP['list_parameters_MP'] + ["Cost_supply_network", "Cost_demand_network"]:
             if key in self.parameters.keys():
                 if key == "Units_Ext_district":
                     MP_parameters["Units_Ext"] = self.parameters[key]
@@ -722,8 +724,9 @@ class MasterProblem:
 
             if self.method['refurbishment']:
                 self.feasible_solutions += 1
-                self.refurbishment = True
-                results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h)) for h in self.infrastructure.houses}
+                results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h, True)) for h in self.infrastructure.houses}
+                while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                    time.sleep(1)
                 for h in self.infrastructure.houses:
                     (df_Results, attr) = results[h].get()
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
@@ -735,13 +738,11 @@ class MasterProblem:
 
                 if self.method['refurbishment']:
                     self.feasible_solutions += 1
-                    self.refurbishment = True
-                    df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h)
+                    df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h, True)
                     self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
-        self.refurbishment = False
         self.feasible_solutions += 1
 
-    def SP_execution(self, scenario, Scn_ID, Pareto_ID, h):
+    def SP_execution(self, scenario, Scn_ID, Pareto_ID, h, refurbishment=False):
         """
         Inserts dual variables in ampl model, apply scenario, adapt model depending on the methods and get results.
 
@@ -790,7 +791,7 @@ class MasterProblem:
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list
 
-        if self.refurbishment:
+        if refurbishment:
             buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2(self.buildings_data[h], self.local_data['df_Refurbishment'], self.local_data['df_Refurbishment_index'])
             parameters_SP['n_years_ins'] = float(self.local_data['df_Refurbishment_index']['lifetime'][0])
 
@@ -1285,6 +1286,11 @@ class MasterProblem:
             if key not in self.lists_MP["list_parameters_MP"]:
                 if isinstance(self.parameters[key], (int, float)):
                     parameters_SP[key] = self.parameters[key]
+                elif isinstance(self.parameters[key], pd.DataFrame):
+                    if "Hub" in self.parameters[key].index.names:
+                        parameters_SP[key] = self.parameters[key].xs(h, level="Hub", drop_level=False)
+                    else:
+                        parameters_SP[key] = self.parameters[key]
                 else:
                     if len(self.parameters[key]) == len(self.buildings_data):
                         try:

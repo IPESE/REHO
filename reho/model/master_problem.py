@@ -203,7 +203,10 @@ class MasterProblem:
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
         if "Network_ext" in self.parameters:
-            capacity = self.parameters["Network_ext"][0]
+            if isinstance(self.parameters["Network_ext"], pd.DataFrame):
+                capacity = self.parameters["Network_ext"].xs("Electricity")[0]
+            else:
+                capacity = self.parameters["Network_ext"][0]
         else:
             capacity = self.infrastructure.Grids_Parameters["Network_ext"].xs("Electricity")
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])

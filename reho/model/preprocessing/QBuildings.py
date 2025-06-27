@@ -227,6 +227,8 @@ class QBuildingsReader:
 
         if district_boundary == "transformers":
             id_key = "transformer"
+        elif district_boundary == "transformers_V2":
+            id_key = "id_transformers_V2"
         elif district_boundary == "geo_girec":
             id_key = "geo_girec"
         elif district_boundary == "neighborhoods":
@@ -251,7 +253,7 @@ class QBuildingsReader:
         if to_csv:
             self.data['buildings'].to_csv('buildings.csv', index=False)
 
-        self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'])
+        self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'], district_boundary=id_key)
         buildings = self.select_buildings_data(nb_buildings, egid)
         if to_csv:
             csv_columns = list(buildings[list(buildings.keys())[0]].keys())
@@ -344,7 +346,7 @@ class QBuildingsReader:
         return selected_data
 
 
-def translate_buildings_to_REHO(df_buildings):
+def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
     dict_QBuildings_REHO = {
 
         #################################################
@@ -393,7 +395,7 @@ def translate_buildings_to_REHO(df_buildings):
         'y': 'y',
         'z': 'z',
         'geometry': 'geometry',
-        'transformer': 'transformer',
+        district_boundary: 'transformer',
 
         # Annual energy
         'energy_heating_signature_kWh_y': 'energy_heating_signature_kWh_y',

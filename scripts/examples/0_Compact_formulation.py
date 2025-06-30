@@ -20,7 +20,7 @@ if __name__ == '__main__':
     scenario['EMOO'] = {}  # remain empty for now
     scenario['specific'] = []  # remain empty for now
     scenario['name'] = 'totex'  # any name is possible here
-    scenario['exclude_units'] = ['Battery']  # specify some units to be excluded
+    scenario['exclude_units'] = ['Battery','HeatPump_Lake','HeatPump_Geothermal']  # specify some units to be excluded
     scenario['enforce_units'] = []  # specify some units to be enforced
 
     # Set method options (as defined in sub_problem.py > initialize_default_methods)

@@ -247,28 +247,46 @@ class Infrastructure:
 
         # HP and AC temperatures
         for h in self.House:
-
             for u in self.houses[h]['units']:
-                if u['UnitOfType'] == 'AirConditioner' or u['UnitOfType'] == 'HeatPump':
+                unit_type = u['UnitOfType']
+                if unit_type in ['AirConditioner', 'HeatPump', 'HeatPump_WH']:
                     complete_name = u['Unit'] + '_' + h
-                    if u['UnitOfType'] == 'AirConditioner':
+
+                    # Determine which file to load
+                    if unit_type == 'AirConditioner':
                         file = os.path.join(path_to_infrastructure, 'AC_parameters.txt')
-                    elif u['UnitOfType'] == 'HeatPump':
+                    else:  # HeatPump or HeatPump_WH
                         file = os.path.join(path_to_infrastructure, 'HP_parameters.txt')
 
                     df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
-                    df = pd.concat([df], keys=[complete_name])
-                    # get index sets of source and sink of HP
-                    name, rest = df.columns[0].split('_', 1)
-                    self.TemperatureSets[name + '_Tsink'] = np.array(df.index.get_level_values(1).unique())
-                    self.TemperatureSets[name + '_Tsource'] = np.array(df.index.get_level_values(2).unique())
 
-                    if u['UnitOfType'] in self.HP_parameters:
-                        self.HP_parameters[u['UnitOfType']] = pd.concat([self.HP_parameters[u['UnitOfType']], df])
+                    # Modify column names if it's HeatPump_WH
+                    if unit_type == 'HeatPump_WH':
+                        df.columns = [f"{col}_WH" for col in df.columns]
+
+                        # Prefix with complete unit name (unit + house)
+                        df = pd.concat([df], keys=[complete_name])
+
+                        # Extract the index sets for Tsink and Tsource
+                        name, rest = df.columns[0].split('_', 1)
+                        self.TemperatureSets[name + '_Tsink_WH'] = np.array(df.index.get_level_values(1).unique())
+                        self.TemperatureSets[name + '_Tsource_WH'] = np.array(df.index.get_level_values(2).unique())
                     else:
-                        self.HP_parameters[u['UnitOfType']] = df
+                        # Prefix with complete unit name (unit + house)
+                        df = pd.concat([df], keys=[complete_name])
 
-        for key in self.TemperatureSets:  # add additional sets from units to total set
+                        # Extract the index sets for Tsink and Tsource
+                        name, rest = df.columns[0].split('_', 1)
+                        self.TemperatureSets[name + '_Tsink'] = np.array(df.index.get_level_values(1).unique())
+                        self.TemperatureSets[name + '_Tsource'] = np.array(df.index.get_level_values(2).unique())
+                    # Store in self.HP_parameters
+                    if unit_type in self.HP_parameters:
+                        self.HP_parameters[unit_type] = pd.concat([self.HP_parameters[unit_type], df])
+                    else:
+                        self.HP_parameters[unit_type] = df
+
+        # Update the global sets
+        for key in self.TemperatureSets:
             self.Set[key] = self.TemperatureSets[key]
 
         # Streams
@@ -438,7 +456,11 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                         district_data="custom_district_units.csv", interperiod_data=True)
     """
 
-    default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH']
+    default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH', 'HeatPump_Waste_heat']
+    default_units_to_exclude = [
+        u for u in default_units_to_exclude
+        if u not in scenario["enforce_units"]
+    ]
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:

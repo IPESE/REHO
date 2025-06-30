@@ -201,7 +201,7 @@ class MasterProblem:
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
         if "Network_ext" in self.parameters:
-            capacity = self.parameters["Network_ext"][0]
+            capacity = self.parameters["Network_ext"].xs("Electricity")[0]
         else:
             capacity = self.infrastructure.Grids_Parameters["Network_ext"].xs("Electricity")
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
@@ -1003,6 +1003,7 @@ class MasterProblem:
             for specific_constraint in scenario['specific']:
                 if specific_constraint in list_constraints:
                     ampl.getConstraint(specific_constraint).restore()
+
 
         for i, o in ampl.getObjectives():
             o.drop()

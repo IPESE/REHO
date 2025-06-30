@@ -14,9 +14,6 @@ param H2_stor_limit_min{u in UnitsOfType['H2storage']} default 0;			#-	[1]
 param C_rate_H2{u in UnitsOfType['H2storage']} default 1;					#-
 param H2_stor_self_discharge{u in UnitsOfType['H2storage']} default 1;	#-	[1]
 
-# param H2_stor_RTE_degradation{u in UnitsOfType['H2storage']} default 0.005; # H2_stortery efficiency degradation per year
-# param H2_stor_efficiency{u in UnitsOfType['H2storage']} >=0, <= sqrt(H2_stor_eff_RTE_basis[u]) := sqrt(H2_stor_eff_RTE_basis[u]-H2_stor_RTE_degradation[u]*lifetime[u]/2); #Computation of the one way efficiency (assuming equal efficiency out and in)
-
 var H2_stor_charging{u in UnitsOfType['H2storage'], p in Period,t in Time[p]} >= 0;
 var H2_stor_discharging{u in UnitsOfType['H2storage'], p in Period,t in Time[p]} >= 0;
 var H2_stor_stored{u in UnitsOfType['H2storage'], hy in Year} >= 0;

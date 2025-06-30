@@ -659,10 +659,6 @@ def set_df_Interperiod(ampl):
     IP_stor_list = []
 
     def add_stor_to_list(IP_stor_list, ampl, var):
-        """
-        Check whether the var is an ampl variable and (if not empty) add it to the list of IP_stor_list if it is the case.
-        Use reset_index for level 1 as we want to differentiate on the  Building and the HourOfYear, not on the type
-        """
         try:
             df1 = get_ampl_data(ampl, var, multi_index=True).reset_index(level=1, drop=True)
             df1.index = df1.index.str.split("_").str[-1]
@@ -670,38 +666,68 @@ def set_df_Interperiod(ampl):
                 IP_stor_list.append(df1)
         except:
             df1 = None
-
         return IP_stor_list
 
-    # Add here other long term storage variables (from the .mod files) if needed
-    #IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "BAT_E_stored")
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "BAT_E_stored_IP")
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "H2_stor_stored")
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CH4_stor_stored")
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CO2_stor_stored")
+
     if IP_stor_list:
         df_IP_storage = pd.concat(IP_stor_list, axis=1)
+
+        vol_all = []
+        P_all = []
+        Z_all = []
+        for stor in list(df_IP_storage.columns):
+            mol = stor.split("_")[0]
+            vol = round(get_ampl_data(ampl, mol+"_stor_volume", multi_index=False).iloc[0][0], 3)
+            P = round(get_ampl_data(ampl, mol+"_stor_pressure", multi_index=False).iloc[0][0], 1)
+            Z = round(get_ampl_data(ampl, "Z_"+mol+"_max", multi_index=False).iloc[0][0], 3)
+            vol_all.append(vol)
+            P_all.append(P)
+            Z_all.append(Z)
+
+        # ⚠️ Inject general info rows before re-indexation
+        general_info = pd.DataFrame(
+            [
+                vol_all,
+                P_all,
+                Z_all
+            ],
+            index=pd.MultiIndex.from_tuples(
+                [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
+                names=['Building', 'HourOfYear']
+            ),
+            columns=df_IP_storage.columns
+        )
+
+        # Convert df_IP_storage to MultiIndex if it's not already
         if df_IP_storage.index.nlevels == 1:
             new_level = list(range(len(df_IP_storage)))
-            # Convert the existing index to a list (or use .get_level_values() for specific levels)
             original_index = df_IP_storage.index.tolist()
+            assert len(original_index) == len(new_level), "Length mismatch"
+            df_IP_storage.index = pd.MultiIndex.from_arrays(
+                [original_index, new_level],
+                names=["Building", "HourOfYear"]
+            )
 
-            # Check that 'new_level' matches the length of 'original_index'
-            assert len(original_index) == len(
-                new_level), "Length of new_level must match length of the existing index."
-
-            # Create a new MultiIndex with the converted index and new level
-            df_IP_storage.index = pd.MultiIndex.from_arrays([original_index, new_level],
-                                                            names=["original_index", "new_level"])
-
+        # Overwrite with correct MultiIndex naming
         df_IP_storage.index.names = ['Building', 'HourOfYear']
+
+        # 🔗 Concatenate the info rows and data rows
+        df_IP_storage = pd.concat([general_info, df_IP_storage])
+
+        # Final cleanup
         df_IP_storage = df_IP_storage.fillna(0)
         df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
         df_IP_storage = df_IP_storage.sort_index()
+
     else:
         df_IP_storage = pd.DataFrame()
 
     return df_IP_storage
+
 
 
 def get_ampl_data(ampl, ampl_name, multi_index=False):

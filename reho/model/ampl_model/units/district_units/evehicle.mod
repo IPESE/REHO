@@ -132,7 +132,7 @@ EV_V2V[u,p,t] = 0;
 
 # mobility and outside-the-district charging
 subject to EV_EB_mobility1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u]; 
+Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u] * ff_EV[u];
 
 subject to EV_EB_mobility2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
 EV_supply_travel[u,p,t] = Units_supply['Mobility',u,p,t]/ ff_EV[u] / EV_eff_travel  - sum{d in Districts}(sum{a in Activities}(EV_demand_ext[a,d,u,p,t]));

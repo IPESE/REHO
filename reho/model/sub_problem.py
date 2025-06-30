@@ -154,6 +154,8 @@ class SubProblem:
             ampl.read('wood_stove.mod')
         if 'HeatPump' in self.infrastructure_sp.UnitTypes:
             ampl.read('heatpump.mod')
+        if 'HeatPump_WH' in self.infrastructure_sp.UnitTypes:
+            ampl.read('heatpump_waste_heat.mod')
         if 'AirConditioner' in self.infrastructure_sp.UnitTypes:
             ampl.read('air_conditioner.mod')
         if 'ThermalSolar' in self.infrastructure_sp.UnitTypes:
@@ -291,7 +293,8 @@ class SubProblem:
                     source = list(itertools.compress(sources, [i in unit for i in sources]))[0]
                     T_source = np.concatenate([T_source, np.repeat(self.parameters_sp['T_source'][source], timesteps)])
                 elif 'Air' in unit:
-                    T_source = np.concatenate([T_source, self.parameters_to_ampl['T_ext']])
+                        T_source = np.concatenate([T_source, self.parameters_to_ampl['T_ext']])
+                        #T_source = np.concatenate([T_source, np.repeat(18, timesteps)])
                 elif 'Lake' in unit:
                     T_source = np.concatenate([T_source, np.repeat(7.5, timesteps)])
                 elif 'Geothermal' in unit:
@@ -585,6 +588,7 @@ class SubProblem:
         ampl.getConstraint('no_ElectricalHeater_without_HP').drop()
         ampl.getConstraint('forced_H2_annual_export').drop()
         ampl.getConstraint('forced_H2_fixed_daily_export').drop()
+
 
         if 'PV' in self.infrastructure_sp.UnitsOfType:
             ampl.getConstraint('enforce_PV_max').drop()

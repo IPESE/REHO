@@ -209,7 +209,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     # Semi-automatically handled devices
     semi_auto_device = [
         'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'ElectricalHeater_other',
-        'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
+        'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air','HeatPump_Waste_heat', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
         'AirConditioner', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district',
         'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district',
     ]
@@ -256,6 +256,16 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 adjustment=offset,
                 fact=factor
             )
+
+    # Manually merge the heatpump_waste_heat as a heatpump_air to avoid duplication in the plots
+    #df_label, df_stv, _ = add_flow('Electrical_consumption', 'HeatPump_Air', 'Electricity', 'HeatPump_Waste_heat',
+    #                               'Demand_MWh', df_annuals, df_label, df_stv)
+
+    #df_label, df_stv, _ = add_flow('HeatPump_Air', 'SH', 'SH', 'HeatPump_Waste_heat',
+    #                               'Supply_MWh', df_annuals, df_label, df_stv)
+
+    #df_label, df_stv, _ = add_flow('HeatPump_Air', 'DHW', 'DHW', 'HeatPump_Waste_heat',
+    #                               'Supply_MWh', df_annuals, df_label, df_stv)
 
     electrical_storage_devices = ['Battery', 'Battery_IP', 'Battery_district', 'Battery_IP_district', 'EV_district']  # example list
     # Flow templates for electrical storage

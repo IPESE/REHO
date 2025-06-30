@@ -47,6 +47,7 @@ HeatPump_DHN,Heat pump DHN,HP DHN,"Pompe à chaleur, CAD",#FEA993,salmon
 HeatPump_Geothermal,Heat pump geothermal,HP geo,"Pompe à chaleur, géothermie",#FEA993,salmon
 HeatPump_Geothermal_district, District HP geothermal,District HP geo,PAC géothermie (district),#FEA993,salmon
 HeatPump_Lake,Heat pump lake,HP lake,"Pompe à chaleur, lac",#FEA993,salmon
+HeatPump_Waste_heat,Heat pump WH,HP,Pompe à chaleur,#FEA993,salmon
 ,,,,,
 DHN_pipes,DHN connection,DHN,Connexion CAD,#FF8C00,orange
 DHN,DHN,DHN,Connexion CAD,#FF8C00,orange
@@ -108,3 +109,4 @@ ElectricBike_district,Electric bikes,EBike,Vélos électriques,#00FF7F,springgre
 Total_EV_fleet,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_charger_district,EV charging station,EVchrg,Stations de recharge,#008080,teal
+EV_charger,EV charging station,EVchrg,Stations de recharge,#008080,teal

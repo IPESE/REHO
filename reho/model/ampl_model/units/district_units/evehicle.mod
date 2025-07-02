@@ -19,10 +19,6 @@
 # ----------------------------------------- PARAMETERS ---------------------------------------
 
 # Usage
-param n_EVperhab{u in UnitsOfType['EV']} default 1; # [4] G 2.1.2.1 on average 0.49 vehicles per dwelling (to be multiplied with persons/dwelling ?)
-param n_EVtotperhab default 1.5; # number
-param n_EV_max{u in UnitsOfType['EV']} := n_EVperhab[u] * Population;
-param n_EVtot_max := n_EVtotperhab * Population;
 param ff_EV{u in UnitsOfType['EV']} default 1.56; # person/vehicle [4]
 param EV_plugged_out{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
 param EV_charging_profile{u in UnitsOfType['EV'], p in Period, t in Time[p]} default 0.15;	# initialized through the function generate_mobility_parameters
@@ -132,7 +128,7 @@ EV_V2V[u,p,t] = 0;
 
 # mobility and outside-the-district charging
 subject to EV_EB_mobility1{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
-Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u]; 
+Units_supply['Mobility',u,p,t] <= n_vehicles[u]* EV_activity['travel',u,p,t] * Mode_Speed[u] * ff_EV[u]; 
 
 subject to EV_EB_mobility2{u in UnitsOfType['EV'],p in PeriodStandard,t in Time[p]}:
 EV_supply_travel[u,p,t] = Units_supply['Mobility',u,p,t]/ ff_EV[u] / EV_eff_travel  - sum{d in Districts}(sum{a in Activities}(EV_demand_ext[a,d,u,p,t]));
@@ -158,14 +154,6 @@ EV_cost_ext[p,t] = sum{d in Districts, a in Activities, u in UnitsOfType['EV']} 
 
 subject to external_charging_costs3{ p in PeriodStandard, t in Time[p]}:
 ExternalEV_Costs_op[p,t] = (EV_cost_ext[p,t] - EV_revenue_ext[p,t])* dp[p] * dt[p];
-
-
-#--Stock constraints
-#subject to EV_stock_upperbound1{u in UnitsOfType['EV']}:
-#n_vehicles[u] <= n_EV_max[u];
-
-#subject to EV_stock_upperbound2:
-#sum{u in UnitsOfType['EV']} (n_vehicles[u]) <= n_EVtot_max;
 
 
 #--Max share and time of travel

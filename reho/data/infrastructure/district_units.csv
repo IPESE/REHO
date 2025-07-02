@@ -1,6 +1,6 @@
 Unit;ref_unit;Units_Fmin;Units_Fmax;Cost_inv1;Cost_inv2;GWP_unit1;GWP_unit2;lifetime;UnitOfType;UnitOfLayer;UnitOfService;StreamsOfUnit;Units_flowrate_in;Units_flowrate_out;stream_Tin;stream_Tout;References
 Battery_district;kWh;100;100000;50000;200;10000;50;15;Battery;Electricity;;;Electricity;Electricity;;;""
-EV_district;kWh;0.1;100000;0;0;0;0;10;EV;Mobility;;;"";Mobility;;;`TCS <https://www.tcs.ch/fr/tests-conseils/tests/comparaison-electrique-essence.php>`_
+EV_district;kWh;0.1;100000;6000;750;0;0;10;EV;Mobility;;;"";Mobility;;;`TCS <https://www.tcs.ch/fr/tests-conseils/tests/comparaison-electrique-essence.php>`_
 EV_charger_district;kW;0.1;100000;300;170;0;0;10;EV_charger;Mobility/ Electricity;;;Electricity;Electricity;;;`TCS <https://www.tcs.ch/fr/tests-conseils/tests/comparaison-electrique-essence.php>`_
 ICE_district;number;0;10000;0;40000;0;8000;10;ICE;Mobility / Gasoline;;;Gasoline;Mobility;;;`TCS <https://www.tcs.ch/fr/tests-conseils/tests/comparaison-electrique-essence.php>`_
 ElectricBike_district;number;0;1000;0;1200;0;200;10;EBike;Mobility / Electricity;;;Electricity;Mobility;;;`Decathlon <https://www.decathlon.ch/fr/p/velo-ville-longue-distance-500-assistance-electrique-cadre-bas/_/R-p-302285?mc=8526895&c=vert>`

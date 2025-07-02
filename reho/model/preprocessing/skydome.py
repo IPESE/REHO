@@ -63,7 +63,7 @@ def irradiation_to_df(local_data):
         MultiIndexed DataFrame indexed by Patches, Period, Time with irradiation values.
     """
 
-    df_normalized = pd.read_csv(os.path.join(path_to_skydome, 'normalized_irradiance.csv'))
+    df_normalized = local_data["Irr_yearly"]/local_data["Irr_yearly"].max().max()
     Irr = local_data['Irr']
     df_time = local_data['df_Timestamp']
 
@@ -74,12 +74,11 @@ def irradiation_to_df(local_data):
 
     # Handle normal periods
     df_p = pd.DataFrame()
-    start_idx = 0
     for date in df_time['Date'][:-2]:
+        start_idx = date.timetuple().tm_yday*24
         df_period = df_irradiation.iloc[start_idx:start_idx + PeriodDuration].copy()
         df_period.index = pd.date_range(start=pd.to_datetime(date), periods=PeriodDuration, freq='H')
         df_p = pd.concat([df_p, df_period])
-        start_idx += PeriodDuration
 
     # Handle extreme periods
     extreme_irradiations = Irr[-2:]

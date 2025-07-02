@@ -46,8 +46,13 @@ def return_local_data(cluster, qbuildings_data):
     typical_data = pd.read_csv(os.path.join(clustering_directory, 'typical_data.csv'))
     local_data["T_ext"] = typical_data['Text'].values
     local_data["Irr"] = typical_data['Irr'].values
+    local_data["Irr_yearly"] = pd.read_csv(os.path.join(path_to_skydome, 'total_irradiation.csv')).drop(columns=["time"])
 
     local_data["df_Timestamp"] = pd.read_csv(os.path.join(clustering_directory, 'timestamp.csv'))
     local_data["df_Timestamp"]["Date"] = pd.to_datetime(local_data["df_Timestamp"]["Date"])
+
+    # Refurbishment
+    local_data["df_Refurbishment"] = pd.read_csv(os.path.join(path_to_infrastructure, 'refurbishment.csv'))
+    local_data["df_Refurbishment_index"] = pd.read_csv(os.path.join(path_to_infrastructure, 'refurbishment_index.csv'))
 
     return local_data

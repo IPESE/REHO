@@ -20,7 +20,7 @@ def get_weather_data(qbuildings_data):
     lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'], qbuildings_data['buildings_data']['Building1']['y'])
 
     pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, startyear=2005, endyear=2020)
-    coordinates = pvgis_data[2]
+    coordinates = pvgis_data[1]
     weather_data = pvgis_data[0]
 
     print(f'The weather data have been extracted from the PVGIS database for : {coordinates}.')

@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import sympy as sp
 import math
-# TODO: add "statsmodels" and "sympy" in to env.
 from scipy.optimize import curve_fit
 
 import random

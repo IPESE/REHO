@@ -99,33 +99,27 @@ def get_actor_expenses(actor, building, last_MP_results=None, last_SP_results=No
     # multiply by cost
     tariff_sc = last_MP_results['df_Actors_tariff']['Cost_self_consumption']['Electricity']
     cost_sc = {b: tariff_sc[b] * sc for b, sc in self_cons.items()}
-    cost_sc_series = pd.Series(cost_sc)
 
     if actor.lower() == "renters":
         renter_expense = last_MP_results['df_District']['renter_expense'][building]
         renter_subsidies = last_MP_results['df_District']['renter_subsidies'][building]
-        #rent_fix = last_MP_results['df_District']['C_rent_fix']
-        #tariff_supply = last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity']
-        #supply = {b: tariff_supply[b] * last_SP_results[b]['df_Grid_t']['Grid_supply']['Electricity'].xs(b, level='Hub').sum()
-        #         for b in last_SP_results}
-        #rent_exp = {b: rent_fix[b] + supply[b] + cost_sc[b] for b in last_SP_results}
         return renter_expense - renter_subsidies
 
     elif actor.lower() == "owner":
-        owner_prof   = last_MP_results['df_District']['owner_profit'][building]
-        owner_sub   =  last_MP_results['df_District']['owner_subsidies'][building]
-        owner_inv   =  last_MP_results['df_District']['Costs_inv'][building]
-        owner_upfront   =  last_MP_results['df_District']['Costs_House_upfront'][building]
-        owner_pir_min   = last_MP_results['Samples']['Owner_PIR_min'].iloc[0,0]
+        owner_prof = last_MP_results['df_District']['owner_profit'][building]
+        owner_sub = last_MP_results['df_District']['owner_subsidies'][building]
+        owner_inv = last_MP_results['df_District']['Costs_inv'][building]
+        owner_upfront = last_MP_results['df_District']['Costs_House_upfront'][building]
+        owner_pir_min = last_MP_results['Samples']['Owner_PIR_min'].iloc[0,0]
 
         owner_exp = owner_prof + owner_sub - owner_pir_min * (owner_inv + owner_upfront)
         return owner_exp
 
     elif actor.lower() == "utility":
         tariff_supply = last_MP_results['df_Actors_tariff']['Cost_supply_district']['Electricity'][building]
-        tariff_dmd    = last_MP_results['df_Actors_tariff']['Cost_demand_district']['Electricity'][building]
+        tariff_dmd = last_MP_results['df_Actors_tariff']['Cost_demand_district']['Electricity'][building]
         util_exp = (tariff_supply * last_SP_results[building]['df_Grid_t']['Grid_supply']['Electricity'].xs(building, level='Hub').sum()
-                    - tariff_dmd  * last_SP_results[building]['df_Grid_t']['Grid_demand']['Electricity'].xs(building, level='Hub').sum())
+                    - tariff_dmd * last_SP_results[building]['df_Grid_t']['Grid_demand']['Electricity'].xs(building, level='Hub').sum())
         return util_exp
 
     else:

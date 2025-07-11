@@ -278,7 +278,8 @@ class QBuildingsReader:
                 self.data['facades'].to_csv('facades.csv', index=False)
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
+            if len(qbuildings["buildings_data"]) > 1:
+                qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
@@ -608,13 +609,8 @@ def return_shadows_district(buildings, facades):
     return df_shadows
 
 
-def return_shadows_id_building(id_building, df_district, local_data):
+def return_shadows_id_building(id_building, df):
     id_building = int(id_building)
-
-    if os.path.isfile('data/shadows.csv'):
-        df = file_reader('data/shadows.csv', index_col=0)
-    else:
-        df = df_district
     df = df.xs(id_building)
 
     df_beta_dome = pd.DataFrame()

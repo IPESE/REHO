@@ -451,10 +451,10 @@ class SubProblem:
         if self.method_sp['use_facades']:
             for b in self.buildings_data_sp:
                 df_facades = self.facades_sp[self.facades_sp['id_building'] == self.buildings_data_sp[b]['id_building']]
-                df_shadows = self.shadows_sp[self.shadows_sp['id_building'] == self.buildings_data_sp[b]['id_building']]
+                df_shadows = self.shadows_sp[self.shadows_sp['id_building'] == str(self.buildings_data_sp[b]['id_building'])]
                 facades = df_facades['Facades_ID']
                 np_facades = np.append(np_facades, facades)
-                df_shadow = return_shadows_id_building(self.buildings_data_sp[b]['id_building'], df_shadows, self.local_data)
+                df_shadow = return_shadows_id_building(self.buildings_data_sp[b]['id_building'], df_shadows)
                 df_shadow = pd.concat([df_shadow], keys=[b], names=['House'])
                 df_limit_angle = pd.concat([df_limit_angle, df_shadow])
                 for fc in facades:

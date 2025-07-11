@@ -1,7 +1,5 @@
 from scipy.stats import qmc
 from reho.model.reho import *
-import sys
-import warnings
 
 __doc__ = """
 File for constructing and solving the optimization for the actor-based problem formulation.

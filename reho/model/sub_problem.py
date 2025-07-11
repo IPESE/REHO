@@ -81,7 +81,7 @@ class SubProblem:
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
         if self.method_sp['use_pv_orientation']:
-            self.set_skydome_parameters(ampl)
+            self.set_skydome_parameters()
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
         ampl = self.set_scenario(ampl)
         return ampl
@@ -375,7 +375,7 @@ class SubProblem:
 
         self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
 
-    def set_skydome_parameters(self, ampl):
+    def set_skydome_parameters(self):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
         df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))

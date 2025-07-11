@@ -105,11 +105,12 @@ def daily_profiles_with_monthly_deviation(status, rooms, date, df):
     df_heat_gain = df_heat_gain.multiply(rooms.values, axis=0).dropna()
 
     # aggregate
+    conv_heat_factor = 0.70
     df_profiles = pd.DataFrame()
     df_profiles['electricity_W/m2'] = df_el.sum(axis=0)
     df_profiles['hotwater_l/m2'] = df_dhw.sum(axis=0)
     df_profiles['occupancy'] = df_occupancy.sum(axis=0)
-    df_profiles['elecgain_W/m2'] = df_el_gain.sum(axis=0)
+    df_profiles['elecgain_W/m2'] = df_el_gain.sum(axis=0) * conv_heat_factor
     df_profiles['heatgainpeople_W/m2'] = df_heat_gain.sum(axis=0)
 
     return df_profiles

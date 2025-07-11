@@ -68,8 +68,7 @@ class MasterProblem:
                                 fmt="%(message)s", stream=sys.stdout)
 
         # infrastructure
-        if method['use_facades'] or method['use_pv_orientation']:
-            self.qbuildings_data = qbuildings_data
+        self.qbuildings_data = qbuildings_data
         self.buildings_data = qbuildings_data['buildings_data']
         self.ERA = sum([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
 
@@ -102,7 +101,7 @@ class MasterProblem:
                                             self.method['include_stochasticity'], self.method['sd_stochasticity'], self.method['use_custom_profiles'])
 
         # build solar gains profile
-        self.parameters['SolarGains'] = buildings_profiles.solar_gains_profile(self.buildings_data, sia_data, self.local_data)
+        self.parameters['SolarGains'] = buildings_profiles.solar_gains_profile(self.qbuildings_data, sia_data, self.local_data)
 
         if set_indexed is None:
             self.set_indexed = {}

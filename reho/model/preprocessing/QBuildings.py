@@ -38,7 +38,7 @@ class QBuildingsReader:
         Whether the roofs data should be added.
     """
 
-    def __init__(self, load_facades=False, load_roofs=False):
+    def __init__(self, load_facades=True, load_roofs=True):
 
         self.db = None
         self.tables = None
@@ -554,7 +554,6 @@ def neighbourhood_angles(buildings, facades):
 
     for b in buildings:
         id_building = buildings[b]['id_building']
-        print('Calculate angles for building: ' + str(id_building))
         df_BUI = pd.DataFrame()
         df_district = {buildings: bui for buildings, bui in buildings.items() if bui['id_building'] != id_building}
         df_district = pd.DataFrame.from_dict(df_district, orient='index')
@@ -584,21 +583,14 @@ def neighbourhood_angles(buildings, facades):
         df_BUI = df_BUI.reset_index()
         df_BUI = df_BUI.rename(columns={'id_building': 'to_id_building'})
         df_BUI['id_building'] = int(id_building)
-
         df_angles = pd.concat((df_angles, df_BUI))
-
-    df_angles.to_csv('data/angles.csv')
 
     return df_angles
 
 
 def return_shadows_district(buildings, facades):
     df_shadows = pd.DataFrame()
-
-    if os.path.exists('data/angles.csv'):
-        df_angles = pd.read_csv('data/angles.csv')
-    else:
-        df_angles = neighbourhood_angles(buildings, facades)
+    df_angles = neighbourhood_angles(buildings, facades)
 
     for b in buildings:
         id_building = int(buildings[b]['id_building'])
@@ -613,8 +605,6 @@ def return_shadows_district(buildings, facades):
         df_shadows = pd.concat((df_shadows, df_id_building))
 
     df_shadows["id_building"] = df_shadows["id_building"].astype(str)
-    df_shadows.to_csv('data/shadows.csv')
-
     return df_shadows
 
 

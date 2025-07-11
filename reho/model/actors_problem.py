@@ -68,14 +68,13 @@ class ActorsProblem(REHO):
         return obj
 
 
-    def sample_actors_epsilon(self, bounds=None, n_samples=1, linear=False):
+    def sample_actors_epsilon(self, bounds=None, n_samples=1, ins_target = [0]):
         """
         Generate N samples of actor epsilon parameters and store them in `self.samples`.
         Produces a pandas DataFrame with columns:
             - 'utility_profit_min': sampled values for the Utility actor's minimum profit.
             - 'owner_PIR_min'     : sampled values for the Owner actor's profit-investment ratio.
         Sampling strategies:
-            - linear grid: evenly spaced values between provided [lower, upper] bounds.
             - Sobol sequence: low-discrepancy quasi-random samples (default).
 
         Parameters
@@ -95,8 +94,10 @@ class ActorsProblem(REHO):
         sampler = qmc.Sobol(d=2, scramble=True)
         k = math.ceil(math.log2(n_samples or 1))
         points = sampler.random_base2(m=k)[:n_samples]
-        self.samples = pd.DataFrame(qmc.scale(points, l_bound, u_bound), columns=['utility_profit_min', 'owner_PIR_min']).round(4)
+        df_samples = pd.DataFrame(qmc.scale(points, l_bound, u_bound), columns=['utility_profit_min', 'owner_PIR_min']).round(4)
 
+        self.samples = df_samples.loc[df_samples.index.repeat(len(ins_target))].reset_index(drop=True)
+        self.samples['ins_target'] = np.tile(ins_target, n_samples)
 
     def actor_decomposition_optimization(self):
         """
@@ -110,7 +111,6 @@ class ActorsProblem(REHO):
             sample_param = self.samples.iloc[ids]
             for param in sample_param.index:
                 self.parameters[param] = sample_param[param]
-
             self.single_optimization(Pareto_ID=ids)
             self.results[self.scenario['name']][ids]['Samples']['Sampling_result'] = sample_param
             self.add_dual_Results(Scn_ID=self.scenario['name'], Pareto_ID=ids)

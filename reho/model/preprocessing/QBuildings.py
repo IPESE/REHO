@@ -163,7 +163,7 @@ class QBuildingsReader:
 
         return qbuildings
 
-    def read_db(self, district_boundary="transformers", district_id=None, nb_buildings=None, egid=None, to_csv=False):
+    def read_db(self, district_boundary="transformers", district_id=None, nb_buildings=None, egid=None, to_csv=False, correct_Uh=False):
         """
         Reads the database and extracts the relevant buildings data.
         If only some buildings from the district_id need to be extracted, you can specify the desired number of buildings or, if the EGIDs are known, provide a list of EGIDs.
@@ -292,6 +292,9 @@ class QBuildingsReader:
                 self.data['roofs'].to_csv('roofs.csv', index=False)
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
+
+        if correct_Uh:
+            qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"])
 
         if qbuildings["buildings_data"] == {}:
             raise print("Empty building data")
@@ -427,6 +430,53 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
             print('Key %s not in the dictionary' % key)
 
     df_buildings = translated_buildings_data
+
+    return df_buildings
+
+def get_Uh_corrected(df_buildings, uh_data=None, maping=None, df_facades=None):
+
+    if uh_data is None:
+        uh_data = pd.DataFrame([[1.75, 1.05, 1.75, 1.75, 0.25], [1, 1, 1, 1.75, 0.25],
+                            [1.25, 1.05, 1.05, 1.05, 0.25], [1.75, 1.75, 1.75, 1.75, 1]],
+                           columns=["<1920", "1920-1945", "1945-1960", "1960-1990", ">1990"],
+                           index=["footprint", "roof", "facade", "window"])/1000
+    if maping is None:
+        maping = {"<1919": "<1920", "1919-1945": "1920-1945", "1946-1960": "1945-1960", "1961-1970": "1960-1990",
+              "1971-1980": "1960-1990", "1981-1990": "1960-1990", "1991-2000": ">1990", "2001-2005": ">1990",
+              "2006-2010": ">1990", ">2010": ">1990"}
+
+    for i in df_buildings:
+        df_h = df_buildings[i]
+        periods = df_h["period"].split("/")
+        ratios = [float(x) for x in df_h["ratio"].split("/")]
+        id_class = df_h["id_class"].split("/")
+
+        if len(periods) < len(ratios):
+            periods = periods + [periods[0]] * (len(ratios) - len(periods))
+        if len(periods) > len(ratios):
+            ratios = ratios + [0] * (len(ratios) - len(periods))
+
+        if df_facades is not None:
+            facades = df_facades[df_facades["id_building"] == df_h["id_building"]]
+            perimeter = np.sum([line.length for line in facades["geometry"]])
+            height = df_h["ERA"] / df_h["area_footprint_m2"] / 0.93 * 2.5
+            df_h["area_facade_m2"] = perimeter * height
+
+        U_h_ins_data = 0
+        for j in range(len(periods)):
+            glass_fraction = 0.5
+            if id_class[j] in ["I", "II"]:
+                glass_fraction = 0.3
+
+            ventilation = 0.7 / 3600 * df_h["ERA"] * 2.5 * (1200 - 0.14 * 400)  # SIA 380/1
+
+            uh_mapped = uh_data[maping[periods[j]]]
+            U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_mapped["facade"] +
+                             df_h['area_footprint_m2'] * uh_mapped["footprint"] +
+                             df_h['area_facade_m2'] * glass_fraction * uh_mapped["window"] +
+                             df_h['SolarRoofArea'] * uh_mapped["roof"] +
+                             ventilation/1000) * ratios[j] / df_h['ERA']
+        df_buildings[i]["U_h"] = U_h_ins_data
 
     return df_buildings
 

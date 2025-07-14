@@ -52,7 +52,6 @@ def return_local_data(cluster, qbuildings_data):
     local_data["df_Timestamp"]["Date"] = pd.to_datetime(local_data["df_Timestamp"]["Date"])
 
     # Refurbishment
+    local_data["df_Refurbishment_targets"] = pd.read_csv(os.path.join(path_to_infrastructure, 'refurbishment_targets.csv'))
     local_data["df_Refurbishment"] = pd.read_csv(os.path.join(path_to_infrastructure, 'refurbishment.csv'))
-    local_data["df_Refurbishment_index"] = pd.read_csv(os.path.join(path_to_infrastructure, 'refurbishment_index.csv'))
-
     return local_data

@@ -325,6 +325,7 @@ class MasterProblem:
 
         if refurbishment_options is not None:
             buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2(buildings_data_SP[h], self.local_data, refurbishment_options)
+            buildings_data_SP[h]["retrofit"] = refurbishment_options
 
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
         if epsilon_init is not None and self.method['building-scale']:
@@ -493,8 +494,7 @@ class MasterProblem:
         # ------------------------------------------------------------------------------------------------------------
         # collect data
         df_Performance = self.return_combined_SP_results(self.results_SP, 'df_Performance')
-        df_Performance = df_Performance.drop(index='Network', level='Hub').groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'Hub']).head(1).droplevel(
-            'Hub')  # select current Scn_ID and Pareto_ID
+        df_Performance = df_Performance.drop(index='Network', level='Hub').groupby(level=['Scn_ID', 'Pareto_ID', 'FeasibleSolution', 'Hub']).head(1).droplevel('Hub')  # select current Scn_ID and Pareto_ID
         df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 6)
         df_Buildings = self.return_combined_SP_results(self.results_SP, 'df_Buildings')
         df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')].droplevel('Hub')
@@ -583,7 +583,9 @@ class MasterProblem:
             for bui in self.infrastructure.houses:
                 df_PV_t = pd.concat([df_PV_t, df_Unit_t.xs("PV_" + bui, level="Unit")])
             MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
-            MP_parameters["Uh"] = pd.DataFrame.from_dict({house:self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})
+
+        if self.method['refurbishment'] is not None:
+            MP_parameters["Uh"] = pd.DataFrame.from_dict({house: self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})
             MP_parameters["Uh_ins"] = df_Buildings[["U_h"]].rename(columns={"U_h": "Uh_ins"})
 
         if "Heat" in self.infrastructure.grids.keys():
@@ -769,6 +771,7 @@ class MasterProblem:
 
         if refurbishment_options is not None:
             buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2(buildings_data_SP[h], self.local_data, refurbishment_options)
+            buildings_data_SP[h]["retrofit"] = refurbishment_options
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:

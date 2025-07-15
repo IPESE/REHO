@@ -444,14 +444,17 @@ class REHO(MasterProblem):
         df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
 
         if self.method["actors_problem"]:
-            #TODO: Add variables
-            df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][
-                ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
-                 'owner_profit', 'C_rent_fix', 'renter_expense','renter_subsidies','owner_subsidies', 'Costs_House_upfront', 'is_ins']]
+            features = ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
+                        'owner_profit', 'C_rent_fix', 'renter_expense', 'renter_subsidies', 'owner_subsidies', 'Costs_House_upfront']
+            df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][features]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
             df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors_tariff"]
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
             df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
+
+        if self.method["refurbishment"] is not None:
+            df_renovation = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][['is_ins']]
+            df_Performance = pd.concat([df_Performance, df_renovation], axis=1)
 
         # df_Grid
         df = self.get_final_SPs_results(MP_selection, 'df_Grid')

@@ -628,6 +628,13 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     else:
         df_Results["df_Interperiod"] = pd.DataFrame()
 
+    if method["refurbishment"] is not None:
+        df1 = get_ampl_data(ampl, 'is_ins')
+        df_renovation = pd.concat([df1], axis=1)
+        df_network = df_renovation.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
+        df_renovation = pd.concat([df_renovation, df_network], axis=0)
+        df_Results["df_District"] = pd.concat([df_Results["df_District"], df_renovation], axis=1)
+
     if method["actors_problem"]:
         # Renters’ expenses and the profits of Owners and the Utility
         df1 = get_ampl_data(ampl, 'renter_expense')
@@ -663,10 +670,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df7 = get_ampl_data(ampl, 'C_rent_fix')
         df8 = get_ampl_data(ampl, 'renter_subsidies')
         df9 = get_ampl_data(ampl, 'owner_subsidies')
-        df10 = get_ampl_data(ampl, 'is_ins')
-        df11 = get_ampl_data(ampl, 'Costs_House_upfront') # Upfront investment costs in buildings
+        df10 = get_ampl_data(ampl, 'Costs_House_upfront') # Upfront investment costs in buildings
 
-        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11], axis=1)
+        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10], axis=1)
         df_network = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
         df_Actors = pd.concat([df_Actors, df_network], axis=0)
         df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)

@@ -104,6 +104,7 @@ autodoc_mock_imports = [
     "setuptools",
     "shapely",
     "sqlalchemy",
+    "sympy",
     "urllib3",
 ]
 

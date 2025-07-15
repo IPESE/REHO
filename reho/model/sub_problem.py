@@ -7,6 +7,8 @@ import reho.model.preprocessing.buildings_profiles as buildings_profiles
 import reho.model.preprocessing.weather as weather
 from reho.model.preprocessing.skydome import irradiation_to_df
 from reho.model.preprocessing.QBuildings import *
+import reho.model.preprocessing.actors as actors
+from reho.model.preprocessing import refurbishment
 
 __doc__ = """
 File for handling data and optimization for an AMPL sub-problem.
@@ -657,6 +659,8 @@ def initialize_default_methods(method):
         method['parallel_computation'] = True
     if 'switch_off_second_objective' not in method:
         method['switch_off_second_objective'] = False
+    if 'skip_initiation' not in method:
+        method['skip_initiation'] = False
 
     if 'fix_units' not in method:
         method['fix_units'] = False
@@ -683,6 +687,8 @@ def initialize_default_methods(method):
         method['actors_problem'] = False
     if method['actors_problem']:
         method["include_all_solutions"] = True
+        method["district-scale"] = True
+
     if 'DHN_CO2' not in method:
         method['DHN_CO2'] = False
 
@@ -694,8 +700,10 @@ def initialize_default_methods(method):
 
     if method['building-scale']:
         method['include_all_solutions'] = False  # avoid interactions between optimization scenarios
-        method[
-            'district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
+        method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
+
+    if 'refurbishment' not in method:
+        method['refurbishment'] = False # decision of refurbishment strategies
 
     return method
 

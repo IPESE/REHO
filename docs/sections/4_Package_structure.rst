@@ -57,11 +57,12 @@ Directory for data-related files.
 
 Core of the optimization model (model objectives, constraints, modelling equations), containing all AMPL files:
 
-- ``units/`` contains the model files specific to each technology that can be used in the system. Three subfolders (``district_units``, ``h2_units``, and ``storage``) are used for easier classification.
+- ``units/`` contains the model files specific to each technology that can be used in the system. Two subfolders (``district_units``, ``interperiod``) are used for easier classification.
 - ``data_stream.dat`` contains values that specify the operating temperatures of streams and energy conversion units.
 - ``master_problem.mod`` contains the modeling of the problem for the decomposition approach.
 - ``sub_problem.mod`` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
 - ``scenario.mod`` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
+- ``actors_problem.mod`` TODO
 
 **postprocessing/**
 -----------------------

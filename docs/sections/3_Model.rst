@@ -579,7 +579,7 @@ Annual capital expenses
 .. math::
     \begin{align}
          \boldsymbol{C^{cap}_b} &=   \frac{i(1+i)}{(1+i)^n -1} \cdot \left(\boldsymbol{C^{inv}_b } +  \boldsymbol{C^{rep}_b } \right) \label{eq_ch1:Ccap}\\
-         \boldsymbol{C^{inv}_b }&= \sum_{u \in \text{U}}   b_{u} \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right) \label{eq_ch1:Cinv}\\
+         \boldsymbol{C^{inv}_b }&= \sum_{u \in \text{U}} \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right) \label{eq_ch1:Cinv}\\
          \boldsymbol{C^{rep}_b} &=   \sum_{u \in \text{U}}  \sum_{r \in \text{R}}  \frac{1}{\left( 1 + i \right)^{r \cdot l_u}}  \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right)   \quad \forall b \in  \text{B} \label{eq_ch1:Crep}
     \end{align}
 
@@ -597,7 +597,7 @@ Global warming potential
     \boldsymbol{G^{op}_b} = \sum_{l \in \text{L}} \sum_{p \in \text{P}} \sum_{t\in \text{T}}  \left( g^{l,+}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,+}_{b,l,p,t}} - g^{l,-}_{p,t} \cdot \boldsymbol{\dot{E}^{gr,-}_{b,l,p,t}} \right) \cdot d_p \cdot d_t \quad \forall b \in  \text{B}
 
 .. math::
-    \boldsymbol{G^{bes}_b }= \sum_{u \in \text{U}}  \frac{1}{l_u}\cdot   \left( i^{g1}_u \cdot \boldsymbol{y_{b,u}} + i^{g2}_u\cdot \boldsymbol{f_{b,u}} \right) \quad \forall b \in \text{B}
+    \boldsymbol{G^{bes}_b }= \sum_{u \in \text{U}}  \frac{1}{l_u}\cdot   \left( i^{g1}_u \cdot \boldsymbol{y_{b,u}^{buy}} + i^{g2}_u\cdot (\boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u}) \right) \quad \forall b \in \text{B}
 
 .. math::
     \boldsymbol{G^{tot}_b} = \boldsymbol{G^{bes}_b} +  \boldsymbol{G^{op}_b} \quad \forall b \in \text{B}
@@ -609,16 +609,22 @@ Building-level constraints
 Sizing constraints
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
+Investment in building-level units consider the existing capacity of the units :math:`f_{b,u}^{ex}` and the installed capacity :math:`\boldsymbol{f_{b,u}}`.
+When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_{b,u}^{buy}}` and the additional capacity installed :math:`(\boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u})`.
+The binary decision variable :math:`\boldsymbol{y_{b,u}^{ex,use}}` enables the decommissioning of existing units prior to their end of life.
 Upper and lower bounds for unit installations are necessary for identifying the validity range for the linearization of the cost function of the unit.
-
-The main equation for sizing and scheduling problem units are described by:
 
 .. math::
     \begin{align}
-    \boldsymbol{y_{b,u}}  \cdot  F_u^{min}  &\leq  \boldsymbol{f_{b,u}} \leq \boldsymbol{y_{b,u}}  \cdot  F_u^{max}   \\
-    \boldsymbol{f_{b,u,p,t}} &\leq  \boldsymbol{f_{b,u}}\\
-    \boldsymbol{y_{b,u,p,t}} &\leq  \boldsymbol{y_{b,u}}\\
-    & \quad \forall b \in  \text{B} \quad \forall u \in  \text{U}  \quad \forall p \in  \text{P} \quad \forall t\in  \text{T} \nonumber
+        &\boldsymbol{C^{inv}}=  \sum_{b\in B}\sum_{u\in \text{U}}\left(i^{c1}_u\cdot \boldsymbol{y_{b,u}^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u})\right) + \boldsymbol{C^{inv,gr}}
+        \label{cinv}\\
+        &\boldsymbol{C^{rep}} = \sum_{b\in B} \sum_{u \in \text{U}} \sum_{r \in \text{R}} \frac{1}{(1+i)^{r\cdot l_u}} \cdot \left(i^{c1}_u\cdot \boldsymbol{y_{b,u}^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_u)\right)
+        \label{crep}\\
+        &\boldsymbol{y_{b,u}^{buy}}\cdot F^{min}_u \leqslant \boldsymbol{f_{b,u}}-\boldsymbol{y_{b,u}^{ex,use}}\cdot f^{ex}_{b,u} \leqslant \boldsymbol{y_{b,u}^{buy}}\cdot (F^{max}_u-f^{ex}_{b,u})
+        \label{units_1}\\
+        &\boldsymbol{f_{b,u,p,t}} \leq  \boldsymbol{f_{b,u}}
+        \label{units_2}\\
+        &\forall b \in  \text{B} \quad l \in  \text{L} \quad u \in \text{U} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
     \end{align}
 
 
@@ -629,9 +635,29 @@ The energy system of the building includes all the different unit technologies t
 
 .. math::
     \begin{align}
-    \boldsymbol{\dot{E}_{b,p,t}^{gr,+}}  +  \sum_{u \in \text{U}} \boldsymbol{ \dot{E}_{b,u,p,t}^{+}} &= \boldsymbol{\dot{E}_{b,p,t}^{gr,-}}+ \sum_{u \in \text{U}} \boldsymbol{\dot{E}_{b,u,p,t}^{-}} + \dot{E}_{b, p, t}^{B,-} \label{eq_ch1:Ebalance}  \\
-    \boldsymbol{\dot{H}_{b,p,t}^{gr,+}}  &=  \sum_{u \in \text{U}} \boldsymbol{\dot{H}_{b,u,p,t}^{-}}  \qquad  \qquad \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T} \label{eq_ch1:Hbalance}
+    \boldsymbol{\dot{E}_{b,l,p,t}^{gr,+}}  +  \sum_{u \in \text{U}} \boldsymbol{ \dot{E}_{b,l,u,p,t}^{+}} &= \boldsymbol{\dot{E}_{b,l,p,t}^{gr,-}}+ \sum_{u \in \text{U}} \boldsymbol{\dot{E}_{b,l,u,p,t}^{-}} + \dot{E}_{b,l,p,t}^{B,-} \label{eq_ch1:Ebalance}  \\
+    \boldsymbol{\dot{H}_{bl,,p,t}^{gr,+}}  &=  \sum_{u \in \text{U}} \boldsymbol{\dot{H}_{b,l,u,p,t}^{-}}  \qquad  \qquad \quad \forall b \in  \text{B} \quad l \in  \text{L} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T} \label{eq_ch1:Hbalance}
     \end{align}
+
+LV lines capacity
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+LV lines capacity are determined by the decision variables :math:`\boldsymbol{f_{b,l}^{gr}}` (the capacity of the line) and :math:`\boldsymbol{y^{gr}_{b,l}}` (the decision to reinforce the line).
+The model considers the existing capacity of the line :math:`f_{b,l}^{ex,gr}` and will require an investment cost :math:`\boldsymbol{C^{inv,gr}_{b,l}}` only if the new capacity :math:`\boldsymbol{f_{b,l}^{gr}}` is larger than the existing one :math:`f_{b,l}^{ex,gr}`.
+The line capacity is not a continuous variable. Its values should be within the set :math:`\boldsymbol{G^{gr}_l}` of available lines capacities, whose values are defined in infrastructure.py  (ReinforcementOfLine).
+
+
+.. math::
+    \begin{align}
+     &\boldsymbol{f_{b,l}^{gr}} \geq f_{b,l}^{ex,gr}   \qquad \qquad \boldsymbol{f^{gr}_{b,l}} \in \boldsymbol{G^{gr}_l} \label{lines_existing_capacity}  \\
+    &\boldsymbol{\dot{E}_{b,l,p,t}^{gr,\pm}} \leq \boldsymbol{f_{b,l}^{gr}}\label{lines_capacity1}\\
+   &\boldsymbol{y^{gr}_{b,l}}\cdot \max{(\boldsymbol{G^{gr}_l})} \geq \boldsymbol{f^{gr}_{b,l}}-f^{ex,gr}_{b,l}  \label{lines_capacity2} \\
+    &\boldsymbol{C^{inv,gr}_{b,l}}=i^{c1,gr}_{b,l}\cdot\boldsymbol{y^{gr}_{b,l}}  +i^{c2,gr}_{b,l}\cdot\left(\boldsymbol{f^{gr}_{b,l}}-f^{ex,gr}_{b,l}(1-\boldsymbol{y^{gr}_{b,l}} )\right) \label{lines_cost} \\
+   &\forall b \in  \text{B} \quad l \in  \text{L} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
+   \end{align}
+
+
+
 
 Heat cascade
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -703,9 +729,24 @@ District-level constraints
 
 Decomposition algorithm (Dantzig-Wolfe) to break down the energy community into a master problem (transformer perspective) and one subproblem for each building ones.
 The obtained solution is an approximation of the compact formulation (= solving all the buildings simultaneously, exponential computational complexity) but has a linear computational complexity.
+The main objective functions are similar to the ones in at the building-level.
+
+.. math::
+    \begin{align}
+        &\boldsymbol{C^{tot}} = \boldsymbol{C^{op}} + \boldsymbol{C^{cap}}
+        \label{totex}\\
+        &\boldsymbol{C^{op}} = \sum_{\substack{l\in L}} \sum_{p \in \text{P}} \sum_{t\in \text{T}} c^+_l \cdot \boldsymbol{E^{net,+}_{l,p,t}} -c^-_l \cdot \boldsymbol{E^{net,-}_{l,p,t}}
+    	\label{opex}\\
+    	&\boldsymbol{C^{cap}} = \frac{i(1+i)}{(1+i)^n-1}(\boldsymbol{C^{inv}}+\boldsymbol{C^{rep}})
+        \label{capex}
+    \end{align}
+
 
 Configuration selection
 ~~~~~~~~~~~~~~~~~~~~~~~~
+
+The main decision variable :math:`\boldsymbol{\lambda_{i,b}}` of the master problem is the selection of building-level configurations (subproblems).
+It corresponds to a weight attributed to each configuration. Therefore, energy flows :math:`\boldsymbol{E^{net,\pm}_{p,t}}` , investment cost :math:`\boldsymbol{C^{cap}}` and emissions :math:`\boldsymbol{G^{tot}}` are determined by a linear combination of solutions obtained in the subproblems.
 
 .. math::
     \begin{align}
@@ -713,42 +754,36 @@ Configuration selection
         \sum_{i \in \text{I}}  \boldsymbol{\lambda_{i,b}} &= 1 \quad \forall b \in \text{B} \quad \backsim [\mu_b] \label{eq_ch4:convex_2}\
     \end{align}
 
-.. math::
-    \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot    \left(  \dot{E}^{gr,+}_{i,b,p,t}  -   \dot{E}^{gr,-}_{i,b,p,t} \right)  \cdot d_p \cdot d_t  = \boldsymbol{E^{TR,+}_{p,t}} - \boldsymbol{ E^{TR,-}_{p,t} }\quad \forall p \in \text{P}, \quad \forall t \in \text{T} \quad \backsim [\pi_{p,t}]
+District-level units are modeled with a similar approach to the building-level units.
+Their energy flows :math:`\boldsymbol{ \dot{E}_{b,l,u,p,t}^{\pm}}` are added in the resource balance.
+
 
 .. math::
-    \boldsymbol{C^{el}} =  \sum_{p \in \text{P}} \sum_{t \in \text{T}}  \left(  c^{el, +}_{p,t} \cdot  \boldsymbol{E^{TR,+}_{p,t}}  -  c^{el,-}_{p,t}\cdot \boldsymbol{ E^{TR,-}_{p,t}} \right)
+       \boldsymbol{E^{net,+}_{l,p,t}} - \boldsymbol{ E^{net,-}_{l,p,t} } = \Big(  \sum_{u \in \text{U}}\boldsymbol{ \dot{E}_{b,l,u,p,t}^{-}} - \boldsymbol{ \dot{E}_{b,l,u,p,t}^{+}} + \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot  \big(  \dot{E}^{gr,+}_{i,b,l,p,t}  -   \dot{E}^{gr,-}_{i,b,l,p,t} \big) \Big) \cdot d_p \cdot d_t   \quad \backsim [\pi_{l,p,t}]
 
-.. math::
-    \boldsymbol{G^{el}} = \sum_{p \in \text{P}} \sum_{t\in \text{T}}  \left( g^{el}_{p,t} \cdot \boldsymbol{E^{TR,+}_{p,t}} - g^{el}_{p,t} \cdot \boldsymbol{E^{TR,-}_{p,t}}  \right)
+Investment in district-level units consider the existing capacity of the units :math:`f_u^{ex}` and the installed capacity :math:`\boldsymbol{f_u}`.
+When the installed capacity exceed the existing one, an investment is triggered by the decision variable to install a new unit :math:`\boldsymbol{y_u^{buy}}` and the additional capacity installed :math:`(\boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_{u})`.
+The binary decision variable :math:`\boldsymbol{y_{u}^{ex,use}}` enables the decommissioning of existing units prior to their end of life.
 
-.. math::
-    \begin{align}
-        \boldsymbol{C^{op}} &=  \boldsymbol{C^{el}} + \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot  C^{gas}_{i,b} \label{eq_ch4:opex}  \\
-        \boldsymbol{C^{cap}} &=  \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot  C^{cap}_{i,b} \label{eq_ch4:capex} \\
-        \boldsymbol{C^{tot}} &=    \boldsymbol{C^{cap}} +  \boldsymbol{C^{op}} \label{eq_ch4:totex}\\
-        \boldsymbol{G^{tot}} &=    \boldsymbol{G^{el}} +   \sum_{i \in \text{I}} \sum_{b \in \text{B}} \boldsymbol{\lambda_{i,b}} \cdot  \left(G^{gas}_{i,b} + G^{bes}_{i,b}    \right) \label{eq_ch4:GWP}
-    \end{align}
 
 .. math::
     \begin{align}
-        &\boldsymbol{TOTEX} = \boldsymbol{OPEX} + \boldsymbol{CAPEX}
-        \label{totex}\\
-        &\boldsymbol{OPEX} = \sum_{\substack{l\in L}} c^+_l \cdot \boldsymbol{E^{net, +}_l} -c^-_l \cdot \boldsymbol{E^{net, -}_l}
-    	\label{opex}\\
-    	&\boldsymbol{CAPEX} = \frac{i(1+i)}{(1+i)^n-1}(\boldsymbol{C^{inv}}+\boldsymbol{C^{rep}})
-        \label{capex}\\
-        &\boldsymbol{C^{inv}} = \sum_{\substack{u\in U}}b_u\cdot(i^{c1}_u\cdot \boldsymbol{y_u}+i^{c2}_u\cdot \boldsymbol{f_u})
-        \label{cinv}\\
-        &\boldsymbol{C^{rep}} = \sum_{\substack{u\in U}}\sum_{\substack{r\in R}}\frac{1}{(1+i)^{r\cdot l_u}}\cdot(i^{c1}_u\cdot \boldsymbol{y_u}+i^{c2}_u\cdot \boldsymbol{f_u})
-        \label{crep}
+        &\boldsymbol{C^{inv}}=\sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{inv} + \boldsymbol{\sum_{u\in U}}\left(i^{c1}_u\cdot \boldsymbol{y_{u}^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_{u})\right) + \boldsymbol{C^{inv,net}}
+        \label{cinv_MP}\\
+        &\boldsymbol{C^{rep}} = \sum_{\boldsymbol{i} \in \boldsymbol{I}} \sum_{\boldsymbol{b} \in \boldsymbol{B}} \boldsymbol{\lambda_{i,b}} \cdot C_{i,b}^{rep} + \sum_{\boldsymbol{u} \in \boldsymbol{U}} \sum_{\boldsymbol{r} \in \boldsymbol{R}} \frac{1}{(1+i)^{r\cdot l_u}} \cdot \left(i^{c1}_u\cdot \boldsymbol{y_u^{buy}}+i^{c1}_u\cdot( \boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_u)\right)
+        \label{crep_MP}\\
+        &\boldsymbol{y_u^{buy}}\cdot F^{min}_u \leqslant \boldsymbol{f_{u}}-\boldsymbol{y_{u}^{ex,use}}\cdot f^{ex}_u \leqslant \boldsymbol{y_u^{buy}}\cdot (F^{max}_u-f^{ex}_{u})
+        \label{units_1_MP}\\
+        &\forall b \in  \text{B} \quad l \in  \text{L} \quad u \in \text{U} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
     \end{align}
 
-Grid capacity
+LV/MV transformer capacity
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The maximum capacity of the local low-voltage transformer is considered.
-The electricity export and the import is constrained within the feasibility range of the transformer.
+:ref:`network` distinguishes the:
+
+- Grid = energy flows within the district boundary
+- Network = exchanges with the district exterior, through the interface (transformer perspective)
 
 .. _network:
 
@@ -758,18 +793,21 @@ The electricity export and the import is constrained within the feasibility rang
    Energy flows and network constraints in REHO
 
 
-:ref:`network` distinguishes the:
+The maximum capacity of the local low-voltage transformer is determined by the decision variables :math:`\boldsymbol{f_{l}^{net}}` (the capacity of the transformer) and :math:`\boldsymbol{y^{net}_{l}}` (the decision to reinforce the transformer).
+The model considers the existing capacity of the transformer :math:`f_{l}^{ex,net}` and will require an investment cost :math:`\boldsymbol{C^{inv,gr}_{l}}` only if the new capacity :math:`\boldsymbol{f_{l}^{net}}` is larger than the existing one :math:`f_{l}^{ex,net}`.
+The transformer capacity is not a continuous variable. Its values should be within the set :math:`\boldsymbol{G^{net}_l}` of available transformer capacities, whose values are defined in layers.csv (ReinforcementOfNetwork).
 
-- Grid = energy flows within the district boundary
-- Network = exchanges with the district exterior, through the interface (transformer perspective)
 
 .. math::
-        \begin{align}
-            &\sum_{b \in \text{B}}   (\boldsymbol{\dot{E}^{gr,+}_{b,l,p,t}} - \boldsymbol{\dot{E}^{gr,-}_{b,l,p,t}})  \cdot d_p \cdot d_t  = \boldsymbol{E^{net,+}_{l,p,t}} - \boldsymbol{ E^{net,-}_{l,p,t} }         \qquad \forall l, p, t \in \text{L, P, T}
-            \label{grid constraints}\\
-            &\boldsymbol{\dot{E}^{net,\pm}_{l,p,t}}  \leq  \dot{E}^{net, max}_l \qquad \forall l, p, t \in \text{L, P, T}
-            \label{Transformer max}
-        \end{align}
+    \begin{align}
+     &\boldsymbol{f_{l}^{net}} \geq f_{l}^{ex,net}\label{TR_existing_capacity} \qquad \qquad \boldsymbol{f^{net}_{l}} \in \boldsymbol{G^{net}_l}\\
+    &\boldsymbol{\dot{E}_{l,p,t}^{net,\pm}} \leq \boldsymbol{f_{l}^{net}}\label{TR_capacity1}\\
+   &\boldsymbol{y^{net}_{l}}\cdot \max{(\boldsymbol{G^{net}_l})} \geq \boldsymbol{f^{net}_{l}}-f^{ex,net}_{l}  \label{TR_capacity2} \\
+    &\boldsymbol{C^{inv,net}_{l}}=i^{c1,net}_{l}\cdot\boldsymbol{y^{net}_{l}}  +i^{c2,net}_{l}\cdot\left(\boldsymbol{f^{net}_{l}}-f^{ex,net}_{l}(1-\boldsymbol{y^{net}_{l}} )\right) \label{TR_cost} \\
+   &\forall b \in  \text{B} \quad l \in  \text{L} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
+   \end{align}
+
+
 
 Outputs
 ===========================

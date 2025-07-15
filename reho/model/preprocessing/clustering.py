@@ -22,7 +22,7 @@ class Clustering:
         Interval for the number of clusters possible.
     """
 
-    def __init__(self, data, nb_clusters=None, period_duration=24, options=None):
+    def __init__(self, data, nb_clusters=None, period_duration=24, cluster=None, options=None):
         """
         Initializes the Clustering object with the given parameters.
         """
@@ -36,6 +36,7 @@ class Clustering:
         self.results = {"idx": None}
         self.attr_clu = None
         self.kpis_clu, self.nbr_opt = None, None
+        self.cluster = cluster
 
     def run_clustering(self):
         self.__do_normalization()
@@ -89,14 +90,36 @@ class Clustering:
 
     def __execute_clustering(self):
         """
-        Executes the K-Medoids clustering for each number of clusters.
+        Executes the K-Medoids clustering for each number of clusters, keeping clustering per month,
+        but concatenates results to form a yearly DataFrame with the correct shape (365, 1).
         """
         df_res = pd.DataFrame()
 
-        for n_clusters in self.nb_clusters:
-            print('Applying algorithm for', n_clusters, 'clusters')
-            df = self.__run_KMedoids(self.attr_nor, n_clusters)
-            df_res[str(n_clusters)] = df[str(n_clusters)]
+        if "per_month" in self.cluster:
+            if self.cluster["per_month"]:
+                # Define day ranges for each month (0-based indexing)
+                month_day_ranges = { 1: (0, 31), 2: (31, 59), 3: (59, 90), 4: (90, 120), 5: (120, 151), 6: (151, 181),
+                            7: (181, 212), 8: (212, 243), 9: (243, 273), 10: (273, 304), 11: (304, 334), 12: (334, 365)}
+
+                for n_clust_tot in self.nb_clusters:
+                    n_clusters = int(n_clust_tot/ 12)
+                    year_results = pd.DataFrame()
+
+                    for month, (start, end) in month_day_ranges.items():
+                        month_attr_nor = self.attr_nor[start:end, :]
+
+                        df = self.__run_KMedoids(month_attr_nor, n_clusters)
+
+                        df[str(n_clusters)] = df[str(n_clusters)] + start
+                        df.index = self.data_org.index[start:end]
+                        
+                        year_results = pd.concat([year_results, df], axis=0)
+                    df_res[str(n_clust_tot)] = year_results[str(n_clusters)]
+        else:
+            for n_clusters in self.nb_clusters:
+                print('Applying algorithm for', n_clusters, 'clusters')
+                df = self.__run_KMedoids(self.attr_nor, n_clusters)
+                df_res[str(n_clusters)] = df[str(n_clusters)]
 
         df_res.columns.name = "iteration"
         self.results["idx"] = df_res

@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
-    "amplpy",
+    "amplpy==0.14.0",
     "ampl_module_base",
     "ampl_module_highs",
     "coloredlogs",
@@ -40,7 +40,7 @@ dependencies = [
     "plotly",
     "psycopg2<3.0.0 ; sys_platform != 'win32'",
     "psycopg2-binary<3.0.0 ; sys_platform == 'win32'",
-    "pvlib",
+    "pvlib==0.13.0",
     "pyclustering",
     "pyproj",
     "python-dotenv",
@@ -52,6 +52,7 @@ dependencies = [
     "setuptools",
     "shapely",
     "sqlalchemy<2.0.0",
+    "sympy",
     "urllib3"
 ]
 

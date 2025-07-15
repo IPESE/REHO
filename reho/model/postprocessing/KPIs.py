@@ -397,6 +397,18 @@ def postcompute_annual_COP(df_annuals, infrastructure):
 
     return df
 
+def postcompute_actors_KPI(df_Performance, Samples):
+    owner_profit = df_Performance['owner_profit']
+    owner_subsidies = df_Performance['owner_subsidies']
+    owner_expense = df_Performance['Costs_inv'] + df_Performance['Costs_House_upfront']
+    df_PIR = (owner_profit + owner_subsidies) / owner_expense
+    df_Rent_Budget_Ratio = df_Performance['renter_expense'] / Samples['Renter_Epsilon']
+    df = pd.concat([df_PIR, df_Rent_Budget_Ratio], axis=1)
+    df.columns=['PIR', 'Rent_Budget_Ratio']
+
+    return df
+
+
 
 def build_df_profiles_house(df_Results, infrastructure):
     """
@@ -554,6 +566,13 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data):
     # df_G_RES = postcompute_average_emission(local_data, df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time)  # TODO: fix
     # df_G_RES = df_G_RES[['gwp_elec_av', 'gwp_elec_dy']].div(df_hsA.ERA, axis=0)
     # df_G_RES.rename(columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})
+
+    # ------------------------------------------------------------------------------------------------------
+    # Actor KPIs
+    # ------------------------------------------------------------------------------------------------------
+    if "df_Actors" in df_Results:
+        df_Actor_KPI = postcompute_actors_KPI(df_Results['df_Performance'], df_Results['Samples'])
+        df_KPI = pd.concat([df_KPI, df_Actor_KPI], axis=1)  # RES_dy    RES_av
 
     # ------------------------------------------------------------------------------------------------------
     # Technical KPIs

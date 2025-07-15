@@ -70,14 +70,13 @@ class REHO(MasterProblem):
             ampl = reho.build_model_without_solving()
 
             if self.method['fix_units']:
-                for unit in self.fix_units_list:
-                    for h in self.infrastructure.House:
-                        if unit == 'PV':
-                            ampl.getVariable('Units_Mult').get('PV_' + h).fix(self.df_fix_Units.Units_Mult.loc['PV_' + h] * 0.999)
-                            ampl.getVariable('Units_Use').get('PV_' + h).fix(float(self.df_fix_Units.Units_Use.loc['PV_' + h]))
-                        else:
-                            ampl.getVariable('Units_Mult').get(unit + '_' + h).fix(self.df_fix_Units.Units_Mult.loc[unit + '_' + h])
-                            ampl.getVariable('Units_Use').get(unit + '_' + h).fix(float(self.df_fix_Units.Units_Use.loc[unit + '_' + h]))
+                for unit in self.df_fix_Units.index:
+                    if 'PV' in unit:
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
+                    else:
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
 
             ampl.solve()
 
@@ -446,12 +445,14 @@ class REHO(MasterProblem):
         df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
 
         if self.method["actors_problem"]:
-            df_actor = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_District"][
+            #TODO: Add variables
+            df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][
                 ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
-                 'owner_portfolio']]
+                 'owner_profit', 'C_rent_fix', 'renter_expense','renter_subsidies','owner_subsidies', 'Costs_House_upfront', 'is_ins']]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
-            df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors_tariff"]
-            df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][ids['Iter']]["df_Actors"]
+            df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors_tariff"]
+            df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
+            df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
 
         # df_Grid
         df = self.get_final_SPs_results(MP_selection, 'df_Grid')
@@ -532,11 +533,21 @@ class REHO(MasterProblem):
         df_Annuals = pd.concat([df, df_network]).sort_index()
 
         # df_Buildings
-        df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
-        df_Buildings.index.names = ['Hub']
-        for item in ['x', 'y', 'z', 'geometry']:
-            if item in df_Buildings.columns:
-                df_Buildings.drop([item], axis=1)
+        if self.method['refurbishment']:
+            df_Buildings = self.get_final_SPs_results(MP_selection, 'df_Buildings')
+            df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')]
+            df_Buildings = df_Buildings.droplevel(['Hub', 'Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution'])
+            df_Buildings.index.names = ['Hub']
+            for item in ['x', 'y', 'z', 'geometry']:
+                if item in df_Buildings.columns:
+                    df_Buildings.drop([item], axis=1)
+
+        else:
+            df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
+            df_Buildings.index.names = ['Hub']
+            for item in ['x', 'y', 'z', 'geometry']:
+                if item in df_Buildings.columns:
+                    df_Buildings.drop([item], axis=1)
 
         if self.method['use_pv_orientation'] or self.method['use_facades']:
             # PV_Surface
@@ -559,6 +570,7 @@ class REHO(MasterProblem):
         df_Results["df_Grid"] = df_Grid
         df_Results["df_Grid_t"] = df_Grid_t
         df_Results["df_Time"] = df_Time
+        df_Results["df_Buildings"] = df_Buildings
 
         # Add interperiod storage to results dictionary
         if self.method["interperiod_storage"]:
@@ -579,7 +591,6 @@ class REHO(MasterProblem):
             df_Results["df_Interperiod"] = df_interperiod_all
 
         if self.method["save_data_input"]:
-            df_Results["df_Buildings"] = df_Buildings
 
             # df_Weather
             ids = self.number_SP_solutions.iloc[0]

@@ -1,7 +1,7 @@
 import copy
 import gc
 import time
-import warnings
+import multiprocessing as mp
 from itertools import groupby
 
 import coloredlogs
@@ -117,6 +117,7 @@ class MasterProblem:
         else:
             self.DW_params = copy.deepcopy(DW_params)
         self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
+        self.cpu_use = mp.cpu_count()
 
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
         self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'renter_subsidies_bound', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',

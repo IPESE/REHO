@@ -1,4 +1,3 @@
-import multiprocessing as mp
 import os.path
 import pickle
 import openpyxl
@@ -93,7 +92,7 @@ class REHO(MasterProblem):
     def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
 
         # Initiation
-        self.pool = mp.Pool(mp.cpu_count())
+        self.pool = mp.Pool(self.cpu_use)
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
@@ -371,7 +370,7 @@ class REHO(MasterProblem):
 
     def get_DHN_costs(self):
 
-        self.pool = mp.Pool(mp.cpu_count())
+        self.pool = mp.Pool(self.cpu_use)
         self.iter = 0  # new scenario has to start at iter = 0
         method = self.method['building-scale']
         self.method['building-scale'] = True

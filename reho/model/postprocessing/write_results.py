@@ -57,7 +57,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
         df_PerformanceBuilding = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
         df_PerformanceNetwork = pd.concat([df_N1, df_N2, df_N3, df_N4, df_N5, df_N6], axis=1)
 
-        if method['refurbishment']:
+        if method['refurbishment'] is not None:
             df8 = get_ampl_data(ampl, 'Costs_ins') * tau_ins[0]
             df_N8 = pd.DataFrame({'Costs_ins': [df8.sum()['Costs_ins']]})
             df_PerformanceBuilding = pd.concat([df_PerformanceBuilding, df8], axis=1)

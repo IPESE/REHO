@@ -294,7 +294,7 @@ class QBuildingsReader:
             qbuildings['roofs_data'] = self.data['roofs']
 
         if correct_Uh:
-            qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"])
+            qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
 
         if qbuildings["buildings_data"] == {}:
             raise print("Empty building data")
@@ -433,17 +433,29 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
 
     return df_buildings
 
-def get_Uh_corrected(df_buildings, uh_data=None, maping=None, df_facades=None):
+def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
+    """
+    Parameters
+    ----------
+    df_buildings : dict
+        The dictionary of building table from QBuilding
+    uh_data : dataframe
+        Typical U values per building element and construction period.
+        Default values are based on SIA 2024 and Energy Performance Gap bei Instandsetzungen, Literaturstudie Schlussbericht, 17. Januar 2022
+    df_facades : geodataframe
+        Geoataframe of the facades in the case study
+
+    Returns
+    -------
+    dict
+        it returns the dictionary df_buildings with the corrected U values based on uh_data.
+        It as well corrects the area of facades if df_facades if given.
+        [1] KHOURY, Assessment of Geneva multifamily building stock: main characteristics and regression models for
+        energy reference area determination. Geneva : SCCER Future Energy Efficient Buildings & Districts
+    """
 
     if uh_data is None:
-        uh_data = pd.DataFrame([[1.75, 1.05, 1.75, 1.75, 0.25], [1, 1, 1, 1.75, 0.25],
-                            [1.25, 1.05, 1.05, 1.05, 0.25], [1.75, 1.75, 1.75, 1.75, 1]],
-                           columns=["<1920", "1920-1945", "1945-1960", "1960-1990", ">1990"],
-                           index=["footprint", "roof", "facade", "window"])/1000
-    if maping is None:
-        maping = {"<1919": "<1920", "1919-1945": "1920-1945", "1946-1960": "1945-1960", "1961-1970": "1960-1990",
-              "1971-1980": "1960-1990", "1981-1990": "1960-1990", "1991-2000": ">1990", "2001-2005": ">1990",
-              "2006-2010": ">1990", ">2010": ">1990"}
+        uh_data = pd.read_csv(os.path.join(path_to_infrastructure, 'U_values.csv')).set_index("period")
 
     for i in df_buildings:
         df_h = df_buildings[i]
@@ -459,7 +471,7 @@ def get_Uh_corrected(df_buildings, uh_data=None, maping=None, df_facades=None):
         if df_facades is not None:
             facades = df_facades[df_facades["id_building"] == df_h["id_building"]]
             perimeter = np.sum([line.length for line in facades["geometry"]])
-            height = df_h["ERA"] / df_h["area_footprint_m2"] / 0.93 * 2.5
+            height = df_h["ERA"] / df_h["area_footprint_m2"] / 0.93 * 2.5 # [1]
             df_h["area_facade_m2"] = perimeter * height
 
         U_h_ins_data = 0
@@ -470,11 +482,11 @@ def get_Uh_corrected(df_buildings, uh_data=None, maping=None, df_facades=None):
 
             ventilation = 0.7 / 3600 * df_h["ERA"] * 2.5 * (1200 - 0.14 * 400)  # SIA 380/1
 
-            uh_mapped = uh_data[maping[periods[j]]]
-            U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_mapped["facade"] +
-                             df_h['area_footprint_m2'] * uh_mapped["footprint"] +
-                             df_h['area_facade_m2'] * glass_fraction * uh_mapped["window"] +
-                             df_h['SolarRoofArea'] * uh_mapped["roof"] +
+            uh_period = uh_data.loc[periods[j]]
+            U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_period["U_facade"] +
+                             df_h['area_footprint_m2'] * uh_period["U_footprint"] +
+                             df_h['area_facade_m2'] * glass_fraction * uh_period["U_window"] +
+                             df_h['SolarRoofArea'] * uh_period["U_roof"] +
                              ventilation/1000) * ratios[j] / df_h['ERA']
         df_buildings[i]["U_h"] = U_h_ins_data
 

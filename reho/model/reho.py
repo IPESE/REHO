@@ -533,21 +533,17 @@ class REHO(MasterProblem):
         df_Annuals = pd.concat([df, df_network]).sort_index()
 
         # df_Buildings
-        if self.method['refurbishment']:
+        if self.method['refurbishment'] is not None:
             df_Buildings = self.get_final_SPs_results(MP_selection, 'df_Buildings')
             df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')]
             df_Buildings = df_Buildings.droplevel(['Hub', 'Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution'])
-            df_Buildings.index.names = ['Hub']
-            for item in ['x', 'y', 'z', 'geometry']:
-                if item in df_Buildings.columns:
-                    df_Buildings.drop([item], axis=1)
-
         else:
             df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
-            df_Buildings.index.names = ['Hub']
-            for item in ['x', 'y', 'z', 'geometry']:
-                if item in df_Buildings.columns:
-                    df_Buildings.drop([item], axis=1)
+
+        df_Buildings.index.names = ['Hub']
+        for item in ['x', 'y', 'z', 'geometry']:
+            if item in df_Buildings.columns:
+                df_Buildings.drop([item], axis=1)
 
         if self.method['use_pv_orientation'] or self.method['use_facades']:
             # PV_Surface

@@ -699,7 +699,7 @@ def initialize_default_methods(method):
         method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
 
     if 'refurbishment' not in method:
-        method['refurbishment'] = False # decision of refurbishment strategies
+        method['refurbishment'] = None # decision of refurbishment strategies
 
     return method
 

@@ -452,7 +452,7 @@ class REHO(MasterProblem):
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
             df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
 
-        if self.method["refurbishment"] is not None:
+        if self.method["renovation"] is not None:
             df_renovation = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][['is_ins']]
             df_Performance = pd.concat([df_Performance, df_renovation], axis=1)
 
@@ -535,7 +535,7 @@ class REHO(MasterProblem):
         df_Annuals = pd.concat([df, df_network]).sort_index()
 
         # df_Buildings
-        if self.method['refurbishment'] is not None:
+        if self.method['renovation'] is not None:
             df_Buildings = self.get_final_SPs_results(MP_selection, 'df_Buildings')
             df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')]
             df_Buildings = df_Buildings.droplevel(['Hub', 'Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution'])

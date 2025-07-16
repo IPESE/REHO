@@ -479,7 +479,7 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
             glass_fraction = 0.5
             if id_class[j] in ["I", "II"]:
                 glass_fraction = 0.3
-
+            # TODO: add heat recovery
             ventilation = 0.7 / 3600 * df_h["ERA"] * 2.5 * (1200 - 0.14 * 400)  # SIA 380/1
 
             uh_period = uh_data.loc[periods[j]]

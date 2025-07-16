@@ -8,7 +8,7 @@ import reho.model.preprocessing.weather as weather
 from reho.model.preprocessing.skydome import irradiation_to_df
 from reho.model.preprocessing.QBuildings import *
 import reho.model.preprocessing.actors as actors
-from reho.model.preprocessing import refurbishment
+from reho.model.preprocessing import renovation
 
 __doc__ = """
 File for handling data and optimization for an AMPL sub-problem.
@@ -698,8 +698,8 @@ def initialize_default_methods(method):
         method['include_all_solutions'] = False  # avoid interactions between optimization scenarios
         method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
 
-    if 'refurbishment' not in method:
-        method['refurbishment'] = None # decision of refurbishment strategies
+    if 'renovation' not in method:
+        method['renovation'] = None # decision of renovation strategies
 
     return method
 

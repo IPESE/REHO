@@ -2,31 +2,28 @@ from reho.paths import *
 import pandas as pd
 import numpy as np
 import sympy as sp
-import math
-# TODO: add "statsmodels" and "sympy" in to env.
 from scipy.optimize import curve_fit
-
-import random
-
-from collections import defaultdict
 
 __doc__ = """
 Generate maximum rental values
 """
 def generate_renter_expense_max_new(qbuildings, income=None, rent_income_ratio = None):
-    #TODO Change name and be Careful: per person or per household!
     renter_expense_max = []
     rent_percentage = pd.read_csv(os.path.join(path_to_actor, 'rent_proportion.csv'))
     income_thresholds_rent = rent_percentage["Income"].to_numpy() * 12
     if rent_income_ratio != None:
-        rent_income_ratio =  np.array(rent_income_ratio)
+        rent_income_ratio = np.array(rent_income_ratio)
     else:
         rent_income_ratio = rent_percentage["Percentage"].to_numpy()
 
     power_params, _ = curve_fit(power_law, income_thresholds_rent, rent_income_ratio)
     max_rent_pp = power_law(income, power_params[0], power_params[1]) * income
     for b in qbuildings["buildings_data"].keys():
-        renter_expense_max.append(max_rent_pp * qbuildings["buildings_data"][b]['n_p'])
+        id_class = qbuildings["buildings_data"][b]['id_class'].split("/")
+        if max(set(id_class), key=id_class.count) == "I":
+            renter_expense_max.append(max_rent_pp * qbuildings["buildings_data"][b]['ERA']/40)
+        else:
+            renter_expense_max.append(max_rent_pp * qbuildings["buildings_data"][b]['ERA']/60)
     return np.round(renter_expense_max, 0)
 
 # define dagum function to model income distribution
@@ -95,10 +92,6 @@ def get_actor_expenses(actor, building, last_MP_results=None, last_SP_results=No
         prod = sp['df_Unit_t']['Units_supply']['Electricity'].sum()
         grid = sp['df_Grid_t']['Grid_demand']['Electricity'].sum()
         self_cons[b] = prod - grid
-
-    # multiply by cost
-    tariff_sc = last_MP_results['df_Actors_tariff']['Cost_self_consumption']['Electricity']
-    cost_sc = {b: tariff_sc[b] * sc for b, sc in self_cons.items()}
 
     if actor.lower() == "renters":
         renter_expense = last_MP_results['df_District']['renter_expense'][building]

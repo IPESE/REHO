@@ -305,16 +305,18 @@ GWP_constr = sum{u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_ins[h])
 #--------------------------------------------------------------------------------------------------------------------#
 #-CAPITAL EXPENSES
 #--------------------------------------------------------------------------------------------------------------------#
-param Costs_House_limit{h in House} default 0;						# CHF/yr
-param Cost_inv1{u in Units} default 0;								# CHF
-param Cost_inv2{u in Units} default 0;								# CHF/...
-param Costs_ins{h in House} default 0;
-param Costs_House_upfront default 7759;
-
+param ERA{h in House} default 200;											#m2			: Energy reference area
 param n_years default 25;
 param i_rate default 0.02;
 param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
 param tau_ins := i_rate*(1+i_rate)^n_years_ins/(((1+i_rate)^n_years_ins)-1);
+
+param Costs_House_limit{h in House} default 0;						# CHF/yr
+param Cost_inv1{u in Units} default 0;								# CHF
+param Cost_inv2{u in Units} default 0;								# CHF/...
+param Costs_ins{h in House} default 0;
+param Costs_House_upfront_m2 default 7759;
+param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2 / ((1-(1+i_rate)^(-70))/i_rate);
 
 var Costs_Unit_inv{u in Units} >= 0;
 var Costs_Unit_rep{u in Units} >= 0;
@@ -381,7 +383,6 @@ Costs_op = sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]}( (Cost_su
 param HeatCapacity{h in House} default 120;									#Wh/K m2	: Heat capacity
 param U_h{h in House} default 0.002;										#kW/K m2	: Hot total thermal transfer coefficient
 
-param ERA{h in House} default 200;											#m2			: Energy reference area
 param Cooling{h in House} binary, default 0;							    #-			: Binary parameter to enable cooling or not
 param SolarRoofArea{h in House} default ERA[h]/3;							#m2 		: Roof area available for solar
 

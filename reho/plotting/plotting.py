@@ -38,9 +38,9 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     per_m2: bool
         Set to True to obtain the results divided by the total ERA.
     additional_costs: dict
-        Additional costs to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
+        Additional costs to include (choose between 'renovation', 'mobility', and 'ict') and scaling values.
     additional_gwp: dict
-        Additional gwp to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
+        Additional gwp to include (choose between 'renovation', 'mobility', and 'ict') and scaling values.
     scc: float
         Carbon externalities, expressed in *CHF/kgCO2*. Default value is the *Social Cost of Carbon*, from `Rennert, 2022 <https://www.nature.com/articles/s41586-022-05224-9>`_.
     title: str
@@ -316,9 +316,9 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', p
     per_m2: bool
         Set to True to obtain the results divided by the total ERA.
     additional_costs: dict
-        Additional costs to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
+        Additional costs to include (choose between 'renovation', 'mobility', and 'ict') and scaling values.
     additional_gwp: dict
-        Additional gwp to include (choose between 'isolation', 'mobility', and 'ict') and scaling values.
+        Additional gwp to include (choose between 'renovation', 'mobility', and 'ict') and scaling values.
     scc: float
         Carbon externalities, expressed in *CHF/kgCO2*. Default value is the *Social Cost of Carbon*, from `Rennert, 2022 <https://www.nature.com/articles/s41586-022-05224-9>`_.
     title: str

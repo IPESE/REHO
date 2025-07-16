@@ -17,7 +17,7 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['EMOO'] = {}
-    scenario['specific'] = ['Renter_noSub', 'Owner_Link_Subsidy_to_Insulation']
+    scenario['specific'] = ['Renter_noSub', 'Owner_Link_Subsidy_to_renovation']
     scenario["name"] = "actors"
 
     # Choose energy system structure options
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Set method options
-    method = {'actors_problem': True, "refurbishment": False}
+    method = {'actors_problem': True, "renovation": False}
 
     # Initialize available units and grids
     grids = infrastructure.initialize_grids()

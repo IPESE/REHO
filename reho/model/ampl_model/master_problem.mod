@@ -148,13 +148,13 @@ param Uh_ins{f in FeasibleSolutions,h in House} default 0;
 param ins_target default 0;
 var is_ins{h in House} binary; 
 
-subject to Insulation_rate:
+subject to renovation_rate:
 sum{h in House} (is_ins[h] * ERA[h]) >= ins_target * sum{h in House} (ERA[h]);
 
-subject to Insulation1{h in House}:
+subject to renovation1{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= 0.000009 - 10000 * (1 - is_ins[h]);
 
-subject to Insulation2{h in House}:
+subject to renovation2{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 0.000009 + 10000 * is_ins[h];
 
 

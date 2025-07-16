@@ -1,6 +1,6 @@
 from reho.model.preprocessing.QBuildings import *
 
-def U_h_insulation(buildings_data, df_U_values):
+def U_h_renovation(buildings_data, df_U_values):
 
     U_h_data = buildings_data['U_h']
     buildings_data = {"dummy": buildings_data}
@@ -11,18 +11,18 @@ def U_h_insulation(buildings_data, df_U_values):
         U_h_ins_data = U_h_data - 0.00001
     return U_h_ins_data
 
-def select_refurbishment_option(local_data, refurbishment_option):
+def select_renovation_option(local_data, renovation_option):
 
-    options = refurbishment_option.split("/")
+    options = renovation_option.split("/")
     elements = ["facade", "footprint", "roof", "window"]
 
-    df_U_values = local_data["df_Refurbishment_targets"].copy()
+    df_U_values = local_data["df_renovation_targets"].copy()
     columns = ["U_" + item for item in elements]
     columns = [item.replace('U_', 'U_required_') if any(x in item for x in options) else item for item in columns]
     df_Uh = df_U_values[columns].copy()
     df_Uh.columns = df_Uh.columns.str.replace(r'^U_required', 'U', regex=True)
 
-    df_costs = local_data["df_Refurbishment"].copy()
+    df_costs = local_data["df_renovation"].copy()
     for col in elements:
         if col not in options:
             df_costs.loc[df_costs.index.get_level_values('element') == col, :] = 0
@@ -30,11 +30,11 @@ def select_refurbishment_option(local_data, refurbishment_option):
     return df_Uh, df_costs
 
 
-def refurbishment_cost_co2(buildings_data, local_data, refurbishment_option):
+def renovation_cost_co2(buildings_data, local_data, renovation_option):
 
     Uh = buildings_data["U_h"]
-    df_U_values, df_costs = select_refurbishment_option(local_data, refurbishment_option)
-    Uh_ins = U_h_insulation(buildings_data.copy(), df_U_values)
+    df_U_values, df_costs = select_renovation_option(local_data, renovation_option)
+    Uh_ins = U_h_renovation(buildings_data.copy(), df_U_values)
 
     if Uh - Uh_ins < 1e-6:
         impacts = {"cost": 0.0, "gwp": 0.0}

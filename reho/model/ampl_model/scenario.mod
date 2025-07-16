@@ -58,7 +58,7 @@ objective_owners[h] = C_rent_fix[h]
                     + sum{p in Period, t in Time[p], u in UnitsOfType['PV'] inter UnitsOfHouse[h]} ((Units_supply['Electricity',u,p,t] - Grid_demand['Electricity',h,p,t]) * Cost_self_consumption[h])  
                     + sum{l in ResourceBalances, p in Period, t in Time[p]} (Cost_demand_district[h,l] * Grid_demand[l,h,p,t])  
                     - Costs_House_inv[h] * tau
-                    - ERA[h] * Costs_House_upfront / ((1-(1+i_rate)^(-70))/i_rate)
+                    - Costs_House_upfront[h]
                     + owner_subsidies[h];
 
 subject to obj_owners{h in House}:

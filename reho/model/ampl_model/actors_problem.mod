@@ -85,14 +85,15 @@ objective_functions["Utility"] = - utility_profit;
 #--------------------------------------------------------------------------------------------------------------------#
 # Owners constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param Costs_House_upfront{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
+param Costs_House_upfront_m2_MP default 7759;
+param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2_MP /((1-(1+i_rate)^(-70))/i_rate);
 param owner_PIR_min default 0;
 param owner_PIR_max default 0.3;
 
 var owner_profit{h in House};
 
 #Scenario 2 & 2.1 & 3 (Owner_Sub_bigM_ub)
-subject to Owner_Link_Subsidy_to_Insulation{h in House}:
+subject to Owner_Link_Subsidy_to_renovation{h in House}:
 owner_subsidies[h] <= 1e10 * is_ins[h];
 
 subject to Owner_profit{h in House}:

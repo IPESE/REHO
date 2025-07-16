@@ -121,8 +121,7 @@ class MasterProblem:
 
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
         self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'renter_subsidies_bound', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
-                                                'Network_ext', "ff_EV",
-                                                'monthly_grid_connection_cost',
+                                                'Network_ext', "ff_EV", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
                                                 "transport_Units", "DailyDist", "Mode_Speed", "Cost_demand_ext", "EV_supply_ext", "share_activity", "Cost_supply_ext",
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity',
@@ -138,7 +137,7 @@ class MasterProblem:
                                                      'ExternalEV_Costs_positive']
 
         if self.method['actors_problem']:
-            self.lists_MP["list_constraints_MP"] += ['Owner_Link_Subsidy_to_Insulation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub']
+            self.lists_MP["list_constraints_MP"] += ['Owner_Link_Subsidy_to_renovation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub']
 
         self.df_fix_Units = pd.DataFrame()
 
@@ -185,11 +184,12 @@ class MasterProblem:
 
         Returns
         -------
+        scenario : dictionary
+            scenario for the MP
         SP_scenario : dictionary
             scenario for the SP (iterations)
         SP_scenario_init : dictionary
             scenario for the SP (initiation)
-
         """
         SP_scenario = scenario.copy()
         SP_scenario['EMOO'] = {}
@@ -245,31 +245,32 @@ class MasterProblem:
         # check if TOTEX, OPEX or multi-objective optimization -> init with beta
         if self.method["skip_initiation"]:
             init_beta = []
-        elif self.method['building-scale'] or self.method['actors_problem']:
+        elif self.method['building-scale'] or (self.method['actors_problem'] and self.flags[scenario['Objective']] == 0):
             init_beta = [None]  # keep same objective function
         elif not self.method['include_all_solutions'] or self.flags[scenario['Objective']] == 0 or scenario['EMOO']['EMOO_grid'] != 0:
-            self.flags[scenario['Objective']] = 1  # never been optimized with this objective previously
             init_beta = [1000.0, 1, 0.001]
         else:
             init_beta = []  # skip the initialization
 
+        if self.method['include_all_solutions']:
+            self.flags[scenario['Objective']] = 1  # never been optimized with this objective previously
+
         for beta in init_beta:  # execute SP for MP initialization
             self.launch_SP_multiprocessing(scenario, Scn_ID, Pareto_ID, epsilon_init, beta, initiation=True)
-
-            if self.method['refurbishment'] is not None:
-                for option in self.method['refurbishment']:
-                    self.launch_SP_multiprocessing(scenario, Scn_ID, Pareto_ID, None, None, initiation=True, refurbishment_options=option)
+            if self.method['renovation'] is not None:
+                for option in self.method['renovation']:
+                    self.launch_SP_multiprocessing(scenario, Scn_ID, Pareto_ID, None, None, initiation=True, renovation_options=option)
 
         return
 
-    def launch_SP_multiprocessing(self, scenario, Scn_ID, Pareto_ID, epsilon_init, beta, initiation=True, refurbishment_options=None):
+    def launch_SP_multiprocessing(self, scenario, Scn_ID, Pareto_ID, epsilon_init, beta, initiation=True, renovation_options=None):
 
         if self.method['parallel_computation']:
             # to run multiprocesses, a copy of the model is performed with pickles -> make sure there are no ampl libraries
             if initiation:
-                results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, refurbishment_options)) for h in self.infrastructure.houses}
+                results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, renovation_options)) for h in self.infrastructure.houses}
             else:
-                results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h, refurbishment_options)) for h in self.infrastructure.houses}
+                results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h, renovation_options)) for h in self.infrastructure.houses}
 
             # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
             while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
@@ -282,16 +283,16 @@ class MasterProblem:
         else:
             for h in self.infrastructure.houses:
                 if initiation:
-                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, refurbishment_options)
+                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, renovation_options)
                 else:
-                    df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h, refurbishment_options)
+                    df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h, renovation_options)
 
                 self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
         self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
         return
 
-    def SP_initiation_execution(self, scenario, Scn_ID=0, Pareto_ID=1, h=None, epsilon_init=None, beta=None, refurbishment_options=None):
+    def SP_initiation_execution(self, scenario, Scn_ID=0, Pareto_ID=1, h=None, epsilon_init=None, beta=None, renovation_options=None):
         """
         Adapts the model depending on the method, execute the optimization and get the results
 
@@ -323,9 +324,9 @@ class MasterProblem:
         # find district structure and parameter for one single building
         buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h)
 
-        if refurbishment_options is not None:
-            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2(buildings_data_SP[h], self.local_data, refurbishment_options)
-            buildings_data_SP[h]["retrofit"] = refurbishment_options
+        if renovation_options is not None:
+            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
+            buildings_data_SP[h]["renovation"] = renovation_options
 
         # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
         if epsilon_init is not None and self.method['building-scale']:
@@ -584,7 +585,7 @@ class MasterProblem:
                 df_PV_t = pd.concat([df_PV_t, df_Unit_t.xs("PV_" + bui, level="Unit")])
             MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
 
-        if self.method['refurbishment'] is not None:
+        if self.method['renovation'] is not None:
             MP_parameters["Uh"] = pd.DataFrame.from_dict({house: self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})
             MP_parameters["Uh_ins"] = df_Buildings[["U_h"]].rename(columns={"U_h": "Uh_ins"})
 
@@ -715,12 +716,12 @@ class MasterProblem:
             pareto ID
         """
         self.launch_SP_multiprocessing(scenario, Scn_ID, Pareto_ID, None, None, initiation=False)
-        if self.method['refurbishment'] is not None:
-            for option in self.method['refurbishment']:
-                self.launch_SP_multiprocessing(scenario, Scn_ID, Pareto_ID, None, None, initiation=False, refurbishment_options=option)
+        if self.method['renovation'] is not None:
+            for option in self.method['renovation']:
+                self.launch_SP_multiprocessing(scenario, Scn_ID, Pareto_ID, None, None, initiation=False, renovation_options=option)
 
 
-    def SP_execution(self, scenario, Scn_ID, Pareto_ID, h, refurbishment_options=None):
+    def SP_execution(self, scenario, Scn_ID, Pareto_ID, h, renovation_options=None):
         """
         Inserts dual variables in ampl model, apply scenario, adapt model depending on the methods and get results.
 
@@ -769,9 +770,9 @@ class MasterProblem:
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list
 
-        if refurbishment_options is not None:
-            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = refurbishment.refurbishment_cost_co2(buildings_data_SP[h], self.local_data, refurbishment_options)
-            buildings_data_SP[h]["retrofit"] = refurbishment_options
+        if renovation_options is not None:
+            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
+            buildings_data_SP[h]["renovation"] = renovation_options
 
         # Execute optimization
         if self.method['use_facades'] or self.method['use_pv_orientation']:

@@ -1,8 +1,6 @@
 from datetime import timedelta
 from reho.model.preprocessing.sia_parser import *
 from reho.model.preprocessing.QBuildings import *
-import pvlib as pvlib
-from pyproj import Transformer
 
 __doc__ = """
 Generates the buildings profiles for domestic hot water (DHW) demand, domestic electricity demand, internal heat gains, and solar gains.
@@ -346,20 +344,11 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
     g = np.repeat(0.5, len(irr))  # g-value SIA 2024
     g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
 
-    lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'], qbuildings_data['buildings_data']['Building1']['y'])
-    df_sun_position = pd.DataFrame()
-    for day in local_data["df_Timestamp"]["Date"][0:-2]:
-        for i in range(24):
-            df_sun_position = pd.concat([df_sun_position, pvlib.solarposition.get_solarposition(day+timedelta(hours=i), lat, long)])
-    for day in local_data["df_Timestamp"]["Date"][-2:]:
-        df_sun_position = pd.concat([df_sun_position, pvlib.solarposition.get_solarposition(day + timedelta(hours=13), lat, long)])
-    df_sun_position["azimuth"] = df_sun_position["azimuth"] - 90
-
     np_gains = np.array([])
     for b in buildings_data:
         id_building = buildings_data[b]["id_building"]
-        facades_b = facades[facades["id_building"]==id_building]
-        df_angles = pd.DataFrame({idx: 90 - (df_sun_position["azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
+        facades_b = facades[facades["id_building"] == id_building]
+        df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
         df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
         df_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
 

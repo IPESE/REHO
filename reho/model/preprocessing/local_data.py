@@ -63,6 +63,6 @@ def return_local_data(cluster, qbuildings_data):
     local_data["Irr_yearly"] = pd.read_csv(os.path.join(path_to_skydome, 'total_irradiation.csv')).drop(columns=["time"])
 
     # renovation
-    local_data["df_renovation_targets"] = pd.read_csv(os.path.join(path_to_infrastructure, 'U_values.csv')).set_index("period")
+    local_data["df_renovation_targets"] = pd.read_csv(os.path.join(path_to_infrastructure, 'U_values.csv'), sep=";").set_index("period")
     local_data["df_renovation"] = pd.read_csv(os.path.join(path_to_infrastructure, 'renovation.csv')).set_index(["year", "element"])
     return local_data

@@ -455,7 +455,7 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
     """
 
     if uh_data is None:
-        uh_data = pd.read_csv(os.path.join(path_to_infrastructure, 'U_values.csv')).set_index("period")
+        uh_data = pd.read_csv(os.path.join(path_to_infrastructure, 'U_values.csv'), sep=";").set_index("period")
 
     for i in df_buildings:
         df_h = df_buildings[i]

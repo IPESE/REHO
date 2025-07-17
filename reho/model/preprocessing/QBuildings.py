@@ -621,6 +621,11 @@ def neighbourhood_angles(buildings, facades):
         df_district = {buildings: bui for buildings, bui in buildings.items() if bui['id_building'] != id_building}
         df_district = pd.DataFrame.from_dict(df_district, orient='index')
         df_district = df_district.set_index('id_building')
+
+        df_nan = df_district[df_district.height_m.isna()]
+        heights_nan = df_nan["ERA"] / df_nan["area_footprint_m2"] / 0.93 * 2.5
+        df_district.loc[heights_nan.index, "height_m"] = heights_nan
+
         # exclude current building to avoid division with zero
         facades_build = facades[facades.id_building == id_building]  # facades of building
         for f in facades_build.index:

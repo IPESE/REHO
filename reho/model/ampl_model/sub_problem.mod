@@ -316,7 +316,9 @@ param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
 param Costs_ins{h in House} default 0;
 param Costs_House_upfront_m2 default 7759;
-param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2 / ((1-(1+i_rate)^(-70))/i_rate);
+param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2;
+param mortage_rate default 0.02;
+param Costs_House_yearly{h in House} := Costs_House_upfront[h]/100 + Costs_House_upfront[h] * 0.8 * mortage_rate;
 
 var Costs_Unit_inv{u in Units} >= 0;
 var Costs_Unit_rep{u in Units} >= 0;

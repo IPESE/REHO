@@ -86,7 +86,9 @@ objective_functions["Utility"] = - utility_profit;
 # Owners constraints
 #--------------------------------------------------------------------------------------------------------------------#
 param Costs_House_upfront_m2_MP default 7759;
-param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2_MP /((1-(1+i_rate)^(-70))/i_rate);
+param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2_MP;
+param mortage_rate default 0.02;
+param Costs_House_yearly{h in House} := Costs_House_upfront[h]/100 + Costs_House_upfront[h] * 0.8 * mortage_rate;
 param owner_PIR_min default 0;
 param owner_PIR_max default 0.3;
 
@@ -97,7 +99,7 @@ subject to Owner_Link_Subsidy_to_renovation{h in House}:
 owner_subsidies[h] <= 1e10 * is_ins[h];
 
 subject to Owner_profit{h in House}:
-owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_upfront[h];
+owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_yearly[h];
 
 #Scenario 2.1 (Owner2)
 subject to Owner_profit_max_PIR{h in House}:

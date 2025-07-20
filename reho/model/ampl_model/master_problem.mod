@@ -152,10 +152,10 @@ subject to renovation_rate:
 sum{h in House} (is_ins[h] * ERA[h]) >= ins_target * sum{h in House} (ERA[h]);
 
 subject to renovation1{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= 0.000009 - 10000 * (1 - is_ins[h]);
+Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= Uh[h]/3 - 10000* (1 - is_ins[h]);
 
 subject to renovation2{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 0.000009 + 10000 * is_ins[h];
+Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 10000 * is_ins[h];
 
 
 ######################################################################################################################

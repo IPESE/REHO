@@ -1233,7 +1233,7 @@ class MasterProblem:
         col = self.number_SP_solutions.columns.difference(["House"])
         self.number_MP_solutions = self.number_SP_solutions[col].groupby('MP_solution').mean(numeric_only=True)
 
-    def split_parameter_sets_per_building(self, h, parameters_SP=dict({}), set_indexed_SP=dict({})):
+    def split_parameter_sets_per_building(self, h, parameters_SP=None, set_indexed_SP=None):
         """
         Some inputs are for the district and some other for the houses. This function fuses the two
         and gives the parameters per house. This is important to run an optimization on a single building
@@ -1256,6 +1256,10 @@ class MasterProblem:
         set_indexed_SP: dict
             The set_indexed variable without the values concerning only the master problem (district scale)
         """
+        if parameters_SP == None:
+            parameters_SP = dict()
+        if set_indexed_SP == None:
+            set_indexed_SP = dict()
         ID = np.where(h == self.infrastructure.House)[0][0]
         buildings_data_SP = {h: self.buildings_data[h].copy()}
 

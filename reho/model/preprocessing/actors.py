@@ -8,7 +8,6 @@ __doc__ = """
 Generate maximum rental values
 """
 def generate_renter_expense_max_new(qbuildings, income=None, rent_income_ratio = None, types=["rent"]):
-    renter_expense_max = []
     rent_percentage = pd.read_csv(os.path.join(path_to_actor, 'rent_proportion.csv'))
     income_thresholds_rent = rent_percentage["Income"].to_numpy() * 12
     if rent_income_ratio != None:
@@ -18,13 +17,15 @@ def generate_renter_expense_max_new(qbuildings, income=None, rent_income_ratio =
 
     power_params, _ = curve_fit(power_law, income_thresholds_rent, rent_income_ratio)
     max_rent_pp = power_law(income, power_params[0], power_params[1]) * income
+
+    renter_expense_max = {}
     for b in qbuildings["buildings_data"].keys():
         id_class = qbuildings["buildings_data"][b]['id_class'].split("/")
         if max(set(id_class), key=id_class.count) == "I":
-            renter_expense_max.append(max_rent_pp * qbuildings["buildings_data"][b]['ERA']/40)
+            renter_expense_max[b] = max_rent_pp * qbuildings["buildings_data"][b]['ERA']/40
         else:
-            renter_expense_max.append(max_rent_pp * qbuildings["buildings_data"][b]['ERA']/60)
-    return np.round(renter_expense_max, 0)
+            renter_expense_max[b] = max_rent_pp * qbuildings["buildings_data"][b]['ERA']/60
+    return pd.DataFrame.from_dict(renter_expense_max, orient="Index", columns=["renter_expense_max"])
 
 # define dagum function to model income distribution
 def dagum_cdf(x, lambda_, delta, beta):

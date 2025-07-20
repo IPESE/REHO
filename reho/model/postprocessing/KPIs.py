@@ -400,7 +400,7 @@ def postcompute_annual_COP(df_annuals, infrastructure):
 def postcompute_actors_KPI(df_Performance, Samples):
     owner_profit = df_Performance['owner_profit']
     owner_subsidies = df_Performance['owner_subsidies']
-    owner_expense = df_Performance['Costs_inv'] + df_Performance['Costs_House_upfront']
+    owner_expense = df_Performance['Costs_inv'] + df_Performance['Costs_House_yearly']
     df_PIR = (owner_profit + owner_subsidies) / owner_expense
     df_Rent_Budget_Ratio = df_Performance['renter_expense'] / Samples['Renter_Epsilon']
     df = pd.concat([df_PIR, df_Rent_Budget_Ratio], axis=1)

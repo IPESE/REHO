@@ -670,7 +670,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df7 = get_ampl_data(ampl, 'C_rent_fix')
         df8 = get_ampl_data(ampl, 'renter_subsidies')
         df9 = get_ampl_data(ampl, 'owner_subsidies')
-        df10 = get_ampl_data(ampl, 'Costs_House_upfront') # Upfront investment costs in buildings
+        df10 = get_ampl_data(ampl, 'Costs_House_yearly') # Upfront investment costs in buildings
 
         df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10], axis=1)
         df_network = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))

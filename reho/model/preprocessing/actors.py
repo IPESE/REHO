@@ -7,14 +7,14 @@ from scipy.optimize import curve_fit
 __doc__ = """
 Generate maximum rental values
 """
-def generate_renter_expense_max_new(qbuildings, income=None, rent_income_ratio = None):
+def generate_renter_expense_max_new(qbuildings, income=None, rent_income_ratio = None, types=["rent"]):
     renter_expense_max = []
     rent_percentage = pd.read_csv(os.path.join(path_to_actor, 'rent_proportion.csv'))
     income_thresholds_rent = rent_percentage["Income"].to_numpy() * 12
     if rent_income_ratio != None:
         rent_income_ratio = np.array(rent_income_ratio)
     else:
-        rent_income_ratio = rent_percentage["Percentage"].to_numpy()
+        rent_income_ratio = rent_percentage[["Percentage_"+i for i in types]].sum(axis=1).to_numpy()
 
     power_params, _ = curve_fit(power_law, income_thresholds_rent, rent_income_ratio)
     max_rent_pp = power_law(income, power_params[0], power_params[1]) * income
@@ -102,7 +102,7 @@ def get_actor_expenses(actor, building, last_MP_results=None, last_SP_results=No
         owner_prof = last_MP_results['df_District']['owner_profit'][building]
         owner_sub = last_MP_results['df_District']['owner_subsidies'][building]
         owner_inv = last_MP_results['df_District']['Costs_inv'][building]
-        owner_upfront = last_MP_results['df_District']['Costs_House_upfront'][building]
+        owner_upfront = last_MP_results['df_District']['Costs_House_yearly'][building]
         owner_pir_min = last_MP_results['Samples']['Owner_PIR_min'].iloc[0,0]
 
         owner_exp = owner_prof + owner_sub - owner_pir_min * (owner_inv + owner_upfront)

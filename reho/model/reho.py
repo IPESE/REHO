@@ -445,7 +445,7 @@ class REHO(MasterProblem):
 
         if self.method["actors_problem"]:
             features = ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
-                        'owner_profit', 'C_rent_fix', 'renter_expense', 'renter_subsidies', 'owner_subsidies', 'Costs_House_upfront']
+                        'owner_profit', 'C_rent_fix', 'renter_expense', 'renter_subsidies', 'owner_subsidies', 'Costs_House_yearly']
             df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][features]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
             df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors_tariff"]

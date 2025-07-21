@@ -211,7 +211,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'ElectricalHeater_other',
         'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
         'AirConditioner', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district',
-        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district',
+        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district','Datacentre_district', 'ORC_DC_district'
     ]
 
     # Services that can be provided by the devices: ['SH', 'DHW', 'Cooling', 'rSOC_heat']

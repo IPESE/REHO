@@ -1,7 +1,8 @@
 import itertools as itertools
 import logging
+import os
 
-from amplpy import AMPL, Environment
+from amplpy import AMPL, Environment, add_to_path
 
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
 import reho.model.preprocessing.weather as weather
@@ -113,6 +114,9 @@ class SubProblem:
                 ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
                 raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+        elif "AMPL_PATH" not in os.environ:
+            add_to_path("/Users/ravi/ampl")
+            ampl = AMPL()
         else:
             try:
                 from amplpy import modules
@@ -244,7 +248,7 @@ class SubProblem:
                 ampl.getSet(str(s)).setValues(self.infrastructure_sp.Set[s])
             elif isinstance(self.infrastructure_sp.Set[s], dict):
                 for i, instance in ampl.getSet(str(s)):
-                    instance.setValues(self.infrastructure_sp.Set[s][i])
+                    instance.setValues(self.infrastructure_sp.Set[s][i[0]])
             else:
                 raise ValueError('Type Error setting AMPLPY Set', s)
 

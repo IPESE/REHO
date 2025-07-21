@@ -92,6 +92,8 @@ WaterTankDHW,Water tank (DHW),WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux
 ,,,,,
 DataHeat_SH,Data centers,ICT,Centre de données,#ffcc99,skin
 DataHeat_DHW,Data centers (DHW),ICT,Centre de données (ECS),#ffcc99,skin
+ORC_DC_district,Organic Rankine Cycle,ORC,ORC,#FF8C00,orange
+Datacentre_district,Data centers,ICT,Centre de données (ECS),#ffcc99,skin
 ,,,,,
 AirConditioner,Air conditioner,AC,Climatiseur,#00008b,darkblue
 Cooling,Space cooling,SC,Demande en froid,#00008b,darkblue

@@ -152,7 +152,7 @@ subject to renovation_rate:
 sum{h in House} (is_ins[h] * ERA[h]) >= ins_target * sum{h in House} (ERA[h]);
 
 subject to renovation1{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= Uh[h]/3 - 10000* (1 - is_ins[h]);
+Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= Uh[h]/10 - 10000* (1 - is_ins[h]);
 
 subject to renovation2{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 10000 * is_ins[h];
@@ -365,9 +365,10 @@ var penalties default 0;
 
 var renter_subsidies{h in House} >= 0;
 var owner_subsidies{h in House} >= 0;
+var penalty_actors >= 0;
 
 subject to penalties_contraints:
-penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op +
+penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op + penalty_actors + 
             sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
              + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]);
 

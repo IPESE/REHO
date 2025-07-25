@@ -97,6 +97,18 @@ and the existing electrical grid.
 REHO integrates the deployment of solar panels on roofs and facades, with the possibility to take into consideration the
 orientation of surfaces (i.e., tilt and azimuth of PV panels as decision variables).
 
+ICT Integration
+--------------
+The district level data centers within REHO are assumed to be liquid cooled data centers,
+which produce heat at a temperature of 75 °C, modelled using the Power Usage Effectiveness (PUE) of 1.3,
+which is a ratio of the total energy consumed by the data center to the energy consumed by the IT equipment
+and also a utilisation rate of 0.327, which is a measure of how busy the servers are at any given time.
+The heat produced could then be used to generate electricity through an Organic Rankine Cycle (ORC) with an efficiency of 9%.
+The demand for the data centers can be parsed from the front end through an average known value of electricity consumption
+of data centers in an urban energy hub considered in a given study to which the model can choose between importing (outsourcing) the data
+to cloud servers or by installing a district level data center.
+
+
 Electric mobility
 -----------------
 

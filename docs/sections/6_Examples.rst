@@ -150,3 +150,10 @@ District-scale rSOC with IP storage
 ====================================
 
 .. literalinclude:: ../../scripts/examples/7c_district_IP.py
+
+8. Data centers and Organic Rankine Cycles
+--------------------------
+
+Liquid cooled data centers (direct-on-chip cooling) produce heat at a temperature of 60-75 °C, which can be used for district heating networks or valorised with Organic Rankine Cycles. This example shows how the demand for data can be set through an average known value of electricity consumption of data centers in an urban energy hub and how the waste heat from such district level data centers can be utilised through an Organic Rankine Cycle. Assuming a temperature of 75 degree Celcius the cycle efficiency as estimated from OSMOSE tool is utilised to abstract the model here.
+
+.. literalinclude:: ../../scripts/examples/8a_datacenter.py

@@ -308,6 +308,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 ('MTR', 'rSOC', 'rSOC_district', 'Demand_MWh', False, None, -elec_heater_to_rSOC_distr, 1),
                 ('MTR', 'DHN', 'MTR_district', 'Supply_MWh', False, None, -rSOC_distr_heat_need + elec_heater_to_rSOC_distr, 1),
                 ('ElectricalHeater_other', 'rSOC', 'ElectricalHeater_other_district', 'Supply_MWh', False, None, 0, 1),
+                ('Datacentre_district','ORC_DC_district', 'ORC_DC_district', 'Demand_MWh', False, None, 0, 1),
             ],
             'electricity_consumption': [
             ]
@@ -366,7 +367,6 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_district', 'Supply_MWh', False, None, 0, 1),
                 ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_charger_district', 'Demand_MWh', False, None, 0, 1),
                 ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1)
-
             ]
 
         }

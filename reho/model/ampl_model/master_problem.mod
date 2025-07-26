@@ -146,10 +146,15 @@ Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
 param Uh{h in House} default 0;
 param Uh_ins{f in FeasibleSolutions,h in House} default 0;
 param ins_target default 0;
+param ins_target_max default 1;
 var is_ins{h in House} binary; 
 
 subject to renovation_rate:
 sum{h in House} (is_ins[h] * ERA[h]) >= ins_target * sum{h in House} (ERA[h]);
+
+subject to renovation_rate_max:
+sum{h in House} (is_ins[h] * ERA[h]) <= ins_target_max * sum{h in House} (ERA[h]);
+
 
 subject to renovation1{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= Uh[h]/10 - 10000* (1 - is_ins[h]);

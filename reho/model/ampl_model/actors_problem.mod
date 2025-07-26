@@ -48,11 +48,11 @@ C_op_renters_to_owners[h] = sum{f in FeasibleSolutions, p in PeriodStandard, t i
 subject to Renter1{h in House}:
 renter_expense[h] = C_rent_fix[h] + C_op_renters_to_utility[h] + C_op_renters_to_owners[h];
 
-subject to Rent_fix{h in House, i in House : h != i}:
-(C_rent_fix[h] / ERA[h]) <= 1.2 * (C_rent_fix[i] / ERA[i]); 
+#subject to Rent_fix{h in House, i in House : h != i}:
+#(C_rent_fix[h] / ERA[h]) <= 1.2 * (C_rent_fix[i] / ERA[i]); 
 
-subject to Rent_fix2{h in House, i in House : h != i}:
-(C_rent_fix[h] / ERA[h]) >= 0.8 * (C_rent_fix[i] / ERA[i]);
+#subject to Rent_fix2{h in House, i in House : h != i}:
+#(C_rent_fix[h] / ERA[h]) >= 0.8 * (C_rent_fix[i] / ERA[i]);
 
 subject to Renter_noSub{h in House}:
 renter_subsidies[h] = 0;

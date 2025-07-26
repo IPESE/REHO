@@ -119,7 +119,7 @@ objective_functions["Owners"] = - sum{h in House}(owner_profit[h]);
 #--------------------------------------------------------------------------------------------------------------------#
 
 subject to penalty_actors_obj_fct:
-penalty_actors = sum{a in Actors}(objective_functions[a]);
+penalty_actors = sum{h in House} (C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] + C_op_renters_to_utility[h]);
 
 minimize TOTEX_actor:
 sum {a in ActorObjective} objective_functions[a] + penalty_ratio * (Costs_inv + Costs_op + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]));

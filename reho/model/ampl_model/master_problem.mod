@@ -157,7 +157,7 @@ sum{h in House} (is_ins[h] * ERA[h]) <= ins_target_max * sum{h in House} (ERA[h]
 
 
 subject to renovation1{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= Uh[h]/10 - 10000* (1 - is_ins[h]);
+Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= Uh[h]/100 - 10000* (1 - is_ins[h]);
 
 subject to renovation2{h in House}:
 Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 10000 * is_ins[h];

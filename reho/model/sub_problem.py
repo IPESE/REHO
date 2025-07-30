@@ -585,6 +585,7 @@ class SubProblem:
         ampl.getConstraint('disallow_exchanges_1').drop()
         ampl.getConstraint('disallow_exchanges_2').drop()
         ampl.getConstraint('no_ElectricalHeater_without_HP').drop()
+        ampl.getConstraint('no_NG_boiler_with_HP').drop()
         ampl.getConstraint('forced_H2_annual_export').drop()
         ampl.getConstraint('forced_H2_fixed_daily_export').drop()
 

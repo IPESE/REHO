@@ -475,6 +475,9 @@ subject to House_EB_cyclic1{h in House,p in Period,t in Time[p]:t=last(Time[p])}
 subject to no_ElectricalHeater_without_HP{h in House}:
 2 * sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ElectricalHeater'] inter UnitsOfHouse[h]} Units_Use[ui];
 
+subject to no_NG_boiler_with_HP{h in House}:
+sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} (Units_Use[uj]) + sum{ui in UnitsOfType['NG_Boiler'] inter UnitsOfHouse[h]} (Units_Use[ui]) <= 1;
+
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 # GRID

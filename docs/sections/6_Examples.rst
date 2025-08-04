@@ -92,6 +92,19 @@ Include capacities of networks for imports and exports
 .. literalinclude:: ../../scripts/examples/3j_Transformer_capacities.py
    :language: python
 
+Include buildings renovation options
+===========================================================
+The renovation method consists in a list of renovation option. Each option contains building elements to renovate. The order doesn't matter. The buildings elements are window, facade, roof and footprint.
+For each option, an additional SP is run with the U value of the renovated building, calculated based on the file ``infrastructure/U_values.csv``.
+The MP will receive at each iteration one solution with non-renovated buildings and one solution per renovated option.
+To keep consistency, the non-renovated U value of the buildings should be taken using the functions *reader.read_db* or *read_csv* with the option *correct_Uh=True*.
+This option uses the values in ``infrastructure/U_values.csv`` instead of the U values from QBuilding.
+Investment costs and embodied emissions are calculated based on the file ``infrastructure/renovation.csv``.
+
+.. literalinclude:: ../../scripts/examples/3k_renovation.py
+   :language: python
+
+
 4. Global features
 --------------------
 

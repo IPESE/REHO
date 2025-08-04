@@ -156,11 +156,11 @@ subject to renovation_rate_max:
 sum{h in House} (is_ins[h] * ERA[h]) <= ins_target_max * sum{h in House} (ERA[h]);
 
 
-subject to renovation1{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= Uh[h]/100 - 10000* (1 - is_ins[h]);
+subject to renovation1{h in House}: # constraints times 1e3 to facilitate convergence
+1e3 * (Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) ) >= 1e3 * (Uh[h]/100) - 10000* (1 - is_ins[h]);
 
 subject to renovation2{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 10000 * is_ins[h];
+1e3 * (Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])) <= 10000 * is_ins[h];
 
 
 ######################################################################################################################

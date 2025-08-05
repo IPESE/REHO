@@ -492,27 +492,27 @@ Building-level units
 .. table:: Overview of building-level units in REHO: Input and output streams, the reference unit of each technology
     :name: tbl-building-units
 
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Technology                      | Input stream              | Output stream     | Reference unit |
-    +=================================+===========================+===================+================+
-    | Energy conversion technologies  |                           |                   |                |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Heat pump                       | electricity               | heat              |   $$kW_{th}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Electrical heater               | electricity               | heat              |  $$kW_{th}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | PV panel                        | solar irradiation         | electricity       |   $$kW_{p}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Storage technologies            |                           |                   |                |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Thermal storage                 | heat                      | heat              |     $$L$$      |
-    +---------------------------------+---------------------------+-------------------+----------------+
-    | Battery                         | electricity               | electricity       |    $$kWh$$     |
-    +---------------------------------+---------------------------+-------------------+----------------+
++---------------------------------+---------------------------+-------------------+----------------+
+| Technology                      | Input stream              | Output stream     | Reference unit |
++---------------------------------+---------------------------+-------------------+----------------+
+| Energy conversion technologies  |                           |                   |                |
++---------------------------------+---------------------------+-------------------+----------------+
+| Gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| Heat pump                       | electricity               | heat              |   $$kW_{th}$$  |
++---------------------------------+---------------------------+-------------------+----------------+
+| Electrical heater               | electricity               | heat              |  $$kW_{th}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| PV panel                        | solar irradiation         | electricity       |   $$kW_{p}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| Cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
++---------------------------------+---------------------------+-------------------+----------------+
+| Storage technologies            |                           |                   |                |
++---------------------------------+---------------------------+-------------------+----------------+
+| Thermal storage                 | heat                      | heat              |     $$L$$      |
++---------------------------------+---------------------------+-------------------+----------------+
+| Battery                         | electricity               | electricity       |    $$kWh$$     |
++---------------------------------+---------------------------+-------------------+----------------+
 
 District-level units
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -549,9 +549,15 @@ The units cannot be used at the building-scale.
 +------------------------------------------+---------------------------+------------------------+----------------+
 | Battery                                  | electricity               | electricity            |    $$kWh$$     |
 +------------------------------------------+---------------------------+------------------------+----------------+
+| Data Center                              | electricity               | electricity,heat       |    $$kW_{e}$$  |
++------------------------------------------+---------------------------+------------------------+----------------+
+| Organic Rankine Cycle (Data Center)      | heat                      | electricity            |    $$kW_{e}$$  |
++------------------------------------------+---------------------------+------------------------+----------------+
 
 .. note::
-    EVs are not directly connected to the Layer *electricity*.  Rather, intermediate variables representing the exchanges between EVs and charging stations are used, and the import of electricity from the Grid to charge the vehicles can be observed through the EV charger demand :math:`\boldsymbol{\sum_{u \in EVcharger}\dot{E}_{u,p,t}^{-}}` (see :ref:`annex <fig-mob1>`). 
+
+EVs are not directly connected to the Layer *electricity*.  Rather, intermediate variables representing the exchanges between EVs and charging stations are used, and the import of electricity from the Grid to charge the vehicles can be observed through the EV charger demand :math:`\boldsymbol{\sum_{u \in EVcharger}\dot{E}_{u,p,t}^{-}}` (see :ref:`annex <fig-mob1>`).
+
 
 Model
 ===========================

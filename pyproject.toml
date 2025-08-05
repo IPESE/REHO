@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
-    "amplpy==0.14.0",
+    "amplpy==0.15.2",
     "ampl_module_base",
     "ampl_module_highs",
     "coloredlogs",

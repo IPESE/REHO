@@ -18,8 +18,8 @@ if __name__ == '__main__':
     scenario['exclude_units'] = []
     scenario['enforce_units'] = []
 
-    # The renovation method consists in a list of renovation option.
-    # Each option contains building elements to renovate. The order doesn't matter.
+    # The "renovation" method consists in a list of renovation options.
+    # Each option contains building elements to renovate. The order does not matter.
     method = {'building-scale': True, "renovation": ["window/facade/roof/footprint", "window/facade", "roof"]}
 
     # Initialize available units and grids

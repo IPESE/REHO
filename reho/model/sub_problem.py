@@ -246,7 +246,7 @@ class SubProblem:
                 ampl.getSet(str(s)).setValues(self.infrastructure_sp.Set[s])
             elif isinstance(self.infrastructure_sp.Set[s], dict):
                 for i, instance in ampl.getSet(str(s)):
-                    instance.setValues(self.infrastructure_sp.Set[s][i])
+                    instance.setValues(self.infrastructure_sp.Set[s][i[0]])
             else:
                 raise ValueError('Type Error setting AMPLPY Set', s)
 

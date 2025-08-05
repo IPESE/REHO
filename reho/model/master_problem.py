@@ -127,7 +127,7 @@ class MasterProblem:
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity',
                                                 "max_share", "min_share", "max_share_modes", "min_share_modes", "n_ICEperhab",
                                                 "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Ext_district",
-                                                "Network_lifetime"],
+                                                "Network_lifetime", "data_EUD_avg"],
                          "list_constraints_MP": [],
                          "list_set_indexed_MP": ["Districts", "Distances"]
                          }
@@ -471,6 +471,10 @@ class MasterProblem:
                 ampl_MP.read('methanator_district.mod')
             if "ElectricalHeater_other_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('electrical_heater_district.mod')
+            if "Datacenter_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('datacenter_district.mod')
+            if "ORC_DC_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ORC_DC_district.mod')
         if read_DHN:
             ampl_MP.read('dhn.mod')
 
@@ -634,7 +638,7 @@ class MasterProblem:
                 ampl_MP.getSet(str(s)).setValues(MP_set_indexed[s])
             elif isinstance(MP_set_indexed[s], dict):
                 for i, instance in ampl_MP.getSet(str(s)):
-                    instance.setValues(MP_set_indexed[s][i])
+                    instance.setValues(MP_set_indexed[s][i[0]])
             elif isinstance(MP_set_indexed[s], pd.DataFrame):
                 ampl_MP.setData(MP_set_indexed[s])
             else:
@@ -646,10 +650,10 @@ class MasterProblem:
         for i, value in ampl_MP.getVariable('Units_Use').instances():
             for u in exclude_units:
                 if u in i:
-                    ampl_MP.getVariable('Units_Use').get(str(i)).fix(0)
+                    ampl_MP.getVariable('Units_Use').get(str(i[0])).fix(0)
             for u in enforce_units:
                 if u in i:
-                    ampl_MP.getVariable('Units_Use').get(str(i)).fix(1)
+                    ampl_MP.getVariable('Units_Use').get(str(i[0])).fix(1)
 
         for i in MP_parameters:
             if isinstance(MP_parameters[i], np.ndarray):

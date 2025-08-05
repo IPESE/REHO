@@ -6,12 +6,13 @@ from scipy.optimize import curve_fit
 
 
 __doc__ = """
-Generate maximum rental values
+Generate boundaries for actors.
 """
+
 def generate_renter_expense_max_new(qbuildings, income=None, rent_income_ratio = None, types=["rent"]):
     rent_percentage = pd.read_csv(os.path.join(path_to_actor, 'rent_proportion.csv'))
     income_thresholds_rent = rent_percentage["Income"].to_numpy() * 12
-    if rent_income_ratio != None:
+    if rent_income_ratio is not None:
         rent_income_ratio = np.array(rent_income_ratio)
     else:
         rent_income_ratio = rent_percentage[["Percentage_"+i for i in types]].sum(axis=1).to_numpy()

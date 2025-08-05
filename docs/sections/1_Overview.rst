@@ -51,28 +51,36 @@ Features
 ========
 
 Building stock database
------------------------
+----------------------------
 
 Each building to be optimized needs to be characterized to estimate its energy demand, its renewable potential, and its sector coupling potential.
-REHO embeds a coupling with `QBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_,
+REHO embeds a coupling with `QBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/>`_,
 a GIS database characterizing the entire Swiss building stock from an energy point of view (end-use demand, buildings morphology, endogenous resources).
 This database is built by gathering different public databases and combining with norms and standard energy requirements
-as defined by the Société suisse des Ingénieurs et des Architectes (SIA).
-REHO therefore contains default values for characterizing the building stock and generating their end-use demand profiles.
-Furthermore all these parameters can be overwritten with available measurements.
+as defined by the Société suisse des *Ingénieurs et des Architectes* (SIA).
+REHO therefore contains default values for characterizing the building stock and generating the end-use demand profiles.
+Statistical parameters can be overwritten with available measurements.
 
 For the optimization of buildings that are not part of the QBuildings database, REHO can also simply read out the relevant information from CSV files.
 
 Typical days
-------------
+----------------------------
 
 The task of optimally designing and scheduling energy systems with a high share of renewable energies is complex and computationally demanding.
 REHO includes machine learning techniques to cluster yearly input data to typical periods.
 The model operates in the conventional way with typical periods of 24 hours, but can be freely adapted to a finer or coarser granularity as required.
 
+Thermal envelope
+----------------------------
 
-Energy communities
-------------------
+Thermal envelope insulation is a cornerstone of building retrofitting as it directly reduces conductive heat losses through walls, roofs, and floors,
+thereby lowering total space heating demand and improving overall energy performance.
+Upgrading insulation to standards is a crucial step for enabling effective integration of renewable heat sources.
+REHO integrates a dynamic approach to assess the best-suited decision among a list of renovation options, encompassing
+all other constraints of the multi-objective optimization model.
+
+Buildings coordination
+----------------------------
 
 An energy community allows buildings to exchange energy flows with each other and share mutualized equipment.
 They improve the self-consumption of local resources by coupling distributed energy sources, and enhance the energy efficiency by supplying multiple services to the consumers.
@@ -89,7 +97,7 @@ problem into a master problem and subproblems. The master problem adopts the tra
 while a subproblem is defined for each building connected to this transformer.
 
 PV integration
---------------
+----------------------------
 
 Given the pivotal role of photovoltaic (PV) systems in the energy transition, their optimal deployment is of paramount
 importance and must take into account the specific characteristics of the building morphology, the local solar irradiance,
@@ -97,35 +105,32 @@ and the existing electrical grid.
 REHO integrates the deployment of solar panels on roofs and facades, with the possibility to take into consideration the
 orientation of surfaces (i.e., tilt and azimuth of PV panels as decision variables).
 
-ICT Integration
---------------
-The district level data centers within REHO are assumed to be liquid cooled data centers,
-which produce heat at a temperature of 75 °C, modelled using the Power Usage Effectiveness (PUE) of 1.3,
-which is a ratio of the total energy consumed by the data center to the energy consumed by the IT equipment
-and also a utilisation rate of 0.327, which is a measure of how busy the servers are at any given time.
-The heat produced could then be used to generate electricity through an Organic Rankine Cycle (ORC) with an efficiency of 9%.
-The demand for the data centers can be parsed from the front end through an average known value of electricity consumption
-of data centers in an urban energy hub considered in a given study to which the model can choose between importing (outsourcing) the data
-to cloud servers or by installing a district level data center.
+ICT integration
+----------------------------
 
+Facing the growing demand for data processing, data storage and data transmission, an essential aspect of energy integration relates
+to datacenters. REHO allows to investigate the economic and environmental rationales of decentralized computing capacities integrated into the building stock.
+These units can be installed at building or district-level, and their residual heat can be valorized using either air or liquid cooling models.
+Operation and effectiveness of the datacenters can be parameterized, as well as their utilization rate or the demand profile they have to satisfy for data processing.
 
 Electric mobility
------------------
+----------------------------
 
 The electrification of mobility is at the heart of the energy transition in urban environments.
 REHO enables the integration of electric vehicles into neighborhoods, including the possibility of intelligent
 unidirectional or bidirectional charging. The fleet of electric vehicles can thus be used to provide an energy storage service.
 
-Transformer and lines constraints
----------------------------------
+Grid reinforcement
+----------------------------
 
 As the electrification of heating and mobility sectors gains momentum, the demands placed on the electricity grid are
 expected to further escalate. The existing electrical grid, originally designed for centralized power generation and
 unidirectional energy flow, now faces new demands and complexities.
 These challenges encompass managing the variability in electricity supply resulting from renewable energy integration
 and addressing the increasing electrification of diverse sectors.
-REHO allows for the consideration of the local low-voltage grid characteristics, through hard (maximum line capacity,
-maximum transformer capacity) or soft constraints (power peaks mitigation, grid usage penalty).
+REHO allows for the consideration of the local low-voltage grid characteristics, through hard (maximum line and transformer capacity)
+or soft constraints (power peaks mitigation, grid usage penalty).
+Grid reinforcement allows to consider the extension of the grid capacity as a decision variable.
 
 District heating and cooling
 ----------------------------
@@ -133,3 +138,17 @@ District heating and cooling
 District heating and cooling (DHC) systems have a large potential to support the decarbonization of the heating and cooling needs.
 REHO enables the deployment of DHC, with consideration of several heat transfer fluids and distribution temperatures.
 Infrastructure costs are also incorporated, based on the topology of the considered neighbourhood.
+
+Actor-based model
+----------------------------
+
+The *ActorsProblem* extension of REHO enables to integrate and model the different stakeholders of an energy community.
+A two-step MILP optimization method is proposed: as a first step, a list of technical configurations for the building stock refurbishment are generated;
+as a second step, the best-suited configuration is selected according to economical criteria considering the stakeholders involved in the energy community,
+with a parameterization of their portfolios through minimum and maximum boundaries.
+
+An example is provided with the modelization of tenants, landlords, distribution system operator, authorities,
+and a new governing entity managing energy at district-level: the energy community manager.
+This latter is here suggested as a profit-making structure whose role is to manage the initial investments allocated to the district-level equipment,
+and also to coordinate the daily operation of the local energy system through an actor-based energy pricing.
+But alternative business models with other stakeholders and associated interactions can be freely defined and modeled.

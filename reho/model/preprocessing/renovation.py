@@ -1,5 +1,9 @@
 from reho.model.preprocessing.QBuildings import *
 
+__doc__ = """
+Correct U-values from QBuildings.
+"""
+
 def U_h_renovation(buildings_data, df_U_values):
 
     U_h_data = buildings_data['U_h']
@@ -39,7 +43,7 @@ def renovation_cost_co2(buildings_data, local_data, renovation_option):
     if Uh - Uh_ins < 1e-6:
         impacts = {"cost": 0.0, "gwp": 0.0}
     else:
-        maping = {'<1919': "<1918", '1919-1945': "1919-1948", '1946-1960': "1949-1978", '1961-1970': "1949-1978",
+        mapping = {'<1919': "<1918", '1919-1945': "1919-1948", '1946-1960': "1949-1978", '1961-1970': "1949-1978",
                   '1971-1980': "1949-1978", '1981-1990': "1979-1994", '1991-2000': "1995-2001", '2001-2005': "2002-2006",
                   '2006-2010': '>2006', '>2010': ">2006"}
         df_costs.columns = ["cost", "gwp"]
@@ -61,8 +65,8 @@ def renovation_cost_co2(buildings_data, local_data, renovation_option):
                 if id_class[i] in ["I", "II"]:
                     glass = 0.3
 
-                cost = df_costs[col].xs(maping[periods[i]])
-                impacts[col] += ratios[i] * (buildings_data["area_facade_m2"] * ((1-glass) * cost["facade"] + glass * cost["window"])\
+                cost = df_costs[col].xs(mapping[periods[i]])
+                impacts[col] += ratios[i] * (buildings_data["area_facade_m2"] * ((1-glass) * cost["facade"] + glass * cost["window"])
                                + buildings_data["SolarRoofArea"] * cost["roof"] + buildings_data["area_footprint_m2"] * cost["footprint"])
 
     return Uh_ins, impacts["cost"]*1.16, impacts["gwp"]

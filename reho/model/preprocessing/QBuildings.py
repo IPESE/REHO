@@ -38,7 +38,7 @@ class QBuildingsReader:
         Whether the roofs data should be added.
     """
 
-    def __init__(self, load_facades=False, load_roofs=False):
+    def __init__(self, load_facades=True, load_roofs=True):
 
         self.db = None
         self.tables = None
@@ -96,7 +96,7 @@ class QBuildingsReader:
 
         return
 
-    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
+    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv', correct_Uh=False):
         """
         Reads buildings-related data from CSV files and prepare it for the REHO model.
 
@@ -161,9 +161,11 @@ class QBuildingsReader:
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
 
+        if correct_Uh:
+            qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
         return qbuildings
 
-    def read_db(self, district_boundary="transformers", district_id=None, nb_buildings=None, egid=None, to_csv=False):
+    def read_db(self, district_boundary="transformers", district_id=None, nb_buildings=None, egid=None, to_csv=False, correct_Uh=False):
         """
         Reads the database and extracts the relevant buildings data.
         If only some buildings from the district_id need to be extracted, you can specify the desired number of buildings or, if the EGIDs are known, provide a list of EGIDs.
@@ -278,7 +280,8 @@ class QBuildingsReader:
                 self.data['facades'].to_csv('facades.csv', index=False)
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
+            if len(qbuildings["buildings_data"]) > 1:
+                qbuildings['shadows_data'] = return_shadows_district(qbuildings["buildings_data"], self.data['facades'])
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
@@ -291,6 +294,9 @@ class QBuildingsReader:
                 self.data['roofs'].to_csv('roofs.csv', index=False)
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
+
+        if correct_Uh:
+            qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
 
         if qbuildings["buildings_data"] == {}:
             raise print("Empty building data")
@@ -429,6 +435,76 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
 
     return df_buildings
 
+def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
+    """
+    Parameters
+    ----------
+    df_buildings : dict
+        The dictionary of building table from QBuilding
+    uh_data : dataframe
+        Typical U values per building element and construction period.
+        Default values are based on SIA 2024 and Energy Performance Gap bei Instandsetzungen, Literaturstudie Schlussbericht, 17. Januar 2022
+    df_facades : geodataframe
+        Geoataframe of the facades in the case study
+
+    Returns
+    -------
+    dict
+        it returns the dictionary df_buildings with the corrected U values based on uh_data.
+        It as well corrects the area of facades if df_facades if given.
+        [1] KHOURY, Assessment of Geneva multifamily building stock: main characteristics and regression models for
+        energy reference area determination. Geneva : SCCER Future Energy Efficient Buildings & Districts
+    """
+
+    if uh_data is None:
+        uh_data = pd.read_csv(os.path.join(path_to_infrastructure, 'U_values.csv'), sep=";").set_index("period")
+
+    for i in df_buildings:
+        df_h = df_buildings[i]
+        periods = df_h["period"].split("/")
+        ratios = [float(x) for x in df_h["ratio"].split("/")]
+        id_class = df_h["id_class"].split("/")
+
+        if len(periods) < len(ratios):
+            periods = periods + [periods[0]] * (len(ratios) - len(periods))
+        if len(periods) > len(ratios):
+            ratios = ratios + [0] * (len(ratios) - len(periods))
+
+        if df_facades is not None:
+            facades = df_facades[df_facades["id_building"] == df_h["id_building"]]
+            perimeter = np.sum([line.length for line in facades["geometry"]])
+            height = df_h["ERA"] / df_h["area_footprint_m2"] / 0.93 * 2.5 # [1]
+            df_h["area_facade_m2"] = perimeter * height
+            footprint_factor = df_h["area_footprint_m2"]/perimeter
+        else:
+            footprint_factor = df_h["area_footprint_m2"]/(4*df_h["area_footprint_m2"]**0.5)
+
+        b_value_floor = pd.read_csv(os.path.join(path_to_sia, 'b_value_floor.csv'), sep=";").set_index("U_footprint")
+        b_value = b_value_floor[min(b_value_floor.columns, key=lambda x: abs(float(x) - footprint_factor))]
+
+        if df_h["ERA"] < df_h["area_footprint_m2"]:
+            df_h["ERA"] = df_h["area_footprint_m2"]
+
+        U_h_ins_data = 0
+        for j in range(len(periods)):
+            glass_fraction = 0.5
+            if id_class[j] in ["I", "II"]:
+                glass_fraction = 0.3
+            # TODO: add heat recovery
+            ventilation = 0.7 / 3600 * df_h["ERA"] * 2.5 * (1200 - 0.14 * 400)  # SIA 380/1
+
+            uh_period = uh_data.loc[periods[j]]
+            b = b_value.loc[min(b_value.index, key=lambda x: abs(float(x) - uh_period["U_footprint"] * 1000))]
+
+            U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_period["U_facade"] +
+                             df_h['area_footprint_m2'] * uh_period["U_footprint"]*b +
+                             df_h['area_facade_m2'] * glass_fraction * uh_period["U_window"] +
+                             df_h['SolarRoofArea'] * uh_period["U_roof"] +
+                             ventilation/1000) * ratios[j] / df_h['ERA']
+        df_buildings[i]["U_h"] = U_h_ins_data
+
+    return df_buildings
+
 
 def translate_facades_to_REHO(df_facades, df_buildings):
     dict_facades = {'azimuth': 'AZIMUTH',
@@ -554,11 +630,15 @@ def neighbourhood_angles(buildings, facades):
 
     for b in buildings:
         id_building = buildings[b]['id_building']
-        print('Calculate angles for building: ' + str(id_building))
         df_BUI = pd.DataFrame()
         df_district = {buildings: bui for buildings, bui in buildings.items() if bui['id_building'] != id_building}
         df_district = pd.DataFrame.from_dict(df_district, orient='index')
         df_district = df_district.set_index('id_building')
+
+        df_nan = df_district[df_district.height_m.isna()]
+        heights_nan = df_nan["ERA"] / df_nan["area_footprint_m2"] / 0.93 * 2.5
+        df_district.loc[heights_nan.index, "height_m"] = heights_nan
+
         # exclude current building to avoid division with zero
         facades_build = facades[facades.id_building == id_building]  # facades of building
         for f in facades_build.index:
@@ -584,21 +664,14 @@ def neighbourhood_angles(buildings, facades):
         df_BUI = df_BUI.reset_index()
         df_BUI = df_BUI.rename(columns={'id_building': 'to_id_building'})
         df_BUI['id_building'] = int(id_building)
-
         df_angles = pd.concat((df_angles, df_BUI))
-
-    df_angles.to_csv('data/angles.csv')
 
     return df_angles
 
 
 def return_shadows_district(buildings, facades):
     df_shadows = pd.DataFrame()
-
-    if os.path.exists('data/angles.csv'):
-        df_angles = pd.read_csv('data/angles.csv')
-    else:
-        df_angles = neighbourhood_angles(buildings, facades)
+    df_angles = neighbourhood_angles(buildings, facades)
 
     for b in buildings:
         id_building = int(buildings[b]['id_building'])
@@ -613,18 +686,11 @@ def return_shadows_district(buildings, facades):
         df_shadows = pd.concat((df_shadows, df_id_building))
 
     df_shadows["id_building"] = df_shadows["id_building"].astype(str)
-    df_shadows.to_csv('data/shadows.csv')
-
     return df_shadows
 
 
-def return_shadows_id_building(id_building, df_district, local_data):
+def return_shadows_id_building(id_building, df):
     id_building = int(id_building)
-
-    if os.path.isfile('data/shadows.csv'):
-        df = file_reader('data/shadows.csv', index_col=0)
-    else:
-        df = df_district
     df = df.xs(id_building)
 
     df_beta_dome = pd.DataFrame()

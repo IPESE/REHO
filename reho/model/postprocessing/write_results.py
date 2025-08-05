@@ -45,7 +45,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
 
         df_N1 = get_ampl_data(ampl, 'Costs_op')  # without the comfort penalty costs
         df_N2 = get_ampl_data(ampl, 'Costs_inv')
-        df_N2['Costs_inv'] = df_N2['Costs_inv'] * tau[0] # include refurbishment
+        df_N2['Costs_inv'] = df_N2['Costs_inv'] * tau[0] # include renovation
         df_N2['ANN_factor'] = tau[0]
         df_N2['Costs_grid_connection'] = get_ampl_data(ampl, 'Costs_grid_connection').sum().values / 2  # TODO enhance
         df_N3 = get_ampl_data(ampl, 'Costs_rep')
@@ -57,7 +57,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df_PerformanceBuilding = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
         df_PerformanceNetwork = pd.concat([df_N1, df_N2, df_N3, df_N4, df_N5, df_N6], axis=1)
 
-        if method['refurbishment']:
+        if method['renovation'] is not None:
             df8 = get_ampl_data(ampl, 'Costs_ins') * tau_ins[0]
             df_N8 = pd.DataFrame({'Costs_ins': [df8.sum()['Costs_ins']]})
             df_PerformanceBuilding = pd.concat([df_PerformanceBuilding, df8], axis=1)
@@ -642,6 +642,13 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     else:
         df_Results["df_Interperiod"] = pd.DataFrame()
 
+    if method["renovation"] is not None:
+        df1 = get_ampl_data(ampl, 'is_ins')
+        df_renovation = pd.concat([df1], axis=1)
+        df_network = df_renovation.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
+        df_renovation = pd.concat([df_renovation, df_network], axis=0)
+        df_Results["df_District"] = pd.concat([df_Results["df_District"], df_renovation], axis=1)
+
     if method["actors_problem"]:
         # Renters’ expenses and the profits of Owners and the Utility
         df1 = get_ampl_data(ampl, 'renter_expense')
@@ -677,10 +684,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df7 = get_ampl_data(ampl, 'C_rent_fix')
         df8 = get_ampl_data(ampl, 'renter_subsidies')
         df9 = get_ampl_data(ampl, 'owner_subsidies')
-        df10 = get_ampl_data(ampl, 'is_ins')
-        df11 = get_ampl_data(ampl, 'Costs_House_upfront') # Upfront investment costs in buildings
+        df10 = get_ampl_data(ampl, 'Costs_House_yearly') # Upfront investment costs in buildings
 
-        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10, df11], axis=1)
+        df_Actors = pd.concat([df1, df2, df3, df4, df5, df6, df7, df8, df9, df10], axis=1)
         df_network = df_Actors.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
         df_Actors = pd.concat([df_Actors, df_network], axis=0)
         df_Results["df_District"] = pd.concat([df_Results["df_District"], df_Actors], axis=1)

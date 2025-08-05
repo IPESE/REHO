@@ -78,8 +78,8 @@ if __name__ == '__main__':
     reho.build_infrastructure_SP()
     reho.single_optimization()
 
-    # Scenario 5 Isolation
-    scenario['name'] = 'Isolation'
+    # Scenario 5 renovation
+    scenario['name'] = 'renovation'
     for b in qbuildings_data['buildings_data']:
         reho.buildings_data[b]['U_h'] = 0.4 * qbuildings_data['buildings_data'][b]['U_h']
 
@@ -105,18 +105,18 @@ if __name__ == '__main__':
     ict_cost = 1000 * reho.results['ICT'][0]['df_Annuals'].loc[("Data", "Network"), "Demand_MWh"] * 1.3 * electricity_price / era
     ict_impact = 1000 * reho.results['ICT'][0]['df_Annuals'].loc[("Data", "Network"), "Demand_MWh"] * 1.3 * electricity_gwp / era
 
-    # Isolation costs and impact
-    isolation_cost = 5.4  # CHF/m2/yr (already annualized for 50 years)
-    isolation_impact = 0.076  # kgCO2/m2/yr (already annualized for 50 years)
+    # renovation costs and impact
+    renovation_cost = 5.4  # CHF/m2/yr (already annualized for 50 years)
+    renovation_impact = 0.076  # kgCO2/m2/yr (already annualized for 50 years)
 
     additional_costs = {'mobility': [gasoline_cost, gasoline_cost, 0, 0, 0],
                         'ict': [ict_cost, ict_cost, ict_cost, 0, 0],
-                        'isolation': [0, 0, 0, 0, isolation_cost]}
+                        'renovation': [0, 0, 0, 0, renovation_cost]}
     additional_costs['no_ict_profit'] = False  # data processing profits can be included in the costs or not
 
     additional_gwp = {'mobility': [gasoline_impact, gasoline_impact, 0, 0, 0],
                       'ict': [ict_impact, ict_impact, ict_impact, 0, 0],
-                      'isolation': [0, 0, 0, 0, isolation_impact]}
+                      'renovation': [0, 0, 0, 0, renovation_impact]}
 
     # Plot results
     plotting.plot_performance(reho.results, plot='costs', per_m2=True, additional_costs=additional_costs, title="Economical performance").show()

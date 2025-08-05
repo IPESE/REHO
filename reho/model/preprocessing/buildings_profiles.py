@@ -87,6 +87,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
     np_gain_all = np.array([])
     np_dhw_all = np.array([])
     np_el_all = np.array([])
+    heat_capacity = {}
 
     for b in buildings_data:  # iterate over buildings
         # get SIA Profiles
@@ -99,6 +100,8 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
         np_gain_b = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
         np_dhw_b = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
         np_el_b = np.zeros(cluster['Periods'] * cluster['PeriodDuration'] + 2)
+        heat_capacity[b] = 0
+
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
             rooms = read_sia2024_rooms_sia380_1(class_380, df_SIA_380)
@@ -111,6 +114,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
             np_gain = np.array([])
             np_dhw = np.array([])
             np_el = np.array([])
+            heat_capacity[b] = heat_capacity[b] + area_net_floor / buildings_data[b]['ERA'] * buildings_data[b]["HeatCapacity"]
 
             if include_stochasticity:
                 [RV_scaling, SF] = create_random_var(sd_stochasticity[0], sd_stochasticity[1])
@@ -191,6 +195,8 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
             for b in buildings_data:
                 dhw_b = df[b].values
                 np_dhw_all = np.append(np_dhw_all, dhw_b)
+    for b in heat_capacity:
+        buildings_data[b]["HeatCapacity"] = heat_capacity[b]
 
     return np_gain_all, np_dhw_all, np_el_all
 
@@ -313,13 +319,13 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     return df_typical
 
 
-def solar_gains_profile(buildings_data, sia_data, local_data):
+def solar_gains_profile(qbuildings_data, sia_data, local_data):
     """
     Computes the solar heat gains from the irradiance. Heat gains depend on the facades surfaces and on a window fraction (obtained from SIA 2024).
 
     Parameters
     ----------
-    buildings_data : dict
+    qbuildings_data : dict
         Building-specific data.
     sia_data : dict
         SIA norms.
@@ -332,14 +338,20 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
         Solar gains for each timesteps.
     """
 
-    irr = local_data["Irr"] * 0.6  # factor to convert global to horizontal irradiance
-
-    g = np.repeat(0.5, len(irr))  # g-value SIA 2024
+    irr = local_data["Irr"]
+    buildings_data = qbuildings_data["buildings_data"]
+    facades = qbuildings_data["facades_data"]
+    g = np.repeat(0.45, len(irr))  # g-value SIA 2024
     g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:
-        A_facades = buildings_data[b]['area_facade_m2']
+        id_building = buildings_data[b]["id_building"]
+        facades_b = facades[facades["id_building"] == id_building]
+        df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
+        df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
+        df_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
+
         classes = buildings_data[b]['id_class'].split('/')
         if isinstance(buildings_data[b]['ratio'], float):
             ratios = str(buildings_data[b]['ratio'])
@@ -348,12 +360,13 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
         glass_fraction_building = 0
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
-            rooms = read_sia2024_rooms_sia380_1(class_380, sia_data["df_SIA_380"])
-            df = sia_data["df_SIA_2024"]['data']
-            glass_fraction_2024 = df['Taux de surface vitrée']
-            glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
-            glass_fraction_building += glass_fraction_rooms * float(ratios[i])
-        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
+            if buildings_data[b]["period"] in ["1971-1980", "1981-1990", "1991-2000", "2001-2005", "2006-2010", ">2010"]: # for building < 1970, solar gains are negligible
+                rooms = read_sia2024_rooms_sia380_1(class_380, sia_data["df_SIA_380"])
+                df = sia_data["df_SIA_2024"]['data']
+                glass_fraction_2024 = df['Taux de surface vitrée']
+                glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
+                glass_fraction_building += glass_fraction_rooms * float(ratios[i])
+        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * df_facade_irr
         # glass fraction on facades from SIA 2024, 0.9 SIA 2024: acknowledge perpendicular rays
         np_gains = np.append(np_gains, gains)
 

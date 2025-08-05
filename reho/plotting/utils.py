@@ -115,8 +115,10 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, include_avoided=Fa
     data_capacities = df_Economics.xs('investment', level='Category', axis=1).transpose()
     data_capacities.index.names = ['Unit']
 
-    if 'isolation' in additional_data:
-        data_capacities.loc['Isolation', :] = additional_data['isolation']
+    if 'renovation' in additional_data:
+        data_capacities.loc['renovation', :] = additional_data['renovation']
+    if 'subsidies' in additional_data:
+        data_capacities.loc['Subsidies', :] = additional_data['subsidies']
 
     data_capacities = data_capacities.reset_index().merge(layout, left_on="Unit", right_on='Name').set_index("Unit").fillna(0)
 

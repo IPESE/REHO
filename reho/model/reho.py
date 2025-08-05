@@ -1,4 +1,3 @@
-import multiprocessing as mp
 import os.path
 import pickle
 import openpyxl
@@ -93,7 +92,7 @@ class REHO(MasterProblem):
     def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
 
         # Initiation
-        self.pool = mp.Pool(mp.cpu_count())
+        self.pool = mp.Pool(self.cpu_use)
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
@@ -371,7 +370,7 @@ class REHO(MasterProblem):
 
     def get_DHN_costs(self):
 
-        self.pool = mp.Pool(mp.cpu_count())
+        self.pool = mp.Pool(self.cpu_use)
         self.iter = 0  # new scenario has to start at iter = 0
         method = self.method['building-scale']
         self.method['building-scale'] = True
@@ -445,14 +444,17 @@ class REHO(MasterProblem):
         df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
 
         if self.method["actors_problem"]:
-            #TODO: Add variables
-            df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][
-                ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
-                 'owner_profit', 'C_rent_fix', 'renter_expense','renter_subsidies','owner_subsidies', 'Costs_House_upfront', 'is_ins']]
+            features = ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
+                        'owner_profit', 'C_rent_fix', 'renter_expense', 'renter_subsidies', 'owner_subsidies', 'Costs_House_yearly']
+            df_actor = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][features]
             df_Performance = pd.concat([df_Performance, df_actor], axis=1)
             df_Results["df_Actors_tariff"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors_tariff"]
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
             df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
+
+        if self.method["renovation"] is not None:
+            df_renovation = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][['is_ins']]
+            df_Performance = pd.concat([df_Performance, df_renovation], axis=1)
 
         # df_Grid
         df = self.get_final_SPs_results(MP_selection, 'df_Grid')
@@ -533,21 +535,17 @@ class REHO(MasterProblem):
         df_Annuals = pd.concat([df, df_network]).sort_index()
 
         # df_Buildings
-        if self.method['refurbishment']:
+        if self.method['renovation'] is not None:
             df_Buildings = self.get_final_SPs_results(MP_selection, 'df_Buildings')
             df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')]
             df_Buildings = df_Buildings.droplevel(['Hub', 'Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution'])
-            df_Buildings.index.names = ['Hub']
-            for item in ['x', 'y', 'z', 'geometry']:
-                if item in df_Buildings.columns:
-                    df_Buildings.drop([item], axis=1)
-
         else:
             df_Buildings = pd.DataFrame.from_dict(self.buildings_data, orient='index')
-            df_Buildings.index.names = ['Hub']
-            for item in ['x', 'y', 'z', 'geometry']:
-                if item in df_Buildings.columns:
-                    df_Buildings.drop([item], axis=1)
+
+        df_Buildings.index.names = ['Hub']
+        for item in ['x', 'y', 'z', 'geometry']:
+            if item in df_Buildings.columns:
+                df_Buildings.drop([item], axis=1)
 
         if self.method['use_pv_orientation'] or self.method['use_facades']:
             # PV_Surface

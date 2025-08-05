@@ -136,6 +136,33 @@ Units_Use[u]*Units_Fmax[u]>=Units_Mult[u];
 subject to Unit_Use_constraint_c2{u in Units}:
 Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
 
+
+######################################################################################################################
+#--------------------------------------------------------------------------------------------------------------------#
+# Renovation
+#--------------------------------------------------------------------------------------------------------------------#
+######################################################################################################################
+
+param Uh{h in House} default 0;
+param Uh_ins{f in FeasibleSolutions,h in House} default 0;
+param ins_target default 0;
+param ins_target_max default 1;
+var is_ins{h in House} binary; 
+
+subject to renovation_rate:
+sum{h in House} (is_ins[h] * ERA[h]) >= ins_target * sum{h in House} (ERA[h]);
+
+subject to renovation_rate_max:
+sum{h in House} (is_ins[h] * ERA[h]) <= ins_target_max * sum{h in House} (ERA[h]);
+
+
+subject to renovation1{h in House}: # constraints times 1e3 to facilitate convergence
+1e3 * (Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) ) >= 1e3 * (Uh[h]/100) - 10000* (1 - is_ins[h]);
+
+subject to renovation2{h in House}:
+1e3 * (Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])) <= 10000 * is_ins[h];
+
+
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 # Costs
@@ -343,9 +370,10 @@ var penalties default 0;
 
 var renter_subsidies{h in House} >= 0;
 var owner_subsidies{h in House} >= 0;
+var penalty_actors >= 0;
 
 subject to penalties_contraints:
-penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op +
+penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op + penalty_actors + 
             sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
              + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]);
 

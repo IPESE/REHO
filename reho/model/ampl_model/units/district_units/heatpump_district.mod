@@ -8,6 +8,8 @@
 #
 #####################################################################################################
 
+#param HP_district_mult{h in House} default 0;
+
 # Temperature of the heat source for each unit, period, and time step.
 param T_source{u in UnitsOfType['HeatPump'], p in Period, t in Time[p]} default 8;
 set HP_Tsupply default {80};
@@ -109,3 +111,6 @@ subject to HP_sizing{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
 subject to HP_heating_output{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
 	Units_supply['Heat',u,p,t] = sum{T in HP_Tsupply} HP_COP[u,p,t,T]*HP_Power[u,p,t,T];
 
+# constraint to enforce the installation of HP_district with specific multiplier
+subject to enforce_HP_district_mult{u in UnitsOfType['HeatPump'],p in Period,t in Time[p]}:
+Units_Mult[u] = 400; #HP_district_mult[u];

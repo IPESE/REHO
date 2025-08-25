@@ -14,7 +14,7 @@ sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t] = BO
 subject to BOI_c1{h in House,u in UnitsOfType['NG_Boiler'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t]  <= Units_Mult[u]*BOI_partload_max[u];
 
-subject to enforce_NG_Boiler{u in UnitsOfType['NG_Boiler']}:
+subject to enforce_NG_Boiler{u in UnitsOfType['NG_Boiler']: NG_Boiler_install[u] >= 0}:
 Units_Use[u] = NG_Boiler_install[u];
 
 #-Advanced model with part-load efficiencies

@@ -55,7 +55,7 @@ subject to convexity_1{h in House}: #mu
 sum{f in FeasibleSolutions}(lambda[f,h]) = 1;
 
 subject to convexity_2{f in FeasibleSolutions, h in House}:
-lambda[f,h] <=1;
+lambda[f,h] <= 1;
 
 subject to convexity_binary{f in FeasibleSolutions, h in House}:
 lambda[f,h] = lambda_binary[f,h];

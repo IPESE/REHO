@@ -148,8 +148,8 @@ param HeatPump_Geothermal_install{h in House} default 0;
 #subject to enforce_HeatPump{h in House}:
 	#sum{u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]: u not in {'HeatPump_DHN_'&h}} Units_Use[u] = HeatPump_install[h];
 
-subject to enforce_HeatPump_Air{h in House,u in {'HeatPump_Air_'&h}}:
+subject to enforce_HeatPump_Air{h in House,u in {'HeatPump_Air_'&h}: HeatPump_Air_install[h] >= 0}:
 	Units_Use[u] = HeatPump_Air_install[h];
 
-subject to enforce_HeatPump_Geothermal{h in House,u in {'HeatPump_Geothermal_'&h}}:
+subject to enforce_HeatPump_Geothermal{h in House,u in {'HeatPump_Geothermal_'&h}: HeatPump_Geothermal_install[h] >= 0}:
 	Units_Use[u] = HeatPump_Geothermal_install[h];

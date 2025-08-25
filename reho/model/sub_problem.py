@@ -591,8 +591,12 @@ class SubProblem:
             ampl.getConstraint('enforce_NG_Boiler').drop()
         if 'OIL_Boiler' in self.infrastructure_sp.UnitsOfType:
             ampl.getConstraint('enforce_OIL_Boiler').drop()
+        if 'WOOD_Stove' in self.infrastructure_sp.UnitsOfType:
+            ampl.getConstraint('enforce_WOOD_Stove').drop()
         if 'DHN_hex' in self.infrastructure_sp.UnitsOfType:
             ampl.getConstraint('enforce_DHN_hex').drop()
+        if 'ThermalSolar' in self.infrastructure_sp.UnitsOfType:
+            ampl.getConstraint('enforce_ThermalSolar').drop()
         if 'PV' in self.infrastructure_sp.UnitsOfType:
             ampl.getConstraint('enforce_PV_max').drop()
             ampl.getConstraint('enforce_PV').drop()

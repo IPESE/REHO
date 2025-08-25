@@ -20,6 +20,8 @@ param STC_b{u in UnitsOfType['ThermalSolar']}>=0 default 0.0073;				#W/m2 K2	SPF
 param STC_efficiency_ref{u in UnitsOfType['ThermalSolar']}>=0 default 0.836;	#-			SPF (Viessmann, Vitosol 200-F)
 param STC_Tlm{u in UnitsOfType['ThermalSolar'],T in STCindex,p in Period,t in Time[p]} := sum{st in StreamsOfUnit[u]: Streams_Tin[st,p,t]=T}( (Streams_Tin[st,p,t]-Streams_Tout[st,p,t])/(log(Streams_Tin[st,p,t]+273.15)-log(Streams_Tout[st,p,t]+273.15))-(T_ext[p,t]+273.15) );	#K
 
+param ThermalSolar_install{u in UnitsOfType['ThermalSolar']} default 0;
+
 #-Definition from [2]
 param STC_efficiency{u in UnitsOfType['ThermalSolar'],T in STCindex,p in Period,t in Time[p]} :=
 if Irr[p,t] >0 and STC_efficiency_ref[u] - STC_a[u]*(STC_Tlm[u,T,p,t]/Irr[p,t]) - STC_b[u]*(STC_Tlm[u,T,p,t]^2/Irr[p,t]) > 0 then
@@ -42,3 +44,7 @@ Units_Mult[u] = STC_module_size[u]*STC_module_nbr[u];																		#m2
 
 subject to enforce_DHW_tank_if_thermal_solar{h in House}:
 sum{uj in UnitsOfType['WaterTankDHW'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ThermalSolar'] inter UnitsOfHouse[h]} Units_Use[ui];
+
+# constraint to enforce the installation of ThermalSolar panels
+subject to enforce_ThermalSolar{u in UnitsOfType['ThermalSolar']: ThermalSolar_install[u] >= 0}:
+Units_Use[u] = ThermalSolar_install[u];

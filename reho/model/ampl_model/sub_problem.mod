@@ -112,7 +112,7 @@ Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
 
 # constraint to limit the number of heating units to one
 subject to unique_heating_system{h in House}:
-sum{u in UnitsOfType['HeatPump']: 'HeatPump' in UnitTypes}(Units_Use[u])+sum{u in UnitsOfType['OIL_Boiler']: 'OIL_Boiler' in UnitTypes}(Units_Use[u])+sum{u in UnitsOfType['NG_Boiler']: 'NG_Boiler' in UnitTypes}(Units_Use[u])+sum{u in {'DHN_hex_'&h}:'DHN_hex_'&h in Units}(Units_Use[u]) <=1;
+sum{u in UnitsOfType['HeatPump']: 'HeatPump' in UnitTypes}(Units_Use[u])+sum{u in UnitsOfType['OIL_Boiler']: 'OIL_Boiler' in UnitTypes}(Units_Use[u])+sum{u in UnitsOfType['WOOD_Stove']: 'WOOD_Stove' in UnitTypes}(Units_Use[u])+sum{u in UnitsOfType['NG_Boiler']: 'NG_Boiler' in UnitTypes}(Units_Use[u])+sum{u in {'DHN_hex_'&h}:'DHN_hex_'&h in Units}(Units_Use[u]) <=1;
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -462,7 +462,7 @@ subject to House_EB_cyclic1{h in House,p in Period,t in Time[p]:t=last(Time[p])}
 																					(House_Q_heating[h,p,t]-House_Q_cooling[h,p,t]) + HeatGains[h,p,t] + SolarGains[h,p,t];
 
 #-additional constraints
-# constraint to limit the installation of electrical heaters olny if there is a heat pump
+# constraint to limit the installation of electrical heaters only if there is a heat pump
 subject to no_ElectricalHeater_without_HP{h in House}:
 2 * sum{uj in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uj] >= sum{ui in UnitsOfType['ElectricalHeater'] inter UnitsOfHouse[h]} Units_Use[ui];
 

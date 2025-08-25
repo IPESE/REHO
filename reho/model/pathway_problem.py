@@ -11,7 +11,7 @@ File for constructing and solving the optimization for the pathway problem formu
 
 class PathwayProblem(REHO):
     """
-    Performs an pathway-based optimization.
+    Performs a pathway-based optimization.
 
     Parameters are inherited from the REHO class.
 
@@ -23,7 +23,7 @@ class PathwayProblem(REHO):
     -------
     This class is still under construction.
     """
-    # TO DO: Add an option to save the transition pathway
+    # TODO: Add an option to save the transition pathway
     def __init__(self, qbuildings_data, units, grids, pathway_parameters, pathway_data, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs", DW_params=None, path_methods=None, group=None):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, scenario, solver, DW_params)
@@ -32,13 +32,16 @@ class PathwayProblem(REHO):
         self.pathway_parameters = pathway_parameters
         self.pathway_data = pathway_data
         self.qbuildings_data = qbuildings_data
+        self.units = units
 
         self.y_start = self.pathway_parameters['y_start']
         self.y_end = self.pathway_parameters['y_end']
 
-        self.default_s_curve_factors = pd.read_csv(os.path.join(path_to_infrastructure, 'building_units.csv'), sep=';', usecols=['Unit', 's_curve_k_factor', 's_curve_c_factor'])
-
         self.method = method
+        if path_methods is None:
+            self.path_methods = {}
+        else:
+            self.path_methods = path_methods
         self.initialise_methods()
 
         self.group = group
@@ -48,7 +51,7 @@ class PathwayProblem(REHO):
         else:
             self.y_span = self.pathway_parameters['y_span']
 
-    def execute_pathway_building_scale(self, pathway_unit_use=False):
+    def execute_pathway_building_scale(self):
 
         # Set up the initial scenario
         self.scenario['specific'] = ['unique_heating_system', # Do not allow two different heating systems (Ex: not NG boiler and heatpump simultaneously)
@@ -56,32 +59,37 @@ class PathwayProblem(REHO):
                                      'enforce_PV',            # Enforce PV Units_Use to 0 or 1 on all buildings
                                      #'enforce_Battery'        # Enforce Battery Units_Use to 0 or 1 on all buildings
                                      ]
-        if pathway_unit_use == False:
+        # Generate the pathway for units if path_methods generate_pathway is True
+        if self.path_methods['generate_pathway'] == True:
             self.generate_pathway_unit_use()
         else:
-            if f'heating_system_{self.y_start}' in self.pathway_data.columns:
-                # Add existing heating system in qbuildings_data based on the egid
-                for key in self.qbuildings_data['buildings_data'].keys():
-                    # get egid of the building
-                    egid = self.qbuildings_data['buildings_data'][key]['egid']
-                    # Find matching row in pathway_data
-                    match_row = self.pathway_data[self.pathway_data['egid'] == egid]
-                    if not match_row.empty:
-                        # Get the data from match_row columns except for egid and add it to the qbuildings_data TO DO: check if I should add all info now or as needed. seems more efficient to add all now, even if not used
-                        for i in match_row.columns:
-                            if i != 'egid':
-                                self.qbuildings_data['buildings_data'][key][i] = match_row[i].values[0]
-                    else:
-                        # If no match found, give error message and end the program
-                        raise ValueError(f"No match found for egid {egid} in pathway_data.")
-            else:
-                # If no heating system is defined, raise an error
-                raise ValueError(f"No heating system defined in pathway_data for year {self.y_start}.")
+            # Check if the heating scenario is defined for all years in y_span
+            for year in self.y_span:
+                if f'heating_system_{int(year)}' not in self.pathway_data.columns:
+                    raise ValueError(f"No heating system defined in pathway_data for year {int(year)}.")
+            # Add the existing heating system in qbuildings_data based on the egid
+            for key in self.qbuildings_data['buildings_data'].keys():
+                # get egid of the building
+                egid = self.qbuildings_data['buildings_data'][key]['egid']
+                # Find matching row in pathway_data
+                match_row = self.pathway_data[self.pathway_data['egid'].astype(str) == str(egid)]
+                if not match_row.empty:
+                    # Get the data from match_row columns except for egid and add it to the qbuildings_data TODO: check if I should add all info now or as needed. seems more efficient to add all now, even if not used
+                    for i in match_row.columns:
+                        if i != 'egid':
+                            self.qbuildings_data['buildings_data'][key][i] = match_row[i].values[0]
+                else:
+                    # If no match found, give an error message and end the program
+                    raise ValueError(f"No match found for egid {egid} in pathway_data.")
 
         # Add enforce heating units in the scenario['specific']
-        Ext_heat_Units = np.array([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in
-             self.qbuildings_data['buildings_data']] + [self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_end}'] for key in
-               self.qbuildings_data['buildings_data']])
+        if self.path_methods['enforce_pathway'] == True:
+            Ext_heat_Units = np.array([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in
+                 self.qbuildings_data['buildings_data']] + [self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_end}'] for key in
+                   self.qbuildings_data['buildings_data']])
+        elif self.path_methods['optimize_pathway'] == True:
+            Ext_heat_Units = np.array([self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] for key in
+                 self.qbuildings_data['buildings_data']])
 
         building_keys = list(self.qbuildings_data['buildings_data'].keys())
 
@@ -90,7 +98,11 @@ class PathwayProblem(REHO):
                 self.scenario['specific'].append(f'enforce_{unit}')
             # Add the heating system to the parameters
             self.parameters['{}_install'.format(unit)] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{self.y_start}'] == unit else [0] for key in self.qbuildings_data['buildings_data'].keys()])
-        # TO DO: Add if mult_heating_systemy_y_start is in the data
+
+        # TODO: Add option for other heating systems for DHW
+        if f'heating_system_2_{self.y_start}' in self.pathway_data.columns:
+            self.parameters['ThermalSolar_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_2_{self.y_start}'] == 'ThermalSolar' else [0] for key in self.qbuildings_data['buildings_data'].keys()])
+            self.scenario['specific'].append(f'enforce_ThermalSolar')
 
         # Check if PV is in the initial scenario
         if f'electric_system_{self.y_start}' in self.pathway_data.columns:
@@ -101,32 +113,26 @@ class PathwayProblem(REHO):
         if self.parameters['PV_install'].sum() > 0:
             if f'pv_mult_{self.y_start}' not in self.pathway_data.columns:
                 max_PV = self.get_max_pv_capacity() # if a mult is not provided we install the max PV
+                # TODO: add the max_pv as enforce PV mult
             else:
-                #self.parameters['PV_mult'] = np.array([[self.qbuildings_data['buildings_data'][key][f'pv_mult_{self.y_start}']] for key in self.qbuildings_data['buildings_data'].keys()])
                 self.parameters['PV_mult'] = np.array([[self.qbuildings_data['buildings_data'][key][f'pv_mult_{self.y_start}']]
                     if self.qbuildings_data['buildings_data'][key][f'pv_mult_{self.y_start}'] > 0
                     else [-1]
                     for key in self.qbuildings_data['buildings_data']
                 ], dtype=object)
             self.scenario['specific'].append('enforce_PV_mult')
-            # TO DO: add enforce PV_mult
+            # TODO: add enforce PV_mult
 
         # Run optimization problem for the existing system
         self.single_optimization(Pareto_ID=self.y_start)
 
-        # Generate pathways for the electric system TO DO: adapt code to when I have more than one electric system
+        # Generate pathways for the electric system TODO: adapt code to when I have more than one electric system
         # Get the logistic curve parameters for PV
-        if 'k_factor' in self.pathway_parameters and 'PV' in self.pathway_parameters['k_factor']:
-            pv_k_factor = self.pathway_parameters['k_factor']['PV']
-        else:
-            pv_k_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == 'PV', 's_curve_k_factor'].values[0]
-        if 'c_factor' in self.pathway_parameters.keys() and 'PV' in self.pathway_parameters['c_factor'].keys():
-            pv_c_factor = self.pathway_parameters['c_factor']['PV']
-        else:
-            pv_c_factor = self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == 'PV', 's_curve_c_factor'].values[0]
+        pv_k_factor = self.get_s_curve_factors('PV','k_factor', 's_curve_k_factor')
+        pv_c_factor = self.get_s_curve_factors('PV', 'c_factor', 's_curve_c_factor')
 
         # Get phase-in timeline (number of buildings using the unit each year)
-        # Get the number of houses that can install a PV. TO DO: Some EGIDs might have almost no roof (this might also happen with the heating system), because the ratio is very small in this case mult will be 0.1 the Fmin. Check if we are getting these cases
+        # Get the number of houses that can install a PV. TODO: Some EGIDs might have almost no roof (this might also happen with the heating system), because the ratio is very small in this case mult will be 0.1 the Fmin. Check if we are getting these cases
         PV_init_total = 0
         PV_init_list = []
         PV_final_tot = 0
@@ -155,11 +161,11 @@ class PathwayProblem(REHO):
         #elec_schedule = self.generate_partial_s_curve(initial_value=PV_init_total, target_value=PV_final_tot, k=pv_k_factor, obs_year=self.y_start, obs_value=234, final_value=False)
         elec_schedule = [int(round(v)) for v in elec_schedule]
 
-        # TO DO: adapt this for if there are mults or not, and if we want to install max or not
+        # TODO: adapt this for if there are mults or not, and if we want to install max or not
         # verify if max_PV has been defined in the local scope
         if 'max_PV' not in locals():
             max_PV = self.get_max_pv_capacity()
-        # TO DO: change the code for when there are PV installed (mults cannot be max_PV in this case)
+        # TODO: change the code for when there are PV installed (mults cannot be max_PV in this case)
         if 'enforce_PV_mult' in self.scenario['specific']:
             PV_mult_raw = self.parameters['PV_mult']  # This is an array of lists, some empty
             instalable_mults_future = []
@@ -174,9 +180,8 @@ class PathwayProblem(REHO):
         # Get the pathway
         pathway_elec_mul, pathway_elec_use = self.select_unit_random(PV_init_list, elec_schedule, method='unit_phase_in', mults=instalable_mults_future)
 
-        # Create a DataFrame for the electric system pathway
-        df_elect = pd.DataFrame({k: v.flatten() for k, v in pathway_elec_use.items()})
-        #df_elect.to_csv(f'{results_folder}/PV_pathway_{self.group}.csv', index=False)
+        if len(self.path_methods['exclude_pathway_units']) > 0:
+            self.scenario['exclude_units'].extend(self.path_methods['exclude_pathway_units'])
 
         # Loop through all time periods
         for t in range(1, len(self.y_span)):
@@ -191,11 +196,29 @@ class PathwayProblem(REHO):
 
             # Initialize HeatPump_install with zeros
             building_keys = list(self.qbuildings_data['buildings_data'].keys())
-            #self.parameters['HeatPump_install'] = np.array([[0] for key in self.qbuildings_data['buildings_data'].keys()])
 
             # Loop through each unit type
             for unit in np.unique(Ext_heat_Units):
-                self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit else [0] for key in building_keys])
+                if self.path_methods['enforce_pathway'] == True:
+                    if unit == 'NG_Boiler':
+
+                        NG_previous = self.parameters[f'{unit}_install']
+                        self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit
+                                                                        else [0] for key in building_keys])
+                        NG_next = self.parameters[f'{unit}_install']
+                        new_SolarThermal = ((NG_next - NG_previous) == 1).astype(int)
+                        if new_SolarThermal.sum() > 0 and 'ThermalSolar_install' not in self.parameters:
+                            self.parameters['ThermalSolar_install'] = new_SolarThermal
+                            if 'enforce_ThermalSolar' not in self.scenario['specific']:
+                                self.scenario['specific'].append('enforce_ThermalSolar')
+                        else: #
+                            self.parameters['ThermalSolar_install'] = self.parameters['ThermalSolar_install'] + new_SolarThermal
+                    else:
+                        self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit
+                                                                       else [0] for key in building_keys])
+                elif self.path_methods['optimize_pathway'] == True:
+                    self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit
+                                                                   else [0] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == f'{unit}_out' else [0] for key in building_keys])
 
             # Update the existing conditions
             self.parameters['Units_Ext'] = self.results[self.scenario["name"]][int(self.y_span[t-1])]['df_Unit']['Units_Mult']
@@ -248,7 +271,7 @@ class PathwayProblem(REHO):
         df_max_PV = df_Unit.loc[(df_Unit.index.str.contains('PV')) & ~(df_Unit.index.str.contains('district'))]
         REHO_max_PV = [np.sum([row['Units_Mult'] for index, row in df_max_PV.iterrows() if index.split('_')[-1] == h]) for h in self.infrastructure.House]
         self.scenario['specific'].remove('enforce_PV_max')
-        # TO DO: See if necessary to append the enforce_PV again
+        # TODO: See if necessary to append the enforce_PV again
         if dummy == True:
             self.scenario['specific'].append('enforce_PV')
         if dummy_2 == True:
@@ -257,6 +280,7 @@ class PathwayProblem(REHO):
         return REHO_max_PV
 
     def generate_pathway_unit_use(self, save_data=False):
+        #TODO: in pathway_problem_SiL there is the imposition of when to phase out the heating system
 
         # Check if the initial heating scenario is defined with
         if f'heating_system_{self.y_start}' in self.pathway_data.columns:
@@ -265,27 +289,36 @@ class PathwayProblem(REHO):
                 # get egid of the building
                 egid = self.qbuildings_data['buildings_data'][key]['egid']
                 # Find matching row in pathway_data
-                match_row = self.pathway_data[self.pathway_data['egid'] == egid]
+                match_row = self.pathway_data[self.pathway_data['egid'].astype(str) == str(egid)]
                 if not match_row.empty:
-                    # Get the data from match_row columns except for egid and add it to the qbuildings_data TO DO: check if I should add all info now or as needed. seems more efficient to add all now, even if not used
+                    # Get the data from match_row columns except for egid and add it to the qbuildings_data TODO: check if I should add all info now or as needed. seems more efficient to add all now, even if not used
                     for i in match_row.columns:
                         if i != 'egid':
                             self.qbuildings_data['buildings_data'][key][i] = match_row[i].values[0]
                 else:
-                    # If no match found, give error message and end the program
+                    # If no match found, give an error message and end the program
                     raise ValueError(f"No match found for egid {egid} in pathway_data.")
         else:
             # If no heating system is defined, raise an error
-            raise ValueError(f"No heating system defined in pathway_data for year {self.y_start}.") # TO DO: Instead of error, run REHO and use results as initial scenario
+            raise ValueError(f"No heating system defined in pathway_data for year {self.y_start}.") # TODO: Instead of error, run REHO and use results as initial scenario
 
-        # Phasing out the heating systems method, when I know the final heating system. TO DO: Do the same when I don't know the final heating system, and or the method of increase coverage
+        if f'heating_system_2_{self.y_start}' in self.pathway_data.columns:
+            # Add an existing heating system in qbuildings_data based on the egid
+            for key in self.qbuildings_data['buildings_data'].keys():
+                # get egid of the building
+                egid = self.qbuildings_data['buildings_data'][key]['egid']
+                # Find matching row in pathway_data
+                match_row = self.pathway_data[self.pathway_data['egid'].astype(str) == str(egid)]
+                if not match_row.empty:
+                    # Get the heating_system_2_{self.y_start} value from match_row columns
+                    self.qbuildings_data['buildings_data'][key][f'heating_system_2_{self.y_start}'] = match_row[f'heating_system_2_{self.y_start}'].values[0]
+
+        # Phasing out the heating systems method, when I know the final heating system.
         # Create a DataFrame with the initial and final heating systems for each building
         heating_pathway = pd.DataFrame()
         heating_pathway['id_building'] = [b['id_building'] for b in self.qbuildings_data['buildings_data'].values()]
-        heating_pathway[self.y_start] = [b[f'heating_system_{self.y_start}'] for b in
-                                         self.qbuildings_data['buildings_data'].values()]
-        heating_pathway[self.y_end] = [b[f'heating_system_{self.y_end}'] for b in
-                                       self.qbuildings_data['buildings_data'].values()]
+        heating_pathway[self.y_start] = [b[f'heating_system_{self.y_start}'] for b in self.qbuildings_data['buildings_data'].values()]
+        heating_pathway[self.y_end] = [b[f'heating_system_{self.y_end}'] for b in self.qbuildings_data['buildings_data'].values()]
 
         final_pathways = []
         for unit in heating_pathway[self.y_start].unique():
@@ -305,7 +338,6 @@ class PathwayProblem(REHO):
             # Start with all buildings using this unit (represented by 1)
             initial_state = [1] * N_initial
             # Final state is the final heating system (represented by 0)
-            # position_list = [i for i in np.array(range(len(initial_selection))) if np.array(bool_selection)[i] == 1]
             final_state = [1 if i == unit else 0 for i in unit_pathway[self.y_end].values]
 
             # Use random logic to decide which buildings stop using the unit at each step
@@ -317,7 +349,10 @@ class PathwayProblem(REHO):
                 col = pd.Series(pathway_use_unit[i].flatten(), name=year)
                 # Replace 1s with the unit name (still in use), and 0s with the final heating system
                 col = col.replace(1, unit)
-                col = np.where(col == 0, unit_pathway[self.y_end], col)
+                if self.path_methods['enforce_pathway'] == True:
+                    col = np.where(col == 0, unit_pathway[self.y_end], col)
+                elif self.path_methods['optimize_pathway'] == True:
+                    col = np.where(col == 0, f'{unit}_out', col)
                 # Add the column to the unit's pathway
                 unit_pathway[f'heating_system_{year}'] = col
             # Append the full pathway for this unit to the final list
@@ -335,13 +370,13 @@ class PathwayProblem(REHO):
                 # Add remaining columns to the building data
                 building.update(filtered_data)
 
-        # Generate pathways for the electric system TO DO: adapt code to when I have more than one electric system
+        # Generate pathways for the electric system TODO: adapt code to when I have more than one electric system
         # Get the logistic curve parameters for PV
-        pv_k_factor = self.get_s_curve_factors(unit, 'k_factor', 's_curve_k_factor')
-        pv_c_factor = self.get_s_curve_factors(unit, 'c_factor', 's_curve_c_factor')
+        pv_k_factor = self.get_s_curve_factors('PV', 'k_factor', 's_curve_k_factor')
+        pv_c_factor = self.get_s_curve_factors('PV', 'c_factor', 's_curve_c_factor')
 
         # Get phase-in timeline (number of buildings using the unit each year)
-        # Get the number of houses that can install a PV. TO DO: Some EGIDs might have almost no roof (this might also happen with the heating system), because the ratio is very small in this case mult will be 0.1 the Fmin. Check if we are getting these cases
+        # Get the number of houses that can install a PV. TODO: Some EGIDs might have almost no roof (this might also happen with the heating system), because the ratio is very small in this case mult will be 0.1 the Fmin. Check if we are getting these cases
         PV_init_total, PV_final_tot, PV_init_list = 0, 0, []
         for building, building_data in self.qbuildings_data['buildings_data'].items():
             # Get the number of houses that currently installed a PV
@@ -402,13 +437,14 @@ class PathwayProblem(REHO):
             # Extract keys and sort electric and heating system fields
             electric_keys = sorted([k for k in building if k.startswith('electric_system_')],key=lambda x: int(re.search(r'\d+', x).group()))
             heating_keys = sorted([k for k in building if k.startswith('heating_system_')],key=lambda x: int(re.search(r'\d+', x).group()))
+            heating_2_keys = sorted([k for k in building if k.startswith('heating_system_2_')],key=lambda x: int(re.search(r'\d+', x).group()))
 
             # Collect all other keys in their original order, excluding the above
-            other_keys = [k for k in building if not (k.startswith('electric_system_') or k.startswith('heating_system_'))]
+            other_keys = [k for k in building if not (k.startswith('electric_system_') or k.startswith('heating_system_') or k.startswith('heating_system_2_'))]
 
             # Rebuild the dictionary
             ordered_building = OrderedDict()
-            for k in other_keys + electric_keys + heating_keys:
+            for k in other_keys + electric_keys + heating_keys + heating_2_keys:
                 ordered_building[k] = building[k]
 
             # Overwrite original
@@ -419,6 +455,9 @@ class PathwayProblem(REHO):
             column_list = ['egid']
             for i in range(len(self.y_span)):
                 column_list.append(f'heating_system_{int(self.y_span[i])}')
+            # Add the column_list f'heating_system_2_{self.y_sart}' in case it exists in the qbuildings_data
+            if f'heating_system_2_{self.y_start}' in self.qbuildings_data['buildings_data'][key].keys():
+                column_list.append(f'heating_system_2_{self.y_start}')
             for i in range(len(self.y_span)):
                 column_list.append(f'electric_system_{int(self.y_span[i])}')
             # Add the column_list f'pv_mult_{self.y_sart}' in case it exists in the qbuildings_data
@@ -429,16 +468,19 @@ class PathwayProblem(REHO):
             for building_name, building_info in self.qbuildings_data['buildings_data'].items():
                 row = {'building': building_name}
                 for column in column_list:
-                    row[column] = building_info.get(column, None)  # safely get the value or None if missing
+                    row[column] = building_info.get(column, None)
                 data.append(row)
             # Convert list of dicts to DataFrame
             df = pd.DataFrame(data)
 
             # Save the DataFrame to a CSV file
-            df.to_csv('results/System_pathway.csv', index=False)
-
+            if self.path_methods['enforce_pathway'] == True:
+                df.to_csv('results/System_pathway.csv', index=False)
+            elif self.path_methods['optimize_pathway'] == True:
+                df.to_csv('results/System_pathway_phase_out.csv', index=False)
 
     def get_s_curve_factors(self, unit, factor_type, default_col):
+        # TODO: redo the docstring, self.default_s_curve_factors was eliminated
         """
         Retrieve the S-curve factor value for a given unit and factor type.
 
@@ -473,7 +515,9 @@ class PathwayProblem(REHO):
         """
         if factor_type in self.pathway_parameters and unit in self.pathway_parameters[factor_type]:
             return self.pathway_parameters[factor_type][unit]
-        return self.default_s_curve_factors.loc[self.default_s_curve_factors['Unit'] == unit, default_col].values[0]
+        for unit_row in self.units['building_units']:
+            if unit_row['name'] == unit:
+                return unit_row[default_col]
 
     def generate_s_curve(self, initial_value=1e-2, target_value=1e-3, k_factor=1, c_factor=2035, force_target=False, starting_value=True):
         """
@@ -563,7 +607,7 @@ class PathwayProblem(REHO):
 
 
 
-    def select_unit_random(self, initial_selection, steps, method, final_selection=None, mults=None): # TO DO: maybe we just nees one function that gets the mul or not depending on the method selected
+    def select_unit_random(self, initial_selection, steps, method, final_selection=None, mults=None): # TODO: maybe we just need one function that gets the mul or not depending on the method selected
         """
         Randomly select buildings to phase in or phase out a unit over a series of time steps.
 
@@ -669,32 +713,30 @@ class PathwayProblem(REHO):
             return capacities_per_step, total_status_per_step
 
     def initialise_methods(self):
-        """
-        Initialize the ``self.method`` dictionary with default values.
+        if 'enforce_pathway' not in self.path_methods and self.path_methods['optimize_pathway'] == True:
+            self.path_methods['enforce_pathway'] = False
+        if 'optimize_pathway' not in self.path_methods and self.path_methods['enforce_pathway'] == True:
+            self.path_methods['optimize_pathway'] = False
+        if 'enforce_pathway' not in self.path_methods and self.path_methods['optimize_pathway'] == False:
+            self.path_methods['enforce_pathway'] = True
+        if 'optimize_pathway' not in self.path_methods and self.path_methods['enforce_pathway'] == False:
+            self.path_methods['optimize_pathway'] = True
+        # raise valueError if 'enforce_pathway' and 'optimize_pathway' are both False
+        if self.path_methods['enforce_pathway'] is False and self.path_methods['optimize_pathway'] is False:
+            raise ValueError("The path_method 'enforce_pathway' and 'optimize_pathway' cannot be both False.")
+        # raise valueError if 'enforce_pathway' and 'optimize_pathway' are both True
+        if self.path_methods['enforce_pathway'] is True and self.path_methods['optimize_pathway'] is True:
+            raise ValueError("The path_method 'enforce_pathway' and 'optimize_pathway' cannot be both True.")
+        # raise valueError if both 'enforce_pathway' and 'optimize_pathway' are not in self.path_methods
+        if 'enforce_pathway' not in self.path_methods and 'optimize_pathway' not in self.path_methods:
+            raise ValueError("The path_method 'enforce_pathway' or 'optimize_pathway' must be defined in path_methods.")
 
-        This method sets up default configuration flags used throughout the optimization process.
-        If a specific key is not already defined in ``self.method``, it will be initialized
-        with a default value. This ensures required options are always present with consistent defaults.
 
-        Default keys and values
-        ------------------------
-        - ``'install_PV_max'`` : ``False``
-            If False the system install the optimal PV capacity.
-
-        - ``'install_PV_mult'`` : ``False``
-            Indicates that PV installation based on a specified multiplier is disabled by default.
-
-        Notes
-        -----
-        - Existing keys in ``self.method`` are preserved and not overwritten.
-        - This method is typically called during model setup to ensure a consistent method dictionary.
-        """
-        # Define default values for method keys
-        defaults = {
-            'install_PV_max': False,  # Install maximum PV capacity
-            'install_PV_mult': False,  # Install PV capacity based on given mult
-        }
-
-        # Apply defaults to self.method if a key is missing
-        for key, value in defaults.items():
-            self.method.setdefault(key, value)
+        if 'generate_pathway' not in self.path_methods:
+            self.path_methods['generate_pathway'] = True
+        if 'install_PV_max' not in self.path_methods:
+            self.path_methods['install_PV_max'] = False
+        if 'install_PV_mult' not in self.path_methods:
+            self.path_methods['install_PV_mult'] = False
+        if 'exclude_pathway_units' not in self.path_methods:
+            self.path_methods['exclude_pathway_units'] = []

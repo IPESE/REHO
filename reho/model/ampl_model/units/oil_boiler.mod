@@ -15,5 +15,5 @@ subject to OIL_c1{h in House,u in UnitsOfType['OIL_Boiler'] inter UnitsOfHouse[h
 sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t]  <= Units_Mult[u]*OIL_partload_max[u];
 
 # constrain to enforce the installation of the oil boiler
-subject to enforce_OIL_Boiler{u in UnitsOfType['OIL_Boiler']}:
+subject to enforce_OIL_Boiler{u in UnitsOfType['OIL_Boiler']: OIL_Boiler_install[u] >= 0}:
 Units_Use[u] = OIL_Boiler_install[u];

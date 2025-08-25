@@ -9,7 +9,7 @@
 # [2]	https://sistemas.eel.usp.br/docentes/arquivos/5817712/LOQ4086/saari__heat_exchanger_dimensioning.pdf
 
 param dt_min default 1;
-param DHN_efficiency_in{u in UnitsOfType['DHN_hex']}  := if min{h in House} Th_supply_0[h] + dt_min < T_DHN_supply_cst and min{h in House} Th_return_0[h] + dt_min < T_DHN_return_cst then 0.85 else 0;
+param DHN_efficiency_in{u in UnitsOfType['DHN_hex']}  := if min{h in House} Th_supply_0[h] + dt_min < T_DHN_supply_cst and min{h in House} Th_return_0[h] + dt_min < T_DHN_return_cst then 0.95 else 0;
 param DHN_efficiency_out{u in UnitsOfType['DHN_hex']}  := if min{h in House} Tc_supply_0[h] >= T_DHN_return_cst + dt_min and min{h in House} Tc_return_0[h] >= T_DHN_supply_cst + dt_min then 0.95 else 0;
 param DHN_hex_install{h in House} default 0;
 
@@ -28,5 +28,5 @@ subject to HEX_heating2{h in House,u in {'DHN_hex_'&h},p in Period,t in Time[p]}
 	Units_demand['Heat',u,p,t] * DHN_efficiency_in[u] = sum{st in StreamsOfUnit[u],se in ServicesOfStream[st]} Streams_Q[se,st,p,t];
 
 # constraint to enforce the use of DHN_hex
-subject to enforce_DHN_hex{h in House,u in {'DHN_hex_'&h}}:
+subject to enforce_DHN_hex{h in House,u in {'DHN_hex_'&h}: DHN_hex_install[h] >= 0}:
 	Units_Use[u] = DHN_hex_install[h];

@@ -7,8 +7,9 @@ from reho.plotting import plotting
 import time
 
 if __name__ == '__main__':
-    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'QBuildings_SDEWES_updated_2_60B.csv')
-    pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_SDEWES_partial_curve.csv')
+    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'QBuildings_SDEWES_updated_regbl_60B.csv')
+    #pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_SDEWES.csv')
+    pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_SDEWES_phase_out.csv')
 
     # read specific column from csv file
     transf = pd.read_csv(buildings_filename, usecols=['transformer_new'])
@@ -19,13 +20,15 @@ if __name__ == '__main__':
     n_build_list = []
     error_transf = []
     error_list = []
-    #transf_list = ['group_1']
+    #transf_list = [ 'group_24']
     for transformer in transf_list:
         tic = time.perf_counter()
         try:
             # Set building parameters
             reader = QBuildingsReader()
             qbuildings_data = reader.read_csv(buildings_filename=buildings_filename,transformer_new=transformer)
+            #qbuildings_data = reader.read_csv(buildings_filename=buildings_filename, egid = [883347, 882759, 886145, 886827, 884388, 886398, 2118598, 280002000, 886772])
+
             nb_buildings = len(qbuildings_data['buildings_data'])
 
             # Select clustering options for weather data
@@ -35,20 +38,18 @@ if __name__ == '__main__':
             scenario = dict()
             scenario['Objective'] = 'TOTEX'
             scenario['name'] = 'pathway'
-            scenario['exclude_units'] = ['ThermalSolar', 'Battery', 'Battery_district', 'NG_Cogeneration',
+            scenario['exclude_units'] = ['Battery', 'Battery_district', 'NG_Cogeneration',
                                          'HeatPump_Geothermal_district', 'HeatPump_DHN',
                                          'NG_Cogeneration_district', 'NG_Boiler_district']
-            # 'ElectricalHeater'
 
             # Set method options
             method = {'building-scale': True, 'parallel_computation': True}
 
+            path_to_custom_layers = str(Path(__file__).parent.parent / 'data' / 'layers_UrbanTwin_wood.csv')
+            available_grids = {'Electricity': {}, 'NaturalGas': {}, 'Heat': {}, 'Oil': {}, 'Wood': {}}
+
             # Initialize available units and grids
-            grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.2810, "Cost_demand_cst": 0.1535}, # (23-04-2025) https://www.lausanne.ch/vie-pratique/energies-et-eau/services-industriels/particuliers/je-choisis-mon-offre/electricite.html?tab=tarifs
-                                                     'NaturalGas': {"Cost_supply_cst": 0.1511, "Cost_demand_cst": 0.0}, # (23-04-2025) https://www.lausanne.ch/vie-pratique/energies-et-eau/services-industriels/particuliers/je-choisis-mon-offre/gaz-naturel.html?tab=tarifs
-                                                     'Heat': {"Cost_supply_cst": 0.1609, "Cost_demand_cst": 0.000}, # (23-04-2025) https://www.lausanne.ch/vie-pratique/energies-et-eau/services-industriels/professionnels/les-offres/chaleur.html?tab=tarifs
-                                                     'Oil': {"Cost_supply_cst": 0.0941, "Cost_demand_cst": 0.000}, #  (23-04-2025) energy content of oil is 137,381 Btu per gallon or 10.63619997 kWh/l (https://www.eia.gov/energyexplained/units-and-calculators/)
-                                                     })                                                            # oil migros Lausanne 100.11	CHF/100 l (https://www.migrol.ch/fr/energie-chaleur/acheter-%C3%A9nergie/mazout/commander-mazout/?m=100&zip=1000&city=Lausanne#/)
+            grids = infrastructure.initialize_grids(available_grids, file=path_to_custom_layers)
 
             grids['Electricity']['ReinforcementOfNetwork'] = np.array([1E6])
             grids['NaturalGas']['ReinforcementOfNetwork'] = np.array([1E6])
@@ -59,7 +60,14 @@ if __name__ == '__main__':
             grids['Oil']['Network_ext'] = 1E6
             grids['Heat']['Network_ext'] = 1E8
 
-            units = infrastructure.initialize_units(scenario, grids)
+            path_to_custom_units = str(Path(__file__).parent.parent / 'data' / 'building_units_UrbanTwin.csv')
+            units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
+
+            # Set pathway methods
+            path_methods = dict()
+            path_methods['generate_pathway'] = False
+            path_methods['optimize_pathway'] = True
+            #path_methods['exclude_pathway_units'] = ['WOOD_Stove']
 
             pathway_parameters = dict()
             pathway_parameters['y_start'] = 2025 # start year for the pathway analysis
@@ -67,14 +75,18 @@ if __name__ == '__main__':
             pathway_parameters['N_steps_pathway'] = 6 # number of points in the analysis
 
             # Pathway data
-            #pathway_data = pd.read_csv('../Pathways/QBuildings/Pathway_SDEWES_test_no_EH_change_PV_300000871_886466.csv')
+            #pathway_data = pd.read_csv('../Pathways/QBuildings/Pathway_SDEWES_no_EH_ST_change_PV_300000871_886466.csv')
             pathway_data = pd.read_csv(pathways_filename)
 
-            reho_path = PathwayProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, pathway_parameters= pathway_parameters, pathway_data=pathway_data, cluster=cluster, scenario=scenario, method=method, solver="gurobi", group=transformer)
-            reho_path.execute_pathway_building_scale(pathway_unit_use=True)
-            #plotting.plot_performance(reho_path.results, plot='costs', indexed_on='Pareto_ID', label='EN_long',title="Economical performance").show()
+            reho_path = PathwayProblem(qbuildings_data=qbuildings_data,units=units,grids=grids,pathway_parameters=pathway_parameters,
+                                       pathway_data=pathway_data,cluster=cluster,scenario=scenario,method=method,solver="gurobiasl",
+                                       path_methods=path_methods,group=transformer)
+            reho_path.execute_pathway_building_scale()
+
+            #plotting.plot_performance(reho_path.results,plot='costs',indexed_on='Pareto_ID',label='EN_long',title="Economical performance").show()
             # Save results
-            reho_path.save_results(format=['pickle'], filename=f'pathway_{transformer}')
+            reho_path.save_results(format=['pickle'], filename=f'pathway_out_{transformer}')
+
         except Exception as e:
             error_transf.append(transformer)
             error_list.append(e)
@@ -86,7 +98,7 @@ if __name__ == '__main__':
 
     # save the process time in a csv file
     process_time_df = pd.DataFrame({'Transformer': transf_list, 'N Buildings': n_build_list, 'Process time': process_time_list})
-    process_time_df.to_csv(str(Path(__file__).parent /'results'/'process_time.csv', index=False))
+    process_time_df.to_csv(str(Path(__file__).parent /'results'/'process_time.csv'), index=False)
 
     error_transf_df = pd.DataFrame({'Transformers': error_transf, 'Error': error_list})
-    error_transf_df.to_csv(str(Path(__file__).parent /'results'/'error_transf.csv', index=False))
+    error_transf_df.to_csv(str(Path(__file__).parent /'results'/'error_transf.csv'), index=False)

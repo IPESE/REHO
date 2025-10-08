@@ -120,3 +120,27 @@ Main contributors
 * Dorsan **Lepour** (2020-...)
 * Cédric **Terrier** (2021-...)
 * Joseph **Loustau** (2022-2024)
+
+
+.. raw:: html
+
+   <p>&nbsp;</p>
+   <p>&nbsp;</p>
+
+
+Funding projects
+================
+
+.. image:: images/logos/SWICE.jpg
+   :width: 300
+   :align: right
+
+* Services Industriels de Genève, SIG (2020-...)
+* Swiss Federal Office of Energy, SWEET-SWICE (2022-...)
+
+
+.. raw:: html
+
+   <p>&nbsp;</p>
+   <p>&nbsp;</p>
+

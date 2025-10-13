@@ -253,14 +253,14 @@ class SubProblem:
         all_units = [unit for unit, value in ampl.getVariable('Units_Use').instances()]
         for i in all_units:
             for u in self.scenario_sp['exclude_units']:
-                if ('district' not in i) and ('IP' not in i) and (u in i):  # unit at the building scale
-                    ampl.getVariable('Units_Use').get(str(i)).fix(0)
+                if ('district' not in i[0]) and ('IP' not in i[0]) and (u in i[0]):  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i[0])).fix(0)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(0)
 
             for u in self.scenario_sp['enforce_units']:
-                if 'district' not in i and u in i:  # unit at the building scale
-                    ampl.getVariable('Units_Use').get(str(i)).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
+                if 'district' not in i[0] and u in i[0]:  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i[0])).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(1)
 

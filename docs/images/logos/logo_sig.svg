@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="114.0079mm"
+   height="113.95287mm"
+   viewBox="0 0 114.0079 113.95287"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.1.1 (c3084ef, 2021-09-22)"
+   sodipodi:docname="SIG_Genève_logo.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:document-units="mm"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="0.49976852"
+     inkscape:cx="150.06948"
+     inkscape:cy="429.1987"
+     inkscape:window-width="1323"
+     inkscape:window-height="783"
+     inkscape:window-x="314"
+     inkscape:window-y="25"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g837" />
+  <defs
+     id="defs2">
+    <radialGradient
+       cx="27.635382"
+       cy="26.379227"
+       fx="27.635382"
+       fy="26.379227"
+       r="20.242632"
+       gradientTransform="scale(0.97700842,1.0235326)"
+       id="rG"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         stop-color="#FFF"
+         offset="0%"
+         id="stop824" />
+      <stop
+         stop-color="#FFD032"
+         offset="100%"
+         id="stop826" />
+    </radialGradient>
+  </defs>
+  <g
+     inkscape:label="Calque 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-65.290167,-35.141213)">
+    <g
+       transform="matrix(2.1166667,0,0,2.1166667,65.290167,35.141213)"
+       id="g837">
+      <path
+         d="M 26.931,0 C 12.058,0 0,12.057 0,26.93 c 0,0.031 0.003,0.062 0.003,0.093 H 53.86 c 0,-0.031 0.002,-0.062 0.002,-0.093 C 53.862,12.057 41.805,0 26.931,0"
+         id="Fill-1"
+         fill="#ffd032" />
+      <rect
+         id="Rectangle"
+         fill="url(#rG)"
+         x="6"
+         y="5"
+         width="42"
+         height="44"
+         rx="21"
+         style="fill:url(#rG)" />
+      <path
+         d="M 26.928,53.836 C 41.771,53.836 53.806,41.829 53.857,27 H 0 c 0.051,14.829 12.086,26.836 26.928,26.836"
+         id="Fill-6"
+         fill="#68737a" />
+      <path
+         d="m 20.577,30.024 c -2.134,-0.714 -3.404,-0.989 -4.653,-0.989 -1.315,0 -2.155,0.357 -2.155,0.907 0,1.678 7.475,1.205 7.475,5.071 0,2.129 -2.37,3.362 -5.643,3.362 -2.569,0 -3.837,-0.503 -5.302,-1.071 v -2.389 c 2.112,1.058 3.406,1.431 5.02,1.431 1.401,0 2.154,-0.373 2.154,-1.024 C 17.473,33.503 10,34.168 10,30.188 10,28.27 12.196,27 15.601,27 c 1.634,0 3.119,0.263 4.976,0.867 z"
+         id="Fill-9"
+         fill="#fefefe" />
+      <polygon
+         id="Fill-11"
+         fill="#fefefe"
+         points="28.59,27 25,27 25,38.082 28.59,38.082 " />
+      <path
+         d="m 44.339,30.333 c -1.58,-0.679 -3.103,-1.022 -4.628,-1.022 -3.357,0 -4.541,1.851 -4.541,3.493 0,1.965 1.732,3.265 4.291,3.265 0.76,0 1.14,-0.064 2.048,-0.39 V 34.38 h -1.798 v -2.029 h 4.883 v 4.531 c -0.925,0.861 -3.213,1.493 -5.212,1.493 C 35.068,38.375 32,36.021 32,32.704 32,29.325 35.045,27 39.461,27 c 1.849,0 3.646,0.376 4.878,0.915 v 2.418"
+         id="Fill-13"
+         fill="#fefefe" />
+    </g>
+  </g>
+</svg>

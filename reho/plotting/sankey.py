@@ -343,7 +343,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
             'flows': [
                 # Network imports/exports
                 ('Biomethane_import', 'rSOC', 'Network', 'Supply_MWh', False, None, 0, 1),
-                ('rSOC', 'Biomethane_export', 'Network', 'Demand_MWh', False, None, 0, 1),
+                ('MTR', 'Biomethane_export', 'Network', 'Demand_MWh', False, None, 0, 1),
 
                 # internal flows
                 ('CH4_storage_IP', 'rSOC', 'CH4_storage_IP', 'Supply_MWh', False, None, 0, 1),

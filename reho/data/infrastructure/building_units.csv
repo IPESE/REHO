@@ -20,7 +20,7 @@ DHN_hex;m2;0.1;10000000;6000;500;400;100;20;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_
 DHN_pipes;kW;0.1;10000000;10000;200;2000;10;60;DHN_pipes;Heat;;;;;;;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`
 DataHeat_SH;kWth;0.1;100000;1000;5000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;SH;h_ht;Electricity;Data;80;60;
 DataHeat_DHW;kWth;0.1;100000;1000;11000;1000;500;4;DataHeat;Electricity/ Data/ HeatCascade;DHW;h_ht;Electricity;Data;80;60;
-MTR;kW;0.1;100000;15000;1000;2000;10;20;Methanator;Biomethane/ CO2/ Hydrogen/ Electricity/ HeatCascade;SH/ DHW/ rSOC_heat;h_ht;Hydrogen/ CO2/ Electricity;Biomethane;110;105;`Energy Prod. <https://www.witpress.com/Secure/ejournals/papers/EQ050201f.pdf>`
-rSOC;kW;0.1;100000;20000;3000;3000;50;10;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ HeatCascade;SH/ DHW/ rSOC_heat;h_ht/ c_ht;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen;80/ 100;60/ 101;`Joule <https://www.cell.com/joule/fulltext/S2542-4351(24)00425-2>`
-FC;kW;0.1;100000;15000;2000;2000;50;20;FuelCell;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen;Electricity;80;60;
+MTR;kW;0.1;100000;5000;700;2000;10;15;Methanator;Biomethane/ CO2/ Hydrogen/ Electricity/ HeatCascade;SH/ DHW/ rSOC_heat;h_ht;Hydrogen/ CO2/ Electricity;Biomethane;110;105;`Energy Prod. <https://www.witpress.com/Secure/ejournals/papers/EQ050201f.pdf/https://www.sciencedirect.com/science/article/pii/S0960148115301610#sec6>`
+rSOC;kW;0.1;100000;8320.6;1193.1;3000;50;10;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ HeatCascade;SH/ DHW/ rSOC_heat;h_ht/ c_ht;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen;80/ 100;60/ 101;`Joule <https://www.cell.com/joule/fulltext/S2542-4351(24)00425-2>`
+FC;kW;0.1;100000;15000;1000;2000;50;10;FuelCell;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen;Electricity;80;60;
 ETZ;kWh;0.1;100000;10000;1000;2000;50;10;Electrolyzer;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Electricity;Hydrogen;80;60;

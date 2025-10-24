@@ -1,6 +1,6 @@
 Unit;ref_unit;Units_Fmin;Units_Fmax;Cost_inv1;Cost_inv2;GWP_unit1;GWP_unit2;lifetime;UnitOfType;UnitOfLayer;UnitOfService;StreamsOfUnit;Units_flowrate_in;Units_flowrate_out;stream_Tin;stream_Tout;References
 Battery_IP_district;kWh;0.1;100000000;825;1290;0;65.9562;10;Battery_interperiod;Electricity;;;Electricity;Electricity;;;`SuisseEnergie <https://www.suisseenergie.ch/stories/batteries-solaires/>`_
-CH4_storage_IP_district;kWh;0.1;100000000;10000;0.1;0;0;60;CH4storage;Biomethane/ Electricity;;;Biomethane/ Electricity;Biomethane;0;0;
-H2_storage_IP_district;kWh;0.1;100000000;10000;10;0;0;60;H2storage;Hydrogen/ Electricity;;;Hydrogen/ Electricity; Hydrogen;0;0;<https://www.hydrogen.energy.gov/docs/hydrogenprogramlibraries/pdfs/review18/st001_ahluwalia_2018_o.pdf?Status=Master>
-CO2_storage_IP_district;mol;0.1;100000000;0;0.0001;0;0;60;CO2storage;CO2/ Electricity;;;CO2/ Electricity;CO2;0;0;
-Compressor_IP_district;kW;0.1;100000000;2500;750;100;20;20;Compressor;;;;;;0;0
+CH4_storage_IP_district;kWh;0.1;1000000000;20000;2.0;0;0;60;CH4storage;Biomethane/ Electricity;;;Biomethane/ Electricity;Biomethane;0;0;
+H2_storage_IP_district;kWh;0.1;1000000000;20000;8;0;0;60;H2storage;Hydrogen/ Electricity;;;Hydrogen/ Electricity; Hydrogen;0;0;<https://www.hydrogen.energy.gov/docs/hydrogenprogramlibraries/pdfs/review18/st001_ahluwalia_2018_o.pdf?Status=Master>
+CO2_storage_IP_district;mol;0.1;1000000000;0;0.0001;0;0;60;CO2storage;CO2/ Electricity;;;CO2/ Electricity;CO2;0;0;
+Compressor_IP_district;kW;0.001;1000000000;2000;750;100;20;20;Compressor;;;;;;0;0

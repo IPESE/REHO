@@ -96,3 +96,18 @@ subject to SOEC_partload{u in UnitsOfType['rSOC'],p in Period, t in Time[p]}:
     Units_demand['Electricity',u,p,t] = 0
     or Units_demand['Electricity',u,p,t] >= Units_Mult[u] * SOEC_power_min_limit_in[u];
 */
+
+### Force hydrogen export
+
+param HydrogenAnnualExport_district >= 0 default 0;  # set as a parameter for an annual H2 export [kWh]
+
+subject to forced_H2_annual_export_district:
+    sum{p in PeriodStandard,t in Time[p]} Network_demand['Hydrogen',p,t]*dp[p]*dt[p] = HydrogenAnnualExport_district;
+
+/*
+var HydrogenDailyExport_district >= 0;  # set as a variable for an optimal daily H2 export [kWh]
+
+subject to forced_H2_fixed_daily_export_district{p in PeriodStandard}:
+HydrogenDailyExport_district = sum{t in Time[p]} Network_demand['Hydrogen',p,t]*dt[p];
+
+*/

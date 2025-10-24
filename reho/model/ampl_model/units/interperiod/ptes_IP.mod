@@ -1,6 +1,10 @@
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 #  Pumped thermal energy storage
+#
+# References:
+#	https://docs.nrel.gov/docs/fy20osti/76766.pdf
+# 	https://www.sciencedirect.com/science/article/pii/S2352152X2201009X
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
@@ -8,10 +12,10 @@
 # It is able to store electricity and provides usable heat from conversion inefficiencies
 
 param PTES_efficiency{u in UnitsOfType['PTES_conversion']}>=0,<=1 := sqrt(0.67); #%
-param PTES_self_discharge{u in UnitsOfType['PTES_storage']}>=0,<=1 default 0.01; #%/day
+param PTES_self_discharge{u in UnitsOfType['PTES_storage']}>=0,<=1 default 0.02; #%/day (half-life: 34 days)
 
 #PTES_heat_losses corresponds to non-usable heat
-param PTES_heat_losses{u in UnitsOfType['PTES_conversion']}>=0,<=(1-PTES_efficiency[u]) default 0.0;
+param PTES_heat_losses{u in UnitsOfType['PTES_conversion']}>=0,<=0.5*(1-PTES_efficiency[u]) default 0.0;
 
 var PTES_E_Stored{h in House, u in UnitsOfType['PTES_storage'] inter UnitsOfHouse[h], hy in Year} >= 0;
 
@@ -35,7 +39,7 @@ PTES_E_Stored[h,u,hy] <= Units_Mult[u];
 subject to PTES_Usable_heat_computation{h in House,u in UnitsOfType['PTES_conversion'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p]:Streams_Hin[st] = 1}:
 Units_demand['Electricity',u,p,t]*(1-PTES_efficiency[u]-PTES_heat_losses[u])
 + Units_supply['Electricity',u,p,t]*(1-PTES_efficiency[u]-PTES_heat_losses[u])
- = sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t];;
+ >= sum{sq in ServicesOfStream[st]} Streams_Q[sq,st,p,t];
 
 subject to PTES_EB{h in House,us in UnitsOfType['PTES_storage'] inter UnitsOfHouse[h], uc in UnitsOfType['PTES_conversion'] inter UnitsOfHouse[h], hy in Year}:
 (PTES_E_Stored[h,us,next(hy,Year)] - (1-PTES_self_discharge[us]/24)*PTES_E_Stored[h,us,hy]) = 

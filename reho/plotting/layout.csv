@@ -112,3 +112,6 @@ Total_EV_fleet,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_charger_district,EV charging station,EVchrg,Stations de recharge,#008080,teal
 Subsidies,Subsidies,Subsid,Subsides,mediumorchid,green_dark
+,,,,,
+PTES_conv_IP,PTES-conversion,PTES,PTES,#ffcc99,limegreen
+PTES_storage_IP,PTES-storage,PTES,PTES,#ffcc99,limegreen

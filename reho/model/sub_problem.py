@@ -198,8 +198,8 @@ class SubProblem:
                 ampl.read('H2storage_IP.mod')
             if 'CH4storage' in self.infrastructure_sp.UnitTypes:
                 ampl.read('CH4storage_IP.mod')
-            if 'CO2storage' in self.infrastructure_sp.UnitTypes:
-                ampl.read('CO2storage_IP.mod')
+            if ('PTES_storage' in self.infrastructure_sp.UnitTypes) and ('PTES_conversion' in self.infrastructure_sp.UnitTypes):
+                ampl.read('ptes_IP.mod')
 
             # if 'WaterTankSH_interperiod' in self.infrastructure_sp.UnitTypes:
             #    ampl.read('heatstorage_IP.mod')

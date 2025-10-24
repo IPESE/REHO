@@ -357,11 +357,11 @@ class MasterProblem:
         ampl = REHO.build_model_without_solving()
 
         if self.method['fix_units']:
+            fix_units_list = getattr(self, 'fix_units_list', [])
 
-            if len(self.fix_units_list) > 0:
+            if fix_units_list:
                 # Create regex pattern like 'rSOC|PV'
-                pattern = "|".join(self.fix_units_list)
-
+                pattern = "|".join(fix_units_list)
                 # Filter rows that contain these substrings
                 self.fix_units_focus = self.df_fix_Units[
                     self.df_fix_Units.index.to_series().str.contains(pattern, case=False, regex=True)
@@ -370,34 +370,44 @@ class MasterProblem:
                 self.fix_units_focus = self.df_fix_Units
 
             # Loop over technologies of interest
-            for tech in self.fix_units_list:
-                tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
+            if fix_units_list:
+                for tech in self.fix_units_list:
+                    tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
 
-                unit_name = f"{tech}_{h}"
-                try:
-                    # --- Case 1: Unit exists in df -> fix to provided values
-                    if unit_name in self.df_fix_Units.index:
-                        if unit_name == f"PV_Building{h}":
-                            ampl.getVariable('Units_Mult').get(unit_name).fix(
-                                self.df_fix_Units.loc[unit_name, 'Units_Mult'] * (1 - 1e-9)
-                            )
-                            ampl.getVariable('Units_Use').get(unit_name).fix(
-                                float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
-                            )
+                    unit_name = f"{tech}_{h}"
+                    try:
+                        # --- Case 1: Unit exists in df -> fix to provided values
+                        if unit_name in self.df_fix_Units.index:
+                            if unit_name == f"PV_Building{h}":
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult'] * (1 - 1e-9)
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
+                            else:
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult']
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
+
+                        # --- Case 2: Unit missing -> fix to 0
                         else:
-                            ampl.getVariable('Units_Mult').get(unit_name).fix(
-                                self.df_fix_Units.loc[unit_name, 'Units_Mult']
-                            )
-                            ampl.getVariable('Units_Use').get(unit_name).fix(
-                                float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
-                            )
-
-                    # --- Case 2: Unit missing -> fix to 0
+                            ampl.getVariable('Units_Mult').get(unit_name).fix(0)
+                            ampl.getVariable('Units_Use').get(unit_name).fix(0)
+                    except:
+                        pass
+            else:
+                for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
+                    if unit == 'PV_' + h:
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
                     else:
-                        ampl.getVariable('Units_Mult').get(unit_name).fix(0)
-                        ampl.getVariable('Units_Use').get(unit_name).fix(0)
-                except:
-                    pass
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
+
 
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)
@@ -730,10 +740,11 @@ class MasterProblem:
 
         if self.method['fix_units']:
 
-            if len(self.fix_units_list) > 0:
-                # Create regex pattern like 'rSOC|PV'
-                pattern = "|".join(self.fix_units_list)
+            fix_units_list = getattr(self, 'fix_units_list', [])
 
+            if fix_units_list:
+                # Create regex pattern like 'rSOC|PV'
+                pattern = "|".join(fix_units_list)
                 # Filter rows that contain these substrings
                 self.fix_units_focus = self.df_fix_Units[
                     self.df_fix_Units.index.to_series().str.contains(pattern, case=False, regex=True)
@@ -741,27 +752,33 @@ class MasterProblem:
             else:
                 self.fix_units_focus = self.df_fix_Units
 
-            # Loop over technologies of interest
-            for tech in self.fix_units_list:
-                tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
+            if fix_units_list:
+                # Loop over technologies of interest
+                for tech in self.fix_units_list:
+                    tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
 
-                unit_name = f"{tech}_district"
-                try:
-                    # --- Case 1: Unit exists in df -> fix to provided values
-                    if unit_name in self.df_fix_Units.index:
+                    unit_name = f"{tech}_district"
+                    try:
+                        # --- Case 1: Unit exists in df -> fix to provided values
+                        if unit_name in self.df_fix_Units.index:
 
-                        ampl_MP.getVariable('Units_Mult').get(unit_name).fix(
-                            self.df_fix_Units.loc[unit_name, 'Units_Mult']
-                        )
-                        ampl_MP.getVariable('Units_Use').get(unit_name).fix(
-                            float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
-                        )
-                    # --- Case 2: Unit missing -> fix to 0
-                    else:
-                        ampl_MP.getVariable('Units_Mult').get(unit_name).fix(0)
-                        ampl_MP.getVariable('Units_Use').get(unit_name).fix(0)
-                except:
-                    pass
+                            ampl_MP.getVariable('Units_Mult').get(unit_name).fix(
+                                self.df_fix_Units.loc[unit_name, 'Units_Mult']
+                            )
+                            ampl_MP.getVariable('Units_Use').get(unit_name).fix(
+                                float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                            )
+                        # --- Case 2: Unit missing -> fix to 0
+                        else:
+                            ampl_MP.getVariable('Units_Mult').get(unit_name).fix(0)
+                            ampl_MP.getVariable('Units_Use').get(unit_name).fix(0)
+                    except:
+                        pass
+            else:
+                for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains('district')]:
+                    ampl_MP.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                    ampl_MP.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
+
         # Solve ampl_MP
         ampl_MP.solve()
 
@@ -885,10 +902,11 @@ class MasterProblem:
 
         if self.method['fix_units']:
 
-            if len(self.fix_units_list) > 0:
-                # Create regex pattern like 'rSOC|PV'
-                pattern = "|".join(self.fix_units_list)
+            fix_units_list = getattr(self, 'fix_units_list', [])
 
+            if fix_units_list:
+                # Create regex pattern like 'rSOC|PV'
+                pattern = "|".join(fix_units_list)
                 # Filter rows that contain these substrings
                 self.fix_units_focus = self.df_fix_Units[
                     self.df_fix_Units.index.to_series().str.contains(pattern, case=False, regex=True)
@@ -896,35 +914,47 @@ class MasterProblem:
             else:
                 self.fix_units_focus = self.df_fix_Units
 
-            # Loop over technologies of interest
-            for tech in self.fix_units_list:
-                tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
+            if fix_units_list:
+                # Loop over technologies of interest
+                for tech in self.fix_units_list:
+                    tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
 
-                unit_name = f"{tech}_{h}"
-                try:
-                    # --- Case 1: Unit exists in df -> fix to provided values
-                    if unit_name in self.df_fix_Units.index:
-                        if unit_name == f"PV_Building{h}":
-                            ampl.getVariable('Units_Mult').get(unit_name).fix(
-                                self.df_fix_Units.loc[unit_name, 'Units_Mult'] * (1 - 1e-9)
-                            )
-                            ampl.getVariable('Units_Use').get(unit_name).fix(
-                                float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
-                            )
+                    unit_name = f"{tech}_{h}"
+                    try:
+                        # --- Case 1: Unit exists in df -> fix to provided values
+                        if unit_name in self.df_fix_Units.index:
+                            if unit_name == f"PV_Building{h}":
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult'] * (1 - 1e-9)
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
+                            else:
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult']
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
+
+                        # --- Case 2: Unit missing -> fix to 0
                         else:
-                            ampl.getVariable('Units_Mult').get(unit_name).fix(
-                                self.df_fix_Units.loc[unit_name, 'Units_Mult']
-                            )
-                            ampl.getVariable('Units_Use').get(unit_name).fix(
-                                float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
-                            )
-
-                    # --- Case 2: Unit missing -> fix to 0
+                            ampl.getVariable('Units_Mult').get(unit_name).fix(0)
+                            ampl.getVariable('Units_Use').get(unit_name).fix(0)
+                    except:
+                        pass
+            else:
+                for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
+                    if unit == 'PV_' + h:
+                        ampl.getVariable('Units_Mult').get(unit).fix(
+                            self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                        ampl.getVariable('Units_Use').get(unit).fix(
+                            float(self.df_fix_Units.Units_Use.loc[unit]))
                     else:
-                        ampl.getVariable('Units_Mult').get(unit_name).fix(0)
-                        ampl.getVariable('Units_Use').get(unit_name).fix(0)
-                except:
-                    pass
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                        ampl.getVariable('Units_Use').get(unit).fix(
+                            float(self.df_fix_Units.Units_Use.loc[unit]))
 
         ampl.solve()
         exitcode = exitcode_from_ampl(ampl)

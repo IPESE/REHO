@@ -93,14 +93,16 @@ WaterTankDHW,Water tank (DHW),WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux
 ,,,,,
 DataHeat_SH,Data centers,ICT,Centre de données,#ffcc99,skin
 DataHeat_DHW,Data centers (DHW),ICT,Centre de données (ECS),#ffcc99,skin
+ORC_DC_district,Organic Rankine Cycle,ORC,ORC,#FF8C00,orange
+Datacenter_district,Data centers,ICT,Centre de données (ECS),#ffcc99,skin
 ,,,,,
 AirConditioner,Air conditioner,AC,Climatiseur,#00008b,darkblue
 Cooling,Space cooling,SC,Demande en froid,#00008b,darkblue
 ,,,,,
-Isolation,Thermal insulation,INS,Isolation,#69B58A,green
-Isolation_roof,Roof insulation,INS1,Isolation toiture,#a9d6bc,green_light
-Isolation_facade,Facade insulation,INS2,Isolation façade,#87c5a1,green_medium
-Isolation_full,Complete insulation,INS3,Isolation complète,#53ac7a,green_dark
+renovation,Thermal renovation,INS,renovation,#69B58A,green
+renovation_roof,Roof renovation,INS1,renovation toiture,#a9d6bc,green_light
+renovation_facade,Facade renovation,INS2,renovation façade,#87c5a1,green_medium
+renovation_full,Complete renovation,INS3,renovation complète,#53ac7a,green_dark
 ,,,,,
 Mobility,Mobility,Mob,Mobilité,#32CD32,limegreen
 ICE_district,Fossil fuel vehicles,ICE,Véhicule à combustion,#8B4513,saddlebrown
@@ -109,4 +111,4 @@ ElectricBike_district,Electric bikes,EBike,Vélos électriques,#00FF7F,springgre
 Total_EV_fleet,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_charger_district,EV charging station,EVchrg,Stations de recharge,#008080,teal
-EV_charger,EV charging station,EVchrg,Stations de recharge,#008080,teal
+Subsidies,Subsidies,Subsid,Subsides,mediumorchid,green_dark

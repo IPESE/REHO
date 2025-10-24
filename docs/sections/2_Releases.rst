@@ -108,7 +108,50 @@ The thesis also focuses in particular on the role of integrating photovoltaic pa
 Academic contributions
 ------------------------
 
-.. dropdown:: :bdg-primary:`Conference` REHO - A Comprehensive Decision Support Tool for Sustainable Energy System Planning, Lepour 2024
+.. dropdown:: :bdg-primary:`Conference` Solid Oxide Cells and Hydrogen Storage to Prevent Grid Congestion, Lepour 2025 :cite:`lepourSolidOxideCells2025`
+    :icon: globe
+
+    *The 35th European Symposium on Computer Aided Process Engineering (ECOS) - July 6-9, 2025, Ghent, Belgium*
+
+    **Abstract**
+
+    The integration of solid oxide cells and hydrogen storage for building energy systems is investigated. In the context of renewables penetration and electrification of energy services (i.e., deployment of photovoltaics, heat pumps, electric vehicles), the study considers a typical residential building with limited grid capacity for electricity im- port/export. Five 5 scenarios are investigated, among which a closed-loop system where hydrogen is produced, stored, and locally consumed, and a scenario where hydrogen can also be exported to generate revenues. Results indicate that a reversible solid oxide cell coupled with a hydrogen tank offer a compelling solution as a substitute for electrical storage in the context of grid congestion and PV curtailment. In addition to provide local chemical storage, it makes an efficient use of resources by recovering waste heat generated during cell operation, which is used to partially meet space heating and domestic hot water demands. Another significant aspect of such system is the potential for e-fuel production and hydrogen export.
+
+.. dropdown:: :bdg-primary:`Conference` Potential of Reversible Solid Oxide Cells and Long-term Energy Storage in Residential Areas, Waeber 2025 :cite:`waeberPotentialReversibleSolid2025`
+    :icon: globe
+
+    *The 35th European Symposium on Computer Aided Process Engineering (ECOS) - July 6-9, 2025, Ghent, Belgium*
+
+    **Abstract**
+
+    This study explores the potential of reversible Solid Oxide Cells (rSOCs) for residential energy storage and decentralized chemical production. rSOCs offer high efficiency, fuel flexibility, and useful heat cogeneration, making them well-suited for balancing renewable energy production throughout the year. This work evaluates the technical and economic feasibility of rSOC systems along with two long-term storage options: Hydrogen (H₂) and Hybrid tank (CH₄/CO₂). The Renewable Energy Hub Optimizer (REHO) is used as an optimization framework considering local resources, multi- energy carriers, and end-use demands in residential areas. A sensitivity analysis is performed to evaluate the benefits of the rSOC integration and enable a fair comparison between the storage options. By assessing TOTEX, storage tank sizes and renewable energy capacity, it also explores the decentralized production of hydrogen as a marketable product for the industry.
+
+.. dropdown:: :bdg-primary:`Conference` Renewable energy communities for the decarbonization of households consumption, Lepour 2025 :cite:`lepourRenewableEnergyCommunities2025`
+    :icon: globe
+
+    *Third International Conference on Action versus Inaction Facing Climate Change (AICC) - June 4-5, 2025, Lausanne, Switzerland*
+
+    **Abstract**
+
+    This study investigates the ”energy cost of living”, comprised as the delivery of energy services for residents —including thermal comfort, domestic electricity, mobility, and information and communication technologies (ICT). Coordinated design and operational strategies of energy communities are shown to significantly reduce monthly per capita energy costs from 142.1 CHF for a fossil-based system, to 41.5 CHF for a renewable-integrated system. The environmental footprint is reduced from 2’295 kgCO2-eq/year to negative emissions of -140.4 kgCO2-eq/year, resulting from surplus solar electricity injected into the grid. A further comprehensive evaluation employs the social cost of carbon as a unified economic metric, capturing both financial expenses and environmental impacts of the different renovation scenarios for buildings. Under this evaluation, the conventional fossil-based system incurs a total societal cost of 171.7 CHF per capita per month, whereas the renewable-integrated system achieves a dramatic reduction, lowering the total cost to 39.7 CHF per capita per month. Projected nationally, this translates into potential annual savings of 14.25 billion CHF for Switzerland.
+
+.. dropdown:: :bdg-primary:`Conference` Power to the People: On the Role of Districts in Decentralized Energy Systems, Chuat 2025 :cite:`chuatPowerPeopleRole2025`
+    :icon: globe
+
+    *Third International Conference on Action versus Inaction Facing Climate Change (AICC) - June 4-5, 2025, Lausanne, Switzerland*
+
+    **Abstract**
+
+    The transition toward renewable and decentralized energy systems is propelled by the urgent need to address climate concerns and advance sustainable development globally. This transformation requires innovative methods to integrate stochastic renewable sources such as solar and wind power and challenge traditional energy paradigms rooted in centralized and continuous energy production. The present study focuses on the Swiss energy system to explore the optimization of energy planning strategies that incorporate decentralized energy production within a centralized framework. Here, we show that a strategic approach to decentralization can significantly reduce annual system costs by 10% to 1230 CHF per capita and increase self-consumption to 68% of the decentralized PV production, emphasizing the need for a hybrid energy-planning model that balances centralized and decentralized models for enhanced system resilience, efficiency, and cost-effectiveness. This research underscores the strategic importance of diversifying energy sources, enhancing energy storage, improving grid flexibility, and laying a foundational framework for policymaking and strategic planning. It encourages further investigation into climate impacts, technology synergy, and the integration of district heating, aiming to establish a resilient, sustainable, and autonomous energy future.
+
+.. dropdown:: :bdg-primary:`Journal` Internal pricing in integrated energy system design, Granacher 2024 :cite:`granacherInternalPricingIntegrated2025`
+    :icon: file-badge
+
+    **Abstract**
+
+    Environmentally sustainable and economically viable process and energy systems are imperative to a successful energy transition. Often, design configurations are derived from a global perspective, in which the individual needs and interests of actors within the system are overlooked. This work proposes an approach for designing a system considering its entire scope and acknowledging the individual actors within the system. System solutions are generated from the perspective of a universal decision-maker who is aware of the whole system, and the obtained solution space is analyzed regarding implications for the individual actors. Thereby, prices of internal exchanges between actors that would allow for the realization of the optimal integrated system solution while granting each actor their economic objectives are derived. The approach is demonstrated in three distinct case studies varying in size: a bio-based industrial site, a renewable energy community, and a national energy system. All case studies yield system configurations allowing the actors to profit from economic benefits emerging from synergies from internal cooperation. Further research must delve into diverse system settings and actor paradigms to enhance the robustness and applicability of the derived insights.
+
+.. dropdown:: :bdg-primary:`Conference` REHO - A Comprehensive Decision Support Tool for Sustainable Energy System Planning, Lepour 2024 :cite:`lepourRenewableEnergyHub2024`
     :icon: globe
 
     *European Symposium on Computer Aided Process Engineering (Escape) - June 2-6, 2024, Florence, Italy*
@@ -118,7 +161,7 @@ Academic contributions
     The transition to sustainable energy systems in the face of growing renewable energy adoption and electrification is a complex and critical challenge. The Renewable Energy Hub Optimizer (REHO) emerges as a powerful decision support tool designed to investigate the deployment of energy conversion and storage technologies in this evolving landscape. REHO leverages a Mixed-Integer Linear Programming (MILP) framework combined with a Dantzig-Wolfe decomposition to simultaneously address the optimal design and operation of energy communities, catering to multi-objective considerations across economic, environmental, and efficiency criteria. This paper introduces REHO and highlights its key features and contributions to the field of sustainable energy system planning.
 
 
-.. dropdown:: :bdg-primary:`Conference` Impact of Industrial Waste Heat Recovery on Heat and Electricity Marginal Costs in an Energy Community, Terrier 2024
+.. dropdown:: :bdg-primary:`Conference` Impact of Industrial Waste Heat Recovery on Heat and Electricity Marginal Costs in an Energy Community, Terrier 2024 :cite:`terrierImpactIndustrialWaste2024`
     :icon: globe
 
     *European Symposium on Computer Aided Process Engineering (Escape) - June 2-6, 2024, Florence, Italy*
@@ -144,7 +187,7 @@ Academic contributions
     The transition towards renewable and decentralized energy systems is propelled by the urgent need to address climate concerns and advance sustainable development globally. This transformation requires innovative methods to integrate stochastic renewable sources such as solar and wind power and challenging traditional energy paradigms rooted in centralized and continuous energy production. The present study focuses on the Swiss energy system to explore the optimization of energy planning strategies that incorporate decentralized energy production within a centralized framework. Here, we show that a strategic approach to decentralization can significantly reduce annual system costs by 10\% to CHF 1230 per capita and increase self-consumption to 68\% of the decentralized PV production, emphasizing the need for a hybrid energy-planning model that balances centralized and decentralized models for enhanced system resilience, efficiency, and cost-effectiveness. This research underscores the strategic importance of diversifying energy sources, enhancing energy storage, improving grid flexibility, and laying a foundational framework for policy making and strategic planning. It encourages further investigation into climate impacts, technology synergy, and the integration of district heating, aiming to establish a resilient, sustainable, and autonomous energy future.
 
 
-.. dropdown:: :bdg-primary:`Journal` From Local Energy Communities Towards National Energy System: A Grid-Aware Techno-Economic Analysis, Terrier 2024 :cite:`terrierLocalEnergyCommunities2023`
+.. dropdown:: :bdg-primary:`Journal` From Local Energy Communities Towards National Energy System: A Grid-Aware Techno-Economic Analysis, Terrier 2024 :cite:`terrierLocalEnergyCommunities2024`
     :icon: file-badge
 
     **Abstract**
@@ -174,7 +217,7 @@ Academic contributions
 
     In light of the energy transition, it becomes a widespread solution to decentralize and to decarbonize energy systems. However, limited transformer capacities are a hurdle for large-scale integration of solar energy in the electricity grid. The aim of this paper is to define a novel concept of renewable energy hubs and to optimize its design strategy at the district scale in an appropriate computational time. To overcome runtime issues, the Dantzig–Wolfe decomposition method is applied to a mixed-integer linear programming framework of the renewable energy hub. Distributed energy units as well as centralized district units are considered. In addition, a method to perform multi-objective optimization as well as respecting district grid constraints in the decomposition algorithm is presented. The decomposed formulation leads to a convergence below 20 min for 31 buildings and a mip gap lower than 0.2%. The centralized design enhances the photovoltaic penetration in the energy mix and reduces the global warming potential and necessary curtailment in order to respect transformer capacity constraints.
 
-.. dropdown:: :bdg-primary:`Conference` Decentralized ICT integration in residential buildings, Lepour 2022
+.. dropdown:: :bdg-primary:`Conference` Decentralized ICT integration in residential buildings, Lepour 2022 :cite:`lepourDecentralizedICTIntegration2022`
     :icon: globe
 
     *International Conference on Efficiency, Cost, Optimization, Simulation and Environmental Impact of Energy Systems (ECOS) - July 3-7, 2022, Copenhagen, Denmark*

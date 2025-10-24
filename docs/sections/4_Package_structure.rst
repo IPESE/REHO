@@ -92,6 +92,12 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 .. automodule:: reho.model.preprocessing
 
+`actors.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.actors
+    :members:
+
 `buildings_profiles.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -118,22 +124,28 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.preprocessing.emissions_parser
     :members:
 
-`mobility_generator.py`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: reho.model.preprocessing.mobility_generator
-    :members:
-
 `local_data.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.local_data
     :members:
 
+`mobility_generator.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.mobility_generator
+    :members:
+
 `QBuildings.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.QBuildings
+    :members:
+
+`renovation.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.renovation
     :members:
 
 `sia_parser.py`

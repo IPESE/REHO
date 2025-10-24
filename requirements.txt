@@ -1,4 +1,4 @@
-amplpy==0.14.0
+amplpy==0.15.2
 --extra-index-url https://pypi.ampl.com
 ampl_module_base
 ampl_module_highs

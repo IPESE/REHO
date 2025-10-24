@@ -8,7 +8,7 @@ import reho.model.preprocessing.weather as weather
 from reho.model.preprocessing.skydome import irradiation_to_df
 from reho.model.preprocessing.QBuildings import *
 import reho.model.preprocessing.actors as actors
-from reho.model.preprocessing import refurbishment
+from reho.model.preprocessing import renovation
 
 __doc__ = """
 File for handling data and optimization for an AMPL sub-problem.
@@ -81,7 +81,7 @@ class SubProblem:
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
         if self.method_sp['use_pv_orientation']:
-            self.set_skydome_parameters(ampl)
+            self.set_skydome_parameters()
         ampl = self.send_parameters_and_sets_to_ampl(ampl)
         ampl = self.set_scenario(ampl)
         return ampl
@@ -248,21 +248,21 @@ class SubProblem:
                 ampl.getSet(str(s)).setValues(self.infrastructure_sp.Set[s])
             elif isinstance(self.infrastructure_sp.Set[s], dict):
                 for i, instance in ampl.getSet(str(s)):
-                    instance.setValues(self.infrastructure_sp.Set[s][i])
+                    instance.setValues(self.infrastructure_sp.Set[s][i[0]])
             else:
                 raise ValueError('Type Error setting AMPLPY Set', s)
 
         all_units = [unit for unit, value in ampl.getVariable('Units_Use').instances()]
         for i in all_units:
             for u in self.scenario_sp['exclude_units']:
-                if ('district' not in i) and ('IP' not in i) and (u in i):  # unit at the building scale
-                    ampl.getVariable('Units_Use').get(str(i)).fix(0)
+                if ('district' not in i[0]) and ('IP' not in i[0]) and (u in i[0]):  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i[0])).fix(0)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(0)
 
             for u in self.scenario_sp['enforce_units']:
-                if 'district' not in i and u in i:  # unit at the building scale
-                    ampl.getVariable('Units_Use').get(str(i)).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
+                if 'district' not in i[0] and u in i[0]:  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i[0])).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(1)
 
@@ -378,7 +378,7 @@ class SubProblem:
 
         self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
 
-    def set_skydome_parameters(self, ampl):
+    def set_skydome_parameters(self):
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
         df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))
@@ -454,10 +454,10 @@ class SubProblem:
         if self.method_sp['use_facades']:
             for b in self.buildings_data_sp:
                 df_facades = self.facades_sp[self.facades_sp['id_building'] == self.buildings_data_sp[b]['id_building']]
-                df_shadows = self.shadows_sp[self.shadows_sp['id_building'] == self.buildings_data_sp[b]['id_building']]
+                df_shadows = self.shadows_sp[self.shadows_sp['id_building'] == str(self.buildings_data_sp[b]['id_building'])]
                 facades = df_facades['Facades_ID']
                 np_facades = np.append(np_facades, facades)
-                df_shadow = return_shadows_id_building(self.buildings_data_sp[b]['id_building'], df_shadows, self.local_data)
+                df_shadow = return_shadows_id_building(self.buildings_data_sp[b]['id_building'], df_shadows)
                 df_shadow = pd.concat([df_shadow], keys=[b], names=['House'])
                 df_limit_angle = pd.concat([df_limit_angle, df_shadow])
                 for fc in facades:
@@ -588,6 +588,7 @@ class SubProblem:
         ampl.getConstraint('disallow_exchanges_1').drop()
         ampl.getConstraint('disallow_exchanges_2').drop()
         ampl.getConstraint('no_ElectricalHeater_without_HP').drop()
+        ampl.getConstraint('no_NG_boiler_with_HP').drop()
         ampl.getConstraint('forced_H2_annual_export').drop()
         ampl.getConstraint('forced_H2_fixed_daily_export').drop()
 
@@ -702,8 +703,8 @@ def initialize_default_methods(method):
         method['include_all_solutions'] = False  # avoid interactions between optimization scenarios
         method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
 
-    if 'refurbishment' not in method:
-        method['refurbishment'] = False # decision of refurbishment strategies
+    if 'renovation' not in method:
+        method['renovation'] = None # decision of renovation strategies
 
     return method
 

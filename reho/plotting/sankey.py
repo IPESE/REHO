@@ -209,7 +209,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'ElectricalHeater_other',
         'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air','HeatPump_Waste_heat', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
         'AirConditioner', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district',
-        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district',
+        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district','Datacenter_district', 'ORC_DC_district'
     ]
 
     # Services that can be provided by the devices: ['SH', 'DHW', 'Cooling', 'rSOC_heat']
@@ -316,6 +316,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 ('MTR', 'rSOC', 'rSOC_district', 'Demand_MWh', False, None, -elec_heater_to_rSOC_distr, 1),
                 ('MTR', 'DHN', 'MTR_district', 'Supply_MWh', False, None, -rSOC_distr_heat_need + elec_heater_to_rSOC_distr, 1),
                 ('ElectricalHeater_other', 'rSOC', 'ElectricalHeater_other_district', 'Supply_MWh', False, None, 0, 1),
+                ('Datacenter_district','ORC_DC_district', 'ORC_DC_district', 'Demand_MWh', False, None, 0, 1),
             ],
             'electricity_consumption': [
             ]
@@ -374,7 +375,6 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_district', 'Supply_MWh', False, None, 0, 1),
                 ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_charger_district', 'Demand_MWh', False, None, 0, 1),
                 ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1)
-
             ]
 
         }

@@ -78,6 +78,10 @@ param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 
 param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 default 0;
 
+
+param data_EUD_avg{l in ResourceBalances: l = 'Data'} default 0;
+param data_EUD{l in ResourceBalances, p in Period, t in Time[p]} default data_EUD_avg[l];
+
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
 
@@ -91,12 +95,21 @@ var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >=
 
 
 # Constraints
+
+
+
+#Fixes the data demand from the network 
+subject to complicating_cst_data_profile_fix{l in ResourceBalances, p in Period,t in Time[p]: l = 'Data'}: #pi_c
+   Network_demand[l,p,t] = data_EUD[l,p,t]* dp[p] * dt[p];
+
+
 subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #pi_c
    Network_supply[l,p,t] - Network_demand[l,p,t]   = (Domestic_energy[l,p,t] +   sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 
 subject to complicating_cst_GWP{l in ResourceBalances, p in Period, t in Time[p]}: #pi_g
    Network_supply_GWP[l,p,t] - Network_demand_GWP[l,p,t]   =  (Domestic_energy[l,p,t] +  sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+
 
 
 subject to TOTAL_profile_c1{l in ResourceBalances, p in Period,t in Time[p]}:
@@ -135,6 +148,33 @@ Units_Use[u]*Units_Fmax[u]>=Units_Mult[u];
 
 subject to Unit_Use_constraint_c2{u in Units}:
 Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
+
+
+######################################################################################################################
+#--------------------------------------------------------------------------------------------------------------------#
+# Renovation
+#--------------------------------------------------------------------------------------------------------------------#
+######################################################################################################################
+
+param Uh{h in House} default 0;
+param Uh_ins{f in FeasibleSolutions,h in House} default 0;
+param ins_target default 0;
+param ins_target_max default 1;
+var is_ins{h in House} binary; 
+
+subject to renovation_rate:
+sum{h in House} (is_ins[h] * ERA[h]) >= ins_target * sum{h in House} (ERA[h]);
+
+subject to renovation_rate_max:
+sum{h in House} (is_ins[h] * ERA[h]) <= ins_target_max * sum{h in House} (ERA[h]);
+
+
+subject to renovation1{h in House}: # constraints times 1e3 to facilitate convergence
+1e3 * (Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) ) >= 1e3 * (Uh[h]/100) - 10000* (1 - is_ins[h]);
+
+subject to renovation2{h in House}:
+1e3 * (Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])) <= 10000 * is_ins[h];
+
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -308,8 +348,9 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 subject to Network_capacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
 Network_supply[l,p,t] <= Network_capacity[l] * dp[p] * dt[p];
 
-subject to Network_capacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
+subject to Network_capacity_demand{l in ResourceBalances  diff {'Data'},p in PeriodStandard,t in Time[p]}:
 Network_demand[l,p,t] <= Network_capacity[l] * dp[p] * dt[p];
+
 
 subject to EMOO_grid_constraint {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
 Network_supply[l,p,t]-Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{ts in Time[p]}((Network_supply[l,p,ts]-Network_demand[l,p,ts])*dt[p]/card(Time[p])) else 1e9;
@@ -343,9 +384,10 @@ var penalties default 0;
 
 var renter_subsidies{h in House} >= 0;
 var owner_subsidies{h in House} >= 0;
+var penalty_actors >= 0;
 
 subject to penalties_contraints:
-penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op +
+penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op + penalty_actors + 
             sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
              + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]);
 

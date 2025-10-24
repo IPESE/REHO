@@ -48,11 +48,12 @@ C_op_renters_to_owners[h] = sum{f in FeasibleSolutions, p in PeriodStandard, t i
 subject to Renter1{h in House}:
 renter_expense[h] = C_rent_fix[h] + C_op_renters_to_utility[h] + C_op_renters_to_owners[h];
 
-subject to Rent_fix{h in House, i in House : h != i}:
-(C_rent_fix[h] / ERA[h]) <= 1.2 * (C_rent_fix[i] / ERA[i]); 
+param max_rent_increase_m2 default 5; # CHF/m2/yr
+subject to Rent_fix{h in House}:
+C_rent_fix[h] / ERA[h] <= max_rent_increase_m2; 
 
-subject to Rent_fix2{h in House, i in House : h != i}:
-(C_rent_fix[h] / ERA[h]) >= 0.8 * (C_rent_fix[i] / ERA[i]);
+#subject to Rent_fix2{h in House, i in House : h != i}:
+#(C_rent_fix[h] / ERA[h]) >= 0.8 * (C_rent_fix[i] / ERA[i]);
 
 subject to Renter_noSub{h in House}:
 renter_subsidies[h] = 0;
@@ -85,33 +86,21 @@ objective_functions["Utility"] = - utility_profit;
 #--------------------------------------------------------------------------------------------------------------------#
 # Owners constraints
 #--------------------------------------------------------------------------------------------------------------------#
-param Costs_House_upfront{h in House} := ERA[h]* 7759 /((1-(1.02^(-70)))/0.02);
+param Costs_House_upfront_m2_MP default 7759;
+param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2_MP;
+param Costs_House_yearly{h in House} := Costs_House_upfront[h]/100 + Costs_House_upfront[h] * i_rate * (0.13/(1-(1+i_rate)^(-15)) + 0.67/(1-(1+i_rate)^(-70))) - Costs_House_upfront[h] * (1/15+1/70);
 param owner_PIR_min default 0;
 param owner_PIR_max default 0.3;
 
 var owner_profit{h in House};
-
-param Uh{h in House} default 0;
-param Uh_ins{f in FeasibleSolutions,h in House} default 0;
-var is_ins{h in House} binary; 
-
-#Scenario 3 (Insulation_enforce)
-subject to Insulation_enforce{h in House}:
-is_ins[h] = 1;
-
-var renovation{h in House};
-
-subject to Insulation1{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h])  >= 0.000009 - 10000 * (1 - is_ins[h]);
-subject to Insulation2{h in House}:
-Uh[h] - sum{f in FeasibleSolutions}(Uh_ins[f,h] * lambda[f,h]) <= 0.000009 + 10000 * is_ins[h];
+var slack_owner_subsidies{h in House};
 
 #Scenario 2 & 2.1 & 3 (Owner_Sub_bigM_ub)
-subject to Owner_Link_Subsidy_to_Insulation{h in House}:
-owner_subsidies[h] <= 1e10 * is_ins[h];
+subject to Owner_Link_Subsidy_to_renovation{h in House}:
+owner_subsidies[h] <= 1e10 * is_ins[h] + slack_owner_subsidies[h];
 
 subject to Owner_profit{h in House}:
-owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_upfront[h];
+owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_yearly[h];
 
 #Scenario 2.1 (Owner2)
 subject to Owner_profit_max_PIR{h in House}:
@@ -130,6 +119,10 @@ objective_functions["Owners"] = - sum{h in House}(owner_profit[h]);
 #--------------------------------------------------------------------------------------------------------------------#
 # Objectives
 #--------------------------------------------------------------------------------------------------------------------#
+
+subject to penalty_actors_obj_fct:
+penalty_actors = sum{h in House} (C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] + C_op_renters_to_utility[h]+1000*renter_subsidies[h]+1000*slack_owner_subsidies[h]);
+
 minimize TOTEX_actor:
 sum {a in ActorObjective} objective_functions[a] + penalty_ratio * (Costs_inv + Costs_op + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]));
 # - sum{h in House} (C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] + owner_subsidies[h]);

@@ -265,7 +265,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     #df_label, df_stv, _ = add_flow('HeatPump_Air', 'DHW', 'DHW', 'HeatPump_Waste_heat',
     #                               'Supply_MWh', df_annuals, df_label, df_stv)
 
-    electrical_storage_devices = ['Battery', 'Battery_IP', 'Battery_district', 'Battery_IP_district', 'EV_district']  # example list
+    electrical_storage_devices = ['Battery', 'Battery_IP', 'Battery_district', 'Battery_IP_district', 'EV_district', "PTES_conv_IP"]  # example list
     # Flow templates for electrical storage
     storage_flow_templates = [
         # Charging flow: electricity used to charge the battery

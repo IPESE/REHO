@@ -4,5 +4,5 @@ CH4_storage_IP;kWh;0.1;1000000000;5000;2.5;200;2;20;CH4storage;Biomethane/ Elect
 H2_storage_IP;kWh;0.1;1000000000;5000;10;200;2;20;H2storage;Hydrogen/ Electricity;;;Hydrogen/ Electricity; Hydrogen;0;0;<https://www.hydrogen.energy.gov/docs/hydrogenprogramlibraries/pdfs/24006-onboard-storage-cost-performance-status.pdf>
 CO2_storage_IP;mol;0.1;1000000000;0;0.0001;0;0.1;20;CO2storage;CO2/ Electricity;;;CO2/ Electricity;CO2;0;0;<->
 Compressor_IP;kW;0.001;1000000000;2000;750;100;20;20;Compressor;;;;;;0;0
-PTES_conv_IP;kWh;0.1;100000;5000;400;100;100;15;PTES_conversion;Electricity/ HeatCascade;SH/ DHW;h_mt;Electricity;Electricity;70;50;<https://www.sciencedirect.com/science/article/pii/S2352152X2201009X#sec2>
-PTES_storage_IP;kWh;0.1;100000;5000;15;100;100;15;PTES_storage;Electricity;;;Electricity;Electricity;0;0;<https://www.sciencedirect.com/science/article/pii/S2352152X2201009X#sec2>
+PTES_conv_IP;kW;0.1;100000;17500;600;100;100;20;PTES_conversion;Electricity;;;Electricity;Electricity;0;0;<https://www.sciencedirect.com/science/article/pii/S2352152X2201009X#sec2>
+PTES_storage_IP;kWh;0.1;100000;5000;15;100;100;20;PTES_storage;Electricity;;;Electricity;Electricity;0;0;<https://www.sciencedirect.com/science/article/pii/S2352152X2201009X#sec2>

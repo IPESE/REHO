@@ -8,7 +8,7 @@ HeatPump_DHN;kWth;0.1;100000;17500;300;1500;15;20;HeatPump;HeatCascade/ Electric
 HeatPump_Lake;kWth;0.1;100000;17500;300;1500;15;20;HeatPump;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;""
 HeatPump_Waste_heat;kWth;0.1;100000;10;400;10;20;20;HeatPump_WH;HeatCascade/ Electricity;DHW/ SH;h_ht/ h_mt/ h_lt;Electricity;;55/ 45/ 35;50/40/30;`Vaillant.ch <https://www.vaillant.ch/particuliers/guide-du-chauffage/comprendre-le-chauffage/pompes-a-chaleur/kosten-warmepumpe/>`_
 AirConditioner;kWth;0.1;100000;3000;200;500;20;20;AirConditioner;HeatCascade/ Electricity;Cooling;c_ht/ c_mt/ c_lt;Electricity;"";13/ 15/ 18;14/ 16/ 19;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_
-ElectricalHeater_other;kWth;0.1;100000;1000;50;100;5;20;ElectricalHeater;HeatCascade/ Electricity;rSOC_heat;h_ht;Electricity;;80;60;
+ElectricalHeater_other;kWth;0.1;100000;1000;50;100;5;20;ElectricalHeater;HeatCascade/ Electricity;rSOC_heat;h_ht;Electricity;;110;100;
 ElectricalHeater_SH;kWth;0.1;100000;1000;50;100;5;20;ElectricalHeater;HeatCascade/ Electricity;SH;h_ht;Electricity;;80;60;`SCDI <https://www.scdi.ch/fr/naturay-ultime-connecte-3.html>`_
 ElectricalHeater_DHW;kWth;0.1;100000;2000;100;200;5;20;ElectricalHeater;HeatCascade/ Electricity;DHW;h_ht;Electricity;;80;60;`SCDI <https://scdi.ch/fr/chauffe-eau-electrique-sur-socle-atlantic.html>`_
 PV;kWe;0.1;100000;10000;1300;200;1000;30;PV;Electricity;;;"";Electricity;;;`Helvetia Energy <https://www.helvetia-energy.ch/prix-moyen-panneaux-solaires-suisse/>`_

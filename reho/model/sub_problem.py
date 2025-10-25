@@ -198,6 +198,8 @@ class SubProblem:
                 ampl.read('H2storage_IP.mod')
             if 'CH4storage' in self.infrastructure_sp.UnitTypes:
                 ampl.read('CH4storage_IP.mod')
+            if 'CO2storage' in self.infrastructure_sp.UnitTypes:
+                ampl.read('CO2storage_IP.mod')
             if ('PTES_storage' in self.infrastructure_sp.UnitTypes) and ('PTES_conversion' in self.infrastructure_sp.UnitTypes):
                 ampl.read('ptes_IP.mod')
 
@@ -591,6 +593,7 @@ class SubProblem:
         ampl.getConstraint('no_NG_boiler_with_HP').drop()
         ampl.getConstraint('forced_H2_annual_export').drop()
         ampl.getConstraint('forced_H2_fixed_daily_export').drop()
+        ampl.getConstraint('only_1_long_term_storage').drop()
 
 
         if 'PV' in self.infrastructure_sp.UnitsOfType:

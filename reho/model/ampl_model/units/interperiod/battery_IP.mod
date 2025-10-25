@@ -11,7 +11,7 @@
 param BAT_eff_charge_IP{u in UnitsOfType['Battery_interperiod']} 	default 0.95;	#- AC-AC efficiency
 param BAT_eff_discharge_IP{u in UnitsOfType['Battery_interperiod']} 	default 0.95;	#- AC-AC efficiency
 
-param BAT_limit_ch_IP{u in UnitsOfType['Battery_interperiod']} default 0.6;			#-
+param BAT_limit_ch_IP{u in UnitsOfType['Battery_interperiod']} default 0.8;			#-
 param BAT_limit_di_IP{u in UnitsOfType['Battery_interperiod']} default 0.2;			#-
 
 param C_rate_IP{u in UnitsOfType['Battery_interperiod']} default 1;					#-

@@ -1497,7 +1497,9 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
             mol = "CH4_storage_IP"
         elif mol == "CO2":
             mol = "CO2_storage_IP"
-            storage_SOC_tot[stor_var] = storage_SOC_tot[stor_var] * 16 / 1000 * 50 / 3.6  #transform from mol to kWh CH4-eq
+            storage_SOC_tot[stor_var] = storage_SOC_tot[stor_var] * 16 / 1000 * 50 / 3.6  # transform from mol to kWh CH4-eq
+        elif mol == "PTES":
+            mol = "PTES_storage_IP"
 
         time_index = np.arange(0, 8760)
 

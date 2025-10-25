@@ -735,36 +735,50 @@ def set_df_Interperiod(ampl):
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "H2_stor_stored")
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CH4_stor_stored")
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CO2_stor_stored")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "PTES_E_Stored")
 
     if IP_stor_list:
         df_IP_storage = pd.concat(IP_stor_list, axis=1)
 
+        df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
         vol_all = []
         P_all = []
         Z_all = []
         for stor in list(df_IP_storage.columns):
             mol = stor.split("_")[0]
-            vol = round(get_ampl_data(ampl, mol+"_stor_volume", multi_index=False).iloc[0][0], 3)
-            P = round(get_ampl_data(ampl, mol+"_stor_pressure", multi_index=False).iloc[0][0], 1)
-            Z = round(get_ampl_data(ampl, "Z_"+mol+"_max", multi_index=False).iloc[0][0], 3)
+            if mol in ["PTES", "BAT"]:
+                vol_all.append(np.nan)
+                P_all.append(np.nan)
+                Z_all.append(np.nan)
+                continue
+
+            try:
+                vol = round(get_ampl_data(ampl, mol + "_stor_volume", multi_index=False).iloc[0][0], 3)
+                P = round(get_ampl_data(ampl, mol + "_stor_pressure", multi_index=False).iloc[0][0], 1)
+                Z = round(get_ampl_data(ampl, "Z_" + mol + "_max", multi_index=False).iloc[0][0], 3)
+            except Exception:
+                vol, P, Z = np.nan, np.nan, np.nan
+
             vol_all.append(vol)
             P_all.append(P)
             Z_all.append(Z)
 
-        # ⚠️ Inject general info rows before re-indexation
-        general_info = pd.DataFrame(
-            [
-                vol_all,
-                P_all,
-                Z_all
-            ],
-            index=pd.MultiIndex.from_tuples(
-                [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
-                names=['Building', 'HourOfYear']
-            ),
-            columns=df_IP_storage.columns
-        )
-
+        if len(vol_all) > 0:
+            # ⚠️ Inject general info rows before re-indexation
+            general_info = pd.DataFrame(
+                [
+                    vol_all,
+                    P_all,
+                    Z_all
+                ],
+                index=pd.MultiIndex.from_tuples(
+                    [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
+                    names=['Building', 'HourOfYear']
+                ),
+                columns=df_IP_storage.columns
+            )
+        else:
+            general_info = pd.DataFrame()
         # Convert df_IP_storage to MultiIndex if it's not already
         if df_IP_storage.index.nlevels == 1:
             new_level = list(range(len(df_IP_storage)))

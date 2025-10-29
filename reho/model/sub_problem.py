@@ -246,7 +246,10 @@ class SubProblem:
                 ampl.getSet(str(s)).setValues(self.infrastructure_sp.Set[s])
             elif isinstance(self.infrastructure_sp.Set[s], dict):
                 for i, instance in ampl.getSet(str(s)):
-                    instance.setValues(self.infrastructure_sp.Set[s][i])
+                    try:
+                        instance.setValues(self.infrastructure_sp.Set[s][i])
+                    except:
+                        instance.setValues(self.infrastructure_sp.Set[s][i[0]])
             else:
                 raise ValueError('Type Error setting AMPLPY Set', s)
 
@@ -255,12 +258,16 @@ class SubProblem:
             for u in self.scenario_sp['exclude_units']:
                 if 'district' not in i and u in i:  # unit at the building scale
                     ampl.getVariable('Units_Use').get(str(i)).fix(0)
+                elif 'district' not in i[0] and u in i[0]:  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i[0])).fix(0)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(0)
 
             for u in self.scenario_sp['enforce_units']:
                 if 'district' not in i and u in i:  # unit at the building scale
                     ampl.getVariable('Units_Use').get(str(i)).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
+                elif 'district' not in i[0] and u in i[0]:  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i[0])).fix(1)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(1)
 

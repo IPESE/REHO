@@ -356,7 +356,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
 
     for idx, row in unit_data.iterrows():
         if all([layer in grid_layers for layer in row["UnitOfLayer"]]):
-            if idx not in exclude_units or row['UnitOfType'] in units_to_keep:
+            if (idx not in exclude_units and row['UnitOfType'] not in exclude_units) or row['UnitOfType'] in units_to_keep:
                 unit_dict = row.to_dict()
                 unit_dict['name'] = idx
                 flow_in = {}

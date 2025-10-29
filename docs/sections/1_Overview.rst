@@ -7,7 +7,7 @@ Overview
 
 :Version: |version| |release|
 :Last update: |today|
-:Authors: Dorsan Lepour, Joseph Loustau, Cédric Terrier
+:Authors: Dorsan Lepour, Joseph Loustau, Cédric Terrier, Ziqian Wang
 :Short summary: Renewable Energy Hub Optimizer (REHO) - A Decision Support Tool for Renewable Energy Communities
 
 The transition to sustainable energy systems in the face of growing renewable energy adoption and electrification is
@@ -41,6 +41,10 @@ technologies (ICT) end-use demand.
 **Multi-Energy Integration:** REHO incorporates various energy sources and networks, such as electricity, fossil
 fuels, biomass, biofuels, hydrogen, and district heating and cooling networks.
 This holistic approach ensures a comprehensive representation of the energy landscape.
+
+**Multi-Actor Interaction:** REHO captures the roles and interactions of diverse stakeholders in energy communities
+consisting of tenants, landlords, the energy community manager, and the municipality. It allocates expenses and revenues
+to each actor and reveals their individual constraints within the energy community.
 
 **Open-Source and Interoperability:** REHO is fully open-source, supported by comprehensive documentation. It
 utilizes AMPL for the core optimization model, encompassing objective functions, modeling equations, and constraints

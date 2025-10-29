@@ -52,6 +52,7 @@ Directory for data-related files.
 
 .. automodule:: reho.model
 
+
 **ampl_model/**
 ---------------------
 
@@ -61,6 +62,7 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 - ``data_stream.dat`` contains values that specify the operating temperatures of streams and energy conversion units.
 - ``master_problem.mod`` contains the modeling of the problem for the decomposition approach.
 - ``sub_problem.mod`` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
+- ``actor_problem.mod`` contains the modelling of the actors (responsibilities, interactions, limitations, etc.).
 - ``scenario.mod`` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
 
 **postprocessing/**
@@ -90,6 +92,11 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ------------------------
 
 .. automodule:: reho.model.preprocessing
+
+`actors.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automodule:: reho.model.preprocessing.actors
+    :members:
 
 `buildings_profiles.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -162,6 +169,12 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ------------------------------
 
 .. automodule:: reho.model.master_problem
+    :members:
+
+*actors_problem.py*
+------------------------------
+
+.. automodule:: reho.model.actors_problem
     :members:
 
 *infrastructure.py*

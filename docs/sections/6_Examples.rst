@@ -175,3 +175,20 @@ District-scale rSOC with IP storage
 ====================================
 
 .. literalinclude:: ../../scripts/examples/7c_district_IP.py
+
+8. Actor model
+--------------------------
+
+Investigate the boundaries of stakeholders in a district energy system and how they influence the optimal design of the system.
+
+Including building upfront cost
+====================================
+Landlords may consider the upfront cost of building by charging a fixed rent from tenants. Tenants' expenses thus include both the energy cost and the fixed rent.
+
+.. literalinclude:: ../../scripts/examples/8a_Actors_problem.py
+
+Considering only rent increase
+====================================
+Due to regulations, landlords may increase the rent after renovating the building. In this case, tenants' expenses are limited by the pre-renovation expenses to avoid unacceptable rent increases.
+
+.. literalinclude:: ../../scripts/examples/8b_Actors_problem_rent_increase.py

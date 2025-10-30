@@ -360,7 +360,7 @@ class SubProblem:
         for bui in self.infrastructure_sp.houses:
             for unit_data in self.infrastructure_sp.houses[bui]["units"]:
                 for i, T_level in enumerate(unit_data["StreamsOfUnit"]):
-                    stream = unit_data['Unit'] + '_' + bui + '_' + T_level
+                    stream = unit_data["Unit"] + '_' + bui + '_' + T_level
                     df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
                     df["Streams_Tout"] = unit_data["stream_Tout"][i]
                     df["Streams_Tin"] = unit_data["stream_Tin"][i]
@@ -494,9 +494,9 @@ class SubProblem:
             elif isinstance(self.set_indexed_sp[s], dict):
                 for i, instance in ampl.getSet(str(s)):
                     try:
-                        instance.setValues(self.set_indexed_sp[s][i])
+                        instance.setValues(self.set_indexed_sp[s][i[0]])
                     except ValueError:
-                        instance.setValues([self.set_indexed_sp[s][i]])
+                        instance.setValues([self.set_indexed_sp[s][i[0]]])
             else:
                 raise ValueError('Type Error setting AMPLPY Set', s)
 

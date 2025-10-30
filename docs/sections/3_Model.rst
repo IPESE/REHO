@@ -53,15 +53,11 @@ List of symbols
         +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{C}`       | cost                                            | :math:`\text{currency}` |
         +------------------------------+-------------------------------------------------+-------------------------+
-        | :math:`\boldsymbol{E}`       | electricity                                     | :math:`kW(h)`           |
+        | :math:`\boldsymbol{E}`       | energy                                          | :math:`kW(h)`           |
         +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{G}`       | global warming potential                        | :math:`kg_{CO_2, eq}`   |
         +------------------------------+-------------------------------------------------+-------------------------+
-        | :math:`\boldsymbol{H}`       | natural gas or fresh water                      | :math:`kW(h)`           |
-        +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{Q}`       | thermal energy                                  | :math:`kWh`             |
-        +------------------------------+-------------------------------------------------+-------------------------+
-        | :math:`\boldsymbol{R}`       | residual heat                                   | :math:`kWh`             |
         +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{T}`       | temperature                                     | :math:`K`               |
         +------------------------------+-------------------------------------------------+-------------------------+
@@ -81,7 +77,6 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`F`         | bound of validity range of unit sizes    | :math:`\diamondsuit`                 |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`\Phi`      | specific heat gain                       | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`Q`         | thermal power                            | :math:`kW`                           |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -105,11 +100,8 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`d_t`       | frequency of timesteps per period        | :math:`h/d`                          |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`e`         | electric power                           | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`\epsilon`  | elevation angle                          | :math:`^{\circ}`                     |
-            +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`\nu`       | efficiency                               | :math:`-`                            |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`f_{b,r}`   | spatial fraction of a room in a building | :math:`-`                            |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -127,13 +119,13 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`i`         | interest rate                            | :math:`-`                            |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`i^{cl}`    | fixed investment cost                    | :math:`\text{currency}`              |
+            | :math:`c^{l}`     | fixed investment cost                    | :math:`\text{currency}`              |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`i^{c2}`    | continuous investment cost               | :math:`\text{currency}/\diamondsuit` |
+            | :math:`c^{2}`     | continuous investment cost               | :math:`\text{currency}/\diamondsuit` |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`i^{g1}`    | fixed impact factor                      | :math:`kg_{CO_2, eq}`                |
+            | :math:`cc^{1}`    | fixed impact factor                      | :math:`kg_{CO_2, eq}`                |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`i^{g2}`    | continuous impact factor                 | :math:`kg_{CO_2, eq}/ \diamondsuit`  |
+            | :math:`cc^{2}`    | continuous impact factor                 | :math:`kg_{CO_2, eq}/ \diamondsuit`  |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`irr`       | irradiation density                      | :math:`kWh/m^2`                      |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -145,7 +137,6 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`pd`        | period duration                          | :math:`h`                            |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`\phi`      | solar gain fraction                      | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`q`         | thermal power                            | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -163,12 +154,15 @@ List of symbols
     .. tab-item:: Dual variables
 
         +-----------------+-------------------------------------------------------+
-        | :math:`[\beta]` | epsilon constraint for multi objective   optimization |
+        | :math:`[\beta]` | epsilon constraint for multi objective optimization   |
         +-----------------+-------------------------------------------------------+
         | :math:`[\mu]`   | incentive to change design proposal                   |
         +-----------------+-------------------------------------------------------+
+        | :math:`[\nu]`   | actor epsilon constraints for multi-actor model       |
+        +-----------------+-------------------------------------------------------+
         | :math:`[\pi]`   | cost or global warming potential of electricity       |
         +-----------------+-------------------------------------------------------+
+
 
     .. tab-item:: Superscripts
 
@@ -181,7 +175,7 @@ List of symbols
         +-----------+-------------------------------+
         | P         | people                        |
         +-----------+-------------------------------+
-        | bat       | bateobatle                    |
+        | bat       | battery                       |
         +-----------+-------------------------------+
         | bes       | bes                           |
         +-----------+-------------------------------+
@@ -197,7 +191,7 @@ List of symbols
         +-----------+-------------------------------+
         | el        | electricity                   |
         +-----------+-------------------------------+
-        | ERA       | enery reference area          |
+        | ERA       | energy reference area         |
         +-----------+-------------------------------+
         | ext       | external                      |
         +-----------+-------------------------------+
@@ -325,8 +319,6 @@ For the application of REHO, the energy hub description needs to contain - as hi
 End use demand profiles
 ---------------------------------
 
-:cite:t:`middelhauveRoleDistrictsRenewable2022` - Section 1.2
-
 The *EUDs* profiles to be determined are:
 
 - The demand profile for domestic hot water
@@ -424,7 +416,7 @@ Weather data
 To calculate energy demand profiles the outdoor ambient temperature global irradiation for the region in study are necessary.
 
 - Outdoor ambient temperature (yearly profile) :math:`T_{out} [°C]`
-- Global horizontal irradiation (yearly profile) :math:`Irr_{out} [°C]`
+- Global horizontal irradiation (yearly profile) :math:`\mathit{Irr}_{out} [°C]`
 
 Data reduction
 """""""""""""""""""
@@ -492,27 +484,27 @@ Building-level units
 .. table:: Overview of building-level units in REHO: Input and output streams, the reference unit of each technology
     :name: tbl-building-units
 
-+---------------------------------+---------------------------+-------------------+----------------+
-| Technology                      | Input stream              | Output stream     | Reference unit |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Energy conversion technologies  |                           |                   |                |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Gas boiler                      | natural gas               | heat              |  $$kW_{th}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Heat pump                       | electricity               | heat              |   $$kW_{th}$$  |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Electrical heater               | electricity               | heat              |  $$kW_{th}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| PV panel                        | solar irradiation         | electricity       |   $$kW_{p}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Cogeneration                    | natural gas               | electricity, heat |   $$kW_{e}$$   |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Storage technologies            |                           |                   |                |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Thermal storage                 | heat                      | heat              |     $$L$$      |
-+---------------------------------+---------------------------+-------------------+----------------+
-| Battery                         | electricity               | electricity       |    $$kWh$$     |
-+---------------------------------+---------------------------+-------------------+----------------+
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Technology                      | Input stream              | Output stream     | Reference unit |
+    +=================================+===========================+===================+================+
+    | **Energy conversion technologies**                                                               |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Gas boiler                      | natural gas               | heat              | $$kW_{th}$$    |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Heat pump                       | electricity               | heat              | $$kW_{th}$$    |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Electrical heater               | electricity               | heat              | $$kW_{th}$$    |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | PV panel                        | solar irradiation         | electricity       | $$kW_{p}$$     |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Cogeneration                    | natural gas               | electricity, heat | $$kW_{e}$$     |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | **Storage technologies**                                                                         |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Thermal storage                 | heat                      | heat              | $$L$$          |
+    +---------------------------------+---------------------------+-------------------+----------------+
+    | Battery                         | electricity               | electricity       | $$kWh$$        |
+    +---------------------------------+---------------------------+-------------------+----------------+
 
 District-level units
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -522,42 +514,39 @@ The units cannot be used at the building-scale.
 .. table:: Overview of district-level units in REHO: Input and output streams, the reference unit of each technology
     :name: tbl-district-units
 
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Technology                               | Input stream              | Output stream          | Reference unit |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Energy conversion technologies           |                           |                        |                |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Gas boiler                               | natural gas               | heat                   |  $$kW_{th}$$   |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Geothermal heat pump                     | ambient heat, electricity | heat                   |   $$kW_{th}$$  |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| District heating network                 | heat                      | heat                   |  $$kW_{th}$$   |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Cogeneration                             | natural gas               | electricity, heat      |   $$kW_{e}$$   |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Electricity storage technologies         |                           |                        |                |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| EV charger                               | electricity*              | electricity*           |     $$kWh$$    |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Electrical vehicle                       | electricity*              | electricity*, mobility |     $$kWh$$    |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| ICE vehicle (internal combustion engine) | fossil fuel               | mobility               |    $$unit$$    |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Bike                                     |                           | mobility               |    $$unit$$    |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Electric bike                            | electricity               | mobility               |    $$unit$$    |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Battery                                  | electricity               | electricity            |    $$kWh$$     |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Data Center                              | electricity               | electricity,heat       |    $$kW_{e}$$  |
-+------------------------------------------+---------------------------+------------------------+----------------+
-| Organic Rankine Cycle (Data Center)      | heat                      | electricity            |    $$kW_{e}$$  |
-+------------------------------------------+---------------------------+------------------------+----------------+
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Technology                               | Input stream              | Output stream         | Reference unit  |
+    +==========================================+===========================+=======================+=================+
+    | **Energy conversion technologies**                                                                             |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Gas boiler                               | natural gas               | heat                  |  $$kW_{th}$$    |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Geothermal heat pump                     | ambient heat, electricity | heat                  |  $$kW_{th}$$    |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | District heating network                 | heat                      | heat                  |  $$kW_{th}$$    |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Cogeneration                             | natural gas               | electricity, heat     |  $$kW_{e}$$     |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | **Storage technologies**                                                                                       |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Battery                                  | electricity               | electricity           |  $$kWh$$        |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | **Mobility services**                                                                                          |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | EV charger                               | electricity [1]_          | electricity [1]_      |  $$kWh$$        |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Electrical vehicle [2]_                  | electricity [1]_          | electricity, mobility |  $$kWh$$        |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | ICE vehicle (internal combustion engine) | fossil fuel               | mobility              |  $$unit$$       |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Bike                                     | --                        | mobility              |  $$unit$$       |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
+    | Electric bike                            | electricity               | mobility              |  $$unit$$       |
+    +------------------------------------------+---------------------------+-----------------------+-----------------+
 
-.. note::
+.. [1] EVs are not directly connected to the Layer *electricity*. Rather, intermediate variables representing the exchanges between EVs and charging stations are used, and the import of electricity from the Grid to charge the vehicles can be observed through the EV charger demand :math:`\boldsymbol{\sum_{u \in EVcharger}\dot{E}_{u,p,t}^{-}}` (see :ref:`annex <fig-mob1>`).
 
-EVs are not directly connected to the Layer *electricity*.  Rather, intermediate variables representing the exchanges between EVs and charging stations are used, and the import of electricity from the Grid to charge the vehicles can be observed through the EV charger demand :math:`\boldsymbol{\sum_{u \in EVcharger}\dot{E}_{u,p,t}^{-}}` (see :ref:`annex <fig-mob1>`).
-
+.. [2] Electric vehicles can also be used as potential storage through Vehicle-to-Grid (V2G) technology.
 
 Model
 ===========================
@@ -565,7 +554,6 @@ Model
 Objective functions
 ---------------------------------
 
-:cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.4*
 
 REHO can optimize energy hubs considering economic indicators (minimizing operational expenses, capital expenses, total expenses) or
 environmental indicators (global warming potential).
@@ -695,7 +683,6 @@ With internal heat gains calculated based on SIA 2024:2015 and include the rooms
 
 And solar heat gains proportional to the global irradiation, through a solar gain coefficient:
 
-:cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 3.2.4 Solar heat gains*
 
 .. math::
     \dot{Q}^{irr}_{b,p,t}  = A^{ERA}_b \cdot \phi^{irr} \cdot \dot{irr}^{ghi}_{b,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
@@ -813,6 +800,66 @@ The transformer capacity is not a continuous variable. Its values should be with
    &\forall b \in  \text{B} \quad l \in  \text{L} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
    \end{align}
 
+Actors modeling
+----------------------------------
+The multi-actor modeling framework captures interactions among stakeholders and balances their respective interests within an energy community.
+The model aims to address dilemmas arising during the energy transition, such as the landlord–tenant dilemma.
+Key actors include tenants, landlords, the energy community manager (ECM), the distribution system operator (DSO), and the municipality, which pursues specific climate goals and provides financial support to promote them.
+Each actor’s interactions and individual constraints are defined alongside district-level constraints.
+
+.. figure:: ../images/actors_interactions.svg
+   :width: 600
+   :align: center
+
+   Energy community actors and their payment flows modeled in REHO
+
+Tenants
+~~~~~~~~~~~~~~~~~~~~~~~~
+Tenants are not responsible for building-related investments such as renovations.
+Their expenses mainly consist of fixed rent paid to the owner, energy bills paid to the owner, and energy bills paid to the community energy manager.
+Regardless of the rental market conditions, the fixed rent can be defined as the increase of rent due to investments made by the landlord.
+To ensure affordability, tenants may set a maximum budget for their annual expenses.
+Intuitively, they prefer lower expenses compared to their optimized pre-renovation levels.
+If the information is not available, it can be set according to the average housing expenses in Switzerland.
+Subsidies can be activated to relax this constraint.
+
+
+Landlords
+~~~~~~~~~~~~~~~~~~~~~~~~
+Landlords finance building renovations and invest in the replacement of existing building-scale energy systems.
+They generate income from tenants through rent and on-site energy consumption and receive payments from the ECM for surplus electricity fed into the grid.
+To ensure that their investments remain profitable, landlords may define a minimum required profit level.
+Subsidies can be activated to relax this constraint, but only when landlords invest in building renovation.
+
+
+Energy Community Manager (ECM)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ECM coordinates internal energy balance through district-level equipment and manages exchanges with external energy supply companies.
+Their expenses and incomes are energy-related payments with tenants, landlords, and the external grid.
+To ensure financial viability, the ECM may define a minimum required profit level.
+
+Distribution system operator (DSO)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The DSO is responsible for managing the import and export of electricity for the district and for providing the grid infrastructure that connects the different buildings.
+The DSO can invest in network reinforcement to increase the district import and export capacity.
+
+Municipality
+~~~~~~~~~~~~~~~~~~~~~~~~
+Municipality provides financial subsidies that help other actors overcoming their bottleneck.
+As they operate with limited budgets, the total subsidies provided are minimized with the objective function \ref{actors-objective}.
+
+
+
+Objective function
+~~~~~~~~~~~~~~~~~~~~~~~~
+To minimize total subsidy outlays, the district‐level energy system’s objective is extended by adding a term that
+penalizes the sum of all subsidies provided.
+
+.. math::
+        \begin{equation}
+            \boldsymbol{C^{obj,actor}} = \boldsymbol{C^{op}} + \boldsymbol{C^{cap}} + \boldsymbol{S^{total}}
+            \label{actors-objective}
+        \end{equation}
 
 
 Outputs
@@ -824,6 +871,7 @@ Decision variables
 
 - Installed capacities for building-level and district-level units
 - Operation time throughout a year
+- Portfolios of actors and money transactions between them
 
 These fully characterize the energy flows at building-level and district-level, as well as the financial flows (investments + operational costs).
 
@@ -831,4 +879,5 @@ Key performance indicators
 ----------------------------------
 
 The KPIs are divided in four subgroups: Environmental, economical, technical and security indicators.
+
 For more information on how to calculate the KPIs presented below, please refer to :cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.5 Key performance indicators*.

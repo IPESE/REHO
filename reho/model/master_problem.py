@@ -120,7 +120,8 @@ class MasterProblem:
         self.cpu_use = mp.cpu_count()
 
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
-        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
+        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound',
+                                                'Costs_House_upfront_m2_MP', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
                                                 'Network_ext', "ff_EV", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
                                                 "transport_Units", "DailyDist", "Mode_Speed", "Cost_demand_ext", "EV_supply_ext", "share_activity", "Cost_supply_ext",
@@ -137,7 +138,7 @@ class MasterProblem:
                                                      'ExternalEV_Costs_positive']
 
         if self.method['actors_problem']:
-            self.lists_MP["list_constraints_MP"] += ['Owner_Link_Subsidy_to_renovation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub']
+            self.lists_MP["list_constraints_MP"] += ['Owner_Link_Subsidy_to_renovation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub', 'Rent_fix_increase','Rent_fix_absolute']
 
         self.df_fix_Units = pd.DataFrame()
 
@@ -229,7 +230,7 @@ class MasterProblem:
         In case the optimization includes an epsilon constraint, there are two ways to initialize.
         Either the epsilon constraint is applied on the SPs, or the initialization is done with beta.
         The former has the risk to be infeasible for certain SPs, therefore the latter is preferred.
-        Five beta values are given to mark the extreme points and an average point.
+        Three beta values are given to mark the extreme points and an average point.
         Sets up the parallel optimization if needed
 
         Parameters
@@ -622,7 +623,7 @@ class MasterProblem:
             MP_set_indexed['UnitTypes'] = np.array([])
             MP_set_indexed['UnitsOfType'] = {}
             for u in self.infrastructure.district_units:
-                name = u['Unit']
+                name = u['Units']
                 MP_set_indexed['Units'] = np.append(MP_set_indexed['Units'], [name])
                 if not u['UnitOfType'] in MP_set_indexed['UnitTypes']:
                     MP_set_indexed['UnitTypes'] = np.append(MP_set_indexed['UnitTypes'], u['UnitOfType'])

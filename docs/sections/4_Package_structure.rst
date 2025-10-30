@@ -52,17 +52,18 @@ Directory for data-related files.
 
 .. automodule:: reho.model
 
+
 **ampl_model/**
 ---------------------
 
-Core of the optimization model (model objectives, constraints, modelling equations), containing all AMPL files:
+Core of the optimization model (model objectives, constraints, modeling equations), containing all AMPL files:
 
 - ``units/`` contains the model files specific to each technology that can be used in the system. Two subfolders (``district_units``, ``interperiod``) are used for easier classification.
 - ``data_stream.dat`` contains values that specify the operating temperatures of streams and energy conversion units.
 - ``master_problem.mod`` contains the modeling of the problem for the decomposition approach.
-- ``sub_problem.mod`` contains the modelling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
+- ``sub_problem.mod`` contains the modeling of the energy system with the declaration of all parameters and variables, problem constraints (energy balance, mass balance, heat cascade, etc.). This is the core of the MILP model.
+- ``actor_problem.mod`` contains the modeling of the actors (responsibilities, interactions, limitations, etc.).
 - ``scenario.mod`` contains the optimization objective functions, the epsilon constraints, and some specific constraints that can be enabled to model a particular scenario.
-- ``actors_problem.mod`` TODO
 
 **postprocessing/**
 -----------------------
@@ -94,7 +95,6 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 
 `actors.py`
 ~~~~~~~~~~~~~~~~~~~~~~~
-
 .. automodule:: reho.model.preprocessing.actors
     :members:
 
@@ -124,16 +124,16 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 .. automodule:: reho.model.preprocessing.emissions_parser
     :members:
 
-`local_data.py`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. automodule:: reho.model.preprocessing.local_data
-    :members:
-
 `mobility_generator.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: reho.model.preprocessing.mobility_generator
+    :members:
+
+`local_data.py`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.preprocessing.local_data
     :members:
 
 `QBuildings.py`
@@ -175,6 +175,12 @@ Core of the optimization model (model objectives, constraints, modelling equatio
 ------------------------------
 
 .. automodule:: reho.model.master_problem
+    :members:
+
+*actors_problem.py*
+------------------------------
+
+.. automodule:: reho.model.actors_problem
     :members:
 
 *infrastructure.py*

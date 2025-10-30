@@ -1,7 +1,7 @@
 Contribute
 +++++++++++++
 
-REHO is an open-source, documented, and collaborative decision support tool for energy system modelling.
+REHO is an open-source, documented, and collaborative decision support tool for energy system modeling.
 
 We articulate our philosophy and provide guidelines for contributing, making it accessible for anyone to get involved.
 Whether you are addressing a bug, enhancing documentation, or proposing new features, your contributions have the potential to positively impact the success of REHO and its community.

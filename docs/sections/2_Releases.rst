@@ -73,8 +73,8 @@ Related work
 Model foundations
 ------------------
 
-The first developments of REHO model are related to Paul Stadler's thesis,
-which presents the buildings modellization framework and serves as a basis for the AMPL model.
+The first developments associated to the model are related to Paul Stadler's thesis,
+which presents the buildings modeling framework and serves as a basis for the AMPL model.
 
 .. dropdown:: :bdg-primary:`PhD Thesis` Model-based sizing of building energy systems with renewable sources, Stadler 2019 :cite:`stadlerModelbasedSizingBuilding2019`
     :icon: mortar-board
@@ -87,7 +87,7 @@ which presents the buildings modellization framework and serves as a basis for t
 
         The second topic focuses on the study of multi-building energy systems and analyses the potential benefits from  involving multiple end-users during the sizing process. Through an extended system scope, potential synergies of  neighbouring building types arise and hence, the initial modelling framework is further developed accordingly.  Additional shared unit technologies, such as inter-day storage and heating networks become interesting elements for  buildings interaction and therefore are also integrated in the modelling framework. Finally, the third target  addresses the quantification of potential ancillary services performed by different energy system configurations to  power network operators. Using a representative set of flexibility request profiles, the modelling framework is  systematically solved to assess the associated temporal load shifting potential in comparison to standard electrical  battery energy storage systems.
 
-The extension towards a district-scale energy hub is the contribution of Luise Middelhauve's thesis,
+The formulation of the the district-scale problem is the contribution of Luise Middelhauve's thesis,
 which applies the Dantzig-Wolfe decomposition algorithm to bypass the computation effort associated with numerous interacting buildings.
 The thesis also focuses in particular on the role of integrating photovoltaic panels into neighbourhoods.
 

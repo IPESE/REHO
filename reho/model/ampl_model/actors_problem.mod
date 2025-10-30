@@ -49,13 +49,13 @@ subject to Renter1{h in House}:
 renter_expense[h] = C_rent_fix[h] + C_op_renters_to_utility[h] + C_op_renters_to_owners[h];
 
 param max_rent_increase_m2 default 5; # CHF/m2/yr
-subject to Rent_fix{h in House}:
+subject to Rent_fix_increase{h in House}: # dropped 
 C_rent_fix[h] / ERA[h] <= max_rent_increase_m2; 
 
-#subject to Rent_fix2{h in House, i in House : h != i}:
-#(C_rent_fix[h] / ERA[h]) >= 0.8 * (C_rent_fix[i] / ERA[i]);
+subject to Rent_fix_absolute{h in House, i in House : h != i}:  # # dropped 
+C_rent_fix[h] / ERA[h] >= 0.8 * (C_rent_fix[i] / ERA[i]);
 
-subject to Renter_noSub{h in House}:
+subject to Renter_noSub{h in House}: # dropped 
 renter_subsidies[h] = 0;
 
 subject to Renter_epsilon{h in House}: #nu_renters
@@ -88,28 +88,30 @@ objective_functions["Utility"] = - utility_profit;
 #--------------------------------------------------------------------------------------------------------------------#
 param Costs_House_upfront_m2_MP default 7759;
 param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2_MP;
-param Costs_House_yearly{h in House} := Costs_House_upfront[h]/100 + Costs_House_upfront[h] * i_rate * (0.13/(1-(1+i_rate)^(-15)) + 0.67/(1-(1+i_rate)^(-70))) - Costs_House_upfront[h] * (1/15+1/70);
+# The following calculation gives a negative cost (please verify)
+# param Costs_House_yearly{h in House} := Costs_House_upfront[h]/100 + Costs_House_upfront[h] * i_rate * (0.13/(1-(1+i_rate)^(-15)) + 0.67/(1-(1+i_rate)^(-70))) - Costs_House_upfront[h] * (1/15+1/70);
+param Costs_House_yearly{h in House} := Costs_House_upfront[h] * i_rate*(1+i_rate)^50/(((1+i_rate)^50)-1);
+
 param owner_PIR_min default 0;
 param owner_PIR_max default 0.3;
 
 var owner_profit{h in House};
 var slack_owner_subsidies{h in House};
 
-#Scenario 2 & 2.1 & 3 (Owner_Sub_bigM_ub)
-subject to Owner_Link_Subsidy_to_renovation{h in House}:
+subject to Owner_Link_Subsidy_to_renovation{h in House}: # dropped 
 owner_subsidies[h] <= 1e10 * is_ins[h] + slack_owner_subsidies[h];
 
 subject to Owner_profit{h in House}:
 owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_yearly[h];
 
-#Scenario 2.1 (Owner2)
-subject to Owner_profit_max_PIR{h in House}:
-owner_profit[h] <= owner_PIR_max * (Costs_House_inv[h] + Costs_House_upfront[h]);
+
+subject to Owner_profit_max_PIR{h in House}: # dropped 
+owner_profit[h] <= owner_PIR_max * (Costs_House_inv[h] + Costs_House_yearly[h]);
 
 subject to Owner_epsilon{h in House}: #nuH_owner
-owner_profit[h] + owner_subsidies[h] >= owner_PIR_min * (Costs_House_inv[h] + Costs_House_upfront[h]); #owner_profit_min[h];
+owner_profit[h] + owner_subsidies[h] >= owner_PIR_min * (Costs_House_inv[h] + Costs_House_yearly[h]); #owner_profit_min[h];
 
-subject to Owner_noSub{h in House}:
+subject to Owner_noSub{h in House}: # dropped 
 owner_subsidies[h] = 0;
 
 subject to obj_fct3:

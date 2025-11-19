@@ -5,6 +5,7 @@ set ActorObjective;
 var Cost_supply_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
 var Cost_demand_district{l in ResourceBalances, f in FeasibleSolutions, h in House};
 var Cost_self_consumption{f in FeasibleSolutions, h in House};
+var Cost_travel >= 0;
 
 subject to size_cstr1{l in ResourceBalances, f in FeasibleSolutions, h in House}:            
    Cost_demand_cst[l] *lambda[f,h] <= Cost_supply_district[l,f,h];
@@ -40,7 +41,7 @@ var C_op_renters_to_utility{h in House} >= 0;
 var C_op_renters_to_owners{h in House} >= 0;
 
 subject to Costs_opex_renter1{h in House}:
-C_op_renters_to_utility[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_supply_district[l,f,h] * Grid_supply[l,f,h,p,t] * dp[p] * dt[p] );
+C_op_renters_to_utility[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_supply_district[l,f,h] * Grid_supply[l,f,h,p,t]  * dp[p] * dt[p] )+ Cost_travel * sum{d in Distances} DailyDist[d];                                             
 
 subject to Costs_opex_renter2{h in House}:
 C_op_renters_to_owners[h] = sum{f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_self_consumption[f,h] * PV_self_consummed[f,h,p,t] * dp[p] * dt[p] );
@@ -88,8 +89,6 @@ objective_functions["Utility"] = - utility_profit;
 #--------------------------------------------------------------------------------------------------------------------#
 param Costs_House_upfront_m2_MP default 7759;
 param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2_MP;
-# The following calculation gives a negative cost (please verify)
-# param Costs_House_yearly{h in House} := Costs_House_upfront[h]/100 + Costs_House_upfront[h] * i_rate * (0.13/(1-(1+i_rate)^(-15)) + 0.67/(1-(1+i_rate)^(-70))) - Costs_House_upfront[h] * (1/15+1/70);
 param Costs_House_yearly{h in House} := Costs_House_upfront[h] * i_rate*(1+i_rate)^50/(((1+i_rate)^50)-1);
 
 param owner_PIR_min default 0;
@@ -109,7 +108,7 @@ subject to Owner_profit_max_PIR{h in House}: # dropped
 owner_profit[h] <= owner_PIR_max * (Costs_House_inv[h] + Costs_House_yearly[h]);
 
 subject to Owner_epsilon{h in House}: #nuH_owner
-owner_profit[h] + owner_subsidies[h] >= owner_PIR_min * (Costs_House_inv[h] + Costs_House_yearly[h]); #owner_profit_min[h];
+owner_profit[h] + owner_subsidies[h] >= owner_PIR_min * (Costs_House_inv[h] + Costs_House_yearly[h]);
 
 subject to Owner_noSub{h in House}: # dropped 
 owner_subsidies[h] = 0;
@@ -127,5 +126,5 @@ penalty_actors = sum{h in House} (C_rent_fix[h] + C_op_renters_to_owners[h] + C_
 
 minimize TOTEX_actor:
 sum {a in ActorObjective} objective_functions[a] + penalty_ratio * (Costs_inv + Costs_op + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]));
-# - sum{h in House} (C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] + owner_subsidies[h]);
-# - (sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units} Costs_Unit_inv[u] - Costs_rep);
+
+

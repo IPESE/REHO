@@ -154,8 +154,8 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
 
             demand_pkm = pd.concat([demand_pkm, profile])
 
-    extreme_hours = pd.concat([pd.DataFrame({"p": 11, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index),
-                               pd.DataFrame({"p": 12, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index)])
+    extreme_hours = pd.concat([pd.DataFrame({"p": len(timestamp)-1, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index),
+                               pd.DataFrame({"p": len(timestamp), "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index)])
 
     extreme_hours.index.name = 'dist'
     extreme_hours.reset_index(inplace=True)
@@ -215,8 +215,8 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
         profile['p'] = j + 1
         daily_profile = pd.concat([daily_profile, profile])
 
-    pd.concat([daily_profile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
-    pd.concat([daily_profile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
+    pd.concat([daily_profile, pd.DataFrame({"p": len(timestamp)-1, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
+    pd.concat([daily_profile, pd.DataFrame({"p": len(timestamp), "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
     return daily_profile.set_index(['u', 'p', 't'])
 
 
@@ -265,10 +265,10 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
         cpf['p'] = j + 1
         EV_charging_profile = pd.concat([EV_charging_profile, cpf])
 
-    aaa = pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 11, "t": 1, "EV_charging_profile": 0},
+    aaa = pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": len(timestamp)-1, "t": 1, "EV_charging_profile": 0},
                        index=[f"{x}1" for x in EV_charging_profile.u.unique()])
     EV_charging_profile = pd.concat([EV_charging_profile, aaa])
-    EV_charging_profile = pd.concat([EV_charging_profile, pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 12, "t": 1, "EV_charging_profile": 0},
+    EV_charging_profile = pd.concat([EV_charging_profile, pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": len(timestamp), "t": 1, "EV_charging_profile": 0},
                                                                        index=[[f"{x}2" for x in EV_charging_profile.u.unique()]])])
     return EV_charging_profile.set_index(['u', 'p', 't'])
 
@@ -314,9 +314,9 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping):
         out['p'] = j + 1
         EV_plugged_out = pd.concat([EV_plugged_out, out])
 
-    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 11, "t": 1, "EV_plugged_out": 0},
+    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": len(timestamp)-1, "t": 1, "EV_plugged_out": 0},
                                                              index=[[f"{x}1" for x in EV_plugged_out.u.unique()]])])
-    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 12, "t": 1, "EV_plugged_out": 0},
+    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": len(timestamp), "t": 1, "EV_plugged_out": 0},
                                                              index=[[f"{x}2" for x in EV_plugged_out.u.unique()]])])
     return EV_plugged_out.set_index(['u', 'p', 't'])
 
@@ -576,68 +576,6 @@ def rho_param(ext_districts, rho, activities=["work", "leisure", "travel"]):
     share = share.stack().to_frame(name="share_activity").reorder_levels([1, 0])
     share.loc['travel'] = 0  # additionnal precaution
     return share
-
-
-def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters, only_prices=False):
-    """"
-    This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
-    The load is expressed using the corrective parameter f.
-
-    Parameters
-    ----------
-    reho_models : dict of reho objects
-        Dictionary of reho object, one for each district
-    Scn_ID : str or int
-        label for the scenario
-    iter : int
-        iteration of the city scale optimization
-    district_parameters : dict of dict
-        Each key of the dict refers to a district d. Used to extract the scale parameter f : district_parameters[d]['f']
-    only_prices : bool
-        if False, only returns the parameters Cost_demand_ext and Cost_supply_ext
-        if True, additionally returns the parameter EV_supply_ext
-    Returns
-    -------
-    parameters : dict of dict
-        For each district d, returns a dict of the parameters to be inputted in the next optimisation. Parameters include Cost_demand_ext, Cost_supply_ext, EV_supply_ext. 
-
-    """
-    parameters = dict()
-    df_prices = pd.DataFrame()
-    for d in district_parameters.keys():
-        parameters[d] = {}
-        pi = reho_models[d].results_MP[Scn_ID][iter][0]["df_Dual_t"]["pi"].xs("Electricity")
-        parameters[d]["Cost_supply_ext"] = pi.rename("Cost_supply_ext").drop([11, 12], level="Period")
-
-        price = pi.to_frame().copy()
-        price['district'] = d
-        price = price.set_index('district', append=True).reorder_levels([2, 0, 1]).drop([11, 12], level="Period")
-        df_prices = pd.concat([df_prices, price])
-
-    for d in district_parameters.keys():
-        parameters[d]["Cost_demand_ext"] = df_prices.drop(d, level="district").rename(columns={'pi': 'Cost_demand_ext'})
-
-    if not only_prices:
-        # scale charging loads asked to external districts
-        df_load = pd.DataFrame()
-        for d in district_parameters.keys():
-            df_unit_t = reho_models[d].results[Scn_ID][iter]["df_Unit_t"]
-            EV_demand_ext = df_unit_t.loc[:, df_unit_t.columns.str.contains("EV_demand_ext")].xs("Electricity").xs("EV_district")
-            activities = [x.split('[')[1].split(",")[0] for x in EV_demand_ext.columns]
-            districts = [x.split('[')[1].split(",")[1].replace("]", "") for x in EV_demand_ext.columns]
-            EV_demand_ext.columns = pd.MultiIndex.from_arrays([activities, districts], names=['activity', 'district'])
-            EV_demand_ext = EV_demand_ext.stack(level=1).reorder_levels([2, 0, 1]) * district_parameters[d]['f']
-            EV_demand_ext = EV_demand_ext * district_parameters[d]['f']
-            df_load = pd.concat([df_load, EV_demand_ext])  # list of all external loads scaled to city level
-
-        df_load = df_load.groupby(["district", "Period", "Time"]).sum()
-        df_load = df_load.stack().unstack(level='district').reorder_levels([2, 0, 1])
-        df_load.columns = df_load.columns.astype(float).astype(int)  # load per district and activity at the city level
-
-        for d in district_parameters.keys():
-            parameters[d]["EV_supply_ext"] = df_load[[d]].rename(columns={d: "EV_supply_ext"}) / district_parameters[d]['f']
-
-    return parameters
 
 
 # FUNCTIONS PROCESSING OF WP1 DATA =======================================================================================

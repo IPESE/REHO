@@ -9,6 +9,7 @@ set Layers;
 set LayerTypes;
 set LayersOfType{LayerTypes} within Layers;
 set ResourceBalances := if (exists{t in LayerTypes} t = 'ResourceBalance') then ({l in LayersOfType["ResourceBalance"]}) else ({});
+set Distances default {"long","short"}; 
 
 set UnitTypes default {};
 set Units default {};
@@ -77,6 +78,7 @@ param Units_flowrate_in{l in ResourceBalances, u in Units}  >=0 default 0;
 param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 
 param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 default 0;
+param DailyDist{dist in Distances} default 36.8; # km - [1] Caution : unlinked default value duplicata in generate_mobility_parameters
 
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];

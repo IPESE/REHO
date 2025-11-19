@@ -658,6 +658,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         # Total expenses and profits of each type of actor
         df_Results["df_Actors"] = get_ampl_data(ampl, 'objective_functions')
+        df_Results["df_Actors"].at["Cost_travel", "objective_functions"] = get_ampl_data(ampl, 'Cost_travel').values
 
         df1 = get_ampl_data(ampl, 'C_op_renters_to_utility')
         df2 = get_ampl_data(ampl, 'C_op_renters_to_owners')

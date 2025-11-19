@@ -80,10 +80,6 @@ param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 default 0;
 param DailyDist{dist in Distances} default 36.8; # km - [1] Caution : unlinked default value duplicata in generate_mobility_parameters
 
-
-param data_EUD_avg{l in ResourceBalances: l = 'Data'} default 0;
-param data_EUD{l in ResourceBalances, p in Period, t in Time[p]} default data_EUD_avg[l];
-
 var Units_supply{l in ResourceBalances, u in Units, p in Period, t in Time[p]} >= 0, <= Units_flowrate_out[l,u];
 var Units_demand{l in ResourceBalances, u in Units,  p in Period, t in Time[p]} >= 0, <= Units_flowrate_in[l,u];
 
@@ -238,17 +234,8 @@ subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}}:
 Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_Unit_replacement{u in Units diff {"DHN_pipes_district"}}:
-Costs_Unit_rep[u] =
+Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
-    sum{n_rep in 1..floor(n_years/lifetime[u]) - 1}
-    ((1/(1+i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u])
-    +
-    ((n_years - floor(n_years/lifetime[u])*lifetime[u])/ lifetime[u])
-    *
-    (1/(1+i_rate))^(floor(n_years/lifetime[u])*lifetime[u])
-    *
-    Costs_Unit_inv[u];
-    
 subject to Costs_replacement:
 Costs_rep =  sum{u in Units diff {"DHN_pipes_district"}} Costs_Unit_rep[u];
 

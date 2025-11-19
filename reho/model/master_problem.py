@@ -437,9 +437,6 @@ class MasterProblem:
         ampl_MP.cd(path_to_ampl_model)
         ampl_MP.read('master_problem.mod')
 
-        if self.method["actors_problem"]:
-            ampl_MP.read('actors_problem.mod')
-
         # Load battery units (district-scale, but same model as building-scale)
         ampl_MP.cd(path_to_units)
         if "Battery_district" in self.infrastructure.UnitsOfDistrict:
@@ -471,6 +468,10 @@ class MasterProblem:
                 ampl_MP.read('methanator_district.mod')
         if read_DHN:
             ampl_MP.read('dhn.mod')
+
+        if self.method["actors_problem"]:
+            ampl_MP.cd(path_to_ampl_model)
+            ampl_MP.read('actors_problem.mod')
 
         # Load interperiod storage units
         ampl_MP.cd(path_to_units_interperiod)
@@ -597,7 +598,7 @@ class MasterProblem:
                     MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
                     MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
         if read_DHN:
-            MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
+            MP_set_indexed["House_ID"] = np.array([int(s.replace("Building", "")) for s in list(self.infrastructure.houses.keys())])
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]),
@@ -758,18 +759,19 @@ class MasterProblem:
         pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
         pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
 
-        parameters_SP = {'Cost_supply_network': pi,
-                         'Cost_demand_network': pi * (1 - 1e-9),
-                         'Cost_supply': pi_h,
-                         'Cost_demand': pi_h * (1 - 1e-9),
-                         'GWP_supply': pi_GWP,
-                         'GWP_demand': pi_GWP.mul(0),  # set emissions of feed in to 0 -> changed in  postcompute
-                         }
-
+        parameters_SP = dict()
         if self.method['actors_problem']:
             parameters_SP.update(actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID, self.iter, h))
         # find district structure, objective, beta and parameter for one single building
         buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
+
+        parameters_SP['Cost_supply_network'] = pi
+        parameters_SP['Cost_demand_network'] = pi * (1 - 1e-9)
+        parameters_SP['Cost_supply'] = pi_h
+        parameters_SP['Cost_demand'] = pi_h * (1 - 1e-9)
+        parameters_SP['GWP_supply'] = pi_GWP
+        parameters_SP['GWP_demand'] = pi_GWP.mul(0)
+
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list

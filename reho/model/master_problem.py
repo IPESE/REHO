@@ -501,14 +501,15 @@ class MasterProblem:
         df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 6)
         df_Buildings = self.return_combined_SP_results(self.results_SP, 'df_Buildings')
         df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')].droplevel('Hub')
+        df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
 
         # apply slicing or level-dropping uniformly to all three DataFrames
-        dfs = [df_Performance, df_Grid_t, df_Buildings]
-        if not self.method['include_all_solutions']:
-            dfs = [df.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID')) for df in dfs]
-        else:
+        dfs = [df_Performance, df_Grid_t, df_Buildings, df_Unit_t]
+        if self.method['include_all_solutions']:
             dfs = [df.droplevel(['Scn_ID', 'Pareto_ID']) for df in dfs]
-        df_Performance, df_Grid_t, df_Buildings = dfs
+        else:
+            dfs = [df.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID')) for df in dfs]
+        df_Performance, df_Grid_t, df_Buildings, df_Unit_t = dfs
 
         df_Performance = df_Performance.droplevel(level='Iter')
         df_Grid_t = df_Grid_t.droplevel(level=['Iter', 'Hub']).reorder_levels(['Layer', 'FeasibleSolution', 'house', 'Period', 'Time'])
@@ -581,11 +582,10 @@ class MasterProblem:
             if "ActorObjective" in self.set_indexed:
                 MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
 
-            df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
             df_PV_t = pd.DataFrame()
             for bui in self.infrastructure.houses:
                 df_PV_t = pd.concat([df_PV_t, df_Unit_t.xs("PV_" + bui, level="Unit")])
-            MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
+            MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Iter"])
 
         if self.method['renovation'] is not None:
             MP_parameters["Uh"] = pd.DataFrame.from_dict({house: self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})

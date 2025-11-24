@@ -76,7 +76,7 @@ subject to Utility1{h in House}:
 C_op_utility_to_owners[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_demand_district[l,f,h] * Grid_demand[l,f,h,p,t] * dp[p] * dt[p]);
 
 subject to Utility2:
-utility_profit = sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units} Costs_Unit_inv[u] - Costs_rep;
+utility_profit = sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units diff {"EV_district"}} Costs_Unit_inv[u] - Costs_rep- sum{h in House} DHN_inv_house[h];
 
 subject to Utility_epsilon: # nu_utility
 utility_profit >= utility_profit_min;

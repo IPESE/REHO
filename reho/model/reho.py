@@ -514,14 +514,8 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                # Only consider PeriodStandard (without extreme days) to compute annual balance
-                PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
-                    ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
-
-                # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(
-                    df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
-                    level='Period', axis=0).sum() / 1000
+                # get annual values df_Unit_t using dp
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp[:-2], axis=0).sum() / 1000
 
                 # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')

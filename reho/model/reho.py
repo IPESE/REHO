@@ -93,7 +93,8 @@ class REHO(MasterProblem):
     def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
 
         # Initiation
-        self.pool = 28 #mp.Pool(mp.cpu_count())
+        #self.pool = mp.Pool(mp.cpu_count())
+        self.pool = mp.Pool(28)
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 

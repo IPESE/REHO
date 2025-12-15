@@ -194,7 +194,6 @@ class PathwayProblem(REHO):
                 [[1] if self.qbuildings_data['buildings_data'][key][f'electric_system_{year}'] == 'PV' else [0]
                  for key in self.qbuildings_data['buildings_data'].keys()])
 
-            # Initialize HeatPump_install with zeros
             building_keys = list(self.qbuildings_data['buildings_data'].keys())
 
             # Loop through each unit type
@@ -217,8 +216,12 @@ class PathwayProblem(REHO):
                         self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit
                                                                        else [0] for key in building_keys])
                 elif self.path_methods['optimize_pathway'] == True:
-                    self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit
-                                                                   else [0] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == f'{unit}_out' else [0] for key in building_keys])
+                    if unit == 'OIL_Boiler':
+                        self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit
+                             else [0] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == f'{unit}_out' else [0] for key in building_keys])
+                    else:
+                        self.parameters[f'{unit}_install'] = np.array([[1] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit
+                                                                       else [0] if self.qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == f'{unit}_out' else [-1] for key in building_keys])
 
             # Update the existing conditions
             self.parameters['Units_Ext'] = self.results[self.scenario["name"]][int(self.y_span[t-1])]['df_Unit']['Units_Mult']

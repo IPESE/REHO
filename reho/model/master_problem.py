@@ -215,6 +215,12 @@ class MasterProblem:
                 SP_scenario['specific'].remove(scenario_cst)
                 SP_scenario_init['specific'].remove(scenario_cst)
 
+        if 'EMOO_PV_lower' in scenario['EMOO'].keys():
+            SP_scenario_init['EMOO']['EMOO_PV_lower'] = scenario['EMOO']['EMOO_PV_lower']
+        if 'EMOO_PV_upper' in scenario['EMOO'].keys():
+            SP_scenario_init['EMOO']['EMOO_PV_upper'] = scenario['EMOO']['EMOO_PV_upper']
+
+
         return scenario, SP_scenario, SP_scenario_init
 
     def initiate_decomposition(self, scenario, Scn_ID=0, Pareto_ID=1, epsilon_init=None):
@@ -500,6 +506,20 @@ class MasterProblem:
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
+        MP_parameters['Area_roof_tot'] = sum([self.buildings_data[house]['SolarRoofArea'] for house in self.buildings_data.keys()])
+
+        df_Unit = self.return_combined_SP_results(self.results_SP, 'df_Unit')
+        df_PV = df_Unit[df_Unit.index.get_level_values("Unit").str.contains("PV")]
+        df_PV_mult = df_PV['Units_Mult']
+        df_PV_mult = df_PV_mult.droplevel('Unit')
+        # prepare df to have the same index as AMPL model
+        if not self.method['include_all_solutions']:
+            df_PV_mult = df_PV_mult.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID'))
+        else:
+            df_PV_mult = df_PV_mult.droplevel(['Scn_ID', 'Pareto_ID'])
+
+        df_PV_mult = df_PV_mult.droplevel(['Iter'])
+        MP_parameters['PV_Mult_house_rep_SPs'] = df_PV_mult
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             mobility_parameters = mobility.generate_mobility_parameters(self.cluster, self.parameters, self.infrastructure, self.modal_split)
@@ -1048,7 +1068,7 @@ class MasterProblem:
     def remove_emoo_constraints(scenario):
 
         EMOOs = list(scenario['EMOO'].keys())
-        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', "EMOO_elec_export", "EMOO_EV"]
+        keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', "EMOO_elec_export", "EMOO_EV","EMOO_PV_upper","EMOO_PV_lower"]
         if 'EMOO' in scenario:
             for key in list(set(EMOOs).intersection(keys_to_remove)):
                 scenario['EMOO'].pop(key, None)

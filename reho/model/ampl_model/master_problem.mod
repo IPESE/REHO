@@ -38,6 +38,8 @@ param dp{p in Period} default 1;			# days
 param Area_tot default 100;
 param ERA{h in House} default 100;
 
+param Area_roof_tot default 1e6;
+
 param n_years default 25;
 param i_rate default 0.02;
 param tau := i_rate*(1+i_rate)^n_years/(((1+i_rate)^n_years)-1);
@@ -118,6 +120,9 @@ param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
 param Units_Ext{u in Units} default 0;
 
+# PV constraint param
+param PV_Mult_house_rep_SPs{f in FeasibleSolutions, h in House} default 0;
+
 var Units_Mult{u in Units} <= Units_Fmax[u];
 var Units_Use{u in Units} binary >= 0, default 0;
 
@@ -136,6 +141,13 @@ Units_Use[u]*Units_Fmax[u]>=Units_Mult[u];
 subject to Unit_Use_constraint_c2{u in Units}:
 Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
 
+# PV constraint variable
+var PV_tot >= -1e-4;
+
+# PV constraint
+subject to PV_installed:
+PV_tot=sum{f in FeasibleSolutions,h in House}(PV_Mult_house_rep_SPs[f,h]*lambda[f,h]);
+
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
 # Costs
@@ -143,7 +155,7 @@ Units_Use[u]*Units_Fmin[u]<=Units_Mult[u];
 ######################################################################################################################
 param eps >= 0 := 1e-8;
 
-param Costs_inv_rep_SPs{f in FeasibleSolutions, h in House} >= -eps; #tells AMPL to accept tiny negative values as essentially zero.
+param Costs_inv_rep_SPs{f in FeasibleSolutions, h in House} >= -eps; # tells AMPL to accept tiny negative values as essentially zero.
 param Costs_ft_SPs{f in FeasibleSolutions, h in House} >= 0;
 param GWP_house_constr_SPs{f in FeasibleSolutions, h in House} >= 0;
 
@@ -278,11 +290,20 @@ param EMOO_TOTEX default 1000;
 param EMOO_grid default 0;
 param EMOO_elec_export default 0;
 
+param EMOO_PV_upper default 1e6;
+param EMOO_PV_lower default 0;
+
 var EMOO_slack                >= 0, <= abs(EMOO_CAPEX) * Area_tot;
 var EMOO_slack_opex           >= 0, <= abs(EMOO_OPEX)*Area_tot;
 var EMOO_slack_gwp            >= 0, <= abs(EMOO_GWP)*Area_tot;
 var EMOO_slack_totex          >= 0, <= abs(EMOO_TOTEX)*Area_tot;
 var EMOO_slack_elec_export >=0;
+
+subject to EMOO_PV_upper_constraint: # beta_pv_upper
+PV_tot  <= EMOO_PV_upper * Area_roof_tot;
+
+subject to EMOO_PV_lower_constraint: # beta_pv_lower
+PV_tot >= EMOO_PV_lower * Area_roof_tot;
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Grid connection costs

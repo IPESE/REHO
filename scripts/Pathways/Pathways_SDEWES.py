@@ -20,7 +20,7 @@ if __name__ == '__main__':
     n_build_list = []
     error_transf = []
     error_list = []
-    #transf_list = [ 'group_24']
+    transf_list = [ 'group_1']
     for transformer in transf_list:
         tic = time.perf_counter()
         try:
@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
             #plotting.plot_performance(reho_path.results,plot='costs',indexed_on='Pareto_ID',label='EN_long',title="Economical performance").show()
             # Save results
-            reho_path.save_results(format=['pickle'], filename=f'pathway_out_{transformer}')
+            reho_path.save_results(format=['xlsx'], filename=f'pathway_out_{transformer}')
 
         except Exception as e:
             error_transf.append(transformer)

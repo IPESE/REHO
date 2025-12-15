@@ -51,6 +51,9 @@ param EMOO_OPEX default 0;
 param EMOO_TOTEX default 0;
 param EMOO_GWP default 0;
 
+param EMOO_PV_upper default 1e6;
+param EMOO_PV_lower default 0;
+
 param EMOO_grid default 0;
 param EMOO_network default 0;
 param EMOO_GU_demand default 1e9;
@@ -74,6 +77,11 @@ Costs_op + tau*(Costs_inv +Costs_rep ) + EMOO_slack_totex = EMOO_TOTEX*(sum{h in
 subject to EMOO_GWP_constraint:
 GWP_op + GWP_constr + EMOO_slack_gwp = EMOO_GWP*(sum{h in House} ERA[h]);
 
+subject to EMOO_PV_upper_constraint: # beta_pv_upper
+sum{u in UnitsOfType['PV']} Units_Mult[u]  <= EMOO_PV_upper *(sum{h in House} SolarRoofArea[h]);
+
+subject to EMOO_PV_lower_constraint: # beta_pv_lower
+sum{u in UnitsOfType['PV']} Units_Mult[u] >= EMOO_PV_lower *(sum{h in House} SolarRoofArea[h]);
 
 subject to EMOO_grid_constraint{l in ResourceBalances,hl in HousesOfLayer[l],p in PeriodStandard,t in Time[p]: l = 'Electricity' }:
 Grid_supply[l,hl,p,t] - Grid_demand[l,hl,p,t]  <= if EMOO_grid!=0 then EMOO_grid*sum{i in Time[p]}((Grid_supply[l,hl,p,i] - Grid_demand[l,hl,p,i] )*dt[p])/(card(Time[p])) else 1e8;

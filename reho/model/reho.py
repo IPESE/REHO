@@ -94,6 +94,7 @@ class REHO(MasterProblem):
 
         # Initiation
         self.pool = mp.Pool(mp.cpu_count())
+        print(self.pool)
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 

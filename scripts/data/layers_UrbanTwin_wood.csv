@@ -1,0 +1,12 @@
+Grid;ref_unit;Network_demand_connection;Network_supply_connection;Cost_demand_cst;Cost_supply_cst;GWP_demand_cst;GWP_supply_cst;Cost_connection;Network_ext;ReinforcementOfNetwork;Cost_network_inv1;Cost_network_inv2;GWP_network_1;GWP_network_2;Network_lifetime
+Electricity;kWh;1;1;0.1535;0.2810;0.037;0.125;0;1e6;400/600/1000/2000/1e6;15000;10;0;0;60
+NaturalGas;kWh;0;1;0;0.1511;0;0.234;0;2000;400/600/1000/2000;0;0;0;0;60
+Oil;kWh;0;1;0;0.0941;0;0.343;0;2000;400/600/1000/2000;0;0;0;0;60
+Heat;kWh;1;1;0;0.1609;0;0.125;0;2000;400/600/1000/2000;0;0;0;0;60
+Wood;kWh;0;1;0;100;0;0.0277;0;2000;400/600/1000/2000;0;0;0;0;60
+Hydrogen;kWh;1;1;0.15;0.45;0;0.328;0;0;0;0;0;0;0;60
+Biomethane;kWh;0;0;0;0.2;0;0.214;0;0;0;0;0;0;0;60
+CO2;mol;0;0;0;0;0;0;0;0;0;0;0;0;0;60
+Data;kWh;1;0;1;10;0.17;0;0;2000;400/600/1000/2000;0;0;0;0;60
+Mobility;pkm;0;1;0;0.4;0;0.0195;0;2000;400/600/1000/2000;0;0;0;0;60
+Gasoline;kWh;0;1;0;0.19;0;0.485;0;0;0;0;0;0;0;60

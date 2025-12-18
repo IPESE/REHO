@@ -623,7 +623,7 @@ class MasterProblem:
             MP_set_indexed['UnitTypes'] = np.array([])
             MP_set_indexed['UnitsOfType'] = {}
             for u in self.infrastructure.district_units:
-                name = u['Units']
+                name = u['Unit']
                 MP_set_indexed['Units'] = np.append(MP_set_indexed['Units'], [name])
                 if not u['UnitOfType'] in MP_set_indexed['UnitTypes']:
                     MP_set_indexed['UnitTypes'] = np.append(MP_set_indexed['UnitTypes'], u['UnitOfType'])

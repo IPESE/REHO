@@ -457,7 +457,7 @@ class MasterProblem:
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('electricbike.mod')
+                ampl_MP.read('ebike.mod')
             if "ICE_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('icevehicle.mod')
             if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:

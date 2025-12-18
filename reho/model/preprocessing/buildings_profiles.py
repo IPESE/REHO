@@ -320,6 +320,7 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
 
 
 def solar_gains_profile(qbuildings_data, sia_data, local_data):
+def solar_gains_profile(qbuildings_data, sia_data, local_data):
     """
     Computes the solar heat gains from the irradiance. Heat gains depend on the facades surfaces and on a window fraction (obtained from SIA 2024).
 
@@ -340,17 +341,20 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
 
     irr = local_data["Irr"]
     buildings_data = qbuildings_data["buildings_data"]
-    facades = qbuildings_data["facades_data"]
     g = np.repeat(0.45, len(irr))  # g-value SIA 2024
-    g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
+    g[irr > 0.4] = 0.1  # assumption that if irradiation exceeds 400 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:
         id_building = buildings_data[b]["id_building"]
-        facades_b = facades[facades["id_building"] == id_building]
-        df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
-        df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
-        df_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
+        if "facades_data" in qbuildings_data.keys():
+            facades = qbuildings_data["facades_data"]
+            facades_b = facades[facades["id_building"] == id_building]
+            df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
+            df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
+            df_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
+        else:
+            df_facade_irr = buildings_data[b]['area_facade_m2']
 
         classes = buildings_data[b]['id_class'].split('/')
         if isinstance(buildings_data[b]['ratio'], float):

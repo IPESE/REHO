@@ -4,7 +4,7 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     # Set building parameters
-    reader = QBuildingsReader(load_roofs=True)
+    reader = QBuildingsReader(load_roofs=True, load_facades=True)
     reader.establish_connection('Geneva')
     qbuildings_data = reader.read_db(district_id=234, nb_buildings=40, correct_Uh=True)
 

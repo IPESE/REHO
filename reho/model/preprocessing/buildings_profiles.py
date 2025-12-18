@@ -320,7 +320,6 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
 
 
 def solar_gains_profile(qbuildings_data, sia_data, local_data):
-def solar_gains_profile(qbuildings_data, sia_data, local_data):
     """
     Computes the solar heat gains from the irradiance. Heat gains depend on the facades surfaces and on a window fraction (obtained from SIA 2024).
 

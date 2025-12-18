@@ -4,7 +4,7 @@ from reho.plotting import plotting
 if __name__ == '__main__':
 
     # Set building parameters
-    reader = QBuildingsReader()
+    reader = QBuildingsReader(load_facades=True, load_roofs=True)
     reader.establish_connection('Geneva')
     qbuildings_data = reader.read_db(district_id=234, nb_buildings=6, correct_Uh=True)
 

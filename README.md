@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/logo-reho-white.png?raw=true">
-  <source media="(prefers-color-scheme: light)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/logo-reho-black.png?raw=true">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/IPESE/REHO/refs/heads/main/docs/images/logos/logo-reho-white.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/IPESE/REHO/refs/heads/main/docs/images/logos/logo-reho-black.png">
   <img width="300"  alt="Shows the IPESE logo, white one in dark color mode and black one in light color mode.">
 </picture>
 

@@ -29,7 +29,7 @@ class REHO(MasterProblem):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
-
+        
         # input attributes
         self.scenario = scenario.copy()
         if 'specific' not in self.scenario:

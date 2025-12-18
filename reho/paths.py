@@ -28,8 +28,10 @@ if package_dotenv:
 elif current_dir_dotenv:
     load_dotenv(dotenv_path=current_dir_dotenv, override=True)
     print(f"Loaded .env from current working directory: {current_dir_dotenv}")
-else:
-    print("No .env file found, using system environment variables.")
+# We have to discuss here what should be printed and in a more general way, what should be the default 
+# behaviour to load AMPL
+# else:
+#     print("No .env file found, using system environment variables.")
 
 # AMPL model
 path_to_ampl_model = os.path.join(path_to_model, 'ampl_model')

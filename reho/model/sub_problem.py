@@ -114,7 +114,14 @@ class SubProblem:
             try:
                 ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
-                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+                print(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.\n"
+                       "Fallback to the amplpy modules.")
+                try:
+                    from amplpy import modules
+                    modules.load()
+                    ampl = AMPL()
+                except:
+                    raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license.")
         else:
             try:
                 from amplpy import modules

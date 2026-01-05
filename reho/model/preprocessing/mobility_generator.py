@@ -75,7 +75,10 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
     profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
     units = pd.read_csv(os.path.join(path_to_infrastructure, "district_units.csv"), sep=";")
 
-    transportunits = np.setdiff1d(np.append(infrastructure.UnitsOfLayer["Mobility"], ['PT_train', "PT_bus"]), infrastructure.UnitsOfType["EV_charger"])
+    if "EV_charger" in infrastructure.UnitsOfType:
+        transportunits = np.setdiff1d(np.append(infrastructure.UnitsOfLayer["Mobility"], ['PT_train', "PT_bus"]), infrastructure.UnitsOfType["EV_charger"])
+    else:
+        transportunits = np.append(infrastructure.UnitsOfLayer["Mobility"], ['PT_train', "PT_bus"])
     units = units[units.Unit.isin(transportunits)]
 
     # Check that modal_split is consistent with DailyDist

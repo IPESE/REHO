@@ -122,7 +122,7 @@ class MasterProblem:
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
         self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound',
                                                 'Costs_House_upfront_m2_MP', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
-                                                'Network_ext', "ff_EV", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
+                                                'Network_ext', "ff_EV", "ff_ICE", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
                                                 "transport_Units", "DailyDist", "Mode_Speed", "Cost_demand_ext", "EV_supply_ext", "share_activity", "Cost_supply_ext",
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity',

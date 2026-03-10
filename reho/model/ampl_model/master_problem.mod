@@ -300,7 +300,7 @@ GWP_tot = GWP_constr + GWP_op;
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-set Lca_kpi default {'land_use'};
+set Lca_kpi default {};
 param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
 param lca_kpi_2{k in Lca_kpi, u in Units} default 0;
 param lca_kpi_supply_cst{k in Lca_kpi, l in ResourceBalances} default 0.1;
@@ -445,12 +445,6 @@ Costs_inv + penalties;
 
 minimize GWP:
 GWP_tot + penalties;
-
-minimize Human_toxicity:
-lca_tot["Human_toxicity"] + penalties;
-
-minimize land_use:
-lca_tot["land_use"] + penalties;
 
 minimize MAX_EXPORT:
 -sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) / 1000 + penalties;

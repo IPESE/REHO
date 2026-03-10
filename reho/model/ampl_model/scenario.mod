@@ -26,15 +26,6 @@ tau*(Costs_inv + Costs_rep) + Costs_op + Costs_grid_connection + penalties;
 
 minimize GWP:
 GWP_op + GWP_constr + penalties;
- 
-minimize land_use:
-lca_tot["land_use"]  + penalties;
-
-minimize mine_res:
-lca_tot["mine_res"] + penalties;
- 
-minimize Human_toxicity:
-lca_tot["Human_toxicity"] + penalties;
 
 minimize MAX_EXPORT:
 -sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) * dp[p] * dt[p] / 1000 + penalties;

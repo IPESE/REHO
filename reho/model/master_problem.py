@@ -538,10 +538,11 @@ class MasterProblem:
                                                                                                drop_level=False)
 
         MP_parameters['Grids_Parameters'] = self.infrastructure.Grids_Parameters
-        MP_parameters['Grids_Parameters_lca'] = self.infrastructure.Grids_Parameters_lca
         MP_parameters['Units_flowrate'] = self.infrastructure.Units_flowrate.query('Unit.str.contains("district")')
         MP_parameters['Units_Parameters'] = self.infrastructure.Units_Parameters.query('index.str.contains("district")')
-        MP_parameters['Units_Parameters_lca'] = self.infrastructure.Units_Parameters_lca.query('index.get_level_values("Units").str.contains("district")')
+        if self.infrastructure.lca_kpis:
+            MP_parameters['Units_Parameters_lca'] = self.infrastructure.Units_Parameters_lca.query('index.get_level_values("Units").str.contains("district")')
+            MP_parameters['Grids_Parameters_lca'] = self.infrastructure.Grids_Parameters_lca
 
         if self.method['use_dynamic_emission_profiles']:
             MP_parameters['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
@@ -773,7 +774,6 @@ class MasterProblem:
         # Give dual variables to Subproblem
         pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
         pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
-        pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_lca')
         pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
 
         parameters_SP = {'Cost_supply_network': pi,
@@ -782,8 +782,10 @@ class MasterProblem:
                          'Cost_demand': pi_h * (1 - 1e-9),
                          'GWP_supply': pi_GWP,
                          'GWP_demand': pi_GWP.mul(0),  # set emissions of feed in to 0 -> changed in  postcompute
-                         'lca_kpi_demand': pi_lca.mul(0)
                          }
+        if self.infrastructure.lca_kpis:
+            pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_lca')
+            parameters_SP["lca_kpi_demand"] = pi_lca.mul(0)
 
         if self.method['actors_problem']:
             parameters_SP.update(actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID, self.iter, h))
@@ -880,14 +882,17 @@ class MasterProblem:
             df_Grid_t = df_Grid_t.xs(h, level='Hub')
             pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi')
             pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_GWP')
-            pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_lca')
 
             # Operation impact
             Cop_h = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi, cost_supply=pi)
             Cop_h_GWP = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_GWP, cost_supply=pi_GWP)
-            Cop_h_lca = [self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_lca.xs(kpi), cost_supply=pi_lca.xs(kpi)) for kpi in self.infrastructure.lca_kpis]
-            Cop_h_lca = pd.concat(Cop_h_lca, axis=1)
-            Cop_h = pd.concat([Cop_h, Cop_h_GWP, Cop_h_lca], axis=1)
+            if self.infrastructure.lca_kpis:
+                pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_lca')
+                Cop_h_lca = [self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_lca.xs(kpi), cost_supply=pi_lca.xs(kpi)) for kpi in self.infrastructure.lca_kpis]
+                Cop_h_lca = pd.concat(Cop_h_lca, axis=1)
+                Cop_h = pd.concat([Cop_h, Cop_h_GWP, Cop_h_lca], axis=1)
+            else:
+                Cop_h = pd.concat([Cop_h, Cop_h_GWP], axis=1)
             Cop_h.columns = ["TOTEX", "GWP"] + list(self.infrastructure.lca_kpis)
             Cop = pd.concat([Cop, Cop_h])
 

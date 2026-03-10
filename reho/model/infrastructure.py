@@ -153,7 +153,7 @@ class Infrastructure:
                 stream = u['Unit'] + '_' + s
                 self.StreamsOfUnit[name] = np.append(self.StreamsOfUnit[name], stream)
 
-        lca_kpi_list = np.array(file_reader(os.path.join(path_to_infrastructure, "building_units.csv")).columns)
+        lca_kpi_list = list(self.units[0].keys())
         lca_kpi_list = [key for key in lca_kpi_list if "_1" in key]
         self.lca_kpis = np.array([key.replace("_1", "") for key in lca_kpi_list])
         self.__generate_set_dict()  # generate dictionary containing all sets for AMPL
@@ -236,21 +236,23 @@ class Infrastructure:
             self.add_unit_parameters(u['Unit'] + '_' + self.House[0], u)
 
         Units_Parameters_0 = self.Units_Parameters.copy()
-        Units_Parameters_lca_0 = self.Units_Parameters_lca.copy()
         for h in self.House[1:]:
             idx_h = [idx.replace(self.House[0], h) for idx in Units_Parameters_0.index.values]
             Units_Parameters_h = Units_Parameters_0.copy()
             Units_Parameters_h.index = idx_h
             self.Units_Parameters = pd.concat([self.Units_Parameters, Units_Parameters_h])
 
-            Units_Parameters_lca_h = Units_Parameters_lca_0.copy()
-            idx_h_lca = [idx.replace(self.House[0], h) for idx in Units_Parameters_lca_0.index.get_level_values(1).unique()]
-            Units_Parameters_lca_h.index = Units_Parameters_lca_h.index.set_levels(idx_h_lca, level=1)
-            self.Units_Parameters_lca = pd.concat([self.Units_Parameters_lca, Units_Parameters_lca_h])
+        if self.lca_kpis:
+            Units_Parameters_lca_0 = self.Units_Parameters_lca.copy()
+            for h in self.House[1:]:
+                Units_Parameters_lca_h = Units_Parameters_lca_0.copy()
+                idx_h_lca = [idx.replace(self.House[0], h) for idx in Units_Parameters_lca_0.index.get_level_values(1).unique()]
+                Units_Parameters_lca_h.index = Units_Parameters_lca_h.index.set_levels(idx_h_lca, level=1)
+                self.Units_Parameters_lca = pd.concat([self.Units_Parameters_lca, Units_Parameters_lca_h])
+            self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
         for u in self.district_units:
             self.add_unit_parameters(u['Unit'], u)
-        self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
 
         # Grids
         lca_impact_demand = [key + "_demand_cst" for key in self.lca_kpis]
@@ -261,14 +263,16 @@ class Infrastructure:
             df = pd.DataFrame([[self.grids[g][key] for key in keys]], index=[g], columns=keys)
             self.Grids_Parameters = pd.concat([self.Grids_Parameters, df])
 
-            df_lca_demand = pd.DataFrame([[float(self.grids[g][key]) for key in lca_impact_demand]], columns=self.lca_kpis).transpose()
-            df_lca_supply = pd.DataFrame([[float(self.grids[g][key]) for key in lca_impact_supply]], columns=self.lca_kpis).transpose()
-            df_lca = pd.concat([df_lca_demand, df_lca_supply], axis=1)
-            df_lca.index.names = ["Lca_kpi"]
-            df_lca["ResourceBalances"] = g
-            df_lca = df_lca.set_index("ResourceBalances", append=True)
-            self.Grids_Parameters_lca = pd.concat([self.Grids_Parameters_lca, df_lca])
-        self.Grids_Parameters_lca.columns = ["lca_kpi_demand_cst", "lca_kpi_supply_cst"]
+        if self.lca_kpis:
+            for g in self.grids:
+                df_lca_demand = pd.DataFrame([[float(self.grids[g][key]) for key in lca_impact_demand]], columns=self.lca_kpis).transpose()
+                df_lca_supply = pd.DataFrame([[float(self.grids[g][key]) for key in lca_impact_supply]], columns=self.lca_kpis).transpose()
+                df_lca = pd.concat([df_lca_demand, df_lca_supply], axis=1)
+                df_lca.index.names = ["Lca_kpi"]
+                df_lca["ResourceBalances"] = g
+                df_lca = df_lca.set_index("ResourceBalances", append=True)
+                self.Grids_Parameters_lca = pd.concat([self.Grids_Parameters_lca, df_lca])
+            self.Grids_Parameters_lca.columns = ["lca_kpi_demand_cst", "lca_kpi_supply_cst"]
 
         # HP and AC temperatures
         for h in self.House:
@@ -328,13 +332,14 @@ class Infrastructure:
         lca_impact_2 = [key + "_2" for key in self.lca_kpis]
         df = pd.DataFrame([[unit_param[key] for key in keys]], columns=keys, index=[complete_name])
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])
-        df_lca_1 = pd.DataFrame([[unit_param[key] for key in lca_impact_1]], columns=self.lca_kpis).transpose()
-        df_lca_2 = pd.DataFrame([[unit_param[key] for key in lca_impact_2]], columns=self.lca_kpis).transpose()
-        df_lca = pd.concat([df_lca_1, df_lca_2], axis=1)
-        df_lca.index.names = ["Lca_kpi"]
-        df_lca["Units"] = complete_name
-        df_lca = df_lca.set_index("Units", append=True)
-        self.Units_Parameters_lca = pd.concat([self.Units_Parameters_lca, df_lca])
+        if self.lca_kpis:
+            df_lca_1 = pd.DataFrame([[unit_param[key] for key in lca_impact_1]], columns=self.lca_kpis).transpose()
+            df_lca_2 = pd.DataFrame([[unit_param[key] for key in lca_impact_2]], columns=self.lca_kpis).transpose()
+            df_lca = pd.concat([df_lca_1, df_lca_2], axis=1)
+            df_lca.index.names = ["Lca_kpi"]
+            df_lca["Units"] = complete_name
+            df_lca = df_lca.set_index("Units", append=True)
+            self.Units_Parameters_lca = pd.concat([self.Units_Parameters_lca, df_lca])
 
 
 

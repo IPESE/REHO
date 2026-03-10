@@ -785,6 +785,7 @@ class MasterProblem:
                          }
         if self.infrastructure.lca_kpis:
             pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_lca')
+            parameters_SP["lca_kpi_supply"] = pi_lca
             parameters_SP["lca_kpi_demand"] = pi_lca.mul(0)
 
         if self.method['actors_problem']:

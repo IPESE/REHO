@@ -26,6 +26,15 @@ tau*(Costs_inv + Costs_rep) + Costs_op + Costs_grid_connection + penalties;
 
 minimize GWP:
 GWP_op + GWP_constr + penalties;
+ 
+minimize land_use:
+lca_tot["land_use"]  + penalties;
+
+minimize mine_res:
+lca_tot["mine_res"] + penalties;
+ 
+minimize Human_toxicity:
+lca_tot["Human_toxicity"] + penalties;
 
 minimize MAX_EXPORT:
 -sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) * dp[p] * dt[p] / 1000 + penalties;
@@ -33,7 +42,7 @@ minimize MAX_EXPORT:
 #--------------------------------------------------------------------------------------------------------------------#
 # Actors
 #--------------------------------------------------------------------------------------------------------------------#
-set Obj_fct := {'TOTEX', 'OPEX', 'CAPEX', 'GWP', "Owners", "Renters", "Utility"};
+set Obj_fct := Lca_kpi union {'TOTEX', 'OPEX', 'CAPEX', 'GWP', "Owners", "Renters", "Utility"};
 param beta_duals{o in Obj_fct} default 0;
 
 param nu_Renters{h in House} default beta_duals["Renters"];
@@ -80,7 +89,7 @@ cost_actors = sum{h in House} (nu_Renters[h] * objective_renters[h]) + sum{h in 
 
 minimize SP_obj_fct:
 beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau * (Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
-penalties + cost_actors;
+sum{o in Obj_fct inter Lca_kpi} beta_duals[o] * lca_tot[o] + penalties + cost_actors;
 
 ######################################################################################################################
 #--------------------------------------------------------------------------------------------------------------------#
@@ -92,6 +101,7 @@ param EMOO_CAPEX default 0;
 param EMOO_OPEX default 0;
 param EMOO_TOTEX default 0;
 param EMOO_GWP default 0;
+param EMOO_lca{k in Lca_kpi} default 1e6;
 
 param EMOO_grid default 0;
 param EMOO_network default 0;
@@ -115,6 +125,9 @@ Costs_op + tau*(Costs_inv +Costs_rep ) + EMOO_slack_totex = EMOO_TOTEX*(sum{h in
 
 subject to EMOO_GWP_constraint:
 GWP_op + GWP_constr + EMOO_slack_gwp = EMOO_GWP*(sum{h in House} ERA[h]);
+
+subject to EMOO_lca_constraint{k in Lca_kpi} :
+lca_tot[k] <= EMOO_lca[k]*(sum{h in House} ERA[h]);
 
 
 subject to EMOO_grid_constraint{l in ResourceBalances,hl in HousesOfLayer[l],p in PeriodStandard,t in Time[p]: l = 'Electricity' }:

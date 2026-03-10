@@ -241,10 +241,11 @@ class SubProblem:
 
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
         self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"], axis=1)
-        self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_sp.Grids_Parameters_lca
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
-        self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_sp.Units_Parameters_lca
         self.parameters_to_ampl['Streams_H'] = self.infrastructure_sp.Streams_H
+        if self.infrastructure_sp.lca_kpis:
+            self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_sp.Grids_Parameters_lca
+            self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_sp.Units_Parameters_lca
 
         for key in self.infrastructure_sp.HP_parameters:
             self.parameters_to_ampl[key] = self.infrastructure_sp.HP_parameters[key]

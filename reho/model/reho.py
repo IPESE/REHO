@@ -633,7 +633,10 @@ class REHO(MasterProblem):
         if self.method["save_lca"]:
             df_lca_Units = self.get_final_SPs_results(MP_selection, 'df_lca_Units')
             df_lca_Units = df_lca_Units.droplevel(level=["Scn_ID", "Pareto_ID", "Iter", "FeasibleSolution", "house"])
-            df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
+            if "df_lca_Units" in last_results:
+                df_Results["df_lca_Units"] = pd.concat([df_lca_Units, last_results["df_lca_Units"]]).sort_index()
+            else:
+                df_Results["df_lca_Units"] = df_lca_Units
             df_Results["df_lca_Performance"] = last_results["df_lca_Performance"]
             df_Results["df_lca_operation"] = last_results["df_lca_operation"]
 

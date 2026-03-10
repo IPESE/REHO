@@ -545,8 +545,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     emoo_keys = ["EMOO_CAPEX", "EMOO_OPEX", "EMOO_GWP", "EMOO_TOTEX", "EMOO_lca"]
     list_keys = [i for i in scenario["EMOO"].keys() if i in emoo_keys]
     if not list_keys:
-        df = pd.DataFrame([0.0] * 16)
-        df.index = ['CAPEX', 'OPEX', 'GWP', 'TOTEX'] + list(get_ampl_data(ampl, 'Lca_kpi').index)
+        index_lca = list(get_ampl_data(ampl, 'Lca_kpi').index)
+        df = pd.DataFrame([0.0] * (4 + len(index_lca)))
+        df.index = ['CAPEX', 'OPEX', 'GWP', 'TOTEX'] + index_lca
         df.columns = ["beta"]
         df_Results["df_beta"] = df
     else:
@@ -601,10 +602,12 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df1.columns = ['pi']
     df2 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_GWP', True)
     df2.columns = ['pi_GWP']
-    df3 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_lca', True).stack().unstack(0).droplevel(3)
-    df4 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_grid_constraint', False)
-    df4.columns = ['gamma_supply']
-    df_Dual_t = pd.concat([df1, df2, df3, df4], axis=1)
+    df3 = get_ampl_dual_values_in_pandas(ampl, 'EMOO_grid_constraint', False)
+    df3.columns = ['gamma_supply']
+    df_Dual_t = pd.concat([df1, df2, df3], axis=1)
+    if len(get_ampl_data(ampl, 'Lca_kpi')) != 0:
+        df4 = get_ampl_dual_values_in_pandas(ampl, 'complicating_cst_lca', True).stack().unstack(0).droplevel(3)
+        df_Dual_t = pd.concat([df_Dual_t, df4], axis=1)
     df_Dual_t.index.names = ['Layer', 'Period', 'Time']
     df_Results["df_Dual_t"] = df_Dual_t.sort_index()
 
@@ -663,9 +666,10 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Interperiod"] = pd.DataFrame()
     # LCA
     if method["save_lca"]:
-        LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)
-        LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
-        df_Results["df_lca_Units"] = LCA_units
+        if len(district.UnitsOfDistrict) > 0:
+            LCA_units = get_ampl_data(ampl, 'lca_units', multi_index=True)
+            LCA_units = LCA_units.stack().unstack(level=0).droplevel(level=1)
+            df_Results["df_lca_Units"] = LCA_units
 
         LCA_tot = get_ampl_data(ampl, 'lca_tot')
         LCA_tot = LCA_tot.stack().unstack(level=0)
@@ -674,7 +678,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         LCA_tot_house = LCA_tot_house.stack().unstack(level=0).droplevel(1)
         df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
         df_Results["df_lca_Performance"].index.names = ['Hub']
-
+        df_Results["df_lca_Performance"].columns = df_Results["df_lca_Performance"].columns+"_tot"
         LCA_op = get_ampl_data(ampl, 'lca_op', multi_index=True)
         LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
         df_Results["df_lca_operation"] = LCA_op

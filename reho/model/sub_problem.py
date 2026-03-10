@@ -240,9 +240,10 @@ class SubProblem:
         # -----------------------------------------------------------------------------------------------------#
 
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
-        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"],
-                                                                                                   axis=1)
+        self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"], axis=1)
+        self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_sp.Grids_Parameters_lca
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
+        self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_sp.Units_Parameters_lca
         self.parameters_to_ampl['Streams_H'] = self.infrastructure_sp.Streams_H
 
         for key in self.infrastructure_sp.HP_parameters:
@@ -567,6 +568,7 @@ class SubProblem:
         ampl.getConstraint('EMOO_OPEX_constraint').drop()
         ampl.getConstraint('EMOO_TOTEX_constraint').drop()
         ampl.getConstraint('EMOO_GWP_constraint').drop()
+        ampl.getConstraint('EMOO_lca_constraint').drop()
 
         ampl.getConstraint('EMOO_elec_export_constraint').drop()
 
@@ -682,6 +684,8 @@ def initialize_default_methods(method):
         method['save_timeseries'] = True
     if 'save_streams' not in method:
         method['save_streams'] = False
+    if 'save_lca' not in method:
+        method['save_lca'] = False
     if 'extract_parameters' not in method:
         method['extract_parameters'] = False
     if 'print_logs' not in method:

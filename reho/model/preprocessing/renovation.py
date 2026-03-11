@@ -67,6 +67,6 @@ def renovation_cost_co2(buildings_data, local_data, renovation_option):
 
                 cost = df_costs[col].xs(mapping[periods[i]])
                 impacts[col] += ratios[i] * (buildings_data["area_facade_m2"] * ((1-glass) * cost["facade"] + glass * cost["window"])
-                               + buildings_data["SolarRoofArea"] * cost["roof"] + buildings_data["area_footprint_m2"] * cost["footprint"])
+                               + buildings_data["SolarRoofArea"] * cost["roof"] + buildings_data['ERA'] / buildings_data['count_floor'] / 0.93 * cost["footprint"])
 
     return Uh_ins, impacts["cost"]*1.16, impacts["gwp"]

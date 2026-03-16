@@ -432,7 +432,7 @@ class MasterProblem:
         # -SOLVER OPTIONS
         ampl_MP.setOption('solver', self.solver)
         if self.solver == "gurobi":
-            ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
+            ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5 IntFeasTol=1e-6';")
 
         ampl_MP.eval('option show_boundtol 0;')
         ampl_MP.eval('option abs_boundtol 1e-10;')
@@ -540,7 +540,7 @@ class MasterProblem:
         MP_parameters['Grids_Parameters'] = self.infrastructure.Grids_Parameters
         MP_parameters['Units_flowrate'] = self.infrastructure.Units_flowrate.query('Unit.str.contains("district")')
         MP_parameters['Units_Parameters'] = self.infrastructure.Units_Parameters.query('index.str.contains("district")')
-        if self.infrastructure.lca_kpis:
+        if len(self.infrastructure.lca_kpis) > 0:
             MP_parameters['Units_Parameters_lca'] = self.infrastructure.Units_Parameters_lca.query('index.get_level_values("Units").str.contains("district")')
             MP_parameters['Grids_Parameters_lca'] = self.infrastructure.Grids_Parameters_lca
 
@@ -783,7 +783,7 @@ class MasterProblem:
                          'GWP_supply': pi_GWP,
                          'GWP_demand': pi_GWP.mul(0),  # set emissions of feed in to 0 -> changed in  postcompute
                          }
-        if self.infrastructure.lca_kpis:
+        if len(self.infrastructure.lca_kpis) > 0:
             pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_lca')
             parameters_SP["lca_kpi_supply"] = pi_lca
             parameters_SP["lca_kpi_demand"] = pi_lca.mul(0)
@@ -887,7 +887,7 @@ class MasterProblem:
             # Operation impact
             Cop_h = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi, cost_supply=pi)
             Cop_h_GWP = self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_GWP, cost_supply=pi_GWP)
-            if self.infrastructure.lca_kpis:
+            if len(self.infrastructure.lca_kpis) > 0:
                 pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, 'pi_lca')
                 Cop_h_lca = [self.get_annual_grid_opex(df_Grid_t, cost_demand=pi_lca.xs(kpi), cost_supply=pi_lca.xs(kpi)) for kpi in self.infrastructure.lca_kpis]
                 Cop_h_lca = pd.concat(Cop_h_lca, axis=1)

@@ -143,7 +143,8 @@ class SubProblem:
         # -SOLVER OPTIONS
         ampl.setOption('solver', self.solver)
         if self.solver == "gurobi":
-            ampl.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
+            ampl.eval("option gurobi_options 'NodeFileStart=0.5 IntFeasTol=1e-6';")
+
 
         # -----------------------------------------------------------------------------------------------------#
         #  MODEL FILES
@@ -243,7 +244,7 @@ class SubProblem:
         self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"], axis=1)
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
         self.parameters_to_ampl['Streams_H'] = self.infrastructure_sp.Streams_H
-        if self.infrastructure_sp.lca_kpis:
+        if len(self.infrastructure_sp.lca_kpis) > 0:
             self.parameters_to_ampl['Grids_Parameters_lca'] = self.infrastructure_sp.Grids_Parameters_lca
             self.parameters_to_ampl['Units_Parameters_lca'] = self.infrastructure_sp.Units_Parameters_lca
 

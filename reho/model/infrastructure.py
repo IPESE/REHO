@@ -242,7 +242,7 @@ class Infrastructure:
             Units_Parameters_h.index = idx_h
             self.Units_Parameters = pd.concat([self.Units_Parameters, Units_Parameters_h])
 
-        if self.lca_kpis:
+        if len(self.lca_kpis) > 0:
             Units_Parameters_lca_0 = self.Units_Parameters_lca.copy()
             for h in self.House[1:]:
                 Units_Parameters_lca_h = Units_Parameters_lca_0.copy()
@@ -263,7 +263,7 @@ class Infrastructure:
             df = pd.DataFrame([[self.grids[g][key] for key in keys]], index=[g], columns=keys)
             self.Grids_Parameters = pd.concat([self.Grids_Parameters, df])
 
-        if self.lca_kpis:
+        if len(self.lca_kpis) > 0:
             for g in self.grids:
                 df_lca_demand = pd.DataFrame([[float(self.grids[g][key]) for key in lca_impact_demand]], columns=self.lca_kpis).transpose()
                 df_lca_supply = pd.DataFrame([[float(self.grids[g][key]) for key in lca_impact_supply]], columns=self.lca_kpis).transpose()
@@ -332,7 +332,7 @@ class Infrastructure:
         lca_impact_2 = [key + "_2" for key in self.lca_kpis]
         df = pd.DataFrame([[unit_param[key] for key in keys]], columns=keys, index=[complete_name])
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])
-        if self.lca_kpis:
+        if len(self.lca_kpis) > 0:
             df_lca_1 = pd.DataFrame([[unit_param[key] for key in lca_impact_1]], columns=self.lca_kpis).transpose()
             df_lca_2 = pd.DataFrame([[unit_param[key] for key in lca_impact_2]], columns=self.lca_kpis).transpose()
             df_lca = pd.concat([df_lca_1, df_lca_2], axis=1)

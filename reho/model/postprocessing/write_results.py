@@ -330,10 +330,10 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         LCA_tot = pd.concat([LCA_tot_house, LCA_tot], axis=0)
         LCA_tot.index.names = ['Hub']
 
-        LCA_op = get_ampl_data(ampl, 'lca_op', multi_index=True)
-        LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
+        LCA_res = get_ampl_data(ampl, 'lca_res', multi_index=True)
+        LCA_res = LCA_res.stack().unstack(level=0).droplevel(level=1)
 
-        return LCA_units, LCA_tot, LCA_op
+        return LCA_units, LCA_tot, LCA_res
 
     def set_dfs_pv(ampl):
 
@@ -422,7 +422,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df_Results["df_Streams_t"] = set_df_streams_t(ampl)
 
     if method['save_lca']:
-        df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_operation"] = set_dfs_lca(ampl)
+        df_Results["df_lca_Units"], df_Results["df_lca_Performance"], df_Results["df_lca_Resources"] = set_dfs_lca(ampl) # LCA_units, LCA_tot, LCA_res
 
     if method['use_pv_orientation'] or method['use_facades']:
         df_Results["df_PV_Surface"], df_Results["df_PV_orientation"] = set_dfs_pv(ampl)
@@ -679,9 +679,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_lca_Performance"] = pd.concat([LCA_tot_house, LCA_tot], axis=0)
         df_Results["df_lca_Performance"].index.names = ['Hub']
         df_Results["df_lca_Performance"].columns = df_Results["df_lca_Performance"].columns+"_tot"
-        LCA_op = get_ampl_data(ampl, 'lca_op', multi_index=True)
-        LCA_op = LCA_op.stack().unstack(level=0).droplevel(level=1)
-        df_Results["df_lca_operation"] = LCA_op
+        LCA_res = get_ampl_data(ampl, 'lca_res', multi_index=True)
+        LCA_res = LCA_res.stack().unstack(level=0).droplevel(level=1)
+        df_Results["df_lca_resources"] = LCA_res
 
     if method["renovation"] is not None:
         df1 = get_ampl_data(ampl, 'is_ins')

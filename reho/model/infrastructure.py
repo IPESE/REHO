@@ -154,8 +154,8 @@ class Infrastructure:
                 self.StreamsOfUnit[name] = np.append(self.StreamsOfUnit[name], stream)
 
         lca_kpi_list = list(self.units[0].keys())
-        lca_kpi_list = [key for key in lca_kpi_list if "_1" in key]
-        self.lca_kpis = np.array([key.replace("_1", "") for key in lca_kpi_list])
+        lca_kpi_list = [key for key in lca_kpi_list if "_constr" in key]
+        self.lca_kpis = np.array([key.replace("_constr", "") for key in lca_kpi_list])
         self.__generate_set_dict()  # generate dictionary containing all sets for AMPL
 
     def __generate_set_dict(self):
@@ -249,7 +249,7 @@ class Infrastructure:
                 idx_h_lca = [idx.replace(self.House[0], h) for idx in Units_Parameters_lca_0.index.get_level_values(1).unique()]
                 Units_Parameters_lca_h.index = Units_Parameters_lca_h.index.set_levels(idx_h_lca, level=1)
                 self.Units_Parameters_lca = pd.concat([self.Units_Parameters_lca, Units_Parameters_lca_h])
-            self.Units_Parameters_lca.columns = ["lca_kpi_1", "lca_kpi_2"]
+            self.Units_Parameters_lca.columns = ["lca_kpi_constr", "lca_kpi_op"]
 
         for u in self.district_units:
             self.add_unit_parameters(u['Unit'], u)
@@ -328,14 +328,14 @@ class Infrastructure:
 
     def add_unit_parameters(self, complete_name, unit_param):
         keys = ['Units_Fmin', 'Units_Fmax', 'Cost_inv1', 'Cost_inv2', 'lifetime', 'GWP_unit1', 'GWP_unit2']
-        lca_impact_1 = [key + "_1" for key in self.lca_kpis]
-        lca_impact_2 = [key + "_2" for key in self.lca_kpis]
+        lca_impact_constr = [key + "_constr" for key in self.lca_kpis]
+        lca_impact_op = [key + "_op" for key in self.lca_kpis]
         df = pd.DataFrame([[unit_param[key] for key in keys]], columns=keys, index=[complete_name])
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])
         if len(self.lca_kpis) > 0:
-            df_lca_1 = pd.DataFrame([[unit_param[key] for key in lca_impact_1]], columns=self.lca_kpis).transpose()
-            df_lca_2 = pd.DataFrame([[unit_param[key] for key in lca_impact_2]], columns=self.lca_kpis).transpose()
-            df_lca = pd.concat([df_lca_1, df_lca_2], axis=1)
+            df_lca_constr = pd.DataFrame([[unit_param[key] for key in lca_impact_constr]], columns=self.lca_kpis).transpose()
+            df_lca_op = pd.DataFrame([[unit_param[key] for key in lca_impact_op]], columns=self.lca_kpis).transpose()
+            df_lca = pd.concat([df_lca_constr, df_lca_op], axis=1)
             df_lca.index.names = ["Lca_kpi"]
             df_lca["Units"] = complete_name
             df_lca = df_lca.set_index("Units", append=True)

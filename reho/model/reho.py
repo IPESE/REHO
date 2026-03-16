@@ -638,7 +638,7 @@ class REHO(MasterProblem):
             else:
                 df_Results["df_lca_Units"] = df_lca_Units
             df_Results["df_lca_Performance"] = last_results["df_lca_Performance"]
-            df_Results["df_lca_operation"] = last_results["df_lca_operation"]
+            df_Results["df_lca_resources"] = last_results["df_lca_resources"]
 
         return df_Results
 

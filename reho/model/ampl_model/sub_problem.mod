@@ -297,26 +297,26 @@ GWP_constr = sum{u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_ins[h])
 			sum{l in ResourceBalances, h in HousesOfLayer[l]}(GWP_line_1[l]*Use_Line_capacity[l,h]+GWP_line_2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]/Line_lifetime[h,l]); 
 
 
-param lca_kpi_1{k in Lca_kpi, u in Units} default 0;
-param lca_kpi_2{k in Lca_kpi, u in Units} default 0;
+param lca_kpi_constr{k in Lca_kpi, u in Units} default 0;
+param lca_kpi_op{k in Lca_kpi, u in Units} default 0;
 param lca_kpi_supply_cst{k in Lca_kpi, l in ResourceBalances} default 0.1;
 param lca_kpi_demand_cst{k in Lca_kpi, l in ResourceBalances} default 0.0;
 param lca_kpi_supply{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_supply_cst[k,l];
 param lca_kpi_demand{k in Lca_kpi, l in ResourceBalances,p in Period,t in Time[p]} default lca_kpi_demand_cst[k,l];
 
-var lca_op{k in Lca_kpi, l in ResourceBalances} default 0;
+var lca_res{k in Lca_kpi, l in ResourceBalances} default 0;
 var lca_units{k in Lca_kpi, u in Units} default 0;
 var lca_tot{k in Lca_kpi} default 0;
 var lca_tot_house{k in Lca_kpi, h in House} default 0;
 
 subject to LU_op_cst{k in Lca_kpi, l in ResourceBalances}:
-lca_op[k, l] = sum{p in PeriodStandard,t in Time[p]}(lca_kpi_supply[k,l,p,t]*Network_supply[l,p,t] - lca_kpi_demand[k,l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
+lca_res[k, l] = sum{p in PeriodStandard,t in Time[p]}(lca_kpi_supply[k,l,p,t]*Network_supply[l,p,t] - lca_kpi_demand[k,l,p,t]*Network_demand[l,p,t]) *dp[p]*dt[p];
 
 subject to LU_inv_cst{k in Lca_kpi, u in Units}:
-lca_units[k, u] = (Units_Use[u]*lca_kpi_1[k, u] + (Units_Mult[u]-Units_Ext[u])*lca_kpi_2[k, u])/lifetime[u];
+lca_units[k, u] = (Units_Mult[u]-Units_Ext[u])*lca_kpi_constr[k, u]/lifetime[u] + sum{l in ResourceBalances, p in Period, t in Time[p],ul in UnitsOfLayer[l]} Units_supply[l,ul,p,t]*lca_kpi_op[k,ul] *dp[p]*dt[p];	#TODO not sure of dp * dt
 
 subject to LU_tot_cst{k in Lca_kpi}:
-lca_tot[k] = sum{u in Units} lca_units[k, u] + sum{l in ResourceBalances} lca_op[k, l];
+lca_tot[k] = sum{u in Units} lca_units[k, u] + sum{l in ResourceBalances} lca_res[k, l];
 
 subject to LU_tot_house_cst{k in Lca_kpi, h in House}:
 lca_tot_house[k, h] = sum{u in UnitsOfHouse[h]} lca_units[k, u] + sum{l in ResourceBalances,p in PeriodStandard,t in Time[p]} (lca_kpi_supply[k,l,p,t]*Grid_supply[l,h,p,t]-lca_kpi_demand[k,l,p,t]*Grid_demand[l,h,p,t]) *dp[p]*dt[p];

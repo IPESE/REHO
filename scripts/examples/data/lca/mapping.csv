@@ -1,0 +1,59 @@
+﻿Name,Type,Product,Activity,Database
+EV_district,Operation,"transport, passenger car","transport, passenger car, battery electric, Medium",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+EV_district,Construction,passenger car,"passenger car, battery electric, Medium",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ICE_district,Construction,"Passenger car, EURO-6ab","Passenger car, gasoline, Medium, EURO-6ab",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ICE_district,Operation,"transport, passenger car, EURO-6ab","transport, passenger car, gasoline, Medium, EURO-6ab",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Boiler,Construction,gas boiler,gas boiler production,ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Boiler,Operation,"heat, central or small-scale, natural gas","heat production, natural gas, at boiler modulating <100kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+OIL_Boiler,Operation,"heat, central or small-scale, other than natural gas","heat production, light fuel oil, at boiler 10kW condensing, non-modulating",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+OIL_Boiler_BOILER,Construction,"oil boiler, 10kW","oil boiler production, 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+OIL_Boiler_TANK,Construction,"oil storage, 3000l","market for oil storage, 3000l",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+WOOD_Stove,Operation,"heat, central or small-scale, other than natural gas","heat production, wood chips from industry, at furnace 50kW, state-of-the-art 2014",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+WOOD_Stove,Construction,"furnace, wood chips, hardwood storage area, 50kW","furnace production, wood chips, hardwood storage area, 50kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_other,Operation,"electricity, low voltage","market for electricity, low voltage",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_other,Construction,"auxiliary heating unit, electric, 5kW","auxiliary heating unit production, electric, 5kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_SH,Operation,"electricity, low voltage","market for electricity, low voltage",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_SH,Construction,"auxiliary heating unit, electric, 5kW","auxiliary heating unit production, electric, 5kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_DHW,Operation,"electricity, low voltage","market for electricity, low voltage",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_DHW,Construction,"auxiliary heating unit, electric, 5kW","auxiliary heating unit production, electric, 5kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Air,Operation,"heat, air-water heat pump 10kW","heat production, air-water heat pump 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Air,Construction,"heat pump, brine-water, 10kW","heat pump production, brine-water, 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ThermalSolar,Construction,"flat plate solar collector, Cu absorber","flat plate solar collector production, Cu absorber",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Boiler_district,Construction,"industrial furnace, natural gas","market for industrial furnace, natural gas",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Boiler_district,Operation,"heat, district or industrial, natural gas","heat production, natural gas, at boiler modulating >100kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Cogeneration_district,Operation,"heat, district or industrial, natural gas","heat and power co-generation, natural gas, 1MW electrical, lean burn",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Cogeneration_district_CHP,Construction,"heat and power co-generation unit, 1MW electrical, common components for heat+electricity","heat and power co-generation unit construction, 1MW electrical, common components for heat+electricity",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Cogeneration_district_ELEC,Construction,"heat and power co-generation unit, 1MW electrical, components for electricity only","heat and power co-generation unit construction, 1MW electrical, components for electricity only",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NG_Cogeneration_district_HEAT,Construction,"heat and power co-generation unit, 1MW electrical, components for heat only","heat and power co-generation unit construction, 1MW electrical, components for heat only",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Geothermal_district,Operation,"heat, deep geothermal","heat production, deep geothermal",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Geothermal_district,Construction,geothermal heat plant,geothermal heat plant construction,ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_DHN,Operation,"heat, air-water heat pump 10kW","heat production, air-water heat pump 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_DHN,Construction,"heat pump, brine-water, 10kW","heat pump production, brine-water, 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Electricity,Flow,"electricity, medium voltage","market for electricity, medium voltage",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Electricity,Resource,"electricity, medium voltage","market group for electricity, medium voltage",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NaturalGas,Flow,"natural gas, medium pressure, vehicle grade","natural gas production, medium pressure, vehicle grade",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+NaturalGas,Resource,"natural gas, medium pressure, vehicle grade","market for natural gas, medium pressure, vehicle grade",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Gasoline,Flow,"petrol, low-sulfur","market for petrol, low-sulfur",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Gasoline,Resource,"petrol, low-sulfur","market for petrol, low-sulfur",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Hydrogen,Flow,"hydrogen, gaseous, low pressure","market for hydrogen, gaseous, low pressure",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Hydrogen,Resource,"hydrogen, gaseous, low pressure","market for hydrogen, gaseous, low pressure",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Oil,Flow,light fuel oil,market for light fuel oil,ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Oil,Resource,light fuel oil,market for light fuel oil,ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+PV,Operation,"electricity, low voltage","electricity production, photovoltaic, residential",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+PV,Construction,"photovoltaic flat-roof installation, 3kWp, multi-Si, on roof","photovoltaic flat-roof installation, 3kWp, multi-Si, on roof",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Wood,Resource,"wood chips, dry, measured as dry mass","market for wood chips, dry, measured as dry mass",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Wood,Flow,"wood chips, dry, measured as dry mass","market for wood chips, dry, measured as dry mass",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Geothermal,Construction,"heat pump, brine-water, 10kW","heat pump production, brine-water, 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Geothermal,Operation,"heat, brine-water heat pump 10kW","heat production, borehole heat exchanger, brine-water heat pump 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Lake,Operation,"heat, air-water heat pump 10kW","heat production, air-water heat pump 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+HeatPump_Lake,Construction,"heat pump, brine-water, 10kW","heat pump production, brine-water, 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+AirConditioner,Construction,"heat pump, brine-water, 10kW","heat pump production, brine-water, 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+AirConditioner,Operation,"heat, brine-water heat pump 10kW","heat production, borehole heat exchanger, brine-water heat pump 10kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Battery,Construction,home electricity storage system,"home electricity storage system, 14.4 kWh, LFP battery",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Battery_district,Construction,home electricity storage system,"home electricity storage system, 14.4 kWh, LFP battery",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+WaterTankSH,Construction,"hot water tank, 600l","market for hot water tank, 600l",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+WaterTankDHW,Construction,"hot water tank, 600l","market for hot water tank, 600l",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Biomethane,Resource,"syngas, from biomass gasification, pre, pipeline 200km, storage 1000m","syngas, from biomass gasification, pre, pipeline 200km, storage 1000m",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+Heat,Resource,"heat, district or industrial, other than natural gas","market for heat, district or industrial, other than natural gas",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_other_district,Operation,"electricity, low voltage","market for electricity, low voltage",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050
+ElectricalHeater_other_district,Construction,"auxiliary heating unit, electric, 5kW","auxiliary heating unit production, electric, 5kW",ecoinvent_cutoff_3.10.1_image_SSP2-L_2050

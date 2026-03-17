@@ -583,3 +583,73 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
             grids[idx] = grid_dict
 
     return grids
+
+
+def initialize_lca_impacts(csv_file, units, grids=None, threshold=None):
+    """
+    Reads LCA_impacts.csv and assigns per-indicator LCA impacts to every
+    unit and (optionally) every grid layer.
+
+    CSV columns used
+    ----------------
+    * ``Name``   : technology or resource/layer name
+    * ``Type``   : ``"Construction"``, ``"Operation"``, or ``"Resource"``
+    * ``Abbrev`` : indicator abbreviation (e.g. ``"CC"``, ``"Aci"``)
+    * ``Value``  : impact value
+
+    Parameters
+    ----------
+    csv_file : str
+        Path to the LCA impacts CSV file.
+    units : dict
+        Units characterization, as returned by :func:`initialize_units`.
+    grids : dict, optional
+        Grids characterization, as returned by :func:`initialize_grids`.
+    threshold : float, optional
+        Values whose absolute value is below this threshold are set to 0.
+        E.g. ``threshold=1e-3``.
+
+    Returns
+    -------
+    list of str
+        Ordered list of unique indicator abbreviations found in the CSV.
+
+    See also
+    --------
+    initialize_units, initialize_grids
+    """
+    df = pd.read_csv(csv_file, usecols=["Name", "Type", "Abbrev", "Value"])
+    indicators = list(df["Abbrev"].unique())
+
+    constr_data = {}  # {tech: {indicator: value}}
+    op_data = {}      # {tech: {indicator: value}}
+    res_data = {}     # {layer: {indicator: value}}
+
+    for _, row in df.iterrows():
+        name, typ, ind, val = row["Name"], row["Type"], row["Abbrev"], float(row["Value"])
+        if threshold is not None and abs(val) < threshold:
+            val = 0.0
+        if typ == "Construction":
+            constr_data.setdefault(name, {})[ind] = val
+        elif typ == "Operation":
+            op_data.setdefault(name, {})[ind] = val
+        elif typ == "Resource":
+            res_data.setdefault(name, {})[ind] = val
+
+    # -- Assign construction / operation impacts to every unit ------------------
+    for unit_list in [units["building_units"], units["district_units"]]:
+        for unit in unit_list:
+            tech = unit["Unit"]
+            for ind in indicators:
+                unit[f"{ind}_constr"] = constr_data.get(tech, {}).get(ind, 0.0)
+                unit[f"{ind}_op"] = op_data.get(tech, {}).get(ind, 0.0)
+
+    # -- Assign resource impacts to every grid layer ----------------------------
+    if grids is not None:
+        for layer in grids:
+            for ind in indicators:
+                val = res_data.get(layer, {}).get(ind, 0.0)
+                grids[layer][f"{ind}_demand_cst"] = val
+                grids[layer][f"{ind}_supply_cst"] = val
+
+    return indicators

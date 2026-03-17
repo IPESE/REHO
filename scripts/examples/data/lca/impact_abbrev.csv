@@ -1,0 +1,297 @@
+Impact_category,Unit,Abbrev,AoP
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Climate change, ecosystem quality, long term')",PDF.m2.yr,CCEQL,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Climate change, ecosystem quality, short term')",PDF.m2.yr,CCEQS,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Climate change, ecosystem quality, long term, fossil and biogenic')",PDF.m2.yr,CCEQLB,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Climate change, ecosystem quality, short term, fossil and biogenic')",PDF.m2.yr,CCEQSB,EQ
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Climate change, human health, long term')",DALY,CCHHL,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Climate change, human health, short term')",DALY,CCHHS,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Climate change, human health, long term, fossil and biogenic')",DALY,CCHHLB,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Climate change, human health, short term, fossil and biogenic')",DALY,CCHHSB,HH
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Freshwater acidification')",PDF.m2.yr,FWA,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Freshwater ecotoxicity, long term')",PDF.m2.yr,FWEXL,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Freshwater ecotoxicity, short term')",PDF.m2.yr,FWEXS,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Freshwater eutrophication')",PDF.m2.yr,FWEU,EQ
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Human toxicity cancer, long term')",DALY,HTXCL,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Human toxicity cancer, short term')",DALY,HTXCS,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Human toxicity non-cancer, long term')",DALY,HTXNCL,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Human toxicity non-cancer, short term')",DALY,HTXNCS,HH
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Ionizing radiation, ecosystem quality')",PDF.m2.yr,IREQ,EQ
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Ionizing radiation, human health')",DALY,IRHH,HH
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Land occupation, biodiversity')",PDF.m2.yr,LOBDV,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Land transformation, biodiversity')",PDF.m2.yr,LTBDV,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Marine acidification, long term')",PDF.m2.yr,MAL,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Marine acidification, short term')",PDF.m2.yr,MAS,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Marine acidification, long term, fossil and biogenic')",PDF.m2.yr,MALB,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Marine acidification, short term, fossil and biogenic')",PDF.m2.yr,MASB,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Marine eutrophication')",PDF.m2.yr,MEU,EQ
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Ozone layer depletion')",DALY,OLD,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Particulate matter formation')",DALY,PMF,HH
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Photochemical oxidant formation')",DALY,PCOX,HH
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Terrestrial acidification')",PDF.m2.yr,TRA,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Thermally polluted water')",PDF.m2.yr,TPW,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Water availability, freshwater ecosystem')",PDF.m2.yr,WAVFWES,EQ
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Water availability, human health')",DALY,WAVHH,HH
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Water availability, terrestrial ecosystem')",PDF.m2.yr,WAVTES,EQ
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Total ecosystem quality')",PDF.m2.yr,TTEQ,EQ
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Total human health')",DALY,TTHH,HH
+"('IMPACT World+ Damage 2.0.1', 'Ecosystem quality', 'Total ecosystem quality, fossil and biogenic')",PDF.m2.yr,TTEQB,EQ
+"('IMPACT World+ Damage 2.0.1', 'Human health', 'Total human health, fossil and biogenic')",DALY,TTHHB,HH
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Climate change, long term')",kg CO2 eq (long),m_CCL,m_CCL
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Climate change, long term, fossil and biogenic')",kg CO2 eq (long),m_CCLB,m_CCLB
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Climate change, short term')",kg CO2 eq (short),m_CCS,m_CCS
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Climate change, short term, fossil and biogenic')",kg CO2 eq (short),m_CCSB,m_CCSB
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Fossil and nuclear energy use')",MJ deprived,m_FNEU,m_FNEU
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Freshwater acidification')",kg SO2 eq,m_FWA,m_FWA
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Freshwater ecotoxicity')",CTUe,m_FEW,m_FEW
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Freshwater eutrophication')",kg PO4 P-lim eq,m_FWEU,m_FWEU
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Human toxicity cancer')",CTUh,m_HTX,m_HTX
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Human toxicity non-cancer')",CTUh,m_HTXN,m_HTXN
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Ionizing radiations')",Bq C-14 eq,m_IR,m_IR
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Land occupation, biodiversity')",m2 arable land eq .yr,m_LOBDV,m_LOBDV
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Land transformation, biodiversity')",m2 arable land eq,m_LTBDV,m_LTBDV
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Marine eutrophication')",kg N N-lim eq,m_MEU,m_MEU
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Mineral resources use')",kg deprived,m_MRU,m_MRU
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Ozone layer depletion')",kg  CFC-11 eq,m_OLD,m_OLD
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Particulate matter formation')",kg PM2.5 eq,m_PMF,m_PMF
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Photochemical oxidant formation')",kg NMVOC eq,m_PCOX,m_PCOX
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Terrestrial acidification')",kg SO2 eq,m_TRA,m_TRA
+"('IMPACT World+ Midpoint 2.0.1', 'Midpoint', 'Water scarcity')",m3 world-eq,m_WAS,m_WAS
+"('IMPACT World+ Footprint 2.0.1', 'Carbon footprint')",kg CO2 eq (short),CF,CF
+"('IMPACT World+ Footprint 2.0.1', 'Carbon footprint, fossil and biogenic')",kg CO2 eq (short),CFB,CFB
+"('IMPACT World+ Footprint 2.0.1', 'Fossil and nuclear energy use')",MJ deprived,FNEU,FNEU
+"('IMPACT World+ Footprint 2.0.1', 'Remaining Ecosystem quality damage')",PDF.m2.yr,REQD,REQD
+"('IMPACT World+ Footprint 2.0.1', 'Remaining Ecosystem quality damage, fossil and biogenic')",PDF.m2.yr,REQDB,REQDB
+"('IMPACT World+ Footprint 2.0.1', 'Remaining Human health damage')",DALY,RHHD,RHHD
+"('IMPACT World+ Footprint 2.0.1', 'Water scarcity footprint')",m3 world-eq,WSF,WSF
+"('PB LCIA', 'Climate change CO2 concentration')",ppm,CCC,CCC
+"('PB LCIA', 'Climate change energy imbalance')",W/m2,CCI,CCI
+"('PB LCIA', 'Stratospheric ozone depletion')",DU,SOD,SOD
+"('PB LCIA', 'Ocean acidification')",Omega_arag,OA,OA
+"('PB LCIA', 'Biogeochemical flows Nitrogen')",Tg N/year,BFN,BFN
+"('PB LCIA', 'Biogeochemical flows Phosphorus')",Tg P/year,BFP,BFP
+"('PB LCIA', 'Land system change global')",%,LSCG,LSCG
+"('PB LCIA', 'Freshwater use')",km3/year,FU,FU
+"('PB LCIA', 'Change biosphere integrity')",species.year,CBI,CBI
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Climate change, ecosystem quality, long term')",PDF.m2.yr,CCEQL,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Climate change, ecosystem quality, short term')",PDF.m2.yr,CCEQS,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Climate change, ecosystem quality, long term, fossil and biogenic')",PDF.m2.yr,CCEQLB,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Climate change, ecosystem quality, short term, fossil and biogenic')",PDF.m2.yr,CCEQSB,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Climate change, human health, long term')",DALY,CCHHL,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Climate change, human health, short term')",DALY,CCHHS,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Climate change, human health, long term, fossil and biogenic')",DALY,CCHHLB,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Climate change, human health, short term, fossil and biogenic')",DALY,CCHHSB,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Freshwater acidification')",PDF.m2.yr,FWA,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Freshwater ecotoxicity, long term')",PDF.m2.yr,FWEXL,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Freshwater ecotoxicity, short term')",PDF.m2.yr,FWEXS,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Freshwater eutrophication')",PDF.m2.yr,FWEU,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Human toxicity cancer, long term')",DALY,HTXCL,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Human toxicity cancer, short term')",DALY,HTXCS,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Human toxicity non-cancer, long term')",DALY,HTXNCL,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Human toxicity non-cancer, short term')",DALY,HTXNCS,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Ionizing radiation, ecosystem quality')",PDF.m2.yr,IREQ,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Ionizing radiation, human health')",DALY,IRHH,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Land occupation, biodiversity')",PDF.m2.yr,LOBDV,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Land transformation, biodiversity')",PDF.m2.yr,LTBDV,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Marine acidification, long term')",PDF.m2.yr,MAL,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Marine acidification, short term')",PDF.m2.yr,MAS,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Marine acidification, long term, fossil and biogenic')",PDF.m2.yr,MALB,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Marine acidification, short term, fossil and biogenic')",PDF.m2.yr,MASB,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Marine eutrophication')",PDF.m2.yr,MEU,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Ozone layer depletion')",DALY,OLD,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Particulate matter formation')",DALY,PMF,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Photochemical oxidant formation')",DALY,PCOX,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Terrestrial acidification')",PDF.m2.yr,TRA,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Thermally polluted water')",PDF.m2.yr,TPW,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Water availability, freshwater ecosystem')",PDF.m2.yr,WAVFWES,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Water availability, human health')",DALY,WAVHH,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Water availability, terrestrial ecosystem')",PDF.m2.yr,WAVTES,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Total ecosystem quality')",PDF.m2.yr,TTEQ,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Total human health')",DALY,TTHH,HH
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Ecosystem quality', 'Total ecosystem quality, fossil and biogenic')",PDF.m2.yr,TTEQB,EQ
+"('IMPACT World+ Damage 2.0.1_regionalized', 'Human health', 'Total human health, fossil and biogenic')",DALY,TTHHB,HH
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Climate change, long term')",kg CO2 eq (long),m_CCL,m_CCL
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Climate change, long term, fossil and biogenic')",kg CO2 eq (long),m_CCLB,m_CCLB
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Climate change, short term')",kg CO2 eq (short),m_CCS,m_CCS
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Climate change, short term, fossil and biogenic')",kg CO2 eq (short),m_CCSB,m_CCSB
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Fossil and nuclear energy use')",MJ deprived,m_FNEU,m_FNEU
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Freshwater acidification')",kg SO2 eq,m_FWA,m_FWA
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Freshwater ecotoxicity')",CTUe,m_FEW,m_FEW
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Freshwater eutrophication')",kg PO4 P-lim eq,m_FWEU,m_FWEU
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Human toxicity cancer')",CTUh,m_HTX,m_HTX
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Human toxicity non-cancer')",CTUh,m_HTXN,m_HTXN
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Ionizing radiations')",Bq C-14 eq,m_IR,m_IR
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Land occupation, biodiversity')",m2 arable land eq .yr,m_LOBDV,m_LOBDV
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Land transformation, biodiversity')",m2 arable land eq,m_LTBDV,m_LTBDV
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Marine eutrophication')",kg N N-lim eq,m_MEU,m_MEU
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Mineral resources use')",kg deprived,m_MRU,m_MRU
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Ozone layer depletion')",kg  CFC-11 eq,m_OLD,m_OLD
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Particulate matter formation')",kg PM2.5 eq,m_PMF,m_PMF
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Photochemical oxidant formation')",kg NMVOC eq,m_PCOX,m_PCOX
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Terrestrial acidification')",kg SO2 eq,m_TRA,m_TRA
+"('IMPACT World+ Midpoint 2.0.1_regionalized', 'Midpoint', 'Water scarcity')",m3 world-eq,m_WAS,m_WAS
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.10', 'Carbon footprint')",kg CO2 eq (short),CF,CF
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.10', 'Energetic resource depletion')",MJ deprived,FNEU,FNEU
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.10', 'Ecosystem quality (residual)')",PDF.m2.yr,REQD,REQD
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.10', 'Human health (residual)')",DALY,RHHD,RHHD
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.10', 'Water footprint - Scarcity')",m3 world-eq,WSF,WSF
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Climate change, ecosystem quality, long term')",PDF.m2.yr,CCEQL,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Climate change, ecosystem quality, short term')",PDF.m2.yr,CCEQS,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Climate change, human health, long term')",DALY,CCHHL,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Climate change, human health, short term')",DALY,CCHHS,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Fisheries impact')",PDF.m2.yr,FI,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater acidification')",PDF.m2.yr,FWA,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater ecotoxicity, long term')",PDF.m2.yr,FWEXL,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater ecotoxicity, short term')",PDF.m2.yr,FWEXS,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater eutrophication')",PDF.m2.yr,FWEU,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Human toxicity cancer, long term')",DALY,HTXCL,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Human toxicity cancer, short term')",DALY,HTXCS,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Human toxicity non-cancer, long term')",DALY,HTNCL,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Human toxicity non-cancer, short term')",DALY,HTNCS,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Ionizing radiations, ecosystem quality')",PDF.m2.yr,IREQ,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Ionizing radiations, human health')",DALY,IRHH,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Land occupation, biodiversity')",PDF.m2.yr,LOBDV,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Land transformation, biodiversity')",PDF.m2.yr,LTBDV,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Marine acidification, long term')",PDF.m2.yr,MAL,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Marine acidification, short term')",PDF.m2.yr,MAS,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Marine ecotoxicity, long term')",PDF.m2.yr,MEXL,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Marine ecotoxicity, short term')",PDF.m2.yr,MEXS,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Marine eutrophication')",PDF.m2.yr,MEU,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Ozone layer depletion')",DALY,OLD,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Particulate matter formation')",DALY,PMF,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Photochemical ozone formation, ecosystem quality')",PDF.m2.yr,POFEQ,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Photochemical ozone formation, human health')",DALY,POFHH,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Terrestrial acidification')",PDF.m2.yr,TRA,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Terrestrial ecotoxicity, long term')",PDF.m2.yr,TREXL,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Terrestrial ecotoxicity, short term')",PDF.m2.yr,TREXS,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Thermally polluted water')",PDF.m2.yr,TPW,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Water availability, freshwater ecosystem')",PDF.m2.yr,WAVFWES,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Water availability, human health')",DALY,WAVHH,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Water availability, terrestrial ecosystem')",PDF.m2.yr,WAVTES,EQ
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Human health', 'Total human health')",DALY,TTHH,HH
+"('IMPACT World+ Damage 2.1_regionalized for ecoinvent v3.10', 'Ecosystem quality', 'Total ecosystem quality')",PDF.m2.yr,TTEQ,EQ
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Climate change, long term')",kg CO2 eq (long),m_CCL,m_CCL
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Climate change, short term')",kg CO2 eq (short),m_CCS,m_CCS
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Fossil and nuclear energy use')",MJ deprived,m_FNEU,m_FNEU
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Freshwater acidification')",kg SO2 eq,m_FWA,m_FWA
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Freshwater ecotoxicity')",CTUe,m_FWEX,m_FWEX
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Freshwater eutrophication')",kg PO4 P-lim eq,m_FWEU,m_FWEU
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Human toxicity cancer')",CTUh,m_HTXC,m_HTXC
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Human toxicity non-cancer')",CTUh,m_HTXNC,m_HTXNC
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Ionizing radiations')",Bq C-14 eq,m_IR,m_IR
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Land occupation, biodiversity')",m2 arable land eq .yr,m_LOBDV,m_LOBDV
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Land transformation, biodiversity')",m2 arable land eq,m_LTBDV,m_LTBDV
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Marine eutrophication')",kg N N-lim eq,m_MEU,m_MEU
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Mineral resources use')",kg deprived,m_MRU,m_MRU
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Ozone layer depletion')",kg  CFC-11 eq,m_OLD,m_OLD
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Particulate matter formation')",kg PM2.5 eq,m_PMF,m_PMF
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Photochemical ozone formation')",kg NMVOC eq,m_PCOX,m_PCOX
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Terrestrial acidification')",kg SO2 eq,m_TRA,m_TRA
+"('IMPACT World+ Midpoint 2.1_regionalized for ecoinvent v3.10', 'Midpoint', 'Water scarcity')",m3 world-eq,m_WAS,m_WAS
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Climate change, ecosystem quality, long term')",PDF.m2.yr,CCEQL,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Climate change, ecosystem quality, short term')",PDF.m2.yr,CCEQS,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Climate change, human health, long term')",DALY,CCHHL,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Climate change, human health, short term')",DALY,CCHHS,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Fisheries impact')",PDF.m2.yr,FI,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater acidification')",PDF.m2.yr,FWA,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater ecotoxicity, long term')",PDF.m2.yr,FWEXL,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater ecotoxicity, short term')",PDF.m2.yr,FWEXS,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Freshwater eutrophication')",PDF.m2.yr,FWEU,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Human toxicity cancer, long term')",DALY,HTXCL,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Human toxicity cancer, short term')",DALY,HTXCS,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Human toxicity non-cancer, long term')",DALY,HTNCL,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Human toxicity non-cancer, short term')",DALY,HTNCS,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Ionizing radiations, ecosystem quality')",PDF.m2.yr,IREQ,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Ionizing radiations, human health')",DALY,IRHH,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Land occupation, biodiversity')",PDF.m2.yr,LOBDV,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Land transformation, biodiversity')",PDF.m2.yr,LTBDV,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Marine acidification, long term')",PDF.m2.yr,MAL,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Marine acidification, short term')",PDF.m2.yr,MAS,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Marine ecotoxicity, long term')",PDF.m2.yr,MEXL,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Marine ecotoxicity, short term')",PDF.m2.yr,MEXS,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Marine eutrophication')",PDF.m2.yr,MEU,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Ozone layer depletion')",DALY,OLD,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Particulate matter formation')",DALY,PMF,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Photochemical ozone formation, ecosystem quality')",PDF.m2.yr,POFEQ,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Photochemical ozone formation, human health')",DALY,POFHH,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Terrestrial acidification')",PDF.m2.yr,TRA,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Terrestrial ecotoxicity, long term')",PDF.m2.yr,TREXL,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Terrestrial ecotoxicity, short term')",PDF.m2.yr,TREXS,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Thermally polluted water')",PDF.m2.yr,TPW,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Water availability, freshwater ecosystem')",PDF.m2.yr,WAVFWES,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Water availability, human health')",DALY,WAVHH,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Water availability, terrestrial ecosystem')",PDF.m2.yr,WAVTES,EQ
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Human health', 'Total human health')",DALY,TTHH,HH
+"('IMPACT World+ Damage 2.1 for ecoinvent v3.10', 'Ecosystem quality', 'Total ecosystem quality')",PDF.m2.yr,TTEQ,EQ
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Climate change, long term')",kg CO2 eq (long),m_CCL,m_CCL
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Climate change, short term')",kg CO2 eq (short),m_CCS,m_CCS
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Fossil and nuclear energy use')",MJ deprived,m_FNEU,m_FNEU
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Freshwater acidification')",kg SO2 eq,m_FWA,m_FWA
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Freshwater ecotoxicity')",CTUe,m_FWEX,m_FWEX
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Freshwater eutrophication')",kg PO4 P-lim eq,m_FWEU,m_FWEU
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Human toxicity cancer')",CTUh,m_HTXC,m_HTXC
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Human toxicity non-cancer')",CTUh,m_HTXNC,m_HTXNC
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Ionizing radiations')",Bq C-14 eq,m_IR,m_IR
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Land occupation, biodiversity')",m2 arable land eq .yr,m_LOBDV,m_LOBDV
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Land transformation, biodiversity')",m2 arable land eq,m_LTBDV,m_LTBDV
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Marine eutrophication')",kg N N-lim eq,m_MEU,m_MEU
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Mineral resources use')",kg deprived,m_MRU,m_MRU
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Ozone layer depletion')",kg  CFC-11 eq,m_OLD,m_OLD
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Particulate matter formation')",kg PM2.5 eq,m_PMF,m_PMF
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Photochemical ozone formation')",kg NMVOC eq,m_PCOX,m_PCOX
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Terrestrial acidification')",kg SO2 eq,m_TRA,m_TRA
+"('IMPACT World+ Midpoint 2.1 for ecoinvent v3.10', 'Midpoint', 'Water scarcity')",m3 world-eq,m_WAS,m_WAS
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.9', 'Carbon footprint')",kg CO2 eq (short),CF,CF
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.9', 'Energetic resource depletion')",MJ deprived,FNEU,FNEU
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.9', 'Ecosystem quality (residual)')",PDF.m2.yr,REQD,REQD
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.9', 'Human health (residual)')",DALY,RHHD,RHHD
+"('IMPACT World+ Footprint 2.1 for ecoinvent v3.9', 'Water footprint - Scarcity')",m3 world-eq,WSF,WSF
+"('EF v3.1', 'acidification', 'accumulated exceedance (AE)')",mol H+-Eq,Aci,Aci
+"('EF v3.1', 'climate change', 'global warming potential (GWP100)')",kg CO2-Eq,CC,CC
+"('EF v3.1', 'climate change: biogenic', 'global warming potential (GWP100)')",kg CO2-Eq,CCb,CCb
+"('EF v3.1', 'climate change: fossil', 'global warming potential (GWP100)')",kg CO2-Eq,CCf,CCf
+"('EF v3.1', 'climate change: land use and land use change', 'global warming potential (GWP100)')",kg CO2-Eq,CCluluc,CCluluc
+"('EF v3.1', 'ecotoxicity: freshwater', 'comparative toxic unit for ecosystems (CTUe)')",CTUe,ETF,ETF
+"('EF v3.1', 'ecotoxicity: freshwater, inorganics', 'comparative toxic unit for ecosystems (CTUe)')",CTUe,ETFi,ETFi
+"('EF v3.1', 'ecotoxicity: freshwater, organics', 'comparative toxic unit for ecosystems (CTUe)')",CTUe,ETFo,ETFo
+"('EF v3.1', 'energy resources: non-renewable', 'abiotic depletion potential (ADP): fossil fuels')","MJ, net calorific value",ERNR,ERNR
+"('EF v3.1', 'eutrophication: freshwater', 'fraction of nutrients reaching freshwater end compartment (P)')",kg P-Eq,EUTf,EUTf
+"('EF v3.1', 'eutrophication: marine', 'fraction of nutrients reaching marine end compartment (N)')",kg N-Eq,EUTm,EUTm
+"('EF v3.1', 'eutrophication: terrestrial', 'accumulated exceedance (AE)')",mol N-Eq,EUTt,EUTt
+"('EF v3.1', 'human toxicity: carcinogenic', 'comparative toxic unit for human (CTUh)')",CTUh_c,HTC,HTC
+"('EF v3.1', 'human toxicity: carcinogenic, inorganics', 'comparative toxic unit for human (CTUh)')",CTUh_c,HTCi,HTCi
+"('EF v3.1', 'human toxicity: carcinogenic, organics', 'comparative toxic unit for human (CTUh)')",CTUh_c,HTCo,HTCo
+"('EF v3.1', 'human toxicity: non-carcinogenic', 'comparative toxic unit for human (CTUh)')",CTUh_nc,HTNC,HTNC
+"('EF v3.1', 'human toxicity: non-carcinogenic, inorganics', 'comparative toxic unit for human (CTUh)')",CTUh_nc,HTNCi,HTNCi
+"('EF v3.1', 'human toxicity: non-carcinogenic, organics', 'comparative toxic unit for human (CTUh)')",CTUh_nc,HTNCo,HTNCo
+"('EF v3.1', 'ionising radiation: human health', 'human exposure efficiency relative to u235')",kBq U235-Eq,IR,IR
+"('EF v3.1', 'land use', 'soil quality index')",dimensionless,LU,LU
+"('EF v3.1', 'material resources: metals/minerals', 'abiotic depletion potential (ADP): elements (ultimate reserves)')",kg Sb-Eq,MR,MR
+"('EF v3.1', 'ozone depletion', 'ozone depletion potential (ODP)')",kg CFC-11-Eq,OD,OD
+"('EF v3.1', 'particulate matter formation', 'impact on human health')",disease incidence,PMF,PMF
+"('EF v3.1', 'photochemical oxidant formation: human health', 'tropospheric ozone concentration increase')",kg NMVOC-Eq,POF,POF
+"('EF v3.1', 'water use', 'user deprivation potential (deprivation-weighted water consumption)')",m3 world eq. deprived,WU,WU
+"('EF v3.1 regionalized', 'acidification', 'accumulated exceedance (AE)')",mol H+-Eq,Aci,Aci
+"('EF v3.1 regionalized', 'climate change', 'global warming potential (GWP100)')",kg CO2-Eq,CC,CC
+"('EF v3.1 regionalized', 'climate change: biogenic', 'global warming potential (GWP100)')",kg CO2-Eq,CCb,CCb
+"('EF v3.1 regionalized', 'climate change: fossil', 'global warming potential (GWP100)')",kg CO2-Eq,CCf,CCf
+"('EF v3.1 regionalized', 'climate change: land use and land use change', 'global warming potential (GWP100)')",kg CO2-Eq,CCluluc,CCluluc
+"('EF v3.1 regionalized', 'ecotoxicity: freshwater', 'comparative toxic unit for ecosystems (CTUe)')",CTUe,ETF,ETF
+"('EF v3.1 regionalized', 'ecotoxicity: freshwater, inorganics', 'comparative toxic unit for ecosystems (CTUe)')",CTUe,ETFi,ETFi
+"('EF v3.1 regionalized', 'ecotoxicity: freshwater, organics', 'comparative toxic unit for ecosystems (CTUe)')",CTUe,ETFo,ETFo
+"('EF v3.1 regionalized', 'energy resources: non-renewable', 'abiotic depletion potential (ADP): fossil fuels')","MJ, net calorific value",ERNR,ERNR
+"('EF v3.1 regionalized', 'eutrophication: freshwater', 'fraction of nutrients reaching freshwater end compartment (P)')",kg P-Eq,EUTf,EUTf
+"('EF v3.1 regionalized', 'eutrophication: marine', 'fraction of nutrients reaching marine end compartment (N)')",kg N-Eq,EUTm,EUTm
+"('EF v3.1 regionalized', 'eutrophication: terrestrial', 'accumulated exceedance (AE)')",mol N-Eq,EUTt,EUTt
+"('EF v3.1 regionalized', 'human toxicity: carcinogenic', 'comparative toxic unit for human (CTUh)')",CTUh_c,HTC,HTC
+"('EF v3.1 regionalized', 'human toxicity: carcinogenic, inorganics', 'comparative toxic unit for human (CTUh)')",CTUh_c,HTCi,HTCi
+"('EF v3.1 regionalized', 'human toxicity: carcinogenic, organics', 'comparative toxic unit for human (CTUh)')",CTUh_c,HTCo,HTCo
+"('EF v3.1 regionalized', 'human toxicity: non-carcinogenic', 'comparative toxic unit for human (CTUh)')",CTUh_nc,HTNC,HTNC
+"('EF v3.1 regionalized', 'human toxicity: non-carcinogenic, inorganics', 'comparative toxic unit for human (CTUh)')",CTUh_nc,HTNCi,HTNCi
+"('EF v3.1 regionalized', 'human toxicity: non-carcinogenic, organics', 'comparative toxic unit for human (CTUh)')",CTUh_nc,HTNCo,HTNCo
+"('EF v3.1 regionalized', 'ionising radiation: human health', 'human exposure efficiency relative to u235')",kBq U235-Eq,IR,IR
+"('EF v3.1 regionalized', 'land use', 'soil quality index')",dimensionless,LU,LU
+"('EF v3.1 regionalized', 'material resources: metals/minerals', 'abiotic depletion potential (ADP): elements (ultimate reserves)')",kg Sb-Eq,MR,MR
+"('EF v3.1 regionalized', 'ozone depletion', 'ozone depletion potential (ODP)')",kg CFC-11-Eq,OD,OD
+"('EF v3.1 regionalized', 'particulate matter formation', 'impact on human health')",disease incidence,PMF,PMF
+"('EF v3.1 regionalized', 'photochemical oxidant formation: human health', 'tropospheric ozone concentration increase')",kg NMVOC-Eq,POF,POF
+"('EF v3.1 regionalized', 'water use', 'user deprivation potential (deprivation-weighted water consumption)')",m3 world eq. deprived,WU,WU

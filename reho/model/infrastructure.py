@@ -336,6 +336,7 @@ class Infrastructure:
             df_lca_constr = pd.DataFrame([[unit_param[key] for key in lca_impact_constr]], columns=self.lca_kpis).transpose()
             df_lca_op = pd.DataFrame([[unit_param[key] for key in lca_impact_op]], columns=self.lca_kpis).transpose()
             df_lca = pd.concat([df_lca_constr, df_lca_op], axis=1)
+            df_lca.columns = ["lca_kpi_constr", "lca_kpi_op"]
             df_lca.index.names = ["Lca_kpi"]
             df_lca["Units"] = complete_name
             df_lca = df_lca.set_index("Units", append=True)

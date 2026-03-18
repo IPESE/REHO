@@ -568,6 +568,12 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data):
     # df_G_RES.rename(columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})
 
     # ------------------------------------------------------------------------------------------------------
+    # LCA KPIs
+    # ------------------------------------------------------------------------------------------------------
+    if "df_lca_Performance" in df_Results:
+        df_KPI = pd.concat([df_KPI, df_Results["df_lca_Performance"]], axis=1)
+
+    # ------------------------------------------------------------------------------------------------------
     # Actor KPIs
     # ------------------------------------------------------------------------------------------------------
     if "df_Actors" in df_Results:

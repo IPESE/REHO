@@ -812,8 +812,8 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
                     x=idx,
                     y=import_profile[layer],
                     mode="lines",
-                    name=layout.loc[layer, label],
-                    line=dict(color=layout.loc[layer, color])
+                    name=layout.loc[layer + '_import', label],
+                    line=dict(color=layout.loc[layer + '_import', color])
                 ))
 
         for unit in units_demand:
@@ -911,7 +911,7 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
                                                                        columns='Layer', values='Demand_MWh')
     df_buildings = df_buildings.reset_index().merge(df_annuals, on=['Scn_ID', 'Pareto_ID', 'Hub']).set_index(
         ['Scn_ID', 'Pareto_ID', 'Hub'])
-    data_to_plot = pd.DataFrame(0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class',
+    data_to_plot = pd.DataFrame(0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class', 'rSOC_per_class',
                                                            'elec_per_class'])
     class_names = pd.read_csv(os.path.join(path_to_plotting, 'sia380_1.csv'), index_col='id_class', sep=";")
     data_to_plot = data_to_plot.merge(class_names, left_index=True, right_on='id_class')
@@ -936,18 +936,19 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
         [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "rSOC", "Elec"]]
         [parents_name.append(element) for element in
          ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],
-          data_to_plot.iloc[i]['class_' + label]]]
+          data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label]]] # Nb of elements must be the same as child_name energy carriers
         [values_sun.append(element) for element in [
-            data_to_plot.iloc[i]['sh_per_class'] + data_to_plot.iloc[i]['dhw_per_class'] +
-            data_to_plot.iloc[i]['elec_per_class'],
-            data_to_plot.iloc[i]['sh_per_class'], data_to_plot.iloc[i]['dhw_per_class'],
+            data_to_plot.iloc[i]['sh_per_class'] + data_to_plot.iloc[i]['dhw_per_class'] + data_to_plot.iloc[i]['rSOC_per_class'] + data_to_plot.iloc[i]['elec_per_class'],
+            data_to_plot.iloc[i]['sh_per_class'], data_to_plot.iloc[i]['dhw_per_class'], data_to_plot.iloc[i]['rSOC_per_class'],
             data_to_plot.iloc[i]['elec_per_class']]]
         [text_template.append(element) for element in ['%{label}<br>%{percentParent:.2%}',
+                                                       '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}']]
         [hover_template.append(element) for element in
          ['<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentParent:.2%}' + liaison + '%{parent}',
+          '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
           '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
           '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
           '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}']]

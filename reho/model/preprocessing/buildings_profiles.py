@@ -316,6 +316,7 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     if typical_file:
         df_typical.to_csv(typical_file)
 
+
     return df_typical
 
 
@@ -341,19 +342,27 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
     irr = local_data["Irr"]
     buildings_data = qbuildings_data["buildings_data"]
     g = np.repeat(0.45, len(irr))  # g-value SIA 2024
-    g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
+    g[irr > 0.4] = 0.1  # assumption that if irradiation exceeds 400 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:
         id_building = buildings_data[b]["id_building"]
-        if "facades_data" in qbuildings_data.keys():
-            facades = qbuildings_data["facades_data"]
-            facades_b = facades[facades["id_building"] == id_building]
-            df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
-            df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
-            df_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
-        else:
-            df_facade_irr = buildings_data[b]['area_facade_m2']
+        if buildings_data[b]["ERA"] < 0.5 * (0.93 * buildings_data[b]["area_footprint_m2"] * buildings_data[b]['count_floor']):
+            # When we have case where the ERA is particularly lower than the footprint (because some spaces do not need to be heated),
+            # issues arise from gains and losses
+            gains = np.zeros(len(irr))
+            footprint_factor = buildings_data[b]["area_footprint_m2"] / buildings_data[b]['geometry'].length
+            conversion_factor_of_useful_facade = 0.6  # Let us estimate that one "useful facades" is inside and they are not all irradiate
+            df_facade_irr = buildings_data[b]["ERA"] / (buildings_data[b]['count_floor'] * 0.93) / footprint_factor * buildings_data[b]['height_m'] * conversion_factor_of_useful_facade
+        else:    
+            if "facades_data" in qbuildings_data.keys():
+                facades = qbuildings_data["facades_data"]
+                facades_b = facades[facades["id_building"] == id_building]
+                df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
+                df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
+                df_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
+            else:
+                df_facade_irr = buildings_data[b]['area_facade_m2']
 
         classes = buildings_data[b]['id_class'].split('/')
         if isinstance(buildings_data[b]['ratio'], float):

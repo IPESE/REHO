@@ -87,9 +87,17 @@ class SensitivityAnalysis:
         sampling : array
             Sampling values
         """
-
+        def flatten_nested_dict(d, parent_key='', sep='+-+'):
+            items = {}
+            for k, v in d.items():
+                new_key = parent_key + sep + k if parent_key else k
+                if isinstance(v, dict):
+                    items.update(flatten_nested_dict(v, new_key, sep))
+                else:
+                    items[new_key] = v
+            return items
+        
         # 1) Generate the list of parameters
-
         default_units_values = self.reho.infrastructure.Units_Parameters  # Extract default unit values of the district
         units = np.unique([unit.split('_Building')[0] for unit in self.reho.infrastructure.Units_Parameters.index.to_list()]).tolist()
         if "EV_district" in units:
@@ -105,8 +113,15 @@ class SensitivityAnalysis:
             for unit in units:
                 for parameter in unit_parameter:
                     value = default_units_values[default_units_values.index.str.contains(unit)][parameter].iloc[0]
-                    name = str(unit) + "___" + str(parameter)
-                    SA_parameters[name] = np.array([0.5, 2.0]) * value
+                    name = "units+-+" + str(unit) + str(parameter)
+                    if unit in SA_parameters['units']:
+                        SA_parameters[name] = SA_parameters['units'][unit]
+                    else:    
+                        SA_parameters[name] = np.array([0.5, 2.0]) * value # By default me allow the price of the units to vary from 0.5 to 2 of their initial value
+
+        SA_parameters = flatten_nested_dict(SA_parameters)
+        # SA_parameters['grids'] = {SA_parameters['grid_param_' + k]: v for k, v in SA_parameters['grids'].items()}
+        # SA_parameters['buildings'] = {'building_param_' + k: v for k, v in SA_parameters['buildings'].items()}
 
         self.parameter = SA_parameters
         # 2) Generate a dictionary with all parameters and their bounds for the sampling
@@ -171,6 +186,7 @@ class SensitivityAnalysis:
         scenario = self.reho.scenario
         district_units = len(self.reho.infrastructure.UnitsOfDistrict) != 0  # True or False
         units = infrastructure.initialize_units(scenario, grids, district_data=district_units)
+        qbuildings_data = {'buildings_data': self.reho.buildings_data}
         n_houses = len(self.reho.buildings_data)
 
         # Modify the attributes of the model and run SA
@@ -178,36 +194,46 @@ class SensitivityAnalysis:
             print("Optimization number", str(j + 1) + "/" + str(len(self.sampling)))
 
             sample = self.sampling[j]
+            pareto_name = []
             for s, value in enumerate(sample):
-                parameter = list(self.parameter.keys())[s]
+                param_type, parameter = list(self.parameter.keys())[s].split("+-+")
+                pareto_name += [f"{parameter}_{value:.2g}"]
+                if param_type == "grids":
+                    if parameter == 'Elec_retail':
+                        grids["Electricity"]["Cost_supply_cst"] = value
+                    elif parameter == 'Elec_feedin':
+                        grids["Electricity"]["Cost_demand_cst"] = value
+                    elif parameter == 'NG_retail':
+                        grids["NaturalGas"]["Cost_supply_cst"] = value
+                    elif parameter == 'Wood_retail':
+                        grids["Wood"]["Cost_supply_cst"] = value
+                    elif parameter == 'Oil_retail':
+                        grids["Oil"]["Cost_supply_cst"] = value
 
-                if parameter == 'Elec_retail':
-                    grids["Electricity"]["Cost_supply_cst"] = value
-                elif parameter == 'Elec_feedin':
-                    grids["Electricity"]["Cost_demand_cst"] = value
-                elif parameter == 'NG_retail':
-                    grids["NaturalGas"]["Cost_supply_cst"] = value
-                elif parameter == 'Wood_retail':
-                    grids["Wood"]["Cost_supply_cst"] = value
-                elif parameter == 'Oil_retail':
-                    grids["Oil"]["Cost_supply_cst"] = value
-
-                elif "___" in parameter:
+                elif param_type == "units":
                     for unit_id in range(len(units['building_units'])):
                         if units['building_units'][unit_id]['Unit'] == parameter.split("___")[0]:
                             units['building_units'][unit_id][parameter.split("___")[1]] = value
+
+                elif param_type == "buildings":
+                    for id_building in qbuildings_data['buildings_data'].keys():
+                        if parameter not in qbuildings_data['buildings_data'][id_building].keys():
+                            raise KeyError(parameter, "not in buildings keys.\n Possible values are: ", qbuildings_data['buildings_data'][id_building].keys())
+                        qbuildings_data['buildings_data'][id_building][parameter] = value 
+                        # if parameter == 'U_h':
+                        #     self.reho.method['renovation'] = ["window/facade/roof/footprint", "window/facade", "roof"]
+
                 else:
                     if parameter in self.reho.lists_MP["list_parameters_MP"]:
                         self.reho.parameters[parameter] = np.array([value])
                     else:
                         self.reho.parameters[parameter] = np.array([value] * n_houses)
 
-            qbuildings_data = {'buildings_data': self.reho.buildings_data}
             self.reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
 
             try:
                 tic = time.perf_counter()
-                self.reho.single_optimization(Pareto_ID=j)  # Optimize the modified model
+                self.reho.single_optimization(Pareto_ID="/".join(pareto_name))  # Optimize the modified model
                 toc = time.perf_counter()
                 time_spent = toc - tic
 

@@ -416,7 +416,8 @@ def prepare_units_df(file, exclude_units=[], grids=None):
     list_of_columns = ['Unit', 'UnitOfLayer', 'UnitOfService', 'StreamsOfUnit', 'Units_flowrate_in', 'Units_flowrate_out',
                        'stream_Tin', 'stream_Tout']
     try:
-        unit_data[list_of_columns] = unit_data[list_of_columns].fillna('').astype(str)
+        # unit_data[list_of_columns] = unit_data[list_of_columns].fillna('').astype(str)
+        unit_data[list_of_columns] = unit_data[list_of_columns].fillna('').astype(object)
         unit_data[list_of_columns[1:]].apply(transform_into_list) # keep Unit as str
     except KeyError:
         raise KeyError('There is a name in the columns of your csv. Make sure the columns correspond to the default'

@@ -146,9 +146,25 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
     # Get the max irradiance from the same period (for the max temperature)
     T_max['Irr'] = cl.data_org.loc[T_period[1] * hours_per_period: (T_period[1] + 1) * hours_per_period - 1, 'Irr'].max()
 
+    # Ensure extreme period time.dd values don't clash with any typical period.
+    # A clash causes periods.unique() to deduplicate them, producing a timestamp CSV
+    # with one fewer row than expected and a shape mismatch in eud_profiles.
+    typical_time_dds = set(int(td) for td in data_cls['time.dd'].values)
+    extreme_period_map = {}  # maps (possibly remapped) time.dd -> original T_period for date formula
+
+    min_dd = T_period[0]
+    if min_dd in typical_time_dds:
+        min_dd = max(typical_time_dds) + 1
+    extreme_period_map[min_dd] = T_period[0]
+
+    max_dd = T_period[1]
+    if max_dd in typical_time_dds or max_dd == min_dd:
+        max_dd = max(typical_time_dds | {min_dd}) + 1
+    extreme_period_map[max_dd] = T_period[1]
+
     # Set the time for the new rows (variable hours per period)
-    T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0], 1, 1]
-    T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1], 1, 1]
+    T_min[['time.dd', 'time.hh', 'dt']] = [min_dd, 1, 1]
+    T_max[['time.dd', 'time.hh', 'dt']] = [max_dd, 1, 1]
 
     # Append the new extreme values to the data
     new_index_min = len(data_cls)  # Dynamically find the next available index
@@ -162,12 +178,12 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
         max_time_dd = len(cl.attr_org)
         data_idy = pd.concat([data_idy, pd.DataFrame([[max_time_dd + 1, max_time_dd + 1]], columns=data_idy.columns)], ignore_index=True)
 
-    write_weather_files(clustering_directory, attributes, data_cls, data_idy)
+    write_weather_files(clustering_directory, attributes, data_cls, data_idy, extreme_period_map=extreme_period_map)
 
     print(f'Clustering for weather data finished. Results have been saved in {clustering_directory}.')
 
 
-def write_weather_files(clustering_directory, attributes, values_cluster, index_inter):
+def write_weather_files(clustering_directory, attributes, values_cluster, index_inter, extreme_period_map=None):
     """
     Writes the clustering results computed from ``generate_weather_data`` as CSV files in folder clustering_directory.
 
@@ -260,7 +276,8 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     timestamp_data = []
 
     for original_period, mapped_period in period_mapping.items():
-        date_idx = (original_period-1) * 24
+        period_for_date = extreme_period_map.get(original_period, original_period) if extreme_period_map else original_period
+        date_idx = (period_for_date - 1) * 24
 
         date = annual_data.iloc[date_idx]['time(UTC)']
         entry = {

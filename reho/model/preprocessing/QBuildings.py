@@ -495,6 +495,8 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
             footprint_factor = df_h["area_footprint_m2"] / perimeter
         else:
             footprint_factor = df_h["area_footprint_m2"] / df_h['geometry'].length
+            perimeter = df_h['geometry'].length
+        df_h["area_facade_m2"] = perimeter * 2.5 * df_h["ERA"] / (0.93 * df_h["area_footprint_m2"])
 
         b_value_floor = pd.read_csv(os.path.join(path_to_sia, 'b_value_floor.csv'), sep=";").set_index("U_footprint")
         b_value = b_value_floor[min(b_value_floor.columns, key=lambda x: abs(float(x) - footprint_factor))]

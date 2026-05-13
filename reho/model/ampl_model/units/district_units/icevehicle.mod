@@ -24,14 +24,10 @@ param max_speed_ICE default 60; # pkm per hour (needed or not ?)
 
 # ----------------------------------------- VARIABLES ---------------------------------------
 var n_ICE{u in UnitsOfType['ICE']} integer >= 0; # number of vehicles
-var share_ICE{u in UnitsOfType['ICE'],p in Period} >= 0; # [-]
 # ---------------------------------------- CONSTRAINTS ---------------------------------------
 
 subject to ICE_EB_c1{u in UnitsOfType['ICE'],p in Period,t in Time[p]}:
 Units_demand['Gasoline',u,p,t ]= Units_supply['Mobility',u,p,t] /  ICE_eff[u]/ ff_ICE;
-
-subject to ICE_EB_c2{u in UnitsOfType['ICE'],p in Period, t in Time[p]}:
-Units_supply['Mobility',u,p,t] = share_ICE[u,p] * Daily_Profile[u,p,t];
 
 subject to ICE_c2{u in UnitsOfType["ICE"]}:
 n_ICE[u] = Units_Mult[u];

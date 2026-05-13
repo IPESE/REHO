@@ -374,10 +374,12 @@ var renter_subsidies{h in House} >= 0;
 var owner_subsidies{h in House} >= 0;
 var penalty_actors >= 0;
 
+param beta_GWP_MP default 0;
+
 subject to penalties_contraints:
 penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op + penalty_actors + 
             sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
-             + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]);
+             + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]) + GWP_tot * beta_GWP_MP;
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Objective functions

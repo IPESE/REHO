@@ -125,7 +125,7 @@ class MasterProblem:
                                                 'Network_ext', "ff_EV", "ff_ICE", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
                                                 "transport_Units", "DailyDist", "Mode_Speed", "Cost_demand_ext", "EV_supply_ext", "share_activity", "Cost_supply_ext",
-                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity',
+                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', "beta_GWP_MP",
                                                 "max_share", "min_share", "max_share_modes", "min_share_modes", "n_ICEperhab",
                                                 "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Ext_district",
                                                 "Network_lifetime"],
@@ -587,9 +587,13 @@ class MasterProblem:
                 df_PV_t = pd.concat([df_PV_t, df_Unit_t.xs("PV_" + bui, level="Unit")])
             MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Iter"])
 
-        if self.method['renovation'] is not None:
+        if self.method['renovation'] is not None or "U_h" in self.parameters:
             MP_parameters["Uh"] = pd.DataFrame.from_dict({house: self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})
             MP_parameters["Uh_ins"] = df_Buildings[["U_h"]].rename(columns={"U_h": "Uh_ins"})
+            if "U_h" in self.parameters:
+                for row in self.parameters["U_h"].index:
+                    mask = MP_parameters["Uh_ins"].index.get_level_values(1) == row
+                    MP_parameters["Uh_ins"].loc[mask, "Uh_ins"] = self.parameters["U_h"].loc[row][0]
 
         if "Heat" in self.infrastructure.grids.keys():
             if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
@@ -623,6 +627,9 @@ class MasterProblem:
                     MP_set_indexed['UnitTypes'] = np.append(MP_set_indexed['UnitTypes'], u['UnitOfType'])
                     MP_set_indexed['UnitsOfType'][u['UnitOfType']] = np.array([])
                 MP_set_indexed['UnitsOfType'][u['UnitOfType']] = np.append(MP_set_indexed['UnitsOfType'][u['UnitOfType']], [name])
+
+        if "i_rate" in self.parameters.keys():
+            MP_parameters["i_rate"] = self.parameters["i_rate"][0]
 
         # ---------------------------------------------------------------------------------------------------------------
         # give values to ampl
@@ -774,6 +781,10 @@ class MasterProblem:
 
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
         scenario, beta_list = self.get_beta_values(scenario, beta)
+
+        if "beta_duals" in parameters_SP:
+            for key in parameters_SP["beta_duals"].index.get_level_values("Obj_fct").unique():
+                beta_list.loc[key] = parameters_SP["beta_duals"].xs(key).xs(h)[0]
         parameters_SP['beta_duals'] = beta_list
 
         if renovation_options is not None:
@@ -1275,7 +1286,11 @@ class MasterProblem:
                     parameters_SP[key] = self.parameters[key]
                 elif isinstance(self.parameters[key], pd.DataFrame):
                     if "Hub" in self.parameters[key].index.names:
-                        parameters_SP[key] = self.parameters[key].xs(h, level="Hub", drop_level=False)
+                        if h in self.parameters[key].index.get_level_values("Hub"):
+                            if isinstance(self.parameters[key].index, pd.MultiIndex):
+                                parameters_SP[key] = self.parameters[key].xs(h, level="Hub", drop_level=False)
+                            else:
+                                parameters_SP[key] = self.parameters[key].loc[h].values[0]
                     else:
                         parameters_SP[key] = self.parameters[key]
                 else:

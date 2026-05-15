@@ -114,14 +114,7 @@ class SubProblem:
             try:
                 ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
             except:
-                print(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.\n"
-                       "Fallback to the amplpy modules.")
-                try:
-                    from amplpy import modules
-                    modules.load()
-                    ampl = AMPL()
-                except:
-                    raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license.")
+                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
         else:
             try:
                 from amplpy import modules
@@ -256,21 +249,28 @@ class SubProblem:
                 ampl.getSet(str(s)).setValues(self.infrastructure_sp.Set[s])
             elif isinstance(self.infrastructure_sp.Set[s], dict):
                 for i, instance in ampl.getSet(str(s)):
-                    instance.setValues(self.infrastructure_sp.Set[s][i[0]])
+                    try:
+                        instance.setValues(self.infrastructure_sp.Set[s][i])
+                    except:
+                        instance.setValues(self.infrastructure_sp.Set[s][i[0]])
             else:
                 raise ValueError('Type Error setting AMPLPY Set', s)
 
         all_units = [unit for unit, value in ampl.getVariable('Units_Use').instances()]
         for i in all_units:
             for u in self.scenario_sp['exclude_units']:
-                if ('district' not in i[0]) and ('IP' not in i[0]) and (u in i[0]):  # unit at the building scale
+                if 'district' not in i and u in i:  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i)).fix(0)
+                elif 'district' not in i[0] and u in i[0]:  # unit at the building scale
                     ampl.getVariable('Units_Use').get(str(i[0])).fix(0)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(0)
 
             for u in self.scenario_sp['enforce_units']:
-                if 'district' not in i[0] and u in i[0]:  # unit at the building scale
-                    ampl.getVariable('Units_Use').get(str(i[0])).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
+                if 'district' not in i and u in i:  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i)).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
+                elif 'district' not in i[0] and u in i[0]:  # unit at the building scale
+                    ampl.getVariable('Units_Use').get(str(i[0])).fix(1)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(1)
 
@@ -370,7 +370,7 @@ class SubProblem:
         for bui in self.infrastructure_sp.houses:
             for unit_data in self.infrastructure_sp.houses[bui]["units"]:
                 for i, T_level in enumerate(unit_data["StreamsOfUnit"]):
-                    stream = unit_data["Unit"] + '_' + bui + '_' + T_level
+                    stream = unit_data["name"] + '_' + bui + '_' + T_level
                     df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
                     df["Streams_Tout"] = unit_data["stream_Tout"][i]
                     df["Streams_Tin"] = unit_data["stream_Tin"][i]
@@ -504,9 +504,9 @@ class SubProblem:
             elif isinstance(self.set_indexed_sp[s], dict):
                 for i, instance in ampl.getSet(str(s)):
                     try:
-                        instance.setValues(self.set_indexed_sp[s][i[0]])
+                        instance.setValues(self.set_indexed_sp[s][i])
                     except ValueError:
-                        instance.setValues([self.set_indexed_sp[s][i[0]]])
+                        instance.setValues([self.set_indexed_sp[s][i]])
             else:
                 raise ValueError('Type Error setting AMPLPY Set', s)
 

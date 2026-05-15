@@ -7,7 +7,7 @@ name = "REHO"
 keywords = ["MILP", "MOO decision support", "sustainable energy systems", "energy communities"]
 dynamic = ['version']
 description = "Renewable Energy Hub Optimizer (REHO) - A Decision Support Tool for Renewable Energy Communities"
-license = {text = "Apache-2.0"}
+license = {text = "Apache Software License"}
 authors = [
     {name = "Dorsan Lepour", email = "dorsan.lepour@epfl.ch"},
 ]
@@ -15,9 +15,10 @@ maintainers = [
     {name = "IPESE-IT", email = "it.ipese@epfl.ch"},
 ]
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.9"
 classifiers = [
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -26,7 +27,7 @@ classifiers = [
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
-    "amplpy==0.15.2",
+    "amplpy",
     "ampl_module_base",
     "ampl_module_highs",
     "coloredlogs",
@@ -37,8 +38,9 @@ dependencies = [
     "openpyxl",
     "pandas<2.0.0",
     "plotly",
-    "psycopg2-binary<3.0.0",
-    "pvlib==0.13.0",
+    "psycopg2<3.0.0 ; sys_platform != 'win32'",
+    "psycopg2-binary<3.0.0 ; sys_platform == 'win32'",
+    "pvlib",
     "pyclustering",
     "pyproj",
     "python-dotenv",
@@ -50,8 +52,7 @@ dependencies = [
     "setuptools",
     "shapely",
     "sqlalchemy<2.0.0",
-    "sympy",
-    "urllib3<2"
+    "urllib3"
 ]
 
 [project.urls]

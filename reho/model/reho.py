@@ -29,7 +29,7 @@ class REHO(MasterProblem):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
-        
+
         # input attributes
         self.scenario = scenario.copy()
         if 'specific' not in self.scenario:
@@ -462,7 +462,7 @@ class REHO(MasterProblem):
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
             df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
 
-        if self.method["renovation"] is not None:
+        if "is_ins" in self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"]:
             df_renovation = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][['is_ins']]
             df_Performance = pd.concat([df_Performance, df_renovation], axis=1)
 
@@ -524,14 +524,8 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                # Only consider PeriodStandard (without extreme days) to compute annual balance
-                PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
-                    ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
-
-                # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(
-                    df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
-                    level='Period', axis=0).sum() / 1000
+                # get annual values df_Unit_t using dp
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp[:-2], axis=0).sum() / 1000
 
                 # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')

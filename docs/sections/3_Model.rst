@@ -53,11 +53,15 @@ List of symbols
         +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{C}`       | cost                                            | :math:`\text{currency}` |
         +------------------------------+-------------------------------------------------+-------------------------+
-        | :math:`\boldsymbol{E}`       | energy                                          | :math:`kW(h)`           |
+        | :math:`\boldsymbol{E}`       | electricity                                     | :math:`kW(h)`           |
         +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{G}`       | global warming potential                        | :math:`kg_{CO_2, eq}`   |
         +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{H}`       | natural gas or fresh water                      | :math:`kW(h)`           |
+        +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{Q}`       | thermal energy                                  | :math:`kWh`             |
+        +------------------------------+-------------------------------------------------+-------------------------+
+        | :math:`\boldsymbol{R}`       | residual heat                                   | :math:`kWh`             |
         +------------------------------+-------------------------------------------------+-------------------------+
         | :math:`\boldsymbol{T}`       | temperature                                     | :math:`K`               |
         +------------------------------+-------------------------------------------------+-------------------------+
@@ -77,6 +81,7 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`F`         | bound of validity range of unit sizes    | :math:`\diamondsuit`                 |
             +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\Phi`      | specific heat gain                       | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`Q`         | thermal power                            | :math:`kW`                           |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -100,6 +105,7 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`d_t`       | frequency of timesteps per period        | :math:`h/d`                          |
             +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`e`         | electric power                           | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`\epsilon`  | elevation angle                          | :math:`^{\circ}`                     |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -119,13 +125,13 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`i`         | interest rate                            | :math:`-`                            |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`c^{l}`     | fixed investment cost                    | :math:`\text{currency}`              |
+            | :math:`i^{cl}`    | fixed investment cost                    | :math:`\text{currency}`              |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`c^{2}`     | continuous investment cost               | :math:`\text{currency}/\diamondsuit` |
+            | :math:`i^{c2}`    | continuous investment cost               | :math:`\text{currency}/\diamondsuit` |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`cc^{1}`    | fixed impact factor                      | :math:`kg_{CO_2, eq}`                |
+            | :math:`i^{g1}`    | fixed impact factor                      | :math:`kg_{CO_2, eq}`                |
             +-------------------+------------------------------------------+--------------------------------------+
-            | :math:`cc^{2}`    | continuous impact factor                 | :math:`kg_{CO_2, eq}/ \diamondsuit`  |
+            | :math:`i^{g2}`    | continuous impact factor                 | :math:`kg_{CO_2, eq}/ \diamondsuit`  |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`irr`       | irradiation density                      | :math:`kWh/m^2`                      |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -137,6 +143,7 @@ List of symbols
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`pd`        | period duration                          | :math:`h`                            |
             +-------------------+------------------------------------------+--------------------------------------+
+            | :math:`\phi`      | solar gain fraction                      | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
             | :math:`q`         | thermal power                            | :math:`kW/m^2`                       |
             +-------------------+------------------------------------------+--------------------------------------+
@@ -175,7 +182,7 @@ List of symbols
         +-----------+-------------------------------+
         | P         | people                        |
         +-----------+-------------------------------+
-        | bat       | battery                       |
+        | bat       | bateobatle                    |
         +-----------+-------------------------------+
         | bes       | bes                           |
         +-----------+-------------------------------+
@@ -191,7 +198,7 @@ List of symbols
         +-----------+-------------------------------+
         | el        | electricity                   |
         +-----------+-------------------------------+
-        | ERA       | energy reference area         |
+        | ERA       | enery reference area          |
         +-----------+-------------------------------+
         | ext       | external                      |
         +-----------+-------------------------------+
@@ -318,6 +325,8 @@ For the application of REHO, the energy hub description needs to contain - as hi
 
 End use demand profiles
 ---------------------------------
+
+:cite:t:`middelhauveRoleDistrictsRenewable2022` - Section 1.2
 
 The *EUDs* profiles to be determined are:
 
@@ -568,6 +577,7 @@ Model
 Objective functions
 ---------------------------------
 
+:cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.4*
 
 REHO can optimize energy hubs considering economic indicators (minimizing operational expenses, capital expenses, total expenses) or
 environmental indicators (global warming potential).
@@ -587,7 +597,7 @@ Annual capital expenses
 .. math::
     \begin{align}
          \boldsymbol{C^{cap}_b} &=   \frac{i(1+i)}{(1+i)^n -1} \cdot \left(\boldsymbol{C^{inv}_b } +  \boldsymbol{C^{rep}_b } \right) \label{eq_ch1:Ccap}\\
-         \boldsymbol{C^{inv}_b }&= \sum_{u \in \text{U}} \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right) \label{eq_ch1:Cinv}\\
+         \boldsymbol{C^{inv}_b }&= \sum_{u \in \text{U}}   b_{u} \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right) \label{eq_ch1:Cinv}\\
          \boldsymbol{C^{rep}_b} &=   \sum_{u \in \text{U}}  \sum_{r \in \text{R}}  \frac{1}{\left( 1 + i \right)^{r \cdot l_u}}  \cdot \left( i^{c1}_{u} \cdot \boldsymbol{y_{b,u}} + i^{c2}_{u} \cdot \boldsymbol{f_{b,u}} \right)   \quad \forall b \in  \text{B} \label{eq_ch1:Crep}
     \end{align}
 
@@ -697,6 +707,7 @@ With internal heat gains calculated based on SIA 2024:2015 and include the rooms
 
 And solar heat gains proportional to the global irradiation, through a solar gain coefficient:
 
+:cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 3.2.4 Solar heat gains*
 
 .. math::
     \dot{Q}^{irr}_{b,p,t}  = A^{ERA}_b \cdot \phi^{irr} \cdot \dot{irr}^{ghi}_{b,p,t} \quad \forall b \in  \text{B} \quad \forall p \in  \text{P} \quad \forall t\in  \text{T}
@@ -818,11 +829,10 @@ Actors modeling
 ----------------------------------
 The multi-actor modeling framework captures interactions among stakeholders and balances their respective interests within an energy community.
 The model aims to address dilemmas arising during the energy transition, such as the landlord–tenant dilemma.
-Key actors include tenants, landlords, the energy community manager (ECM), the distribution system operator (DSO), and the municipality, which pursues specific climate goals and provides financial support to promote them.
+Key actors include tenants, landlords, the energy community manager (ECM), and the municipality, which pursues specific climate goals and provides financial support to promote them.
 Each actor’s interactions and individual constraints are defined alongside district-level constraints.
 
-.. figure:: ../images/actors_interactions.svg
-   :width: 600
+.. figure:: ../images/actors_interaction.svg
    :align: center
 
    Energy community actors and their payment flows modeled in REHO
@@ -837,6 +847,17 @@ Intuitively, they prefer lower expenses compared to their optimized pre-renovati
 If the information is not available, it can be set according to the average housing expenses in Switzerland.
 Subsidies can be activated to relax this constraint.
 
+.. math::
+        \begin{align}
+            &C_{tenant,b} = C^{T \rightarrow L, FIX}_b + C^{T \rightarrow L,EB}_b + C^{T \rightarrow ECM,EB}_b && \forall b \in B
+            \label{tenant}\\
+            &C^{T \rightarrow L,EB}_b = \sum_{i,l,p,t}c^{\text{SC}}_{i,b,l,p,t} \cdot \dot{E}^{SC}_{i,b,l,p,t} \cdot d_p \cdot d_t && \forall b \in B
+            \label{tenant-landlord}\\
+            &C^{T \rightarrow ECM,EB}_{b} = \sum_{i,l,p,t}c^{\text{gr},+}_{i,l,b,p,t} \cdot \dot{E}^{\text{gr},+}_{i,b,l,p,t} \cdot d_p \cdot d_t && \forall b \in B
+            \label{tenant-ECM}\\
+            &C_{tenant,b} - S^T_b \le \epsilon^T_b \quad \backsim [\nu^T_b] && \forall b\in B
+            \label{tenant-epsilon}
+        \end{align}
 
 Landlords
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -845,23 +866,42 @@ They generate income from tenants through rent and on-site energy consumption an
 To ensure that their investments remain profitable, landlords may define a minimum required profit level.
 Subsidies can be activated to relax this constraint, but only when landlords invest in building renovation.
 
+.. math::
+        \begin{align}
+            &C_{landlord,b} = ANN \cdot \sum_{i \in I} {\lambda_{i,b} \cdot C_{i,b}^{\text{inv}}} - C^{T \rightarrow L,FIX}_b -C^{T \rightarrow L,EB}_{b} - C^{ECM \rightarrow L,EB}_{b} && \forall b \in B
+            \label{landlord}\\
+            &C^{ECM \rightarrow L,EB}_{b} = \sum_{i,l,p,t} \cdot c^{\text{gr},-}_{i,l,b,p,t} \cdot \dot{E}^{\text{gr},-}_{i,b,l,p,t} \cdot d_p \cdot d_t && \forall b \in B
+            \label{landlord-ECM}\\
+            & S^L_b \le 10^8 \cdot y_b^{ren} && \forall b \in B
+            \label{landlord-subsidy}\\
+            & y^{ren} \in \{0,1\}^n \label{landlord-renovation-binary} \\
+            &C_{landlord,b} - S^L_b \le \epsilon^L_b \quad \backsim [\nu^L_b] && \forall b\in B
+            \label{landlord-epsilon}
+        \end{align}
 
 Energy Community Manager (ECM)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ECM coordinates internal energy balance through district-level equipment and manages exchanges with external energy supply companies.
+~~~~~~~~~~~~~~~~~~~~~~~~
+ECM coordinates internal energy balance and manages exchanges with external networks.
 Their expenses and incomes are energy-related payments with tenants, landlords, and the external grid.
 To ensure financial viability, the ECM may define a minimum required profit level.
 
-Distribution system operator (DSO)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The DSO is responsible for managing the import and export of electricity for the district and for providing the grid infrastructure that connects the different buildings.
-The DSO can invest in network reinforcement to increase the district import and export capacity.
+.. math::
+        \begin{align}
+            & C_{ECM} = \sum_{b \in B} (C^{ECM \rightarrow L,EB}_{b} - C^{T \rightarrow ECM,EB}_{b}) + C^{op}
+            \label{ecm}\\
+            & C_{ECM} \le \epsilon^{ECM} \quad \backsim [\nu^{ECM}]
+            \label{ecm-epsilon}
+        \end{align}
 
 Municipality
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Municipality provides financial subsidies that help other actors overcoming their bottleneck.
 As they operate with limited budgets, the total subsidies provided are minimized with the objective function \ref{actors-objective}.
 
+.. math::
+        \begin{align}
+            &S^{total} = \sum_{b \in B} (S^T_b + S^L_b) \label{municipality}
+        \end{align}
 
 
 Objective function
@@ -885,7 +925,7 @@ Decision variables
 
 - Installed capacities for building-level and district-level units
 - Operation time throughout a year
-- Portfolios of actors and money transactions between them
+- Actor-model: Subsidies allocated to tenants and landlords
 
 These fully characterize the energy flows at building-level and district-level, as well as the financial flows (investments + operational costs).
 
@@ -893,5 +933,4 @@ Key performance indicators
 ----------------------------------
 
 The KPIs are divided in four subgroups: Environmental, economical, technical and security indicators.
-
 For more information on how to calculate the KPIs presented below, please refer to :cite:t:`middelhauveRoleDistrictsRenewable2022` - *Section 1.2.5 Key performance indicators*.

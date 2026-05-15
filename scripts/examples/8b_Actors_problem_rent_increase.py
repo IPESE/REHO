@@ -45,4 +45,4 @@ if __name__ == '__main__':
     reho.actor_decomposition_optimization()
 
     # Save results
-    reho.save_results(format=["pickle"], filename='8b')
+    reho.save_results(format=["pickle"], filename='8b_rent_increase')

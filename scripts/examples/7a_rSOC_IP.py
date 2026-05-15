@@ -2,6 +2,7 @@ from reho.model.reho import *
 from reho.plotting import plotting
 
 if __name__ == '__main__':
+
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
@@ -14,8 +15,8 @@ if __name__ == '__main__':
     scenario = dict()
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
-    scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP", "rSOC", "H2_storage_IP", "HeatPump_Geothermal"]
-    scenario['enforce_units'] = []
+    scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP"]
+    scenario['enforce_units'] = ["rSOC", "MTR", "CO2_storage_IP", "CH4_storage_IP"]
 
     # Set method options
     method = {'interperiod_storage': True}
@@ -23,6 +24,7 @@ if __name__ == '__main__':
     # Initialize available units and grids
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
     grids = infrastructure.initialize_grids({'Electricity': {},
+                                             'NaturalGas': {},
                                              'Hydrogen': {},
                                              'Biomethane': {},
                                              'CO2': {},
@@ -37,8 +39,7 @@ if __name__ == '__main__':
     parameters = {}
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method,
-                solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

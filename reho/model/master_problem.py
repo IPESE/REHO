@@ -122,13 +122,13 @@ class MasterProblem:
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
         self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound',
                                                 'Costs_House_upfront_m2_MP', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
-                                                'Network_ext', "ff_EV", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
+                                                'Network_ext', "ff_EV", "ff_ICE", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
                                                 "transport_Units", "DailyDist", "Mode_Speed", "Cost_demand_ext", "EV_supply_ext", "share_activity", "Cost_supply_ext",
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity',
                                                 "max_share", "min_share", "max_share_modes", "min_share_modes", "n_ICEperhab",
                                                 "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Ext_district",
-                                                "Network_lifetime", "data_EUD_avg"],
+                                                "Network_lifetime"],
                          "list_constraints_MP": [],
                          "list_set_indexed_MP": ["Districts", "Distances"]
                          }
@@ -213,9 +213,8 @@ class MasterProblem:
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
         profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
         max_DEL = profile_building_x.max(axis=1).sum()
-        if not self.method['interperiod_storage']:
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
+        SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
+        SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -441,9 +440,6 @@ class MasterProblem:
         ampl_MP.cd(path_to_ampl_model)
         ampl_MP.read('master_problem.mod')
 
-        if self.method["actors_problem"]:
-            ampl_MP.read('actors_problem.mod')
-
         # Load battery units (district-scale, but same model as building-scale)
         ampl_MP.cd(path_to_units)
         if "Battery_district" in self.infrastructure.UnitsOfDistrict:
@@ -460,7 +456,7 @@ class MasterProblem:
             if "Bike_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('bike.mod')
             if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ebike.mod')
+                ampl_MP.read('electricbike.mod')
             if "ICE_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('icevehicle.mod')
             if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
@@ -473,14 +469,12 @@ class MasterProblem:
                 ampl_MP.read('rsoc_district.mod')
             if "MTR_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read('methanator_district.mod')
-            if "ElectricalHeater_other_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('electrical_heater_district.mod')
-            if "Datacenter_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('datacenter_district.mod')
-            if "ORC_DC_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ORC_DC_district.mod')
         if read_DHN:
             ampl_MP.read('dhn.mod')
+
+        if self.method["actors_problem"]:
+            ampl_MP.cd(path_to_ampl_model)
+            ampl_MP.read('actors_problem.mod')
 
         # Load interperiod storage units
         ampl_MP.cd(path_to_units_interperiod)
@@ -510,14 +504,15 @@ class MasterProblem:
         df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 6)
         df_Buildings = self.return_combined_SP_results(self.results_SP, 'df_Buildings')
         df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')].droplevel('Hub')
+        df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
 
         # apply slicing or level-dropping uniformly to all three DataFrames
-        dfs = [df_Performance, df_Grid_t, df_Buildings]
-        if not self.method['include_all_solutions']:
-            dfs = [df.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID')) for df in dfs]
-        else:
+        dfs = [df_Performance, df_Grid_t, df_Buildings, df_Unit_t]
+        if self.method['include_all_solutions']:
             dfs = [df.droplevel(['Scn_ID', 'Pareto_ID']) for df in dfs]
-        df_Performance, df_Grid_t, df_Buildings = dfs
+        else:
+            dfs = [df.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID')) for df in dfs]
+        df_Performance, df_Grid_t, df_Buildings, df_Unit_t = dfs
 
         df_Performance = df_Performance.droplevel(level='Iter')
         df_Grid_t = df_Grid_t.droplevel(level=['Iter', 'Hub']).reorder_levels(['Layer', 'FeasibleSolution', 'house', 'Period', 'Time'])
@@ -601,11 +596,10 @@ class MasterProblem:
             if "ActorObjective" in self.set_indexed:
                 MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
 
-            df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
             df_PV_t = pd.DataFrame()
             for bui in self.infrastructure.houses:
                 df_PV_t = pd.concat([df_PV_t, df_Unit_t.xs("PV_" + bui, level="Unit")])
-            MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
+            MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Iter"])
 
         if self.method['renovation'] is not None:
             MP_parameters["Uh"] = pd.DataFrame.from_dict({house: self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})
@@ -618,7 +612,7 @@ class MasterProblem:
                     MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
                     MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
         if read_DHN:
-            MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
+            MP_set_indexed["House_ID"] = np.array([int(s.replace("Building", "")) for s in list(self.infrastructure.houses.keys())])
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]),
@@ -637,7 +631,7 @@ class MasterProblem:
             MP_set_indexed['UnitTypes'] = np.array([])
             MP_set_indexed['UnitsOfType'] = {}
             for u in self.infrastructure.district_units:
-                name = u['Unit']
+                name = u['name']
                 MP_set_indexed['Units'] = np.append(MP_set_indexed['Units'], [name])
                 if not u['UnitOfType'] in MP_set_indexed['UnitTypes']:
                     MP_set_indexed['UnitTypes'] = np.append(MP_set_indexed['UnitTypes'], u['UnitOfType'])
@@ -653,7 +647,10 @@ class MasterProblem:
                 ampl_MP.getSet(str(s)).setValues(MP_set_indexed[s])
             elif isinstance(MP_set_indexed[s], dict):
                 for i, instance in ampl_MP.getSet(str(s)):
-                    instance.setValues(MP_set_indexed[s][i[0]])
+                    try:
+                        instance.setValues(MP_set_indexed[s][i])
+                    except:
+                        instance.setValues(MP_set_indexed[s][i[0]])
             elif isinstance(MP_set_indexed[s], pd.DataFrame):
                 ampl_MP.setData(MP_set_indexed[s])
             else:
@@ -665,10 +662,10 @@ class MasterProblem:
         for i, value in ampl_MP.getVariable('Units_Use').instances():
             for u in exclude_units:
                 if u in i:
-                    ampl_MP.getVariable('Units_Use').get(str(i[0])).fix(0)
+                    ampl_MP.getVariable('Units_Use').get(str(i)).fix(0)
             for u in enforce_units:
                 if u in i:
-                    ampl_MP.getVariable('Units_Use').get(str(i[0])).fix(1)
+                    ampl_MP.getVariable('Units_Use').get(str(i)).fix(1)
 
         for i in MP_parameters:
             if isinstance(MP_parameters[i], np.ndarray):
@@ -776,22 +773,23 @@ class MasterProblem:
         pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
         pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
 
-        parameters_SP = {'Cost_supply_network': pi,
-                         'Cost_demand_network': pi * (1 - 1e-9),
-                         'Cost_supply': pi_h,
-                         'Cost_demand': pi_h * (1 - 1e-9),
-                         'GWP_supply': pi_GWP,
-                         'GWP_demand': pi_GWP.mul(0),  # set emissions of feed in to 0 -> changed in  postcompute
-                         }
+        parameters_SP = dict()
         if len(self.infrastructure.lca_kpis) > 0:
             pi_lca = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_lca')
             parameters_SP["lca_kpi_supply"] = pi_lca
             parameters_SP["lca_kpi_demand"] = pi_lca.mul(0)
-
         if self.method['actors_problem']:
             parameters_SP.update(actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID, self.iter, h))
         # find district structure, objective, beta and parameter for one single building
         buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
+
+        parameters_SP['Cost_supply_network'] = pi
+        parameters_SP['Cost_demand_network'] = pi * (1 - 1e-9)
+        parameters_SP['Cost_supply'] = pi_h
+        parameters_SP['Cost_demand'] = pi_h * (1 - 1e-9)
+        parameters_SP['GWP_supply'] = pi_GWP
+        parameters_SP['GWP_demand'] = pi_GWP.mul(0)
+
         beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
         scenario, beta_list = self.get_beta_values(scenario, beta)
         parameters_SP['beta_duals'] = beta_list

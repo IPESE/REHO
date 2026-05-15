@@ -1,8 +1,8 @@
-<img
-  src="https://raw.githubusercontent.com/IPESE/REHO/main/docs/images/logos/logo-reho-black.png"
-  width="300"
-  alt="REHO logo"
-/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/logo-reho-white.png?raw=true">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/IPESE/REHO/blob/main/docs/images/logos/logo-reho-black.png?raw=true">
+  <img width="300"  alt="Shows the IPESE logo, white one in dark color mode and black one in light color mode.">
+</picture>
 
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.06734/status.svg)](https://doi.org/10.21105/joss.06734)
 [![Documentation Status](https://readthedocs.org/projects/reho/badge/?version=main)](https://reho.readthedocs.io/)

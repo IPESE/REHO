@@ -1,4 +1,4 @@
-amplpy==0.15.2
+amplpy
 --extra-index-url https://pypi.ampl.com
 ampl_module_base
 ampl_module_highs
@@ -12,7 +12,7 @@ pandas<2.0.0
 plotly
 psycopg2<3.0.0 ; platform_system != "Windows"
 psycopg2-binary<3.0.0
-pvlib==0.13.0
+pvlib
 pyclustering
 pyproj
 python-dotenv
@@ -24,5 +24,4 @@ scipy
 setuptools
 shapely
 sqlalchemy<2.0.0
-sympy
 urllib3

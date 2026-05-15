@@ -4,7 +4,7 @@ from reho.plotting import plotting
 if __name__ == '__main__':
 
     # Set building parameters
-    reader = QBuildingsReader(load_facades=True, load_roofs=True)
+    reader = QBuildingsReader()
     reader.establish_connection('Geneva')
     qbuildings_data = reader.read_db(district_id=234, nb_buildings=6, correct_Uh=True)
 
@@ -18,8 +18,8 @@ if __name__ == '__main__':
     scenario['exclude_units'] = []
     scenario['enforce_units'] = []
 
-    # The "renovation" method consists in a list of renovation options.
-    # Each option contains building elements to renovate. The order does not matter.
+    # The renovation method consists in a list of renovation option.
+    # Each option contains building elements to renovate. The order doesn't matter.
     method = {'building-scale': True, "renovation": ["window/facade/roof/footprint", "window/facade", "roof"]}
 
     # Initialize available units and grids

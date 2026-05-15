@@ -187,7 +187,7 @@ subject to Streams_Q_def{sq in Services,s in StreamsOfService[sq],p in Period,t 
 Streams_Q[sq,s,p,t] = Streams_Mcp[s,p,t] * HC_Streams_Mult[sq,s,p,t] * abs(Streams_Tin[s,p,t] - Streams_Tout[s,p,t]);
 
 #--------------------------------------------------------------------------------------------------------------------#
-#-HEAT CASCADE (refer to Stadler 2019, p.23)
+#-HEAT CASCADE
 #--------------------------------------------------------------------------------------------------------------------#
 set HC_TempIntervals_SQ{h in House,sq in Services,p in Period,t in Time[p]} ordered by Reals :=
 setof {s in HC_Hot_loc_SQ[h,sq] union HC_Cold_loc_SQ[h,sq]} Streams_Tin_corr[s,p,t] union 
@@ -197,9 +197,9 @@ param Min_T{h in House,sq in Services,p in Period,t in Time[p]} := min{k in HC_T
 param Max_T{h in House,sq in Services,p in Period,t in Time[p]} := max{k in HC_TempIntervals_SQ[h,sq,p,t]} k; 
 param epsilon := 1e-5;
 
-var HC_Rk{h in House,sq in Services, p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}>=0;
+var HC_Rk{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}>=0;
 
-subject to HC_heat_cascade{h in House,sq in Services, p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}:
+subject to HC_heat_cascade{h in House,sq in Services,p in Period,t in Time[p],k in HC_TempIntervals_SQ[h,sq,p,t]}:
 sum{st in HC_Hot_loc_SQ[h,sq]:Streams_Tout_corr[st,p,t]>= k + epsilon} 
      (Streams_Mcp[st,p,t]*HC_Streams_Mult[sq,st,p,t]*(Streams_Tin_corr[st,p,t]-Streams_Tout_corr[st,p,t])) -
 	 
@@ -363,7 +363,7 @@ subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + Costs_ins[h] * tau_ins / tau+
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + 0.5*Costs_ins[h] * tau_ins / tau+
 					sum{l in ResourceBalances: h in HousesOfLayer[l]}(Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);
 
 subject to Costs_Unit_replacement{u in Units}:
@@ -373,7 +373,7 @@ subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 subject to Costs_Grid_supply:
-Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{h in House}(Costs_ins[h]) * tau_ins / tau + 
+Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{h in House}(0.5*Costs_ins[h]) * tau_ins / tau + 
 			sum{l in ResourceBalances, h in HousesOfLayer[l]} (Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (Cost_network_inv1[l]*Use_Network_capacity[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l]));
 
 subject to Costs_replacement:
@@ -557,3 +557,5 @@ sum{h in House} (Grid_supply[l,h,p,t]) = Network_supply[l,p,t];
 
 subject to disallow_exchanges_2{l in ResourceBalances,p in PeriodStandard,t in Time[p]: l = 'Electricity'}:
 sum{h in House} (Grid_demand[l,h,p,t]) = Network_demand[l,p,t];
+
+

@@ -117,10 +117,10 @@ Main contributors
    :align: right
    :class: only-dark
 
-* Dorsan **Lepour** (2020-present)
-* Cédric **Terrier** (2021-present)
+* Dorsan **Lepour** (2020-...)
+* Cédric **Terrier** (2021-...)
 * Joseph **Loustau** (2022-2024)
-* Ziqian **Wang** (2025-present)
+
 
 .. raw:: html
 
@@ -131,28 +131,16 @@ Main contributors
 Funding projects
 ================
 
-.. grid:: 2
-   :gutter: 2
-   :margin: 2 0 2 0
+.. image:: images/logos/SWICE.jpg
+   :width: 300
+   :align: right
 
-   .. grid-item-card:: Services Industriels de Genève (SIG)
-      :text-align: center
-      :link: https://ww2.sig-ge.ch/
+* Services Industriels de Genève, SIG (2020-...)
+* Swiss Federal Office of Energy, SWEET-SWICE (2022-...)
 
-      .. image:: images/logos/logo_sig.svg
-         :width: 100px
-         :align: center
 
-      2020–present
+.. raw:: html
 
-   .. grid-item-card:: Swiss Federal Office of Energy (SWEET–SWICE)
-      :text-align: center
-      :link: https://sweet-swice.ch/
-
-      .. image:: images/logos/logo_swice.jpg
-         :width: 300px
-         :align: center
-
-      2022–present
-
+   <p>&nbsp;</p>
+   <p>&nbsp;</p>
 

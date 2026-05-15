@@ -28,7 +28,6 @@ NG_Cogeneration_district,District cogeneration,COGEN,Cogénération (district),#
 WOOD_Stove,Wood stove,WS,Poêle à bois,#8B4513,brown
 ,,,,,
 ElectricalHeater,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light
-ElectricalHeater_other,Electrical heater,EH,Chauffage électrique,#ff6666,groseille_light
 ElectricalHeater_DHW,Electrical heater (DHW),EH (DHW),Chauffage électrique (ECS),#ff6666,groseille_light
 ElectricalHeater_SH,Electrical heater (SH),EH (SH),Chauffage électrique,#ff6666,groseille_light
 ,,,,,
@@ -37,8 +36,8 @@ ThermalSolar,Thermal solar panels,TS,Panneaux solaires thermiques,#FF8C00,orange
 PV,PV panel,PV,Panneaux photovoltaïques,#ffd980,yellow_light
 PV_roof,PV roof,PV,PV toiture,#ffd980,yellow_light
 PV_facades,PV facade,PV,PV façade,#ffc94d,yellow_medium
-solar_value,Solar electricity,Solar,Électricité solaire,#4d9ea6,canard_light
-sc_premium,Self-consumption premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light
+solar_value,Solar value,Solar,Électricité solaire,#4d9ea6,canard_light
+solar_premium,Solar premium,SC Premium,Premium auto-consommation,#ffd980,yellow_light
 Curtailment,PV curtailment,CU,PV Écrêtement,#664700,yellow_dark
 ,,,,,
 HeatPump,Heat pump,HP,Pompe à chaleur,#FEA993,salmon
@@ -66,13 +65,13 @@ Battery_IP,Battery,Bat,Batterie,#A57300,lightblue
 Battery_IP_district,District battery,Bat,Batterie (district),#A57300,lightblue
 ,,,,,
 H2_storage_IP,Hydrogen storage,H2,Stockage hydrogène,#82a4d6,lightblue
-H2_storage_IP_district,hydrogen storage,H2,Stockage hydrogène,#82a4d6,lightblue
+H2_storage_IP_district,District hydrogen storage,H2,Stockage hydrogène,#82a4d6,lightblue
 CH4_storage_IP,Biomethane storage,CH4,Stockage biogaz,#D7B652,darkyellow
-CH4_storage_IP_district,biomethane storage,CH4,Stockage biogaz,#D7B652,darkyellow
+CH4_storage_IP_district,District biomethane storage,CH4,Stockage biogaz,#D7B652,darkyellow
 CO2_storage_IP,CO2 storage,CO2,Stockage CO2,#D2363E,brightred
-CO2_storage_IP_district,CO2 storage,CO2,Stockage CO2,#D2363E,brightred
-Hybrid_storage_IP,(CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
-Hybrid_storage_IP_district,hybrid (CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
+CO2_storage_IP_district,District CO2 storage,CO2,Stockage CO2,#D2363E,brightred
+Hybrid_storage_IP,Hybrid (CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
+Hybrid_storage_IP_district,District hybrid (CH4/CO2) storage,CH4/CO2,Stockage hybride,#9f8753,darkyellow
 Compressor_IP,Storage compressor,COMP,Compresseur stockage,#82a4d6,lightblue
 ,,,,,
 Electricity,Electrical grid,Elec,Électricité,#007480,canard
@@ -84,7 +83,6 @@ PV_SC,Electricity self-consumption,Elec SC,Électricité (auto-consommation),#ff
 SH,Space heating,SH,Chauffage,#FF8C00,orange
 SH_heat,Space heating,SH,Chauffage,#FF8C00,orange
 DHW,Domestic hot water,DHW,Eau chaude sanitaire,#B22222,bordeaux
-rSOC_heat,water evaporation,Wevap,Evaporation Eau, #B22222,bordeaux
 ,,,,,
 Tank,Tank,Tank,Réservoir,#FF8C00,orange
 WaterTankSH,Water tank (SH),WT (SH),Ballon d'eau (chauffage),#FF8C00,orange
@@ -92,8 +90,6 @@ WaterTankDHW,Water tank (DHW),WT (DHW),Ballon d'eau (ECS),#B22222,bordeaux
 ,,,,,
 DataHeat_SH,Data centers,ICT,Centre de données,#ffcc99,skin
 DataHeat_DHW,Data centers (DHW),ICT,Centre de données (ECS),#ffcc99,skin
-ORC_DC_district,Organic Rankine Cycle,ORC,ORC,#FF8C00,orange
-Datacenter_district,Data centers,ICT,Centre de données (ECS),#ffcc99,skin
 ,,,,,
 AirConditioner,Air conditioner,AC,Climatiseur,#00008b,darkblue
 Cooling,Space cooling,SC,Demande en froid,#00008b,darkblue

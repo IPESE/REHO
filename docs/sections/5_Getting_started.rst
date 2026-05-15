@@ -51,36 +51,19 @@ AMPL syntax
 
 For most convenient use, we recommend using a text editor that supports AMPL syntax highlighting. As PyCharm does not currently provide an extension for AMPL syntax, we suggest using a different editor for AMPL files such as `Sublime Text <https://www.sublimetext.com/>`_, with its `AMPL Highlighting package <https://github.com/JackDunnNZ/sublime-ampl>`_. VS Code in turn features several extensions for AMPL.
 
-For a quick introduction to AMPL syntax, please refer to `AMPL Resources - Quick introduction <https://dev.ampl.com/ampl/introduction.html>`_.
+For a quick introduction to AMPL syntax, please refer to `AMPL Resoures - Quick introduction <https://dev.ampl.com/ampl/introduction.html>`_.
 
-AMPL install and license
-~~~~~~~~~~~~~~~~~~~~~~~~
+AMPL license
+~~~~~~~~~~~~~~~~~~
 
-As REHO is based on AMPL, it requires AMPL to be installed with a license. There are two main options:
-
-.. grid::
-
-    .. grid-item-card:: Option 1: AMPL for Python
-        :padding: 3
-
-        AMPL developed `amplpy`, its python wrapper. In REHO, it is installed by default. A user only has to provide a license.
-
-        You can use the free `AMPL Community Edition <https://ampl.com/ce/>`_. This AMPL license is full-sized and full-featured for personal, academic, and commercial-prototyping use. Since 2023, there are no more restrictions on the number of variables or constraints one can use. This Community Edition operates on a cloud license, requiring an internet connection to function.
-
-        ++++++++++++++++++++++
-
-        Follow the installation steps in AMPL website to request your license. Once you have it, it must be activated in your project terminal:
-
-        .. code-block:: bash
-
-            python -m amplpy.modules activate <license-uuid>
+As REHO is based on AMPL, it requires an AMPL licence. There are two main options:
 
 .. grid::
 
-    .. grid-item-card:: Option 2: Install AMPL on your computer
+    .. grid-item-card:: Option 1: Standard AMPL license
         :padding: 3
 
-        You already have an AMPL license (standard or custom license for research, teaching, business, consultant), you have installed AMPL and you know the path of your installation.
+        You already have an AMPL licence (standard or custom licence for research, teaching, business, consultant) and you know the path to your licence file.
 
         ++++++++++++++++++++++
 
@@ -89,6 +72,17 @@ As REHO is based on AMPL, it requires AMPL to be installed with a license. There
         .. code-block:: bash
 
             AMPL_PATH="path_to_your_license"
+
+.. grid::
+
+    .. grid-item-card:: Option 2: AMPL Community Edition license
+        :padding: 3
+
+        You plan to use the free `AMPL Community Edition <https://ampl.com/ce/>`_. This AMPL license is full-sized and full-featured for personal, academic, and commercial-prototyping use. Since 2023, there are no more restrictions on the number of variables or constraints one can use. This Community Edition operates on a cloud license, requiring an internet connection to function.
+
+        ++++++++++++++++++++++
+
+        Follow the installation steps in AMPL website to request your license, (install AMPL), and activate the license.
 
 
 .. note::
@@ -111,11 +105,6 @@ REHO requires at least one linear programming solver.
 The requirements already specify the installation of the `HiGHS <https://highs.dev/>`_ solver, which is chosen by default when performing an optimization.
 
 However, you have the possibility to install other open-source or licensed solvers, and specify them in the ``REHO(solver="...")`` class constructor. The `Gurobi <https://www.gurobi.com/>`_ solver works particularly well with REHO, with a calculation time reduced by a factor of 3 compared to HiGHS.
-Is it available with an academic license. If you are using *AMPL for Python* and want to use Gurobi, please do in the project terminal:
-
-.. code-block:: bash
-
-    python -m amplpy.modules install gurobi
 
 Please refer to `AMPL Modules for Python <https://dev.ampl.com/ampl/python/modules.html>`_ page further insights about AMPL solvers available.
 

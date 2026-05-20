@@ -36,8 +36,18 @@ extensions = ['sphinxcontrib.bibtex',
               'sphinx.ext.napoleon',
               'sphinx.ext.autosummary',
               'sphinx_design',
-              'sphinx_copybutton']
+              'sphinx_copybutton',
+              'myst_parser',
+              'sphinx.ext.mathjax']
 source_suffix = [".rst", ".md"]
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "dollarmath",
+    "html_admonition",
+    "substitution",
+]
+myst_dmath_double_inline = True
 exclude_patterns = ['LICENSE']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
@@ -52,6 +62,7 @@ html_theme = 'pydata_sphinx_theme'
 
 html_sidebars = {
   "_autosummary": ["sidebar-nav-bs"],
+  "sections/model/*": ["sidebar-nav-bs"],
   "sections/*": []
 }
 

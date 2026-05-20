@@ -29,9 +29,9 @@ Contents
 .. grid::
 
     .. grid-item-card:: :octicon:`book` Model
-        :link: sections/3_Model.html
+        :link: sections/model/index.html
 
-        Describes the mathematical formulation behind the REHO model.
+        Describes the mathematical formulation behind the REHO model — building, district, and actors scales.
 
     .. grid-item-card:: :octicon:`package` Package structure
         :link: sections/4_Package_structure.html
@@ -63,7 +63,7 @@ Contents
 
    sections/1_Overview
    sections/2_Releases
-   sections/3_Model
+   sections/model/index
    sections/4_Package_structure
    sections/5_Getting_started
    sections/6_Examples

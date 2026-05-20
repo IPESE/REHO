@@ -13,6 +13,7 @@ Biomethane_import,Biomethane import,CH4 in,Biogaz (import),#8B4513,brown
 Biomethane_export,Biomethane export,CH4 out,Biogaz (export),#8B4513,brown
 Hydrogen_import,Hydrogen import,H2 in,Hydrogène (import),#82a4d6,lightblue
 Hydrogen_export,Hydrogen export,H2 out,Hydrogène (export),#82a4d6,lightblue
+Mobility_import, Public Transports, PT, transports publics, #c6e2b9,limegreen
 ,,,,,
 Oil_import,Oil import,OIL,Mazout (import),#000000,dark
 NaturalGas_import,Natural gas import,NG,Gaz naturel (import),#413D3A,ardoise
@@ -104,10 +105,10 @@ renovation_roof,Roof renovation,INS1,renovation toiture,#a9d6bc,green_light
 renovation_facade,Facade renovation,INS2,renovation façade,#87c5a1,green_medium
 renovation_full,Complete renovation,INS3,renovation complète,#53ac7a,green_dark
 ,,,,,
-Mobility,Mobility,Mob,Mobilité,#32CD32,limegreen
+Mobility,Mobility,Mob,Mobilité,#c6e2b9,limegreen
 ICE_district,Fossil fuel vehicles,ICE,Véhicule à combustion,#8B4513,saddlebrown
-Bike_district,Bikes,Bike,Vélos,#90EE90,lightgreen
-ElectricBike_district,Electric bikes,EBike,Vélos électriques,#00FF7F,springgreen
+Bike_district,Bikes,Bike,Vélos,#97d47d,lightgreen
+ElectricBike_district,Electric bikes,EBike,Vélos électriques,#97d47d,springgreen
 Total_EV_fleet,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_district,Electric vehicles,EVs,Véhicules électriques,#7AC5CD,turquoise
 EV_charger_district,EV charging station,EVchrg,Stations de recharge,#008080,teal
@@ -115,3 +116,5 @@ Subsidies,Subsidies,Subsid,Subsides,mediumorchid,green_dark
 ,,,,,
 PTES_conv_IP,Pumped thermal storage,PTES-engine,PTES,#ffcc99,limegreen
 PTES_storage_IP,Thermal storage unit,PTES-tank,PTES,#ffcc99,limegreen
+PTES_conv_IP_district,Pumped thermal storage,PTES-engine,PTES,#ffcc99,limegreen
+PTES_storage_IP_district,Thermal storage unit,PTES-tank,PTES,#ffcc99,limegreen

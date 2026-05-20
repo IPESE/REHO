@@ -38,7 +38,7 @@ class QBuildingsReader:
         Whether the roofs data should be added.
     """
 
-    def __init__(self, load_facades=True, load_roofs=True):
+    def __init__(self, load_facades=False, load_roofs=False):
 
         self.db = None
         self.tables = None

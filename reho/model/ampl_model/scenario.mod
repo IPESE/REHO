@@ -220,7 +220,7 @@ var waste_heat_available{p in Period, t in Time[p]} >= 0;
 #        Network_capacity['Hydrogen'] <= 0;
 
 subject to only_1_long_term_storage:
-    Units_Use['CH4_storage_IP_Building1'] + Units_Use['H2_storage_IP_Building1'] + Units_Use['PTES_storage_IP_Building1'] + Units_Use['Battery_Building1'] <= 1;
+    Units_Use['CH4_storage_IP_Building1'] + Units_Use['PTES_storage_IP_Building1'] <= 1;
 
 
 

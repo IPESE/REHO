@@ -11,11 +11,11 @@
 param BAT_eff_charge_IP{u in UnitsOfType['Battery_interperiod']} 	default 0.95;	#- AC-AC efficiency
 param BAT_eff_discharge_IP{u in UnitsOfType['Battery_interperiod']} 	default 0.95;	#- AC-AC efficiency
 
-param BAT_limit_ch_IP{u in UnitsOfType['Battery_interperiod']} default 0.8;			#-
-param BAT_limit_di_IP{u in UnitsOfType['Battery_interperiod']} default 0.2;			#-
+param BAT_limit_ch_IP{u in UnitsOfType['Battery_interperiod']} default 0.95;			#-
+param BAT_limit_di_IP{u in UnitsOfType['Battery_interperiod']} default 0.05;			#-
 
 param C_rate_IP{u in UnitsOfType['Battery_interperiod']} default 1;					#-
-param BAT_self_discharge_IP{u in UnitsOfType['Battery_interperiod']} default 0.99992;	#-
+param BAT_self_discharge_IP{u in UnitsOfType['Battery_interperiod']} default 0.99996;	#-
 
 # param BAT_RTE_degradation_IP{u in UnitsOfType['Battery_interperiod']} default 0.005; # Battery efficiency degradation per year
 # param BAT_efficiency_IP{u in UnitsOfType['Battery_interperiod']} >=0, <= sqrt(BAT_eff_RTE_basis_IP[u]) := sqrt(BAT_eff_RTE_basis_IP[u]-BAT_RTE_degradation_IP[u]*lifetime[u]/2); #Computation of the one way efficiency (assuming equal efficiency out and in)

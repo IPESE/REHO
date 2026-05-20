@@ -1646,6 +1646,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
                 col=1
             )
 
+
         elif unit == "Building":
             buildings = pd.unique(df_Results["df_Buildings_t"].index.get_level_values(0))
             building_demand = df_Results["df_Buildings_t"].loc["Building1"]
@@ -1664,6 +1665,49 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
                 row=1,
                 col=1
             )
+        elif unit == "PV":
+
+            units = pd.unique(df_Results["df_Unit_t"].loc["Electricity"]
+                              .index.get_level_values(0)).tolist()
+            units = [u for u in units if unit in u]
+
+            # Sum all PV units
+            net_supply = df_Results["df_Unit_t"].loc["Electricity"].loc[units[0]]
+            for bd in units[1:]:
+                net_supply += df_Results["df_Unit_t"].loc["Electricity"].loc[bd]
+
+            merged_df = pd.merge(TD_time, net_supply, on=['Period', 'Time'], how='left')
+
+            # Usable PV (after curtailment)
+            used_pv = merged_df["Units_supply"] - merged_df["Units_curtailment"]
+
+            if (merged_df["Units_supply"].any() > 0) or (merged_df["Units_demand"].any() > 0):
+                # 1. Line: usable PV
+                fig.add_trace(
+                    go.Scatter(
+                        x=TD_time.index,
+                        y=used_pv,
+                        mode="lines",
+                        name=layout.loc[unit, label],
+                        line=dict(color=layout.loc[unit, color], width=2),
+                    ),
+                    row=1, col=1
+                )
+
+                # 2. Filled: curtailment as shaded area on top of the line
+                fig.add_trace(
+                    go.Scatter(
+                        x=TD_time.index,
+                        y=merged_df["Units_supply"],  # upper boundary
+                        mode="lines",
+                        fill="tonexty",  # fill between this and previous trace
+                        name="Curtailment",
+                        line=dict(color=layout.loc[unit, color]),  # invisible border
+                        fillcolor="rgba(255, 217, 128, 0.6)",  # shaded yello
+                    ),
+                    row=1, col=1
+                )
+
         else:
 
             units = pd.unique(df_Results["df_Unit_t"].loc["Electricity"].index.get_level_values(0)).tolist()

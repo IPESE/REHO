@@ -11,9 +11,11 @@
 # Composed of both a reservoir ("PTES_storage") and a conversion ("PTES_conversion") unit.
 # It is able to store electricity and provides usable heat from conversion inefficiencies
 
-param PTES_efficiency{uc in UnitsOfType['PTES_conversion']}>=0,<=1 := sqrt(0.67); #%
-param PTES_self_discharge{us in UnitsOfType['PTES_storage']}>=0,<=1 default 0.1; # %/day (half-life: 34 days)
-param PTES_COP{us in UnitsOfType['PTES_conversion']}>=0 default 3.5;
+#param PTES_efficiency{uc in UnitsOfType['PTES_conversion']}>=0,<=1 := sqrt(0.64); #%
+param PTES_self_discharge{us in UnitsOfType['PTES_storage']}>=0,<=1 default 0.015; # %/day (half-life: ≈34 days)
+param PTES_COP{us in UnitsOfType['PTES_conversion']}>=0 default 3;
+param PTES_engine_eff{us in UnitsOfType['PTES_conversion']}>=0 default 0.2;
+
 #PTES_heat_losses corresponds to non-usable heat
 param PTES_heat_losses{uc in UnitsOfType['PTES_conversion']}>= 0 default 0.2;
 
@@ -46,8 +48,8 @@ Units_demand['Electricity',uc,p,t]*(1-PTES_efficiency[uc]-PTES_heat_losses[uc])
 
 subject to PTES_EB{us in UnitsOfType['PTES_storage'], uc in UnitsOfType['PTES_conversion'], hy in Year}:
 PTES_E_Stored[us,next(hy,Year)] = PTES_E_Stored[us,hy]*(1-PTES_self_discharge[us]/24) +
-		(PTES_efficiency[uc]*Units_demand['Electricity',uc,PeriodOfYear[hy],TimeOfYear[hy]] -
-		(1/PTES_efficiency[uc])* Units_supply['Electricity',uc,PeriodOfYear[hy],TimeOfYear[hy]])*dt[PeriodOfYear[hy]];
+		(PTES_COP[uc]*Units_demand['Electricity',uc,PeriodOfYear[hy],TimeOfYear[hy]] -
+		(1/PTES_engine_eff[uc])* Units_supply['Electricity',uc,PeriodOfYear[hy],TimeOfYear[hy]])*dt[PeriodOfYear[hy]];
 #--------------------------------------------------------------------------------------------------------------------#
 #  PTES charge/discharge mutual exclusivity
 #--------------------------------------------------------------------------------------------------------------------#

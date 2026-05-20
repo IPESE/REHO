@@ -620,7 +620,7 @@ class SubProblem:
     def solve_model(self):
         ampl = self.build_model_without_solving()
 
-        debugging = False
+        debugging = True
         if debugging:
             # ampl.exportData('loaded_data.dat')
             # ampl.expotModel('loaded_model.mod')

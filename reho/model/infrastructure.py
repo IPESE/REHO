@@ -474,7 +474,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 
     building_units= np.array(building_units.to_dict(orient="records"))
 
-    if interperiod_data != 'district' and interperiod_data is not None:
+    if interperiod_data != 'district' and interperiod_data is not None and ~interperiod_data:
         building_units_IP = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "building_units_IP.csv"), exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
     elif isinstance(interperiod_data, dict) and 'building_units_IP' in interperiod_data:
         building_units_IP = np.array(prepare_units_df(interperiod_data["building_units_IP"], exclude_units=exclude_units, grids=grids).to_dict(orient="records"))

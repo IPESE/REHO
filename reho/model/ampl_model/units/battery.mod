@@ -14,9 +14,9 @@
 
 param BAT_eff_ch{u in UnitsOfType['Battery']} 	default 0.95;			#-	[1]
 param BAT_eff_di{u in UnitsOfType['Battery']} 	default 0.95;			#-	[1]
-param BAT_limit_ch{u in UnitsOfType['Battery']} default 0.8;			#-	[2]
-param BAT_limit_di{u in UnitsOfType['Battery']} default 0.2;			#-	[1]
-param BAT_efficiency{u in UnitsOfType['Battery']} default 0.99992;		#-	[1]
+param BAT_limit_ch{u in UnitsOfType['Battery']} default 0.95;			#-	[2]
+param BAT_limit_di{u in UnitsOfType['Battery']} default 0.05;			#-	[1]
+param BAT_efficiency{u in UnitsOfType['Battery']} default 0.99996;		#-	[1]
 
 var BAT_E_stored{u in UnitsOfType['Battery'],p in Period,t in Time[p]} >= 0;
 

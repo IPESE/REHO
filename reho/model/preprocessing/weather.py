@@ -21,6 +21,7 @@ def get_weather_data(qbuildings_data):
 
     pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, startyear=2005, endyear=2020)
     coordinates = pvgis_data[2]['location']
+    #coordinates = pvgis_data[1]['inputs']['location']
     weather_data = pvgis_data[0]
 
     print(f'The weather data have been extracted from the PVGIS database for : {coordinates}.')

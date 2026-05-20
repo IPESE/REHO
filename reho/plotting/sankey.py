@@ -209,7 +209,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'ElectricalHeater_other',
         'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air','HeatPump_Waste_heat', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
         'AirConditioner', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district',
-        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district','Datacenter_district', 'ORC_DC_district'
+        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district','Datacenter_district', 'ORC_DC_district', 'ICE_district'
     ]
 
     # Services that can be provided by the devices: ['SH', 'DHW', 'Cooling', 'rSOC_heat']
@@ -369,6 +369,11 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 # Only include if the device exists (done in logic block below)
                 ('Total_EV_fleet', 'Mobility', 'EV_district', 'Supply_MWh', False, None, 0, 1 / 9.37),
                 ('Total_EV_fleet', 'Mobility', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1 / 9.37),
+                ("ICE_district", "Mobility", "ICE_district", "Supply_MWh", False, None, 0, 1/ 9.37),
+                ("Mobility_import", "Mobility", "Network", "Supply_MWh", False, None, 0, 1 / 9.37),
+                ("Bike_district", "Mobility", "Bike_district", "Supply_MWh", False, None, 0, 1 / 9.37),
+                ("ElectricBike_district", "Mobility", "ElectricBike_district", "Supply_MWh", False, None, 0, 1 / 9.37),
+
             ],
             'electricity_consumption': [
                 ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_district', 'Demand_MWh', False, None, 0, 1),
@@ -376,7 +381,6 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_charger_district', 'Demand_MWh', False, None, 0, 1),
                 ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1)
             ]
-
         }
     }
 

@@ -216,9 +216,9 @@ class MasterProblem:
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
         profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
         max_DEL = profile_building_x.max(axis=1).sum()
-        if not self.method['interperiod_storage']:
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
+        #if not self.method['interperiod_storage']:
+        SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
+        SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -527,8 +527,9 @@ class MasterProblem:
             ampl_MP.read('dhn.mod')
 
         # Load interperiod storage units
-        ampl_MP.cd(path_to_units_interperiod)
+
         if self.method["interperiod_storage"]:
+            ampl_MP.cd(path_to_units_interperiod)
             if "Battery_IP_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read("battery_IP.mod")
             if "CH4_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
@@ -537,6 +538,8 @@ class MasterProblem:
                 ampl_MP.read("H2storage_IP.mod")
             if "CO2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
                 ampl_MP.read("CO2storage_IP.mod")
+            if ("PTES_conv_IP_district" in self.infrastructure.UnitsOfDistrict) and ("PTES_storage_IP_district" in self.infrastructure.UnitsOfDistrict):
+                ampl_MP.read('ptes_IP.mod')
 
         clustering_directory = os.path.join(path_to_clustering, self.local_data['File_ID'])
         ampl_MP.cd(clustering_directory)

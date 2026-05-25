@@ -8,6 +8,7 @@
 
 import os
 import sys
+import datetime
 import requests
 from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../'))
@@ -36,8 +37,23 @@ extensions = ['sphinxcontrib.bibtex',
               'sphinx.ext.napoleon',
               'sphinx.ext.autosummary',
               'sphinx_design',
-              'sphinx_copybutton']
+              'sphinx_copybutton',
+              'myst_parser',
+              'sphinx.ext.mathjax']
 source_suffix = [".rst", ".md"]
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "dollarmath",
+    "html_admonition",
+    "substitution",
+]
+myst_dmath_double_inline = True
+myst_substitutions = {
+    "version": version,
+    "release": version,
+    "today": datetime.date.today().strftime("%B %d, %Y"),
+}
 exclude_patterns = ['LICENSE']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
@@ -50,8 +66,14 @@ bibtex_reference_style = 'super'
 
 html_theme = 'pydata_sphinx_theme'
 
+html_static_path = ["_static"]
+html_js_files = ["custom.js"]
+html_css_files = ["custom.css"]
+
 html_sidebars = {
   "_autosummary": ["sidebar-nav-bs"],
+  "sections/model/index": [],
+  "sections/model/*": ["sidebar-nav-bs"],
   "sections/*": []
 }
 
@@ -59,7 +81,7 @@ html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
   'header_links_before_dropdown': 7,
   'navbar_align': 'left',
-  # "external_links": [{"name": "REHO-fm", "url": "https://ipese-test.epfl.ch/reho-fm/"}],
+  "external_links": [{"name": "REHO-fm", "url": "https://reho.epfl.ch/"}],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
                   "icon": "https://github.com/IPESE/REHO/blob/main/docs/images/logos/ipese_square.png?raw=true",
@@ -69,8 +91,8 @@ html_theme_options = {
            "alt_text": "REHO documentation - Home"},
   "navigation_depth": 6
 }
-numfig = True  # Add figure numbering
-numtab = True  # Add table numbering
+numfig = False  # No automatic figure numbering
+numtab = False  # No automatic table numbering
 add_function_parentheses = False
 toc_object_entries_show_parents = 'all'
 

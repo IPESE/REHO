@@ -1,8 +1,10 @@
-<img
-  src="https://raw.githubusercontent.com/IPESE/REHO/main/docs/images/logos/logo-reho-black.png"
-  width="300"
-  alt="REHO logo"
-/>
+<p align="center">
+  <img
+    src="https://raw.githubusercontent.com/IPESE/REHO/v1.2.1/docs/images/logos/logo-reho-black.png"
+    width="300"
+    alt="REHO logo"
+  />
+</p>
 
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.06734/status.svg)](https://doi.org/10.21105/joss.06734)
 [![Documentation Status](https://readthedocs.org/projects/reho/badge/?version=main)](https://reho.readthedocs.io/)
@@ -40,7 +42,7 @@ Joseph Loustau
 </picture>
 
 ## Licence
-Copyright (C) <2021-2025> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
+Copyright (C) <2021-2026> <Ecole Polytechnique Fédérale de Lausanne (EPFL), Switzerland>
 
 Licensed under the Apache License, (the "License");
 you may not use this file except in compliance with the License.

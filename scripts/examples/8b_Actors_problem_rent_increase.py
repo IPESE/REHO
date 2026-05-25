@@ -33,7 +33,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     # Define maximum rent affordable
-    reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params={'max_iter': 8}, solver="gurobiasl")
+    reho = ActorsModel(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params={'max_iter': 8}, solver="gurobiasl")
     reho.parameters['renter_expense_max'] = actors.generate_renter_expense_max(method='increase', reho_model=reho)
     reho.parameters['Costs_House_upfront_m2_MP'] = 0.0
 

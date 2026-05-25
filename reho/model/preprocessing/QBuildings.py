@@ -26,9 +26,8 @@ class QBuildingsReader:
     """
     Handles and prepares the data related to buildings.
 
-    There usually come from `GBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database. However,
-    one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in
-    `Processed GBuildings tables <https://ipese-web.epfl.ch/lepour/qbuildings/GBuildings/description.html#processed>`_.
+    There usually come from `QBuildings <https://qbuildings.epfl.ch/>`_ database. However,
+    one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in "Processed" tables.
 
     Parameters
     ----------

@@ -812,8 +812,8 @@ def plot_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', co
                     x=idx,
                     y=import_profile[layer],
                     mode="lines",
-                    name=layout.loc[layer, label],
-                    line=dict(color=layout.loc[layer, color])
+                    name=layout.loc[layer + '_import', label],
+                    line=dict(color=layout.loc[layer + '_import', color])
                 ))
 
         for unit in units_demand:
@@ -933,10 +933,9 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
     hover_template = []
     values_sun = []
     for i in range(len(classes)):
-        [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "rSOC", "Elec"]]
+        [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "Elec"]]
         [parents_name.append(element) for element in
-         ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],
-          data_to_plot.iloc[i]['class_' + label]]]
+         ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],]]
         [values_sun.append(element) for element in [
             data_to_plot.iloc[i]['sh_per_class'] + data_to_plot.iloc[i]['dhw_per_class'] +
             data_to_plot.iloc[i]['elec_per_class'],
@@ -979,6 +978,8 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
             fig.write_image(filename + '.' + export_format)
 
     if return_df:
+        print("Parents sunburst:", parents_name, "of length:", len(parents_name) ,"\n")
+        print("Child: ", child_name, "of length:", len(child_name), "\n")
         df = pd.DataFrame()
         df["Energy Use"] = child_name
         df["Building Type"] = parents_name

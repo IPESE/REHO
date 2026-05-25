@@ -1,5 +1,5 @@
 (sec_actors_model)=
-# Actors Model
+# 👥 Actors Model
 
 The actors model extends the district-scale optimization of {doc}`district` by explicitly
 representing the **economic interests and interactions of the distinct stakeholders** of a
@@ -37,6 +37,18 @@ Five key actors are distinguished in the energy community:
 | **Energy Community Manager (ECM)** | Non-profit operator of community-scale infrastructure; sets internal prices | District-unit investment; internal pricing; energy arbitrage |
 | **Distribution System Operator (DSO)** | Manages electricity distribution grid; sets network tariffs | Grid capacity investment; import/export tariffs |
 | **Authorities** | Public bodies that allocate subsidies for decarbonization | Subsidy levels; policy targets |
+
+:::{note}
+**Adapting the actor decomposition**
+
+The five actors above represent one specific illustration of the multi-actor framework,
+chosen to capture typical stakeholder dynamics in European energy communities. The modular
+design of the model allows it to be adapted to represent alternative interaction schemes
+between existing actors, or to introduce entirely new actors and business models (e.g.,
+energy cooperatives, peer-to-peer trading platforms, aggregators). Chapter 4 of the
+reference thesis provides further discussion on the expected learning curve to adapt the
+model and highlights avenues for future developments.
+:::
 
 ---
 
@@ -187,6 +199,19 @@ Threshold interpretation:
   margin reflecting the ECM's cost of operation).
 - **DSO** ($\epsilon^{DSO}$): net balance must remain non-negative.
 
+:::{note}
+**Cooperative game theory: the Core**
+
+The ε-constraints encode **individual rationality** from cooperative game theory: each
+actor must do at least as well in the cooperative energy community as they would
+independently. The set of cost allocations satisfying all such constraints defines the
+**Core**. By parametrically varying the thresholds, different fairness rules can be
+explored — for example, tightening $\epsilon^T_b$ to prioritize lower tenant bills, setting
+$\epsilon^{ECM} = 0$ for ECM cost neutrality, or fixing $\epsilon^{DSO}$ to ensure full
+grid-cost recovery. This reveals trade-offs between social equity and system efficiency
+along a Pareto set across actors.
+:::
+
 ### Actor dual variables
 
 The dual variables of the ε-constraints measure the sensitivity of the optimal cost to
@@ -274,43 +299,12 @@ increasingly actor-aware configurations.
 
 ---
 
-## Fairness and the Core concept
+:::{seealso}
+**Multi-actor extension**
 
-The actor ε-constraints encode the notion of **individual rationality** from cooperative
-game theory: each actor must do at least as well in the cooperative energy community as
-they would independently.  The set of allocations satisfying all such constraints is called
-the **Core**.
-
-The optimization searches for the point in the Core that minimizes public subsidies
-(or equivalently, total system cost).  By varying the ε-thresholds, the authority can
-explore different fairness rules:
-
-- **Tenant-first**: tighten $\epsilon^T_b$ (force lower tenant bills at the cost of higher
-  subsidies to landlords/ECM).
-- **ECM-neutral**: set $\epsilon^{ECM} = 0$ (no subsidy to the ECM, tenants and landlords
-  must self-fund).
-- **DSO cost-recovery**: set $\epsilon^{DSO}$ to recover full grid costs from community
-  fees.
-
-The resulting Pareto set across actors can be explored by parametrically varying the
-thresholds, revealing the trade-offs between social equity and system efficiency.
-
----
-
-## Implementation
-
-The multi-actor model is implemented in REHO as an optional extension of the district-scale
-mode, activated by setting `actors_problem=True`.
-
-Implementation details:
-
-- **AMPL core model** is extended with actor-specific variables ($\boldsymbol{C}_{T,b}$,
-  $\boldsymbol{C}_{L,b}$, $\boldsymbol{C}_{ECM}$, $\boldsymbol{C}_{DSO}$), the subsidy
-  variables $\boldsymbol{S}$, and the actor ε-constraints.
-- **Python layer** handles actor portfolios, internal pricing parameterization, and
-  post-processing of multi-actor results (individual actor cost breakdowns, subsidy
-  allocation maps).
-- All technical features from building and district scales (renovation, mobility, grid
-  reinforcement, DHC networks) remain fully available.
-- The modular design allows straightforward extension to new actor types or alternative
-  business models (e.g., energy cooperatives, peer-to-peer trading schemes).
+The actors model is a layered extension of the {doc}`District model <district>`, which is
+itself built on the {doc}`Building model <building>`. All technical features — renovation,
+mobility, grid reinforcement, and district heating/cooling networks — remain fully available
+at this scale. Refer to the {doc}`Package structure <../4_Package_structure>` and
+{doc}`Getting started <../5_Getting_started>` sections for practical usage.
+:::

@@ -1,0 +1,66 @@
+/* ── Model index: full-width article, no right sidebar ─────────────────── */
+body.model-index #pst-secondary-sidebar {
+    display: none !important;
+}
+body.model-index .bd-main .bd-content .bd-article-container {
+    max-width: 100% !important;
+}
+
+/* ── Model sub-pages: slightly narrower right sidebar ───────────────────── */
+.bd-sidebar-secondary {
+    max-width: 15rem;
+    min-width: 12rem;
+}
+.bd-sidebar-secondary .page-toc li {
+    font-size: 0.82rem;
+}
+
+/* ── Lightbox overlay ───────────────────────────────────────────────────── */
+#lb-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+#lb-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: zoom-out;
+}
+#lb-img {
+    max-width: 90vw;
+    max-height: 88vh;
+    object-fit: contain;
+    border-radius: 4px;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+    transform: scale(0.94);
+    transition: transform 0.25s ease;
+}
+#lb-overlay.active #lb-img {
+    transform: scale(1);
+}
+
+/* ── Zoom cursor on all article figures (building / district / actors) ───── */
+.bd-article figure img {
+    cursor: zoom-in;
+    transition: opacity 0.15s ease;
+}
+.bd-article figure img:hover {
+    opacity: 0.88;
+}
+
+/* ── Zoom cursor on graphical overview images (model index) ─────────────── */
+img.model-graphical-overview {
+    cursor: zoom-in;
+    transition: opacity 0.15s ease;
+    border-radius: 3px;
+}
+img.model-graphical-overview:hover {
+    opacity: 0.88;
+}

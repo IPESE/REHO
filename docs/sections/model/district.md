@@ -1,5 +1,5 @@
 (sec_district_model)=
-# District Model
+# 🏙️ District Model
 
 The district model extends the single-building MILP of {doc}`building` to a **community of
 buildings** by applying a **Dantzig–Wolfe decomposition** (DWD).  The district is modeled
@@ -48,14 +48,6 @@ sequence of lower bounds that converge to the optimal district solution.
 :name: fig_dwd_workflow
 
 Dantzig–Wolfe decomposition workflow.
-```
-
-```{figure} ../../images/model/decomposition_algorithm.png
-:align: center
-:width: 85%
-:name: fig_dwd_algo
-
-Decomposition algorithm flowchart.
 ```
 
 ---
@@ -204,6 +196,14 @@ Pareto frontier.
 
 ### Algorithm workflow
 
+```{figure} ../../images/model/decomposition_algorithm.png
+:align: center
+:width: 85%
+:name: fig_dwd_algo
+
+Decomposition algorithm flowchart.
+```
+
 **Phase 1 — Initiation:**
 
 1. Solve one compact optimization per building using exogenous energy prices (no district
@@ -284,14 +284,6 @@ The combined stochastic perturbation reduces aggregated peak power by ~40% and r
 sharp synchronized peaks with smoother, more realistic demand curves.  The method applies to
 all norm-based profiles: electricity, DHW, occupancy, internal gains, ICT, and mobility.
 
-```{figure} ../../images/model/decomposition_algorithm.png
-:align: center
-:width: 85%
-
-Effect of stochastic pooling on aggregated district demand: synchronized peaks (without)
-versus smoothed profile (with pooling).
-```
-
 ---
 
 ## District-scale infrastructure
@@ -304,13 +296,6 @@ batteries, hydrogen storage, data centers, PTES, rSOC, and methanators.
 ### District heating and cooling networks
 
 DHC networks allow buildings to exchange heat with centralized sources and sinks.
-
-```{figure} ../../images/model/DES_balance.png
-:align: center
-:width: 75%
-
-District heating/cooling: buildings connected via a common heat layer.
-```
 
 #### Temperature levels
 
@@ -538,19 +523,11 @@ of total district floor area is renovated:
 
 ---
 
-## Implementation
+:::{seealso}
+**District-scale extension**
 
-The district model is implemented in REHO on top of the building-scale core.  Key
-implementation aspects:
-
-- **Python orchestration layer** manages the decomposition loop: launching SP solves,
-  collecting configurations, updating the MP, and checking convergence.
-- **Parallel SP execution** using Python `multiprocessing`: all building subproblems are
-  solved simultaneously across CPU cores, dramatically reducing wall-clock time.
-- **AMPL core models** for both the MP (district energy balance, infrastructure, GWP) and
-  the SPs (building energy system, identical to the single-building mode).
-- **Automatic attribution of KPIs** at building and district levels from the converged
-  solution.
-
-The district-scale mode is activated in REHO by setting `district_scale=True` and providing
-building geometries, GIS data, and mobility parameters.
+The district model extends the {doc}`Building model <building>` core to communities of
+many buildings, and is itself further enriched by the {doc}`Actors model <actors>` at the
+next scale. Refer to the {doc}`Package structure <../4_Package_structure>` and
+{doc}`Getting started <../5_Getting_started>` sections for practical usage.
+:::

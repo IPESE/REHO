@@ -60,8 +60,13 @@ bibtex_reference_style = 'super'
 
 html_theme = 'pydata_sphinx_theme'
 
+html_static_path = ["_static"]
+html_js_files = ["custom.js"]
+html_css_files = ["custom.css"]
+
 html_sidebars = {
   "_autosummary": ["sidebar-nav-bs"],
+  "sections/model/index": [],
   "sections/model/*": ["sidebar-nav-bs"],
   "sections/*": []
 }
@@ -80,8 +85,8 @@ html_theme_options = {
            "alt_text": "REHO documentation - Home"},
   "navigation_depth": 6
 }
-numfig = True  # Add figure numbering
-numtab = True  # Add table numbering
+numfig = False  # No automatic figure numbering
+numtab = False  # No automatic table numbering
 add_function_parentheses = False
 toc_object_entries_show_parents = 'all'
 

@@ -1,5 +1,5 @@
 (sec_building_model)=
-# Building Model
+# 🏠 Building Model
 
 The building-scale model characterizes the optimal design and operation of a **Building Energy
 System (BES)**: a set of energy conversion and storage technologies that interface local
@@ -387,8 +387,9 @@ $\varepsilon_{\text{EV}}$ [kWh/km] connect population mobility needs to per-vehi
 
 ### ICT demand
 
-An integrated data-center module adds an **ICT energy layer** with its own demand profile.
-See {ref}`sec_datacenter` for the full model.
+Buildings can optionally include an integrated data-center module that introduces a dedicated
+**ICT energy layer**, linking server load to electricity consumption and waste heat recovery.
+See the reference thesis (Chapter 2) for the full formulation.
 
 ---
 
@@ -457,18 +458,18 @@ charging and discharging efficiencies. Additional constraints bound SoC and powe
 | Technology | Demand layer | Supply layer | Reference unit |
 |---|---|---|---|
 | **Energy conversion** | | | |
-| Oil boiler | Heating oil | Heat | kW_th |
-| Gas boiler | Natural gas | Heat | kW_th |
-| Wood stove | Wood pellets | Heat | kW_th |
-| Heat pump (air) | Electricity | Heat, cooling | kW_th |
-| Heat pump (geothermal) | Electricity | Heat, cooling | kW_th |
-| Air conditioner | Electricity | Cooling | kW_th |
-| Electrical heater | Electricity | Heat | kW_th |
-| Heat exchanger (DHN) | Heat | Heat | kW_th |
-| PTES | Electricity | Electricity, heat | kW_th |
-| rSOC | Electricity, H₂, CH₄ | Electricity, heat, H₂ | kW_el |
-| Methanator | Electricity, H₂, CO₂ | CH₄, heat | kW_el |
-| Thermal solar | — | Heat | kW_th |
+| Oil boiler | Heating oil | Heat | $\text{kW}_{\text{th}}$ |
+| Gas boiler | Natural gas | Heat | $\text{kW}_{\text{th}}$ |
+| Wood stove | Wood pellets | Heat | $\text{kW}_{\text{th}}$ |
+| Heat pump (air) | Electricity | Heat, cooling | $\text{kW}_{\text{th}}$ |
+| Heat pump (geothermal) | Electricity | Heat, cooling | $\text{kW}_{\text{th}}$ |
+| Air conditioner | Electricity | Cooling | $\text{kW}_{\text{th}}$ |
+| Electrical heater | Electricity | Heat | $\text{kW}_{\text{th}}$ |
+| Heat exchanger (DHN) | Heat | Heat | $\text{kW}_{\text{th}}$ |
+| PTES | Electricity | Electricity, heat | $\text{kW}_{\text{th}}$ |
+| rSOC | Electricity, H₂, CH₄ | Electricity, heat, H₂ | $\text{kW}_{\text{el}}$ |
+| Methanator | Electricity, H₂, CO₂ | CH₄, heat | $\text{kW}_{\text{el}}$ |
+| Thermal solar | — | Heat | $\text{kW}_{\text{th}}$ |
 | PV panel | — | Electricity | kWp |
 | **Energy storage** | | | |
 | Battery | Electricity | Electricity | kWh |
@@ -494,121 +495,23 @@ PV yield depends on panel orientation. The model explicitly accounts for azimuth
 This keeps the problem linear while making orientation an endogenous decision variable,
 combining roof tilts, azimuths, and facade exposures.
 
-### Reversible heat pump
+### Advanced technologies
 
-The extended reversible heat pump model derives performance from a Carnot reference scaled
-by an exergy efficiency that depends on temperature lift. Let $T^{\text{src}}_{p,t}$ be the
-source temperature and $T^{\text{ln}}_{st,p,t}$ the log-mean temperature of heat-cascade
-stream $st$.
+Several technologies have dedicated sub-models beyond the generic conversion and storage
+equations. The **reversible heat pump** derives a time-varying COP from a Carnot reference
+scaled by an exergy efficiency that depends on temperature lift, and supports a free-cooling
+mode when the source temperature is lower than the building's heat stream. The **electric
+vehicle** fleet is modeled as an aggregated battery whose charging availability is
+constrained by the hourly plug-out profile, with support for both smart-charging and
+bidirectional (V2B/V2G) operation. The **pumped thermal energy storage (PTES)** stores
+electricity as high-grade thermal energy through a heat-pump/heat-engine thermodynamic
+cycle, including self-discharge losses. The **reversible solid oxide cell (rSOC)** switches
+between SOEC (electrolysis) and SOFC (fuel cell) modes using binary selection variables.
+Buildings can also integrate a **data-center** module with a dedicated ICT energy layer
+that co-optimizes server load, electricity consumption, and waste heat recovery.
 
-**Temperature lift and exergy efficiency:**
-
-```{math}
-:label: eq_hp_dTlift
-\Delta T^{\text{lift}}_{st,p,t} := \bigl|T^{\text{ln}}_{st,p,t} - T^{\text{src}}_{p,t}\bigr|
-```
-
-```{math}
-:label: eq_hp_eta
-\eta^{\text{ex}}_{st,p,t}
-= \min\!\Bigl\{
-    \eta_{\text{nom}},\;
-    \eta_{\text{nom}} - \eta_{\text{slope}}\bigl(\Delta T_{\text{lift,elbow}} - \Delta T^{\text{lift}}_{st,p,t}\bigr)
-  \Bigr\}
-```
-
-subject to a minimum lift $\Delta T^{\text{lift}}_{st,p,t} \ge \Delta T_{\text{lift,low}}$.
-
-**Heating and cooling COPs (using absolute temperatures):**
-
-```{math}
-:label: eq_hp_cop
-\mathrm{COP}^{\text{heat}}_{st,p,t}
-= \eta^{\text{ex}}_{st,p,t}\,
-  \frac{T^{\text{hot}}_{st,p,t}}{T^{\text{hot}}_{st,p,t} - T^{\text{cold}}_{p,t}}
-\qquad
-\mathrm{COP}^{\text{cool}}_{st,p,t}
-= \eta^{\text{ex}}_{st,p,t}\,
-  \frac{T^{\text{cold}}_{p,t}}{T^{\text{hot}}_{st,p,t} - T^{\text{cold}}_{p,t}}
-```
-
-Typical parameters: $\eta_{\text{nom}} = 0.42$, $\Delta T_{\text{lift,elbow}} = 20\,°\text{C}$,
-$\Delta T_{\text{lift,low}} = 10\,°\text{C}$, part-load range 20–100%.  An optional
-**free-cooling** mode is available when the source is colder than the building stream
-(e.g., anergy network in summer).
-
-### Electric vehicle
-
-The EV fleet is modeled as an aggregated battery with availability constrained by the
-mobility profile. The battery energy $\boldsymbol{E}_{p,t}$ evolves as:
-
-```{math}
-:label: eq_ev_soc
-\boldsymbol{E}_{p,t+1}
-= (1-\sigma_{\text{EV}})\,\boldsymbol{E}_{p,t}
-+ \eta^-\,\dot{\boldsymbol{E}}^{-}_{p,t}\,\Delta t
-- \frac{1}{\eta^+}\,\dot{\boldsymbol{E}}^{+}_{p,t}\,\Delta t
-- E^{\text{drive}}_{p,t}
-```
-
-where $\dot{\boldsymbol{E}}^{-}_{p,t}$ is charging power (grid → battery) and
-$\dot{\boldsymbol{E}}^{+}_{p,t}$ is discharging power (battery → building, V2B mode).
-The plug-out fraction $\alpha_{p,t}$ limits charging availability when vehicles are away.
-Cyclic constraints ensure the SoC returns to its initial value at the end of each typical
-period.
-
-### Integrated data center
-
-(sec_datacenter)=
-
-ICT infrastructure is modeled as an integrated data center that manages **data demand**
-(a new energy service layer) alongside its power electronics and heat rejection.
-
-```{figure} ../../images/model/ict.png
-:align: center
-:width: 80%
-
-ICT demand model: data demand layer linked to electricity consumption and heat recovery.
-```
-
-The data center co-optimizes electricity consumption, waste heat recovery (fed into the
-building heat cascade), and server load modulation, making it a flexible demand resource
-for the energy hub.
-
-### Pumped thermal energy storage (PTES)
-
-```{figure} ../../images/model/PTES_diagram.png
-:align: center
-:width: 75%
-
-PTES system diagram: high-grade heat storage using a thermodynamic cycle.
-```
-
-PTES stores electricity as high-grade thermal energy in a hot tank and recovers it later
-via a thermodynamic cycle. The model includes:
-
-- Charging mode: heat pump raises temperature and fills the hot reservoir
-- Discharging mode: heat engine recovers electricity from the temperature difference
-- Self-discharge: thermal losses from the insulated reservoir
-
-### Reversible solid oxide cell (rSOC)
-
-```{figure} ../../images/model/rSOC_diagram.png
-:align: center
-:width: 80%
-
-rSOC system diagram: operates in electrolysis (SOEC) and fuel cell (SOFC) modes.
-```
-
-The rSOC operates in two modes:
-
-- **SOEC (electrolysis):** consumes electricity and produces H₂ (and optionally CH₄ via
-  integrated methanation); waste heat is recovered.
-- **SOFC (fuel cell):** consumes H₂ or CH₄ and produces electricity and heat.
-
-The model is formulated as a mode-selection problem with binary variables for switching
-between the two operating modes, respecting temperature constraints and minimum/maximum
-loads.
+Full formulations for all these technologies are provided in Chapter 2 of the reference
+thesis.
 
 ---
 
@@ -674,14 +577,6 @@ $c^{\text{ren}}_{b,e}$ and embodied impact $cc^{\text{ren}}_{b,e}$:
 C^{\text{ren}}_b = \sum_{e \in \mathbb{E}^*_b} c^{\text{ren}}_{b,e}\, A_{b,e}
 \qquad
 \mathrm{GWP}^{\text{ren}}_b = \sum_{e \in \mathbb{E}^*_b} cc^{\text{ren}}_{b,e}\, A_{b,e}
-```
-
-```{figure} ../../images/model/renovation_costs.png
-:align: center
-:width: 90%
-
-Reference and target U-values for each envelope element, with associated renovation costs
-and embodied GWP by construction period.
 ```
 
 ### Coupling with the building model
@@ -788,20 +683,12 @@ mobility) on a distribution network originally designed only for domestic applia
 
 ---
 
-## Implementation
+:::{seealso}
+**Core optimization module**
 
-The building-scale methodology is implemented in REHO (Renewable Energy Hub Optimizer) as
-the core optimization module.  REHO is built with **Python** for high-level orchestration
-and **AMPL** for the MILP formulation; users interact entirely through Python interfaces
-without needing to know AMPL.
-
-The framework is released under the Apache 2.0 license and published in the
-[Journal of Open Source Software (2024)](https://doi.org/10.21105/joss.06177).
-
-Key implementation features:
-
-- Single-building optimization as the baseline entry point
-- Automatic generation of demand profiles from SIA 2024 norms or user-supplied data
-- Modular technology library (each unit is a self-contained AMPL block)
-- Post-processing layer that computes all KPIs from the optimized solution
-- Renovation scenarios pre-computed and passed transparently to the district extension
+The building-scale model described in this page is the core optimization module of REHO,
+and the entry point for all computations. The {doc}`District model <district>` and
+{doc}`Actors model <actors>` layer additional structure on top of it. Refer to the
+{doc}`Package structure <../4_Package_structure>` and
+{doc}`Getting started <../5_Getting_started>` sections for practical usage.
+:::

@@ -689,6 +689,6 @@ mobility) on a distribution network originally designed only for domestic applia
 The building-scale model described in this page is the core optimization module of REHO,
 and the entry point for all computations. The {doc}`District model <district>` and
 {doc}`Actors model <actors>` layer additional structure on top of it. Refer to the
-{doc}`Package structure <../4_Package_structure>` and
-{doc}`Getting started <../5_Getting_started>` sections for practical usage.
+{doc}`Package structure <../package_structure>` and
+{doc}`Getting started <../getting_started>` sections for practical usage.
 :::

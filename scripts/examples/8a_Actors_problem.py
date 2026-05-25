@@ -35,7 +35,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)
 
     # Define maximum rent affordable
-    reho = ActorsProblem(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params={'max_iter': 4}, solver="gurobiasl")
+    reho = ActorsModel(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params={'max_iter': 4}, solver="gurobiasl")
     reho.parameters['renter_expense_max'] = actors.generate_renter_expense_max(method='absolute', qbuildings_data=qbuildings_data, income=70000)
 
     # Set value / sampling range for actors epsilon

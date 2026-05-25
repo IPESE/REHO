@@ -33,7 +33,7 @@ def generate_renter_expense_max(method='absolute', **kwargs):
             - types (list of str, optional): Rent types to consider. Default ["rent"]
 
         For method='increase':
-            - reho_model (ActorsProblem, required): REHO model instance
+            - reho_model (ActorsModel, required): REHO model instance
 
     Returns
     -------
@@ -148,8 +148,8 @@ def generate_renter_expense_max_increase(reho_model):
 
     Parameters
     ----------
-    reho_model : ActorsProblem
-        An initialized REHO ActorsProblem model instance. The model's configuration
+    reho_model : ActorsModel
+        An initialized REHO ActorsModel model instance. The model's configuration
         will be temporarily modified to run a baseline optimization, then restored.
 
     Returns
@@ -159,7 +159,7 @@ def generate_renter_expense_max_increase(reho_model):
 
     Examples
     --------
-    >>> reho = ActorsProblem(qbuildings_data, units, grids, ...)
+    >>> reho = ActorsModel(qbuildings_data, units, grids, ...)
     >>> reho.parameters['renter_expense_max'] = generate_renter_expense_max_increase(reho)
     """
     import copy

@@ -6,7 +6,7 @@ File for constructing and solving the optimization for the actor-based problem f
 """
 
 
-class ActorsProblem(REHO):
+class ActorsModel(REHO):
     """
     Performs an actor-based optimization.
 

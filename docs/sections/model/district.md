@@ -528,6 +528,6 @@ of total district floor area is renovated:
 
 The district model extends the {doc}`Building model <building>` core to communities of
 many buildings, and is itself further enriched by the {doc}`Actors model <actors>` at the
-next scale. Refer to the {doc}`Package structure <../4_Package_structure>` and
-{doc}`Getting started <../5_Getting_started>` sections for practical usage.
+next scale. Refer to the {doc}`Package structure <../package_structure>` and
+{doc}`Getting started <../getting_started>` sections for practical usage.
 :::

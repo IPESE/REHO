@@ -305,6 +305,6 @@ increasingly actor-aware configurations.
 The actors model is a layered extension of the {doc}`District model <district>`, which is
 itself built on the {doc}`Building model <building>`. All technical features — renovation,
 mobility, grid reinforcement, and district heating/cooling networks — remain fully available
-at this scale. Refer to the {doc}`Package structure <../4_Package_structure>` and
-{doc}`Getting started <../5_Getting_started>` sections for practical usage.
+at this scale. Refer to the {doc}`Package structure <../package_structure>` and
+{doc}`Getting started <../getting_started>` sections for practical usage.
 :::

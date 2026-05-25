@@ -8,6 +8,7 @@
 
 import os
 import sys
+import datetime
 import requests
 from unittest.mock import MagicMock
 sys.path.insert(0, os.path.abspath('../'))
@@ -48,6 +49,11 @@ myst_enable_extensions = [
     "substitution",
 ]
 myst_dmath_double_inline = True
+myst_substitutions = {
+    "version": version,
+    "release": version,
+    "today": datetime.date.today().strftime("%B %d, %Y"),
+}
 exclude_patterns = ['LICENSE']
 # autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
@@ -75,7 +81,7 @@ html_theme_options = {
   'github_url': 'https://github.com/IPESE/REHO',
   'header_links_before_dropdown': 7,
   'navbar_align': 'left',
-  # "external_links": [{"name": "REHO-fm", "url": "https://reho.epfl.ch/"}],
+  "external_links": [{"name": "REHO-fm", "url": "https://reho.epfl.ch/"}],
   "icon_links": [{"name": "IPESE",
                   "url": "https://ipese-web.epfl.ch/ipese-blog/",
                   "icon": "https://github.com/IPESE/REHO/blob/main/docs/images/logos/ipese_square.png?raw=true",

@@ -44,20 +44,18 @@ software since it was made available to the public in August 2023.
 Applications using REHO
 ============================
 
+.. dropdown:: :bdg-primary:`Web-app` REHO-fm, Fayt, Lepour & Loustau 2023
+    :icon: gear
+
+    `REHO-fm <https://reho.epfl.ch/>`_ is a web application that compares energy scenarios for the entire Swiss building stock.
+    The application is based on the REHO open-source optimization model and its input data comes from the `QBuildings <https://qbuildings.epfl.ch/>`_ database.
+
 .. dropdown:: :bdg-primary:`Web-app` APECC, Lepour 2024
     :icon: gear
 
     `APECC <https://ipese-web.epfl.ch/lepour/apecc/>`_ helps to explore innovative energy solutions for the canton of Geneva. Combining interactive maps and data visualization, it offers an analysis of energy systems from technical, economic and environmental perspectives. It aims to support citizens, municipalities and energy suppliers in the energy transition and in reducing the carbon footprint of the building stock.
 
     It has been developed as part of a collaboration between the Industrial Process and Energy Systems Engineering laboratory (IPESE, EPFL) and the Services Industriels de Genève (SIG).
-
-.. dropdown:: :bdg-primary:`Web-app` REHO-fm, Fayt, Lepour & Loustau 2023
-    :icon: gear
-
-    `REHO-fm <https://ipese-test.epfl.ch/reho-fm/>`_ is a web application that compares energy scenarios for the entire Swiss building stock.
-    The application is based on the REHO open-source optimization model and its input data comes from the `QBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database.
-
-    .. note:: REHO-fm can only be accessed through the EPFL intranet. A public version will soon be released.
 
 .. dropdown:: :bdg-primary:`Web-app` SIG - VarÉlec, Lepour & Loustau 2022
     :icon: gear

@@ -123,7 +123,7 @@ Please refer to `AMPL Modules for Python <https://dev.ampl.com/ampl/python/modul
 PostgreSQL
 ------------------
 
-For large-scale applications, REHO can be connected to relational database management systems. The `QBuildings database <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ used as a reference for the input to REHO is built with PostgreSQL.
+For large-scale applications, REHO can be connected to relational database management systems. The `QBuildings database <https://qbuildings.epfl.ch/>`_ used as a reference for the input to REHO is built with PostgreSQL.
 
 More specifically, the `psycopg2 <https://pypi.org/project/psycopg2/>`_ library is used to connect to the database and execute queries in Python. This library is already included in the REHO requirements but is known to cause some issues, as some prerequisites are frequently missing (i.e. the PostgreSQL package and Python development tools).
 
@@ -276,7 +276,7 @@ Set building parameters
 Each building needs to be characterized to estimate its energy demand, its renewable potential, and its sector coupling potential.
 Such information about the buildings involved in the analysis can be provided to REHO in two different ways:
 
-1. By connecting to the `QBuildings database <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ ;
+1. By connecting to the `QBuildings database <https://qbuildings.epfl.ch/>`_ ;
 2. By reading CSV files.
 
 QBuildings
@@ -297,10 +297,6 @@ REHO can connect to QBuildings and read the data it contains with the following 
 
 See :meth:`reho.model.preprocessing.QBuildings.QBuildingsReader.read_db` for further description.
 
-.. warning::
-    The QBuildings-Suisse database will soon be available for full access. At present, you need to be connected to EPFL intranet to access the complete database.
-
-    However, a reduced version (QBuildings-Geneva) is already available to the public and serves as a demo for all the examples.
 
 CSV files
 ~~~~~~~~~~~~~~~~~

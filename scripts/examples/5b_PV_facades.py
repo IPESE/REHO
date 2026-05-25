@@ -7,7 +7,6 @@ if __name__ == '__main__':
     # PV on facades can be considered
     reader = QBuildingsReader(load_facades=True, load_roofs=True)
 
-    # # Warning: to connect to QBuildings-Suisse (database including facades data), you need to be within EPFL intranet.
     # reader.establish_connection('Suisse')
     # qbuildings_data = reader.read_db(district_id=3658, nb_buildings=2)
 

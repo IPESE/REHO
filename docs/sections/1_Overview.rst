@@ -58,7 +58,7 @@ Building stock database
 ----------------------------
 
 Each building to be optimized needs to be characterized to estimate its energy demand, its renewable potential, and its sector coupling potential.
-REHO embeds a coupling with `QBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/>`_,
+REHO embeds a coupling with `QBuildings <https://qbuildings.epfl.ch/>`_,
 a GIS database characterizing the entire Swiss building stock from an energy point of view (end-use demand, buildings morphology, endogenous resources).
 This database is built by gathering different public databases and combining with norms and standard energy requirements
 as defined by the Société suisse des *Ingénieurs et des Architectes* (SIA).

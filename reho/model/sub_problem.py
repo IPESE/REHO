@@ -357,13 +357,11 @@ class SubProblem:
 
         df_end = ampl.getParameter('TimeEnd').getValues().toPandas()
         timesteps = int(df_end['TimeEnd'].sum())
-        df_Streams_T = pd.DataFrame(columns=["Period", "Time", "Streams", "Streams_Tout", "Streams_Tin"])
-        df_Streams_T = df_Streams_T.set_index(["Period", "Time", "Streams"])
-
         index = [[(i, j + 1) for j in list(range(int(df_end["TimeEnd"][i])))] for i in df_end.index]
         index = [j for i in index for j in i]
         index = pd.MultiIndex.from_tuples(index, names=["Period", "Time"])
 
+        streams_frames = []
         for bui in self.infrastructure_sp.houses:
             for unit_data in self.infrastructure_sp.houses[bui]["units"]:
                 for i, T_level in enumerate(unit_data["StreamsOfUnit"]):
@@ -372,14 +370,15 @@ class SubProblem:
                     df["Streams_Tout"] = unit_data["stream_Tout"][i]
                     df["Streams_Tin"] = unit_data["stream_Tin"][i]
                     df.set_index("Streams", append=True, inplace=True)
-                    df_Streams_T = pd.concat([df_Streams_T, df])
+                    streams_frames.append(df)
             for stream in self.infrastructure_sp.StreamsOfBuilding[bui]:
                 df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
                 df["Streams_Tout"] = 40  # default value that is changed in data_stream.dat
                 df["Streams_Tin"] = 50  # default value that is changed in data_stream.dat
                 df.set_index("Streams", append=True, inplace=True)
-                df_Streams_T = pd.concat([df_Streams_T, df])
+                streams_frames.append(df)
 
+        df_Streams_T = pd.concat(streams_frames)
         self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
 
     def set_skydome_parameters(self):

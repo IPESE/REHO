@@ -441,7 +441,7 @@ class REHO(MasterProblem):
 
         for column in ["Costs_op", "Costs_inv", "Costs_cft", "GWP_op", "GWP_constr"]:
             df_Performance.loc[:, column] = last_results["df_District"][column]
-        df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
+        df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'].iloc[0]
 
         if self.method["actors_problem"]:
             features = ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',

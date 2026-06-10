@@ -508,8 +508,9 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data):
     df_profiles_network = df_Results["df_Grid_t"].xs('Network', level='Hub').copy()
 
     df_Time = df_Results["df_Time"]
-    df_Time.dp.iloc[-1] = 0  # exclude extreme periods
-    df_Time.dp.iloc[-2] = 0
+    dp_col = df_Time.columns.get_loc('dp')
+    df_Time.iloc[-1, dp_col] = 0  # exclude extreme periods
+    df_Time.iloc[-2, dp_col] = 0
 
     # ------------------------------------------------------------------------------------------------------
     # Construct Economics dataframe

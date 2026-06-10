@@ -730,7 +730,7 @@ def mobility_demand_from_WP1data(pkm_demand, max_dist=70, nbins=1, modalwindow=0
     df_dist_inf.pkm = df_dist_inf.pkm / df_dist_inf.pkm.sum()
 
     df_dist_inf = df_dist_inf.join(df_modal_split)
-    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].fillna(method='bfill').fillna(method='ffill')
+    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].bfill().ffill()
 
     lowerbound = 0
     step = max_dist / nbins

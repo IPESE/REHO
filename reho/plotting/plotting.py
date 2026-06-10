@@ -1267,7 +1267,7 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
         class_ = row['id_class'].split("/")
         serie = pd.Series(ratio, index=class_).groupby(level=0).sum()
         for key, value in correspondance_dict.items():
-            data_to_plot[value].update(data_to_plot[value] + serie * row[key])
+            data_to_plot[value] = data_to_plot[value] + (serie * row[key]).reindex(data_to_plot.index, fill_value=0)
 
     correspondance_dict = {'ERA': 'area_per_class',
                            'SH': 'sh_per_class',
@@ -1279,8 +1279,8 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
                                                                        columns='Layer', values='Demand_MWh')
     df_buildings = df_buildings.reset_index().merge(df_annuals, on=['Scn_ID', 'Pareto_ID', 'Hub']).set_index(
         ['Scn_ID', 'Pareto_ID', 'Hub'])
-    data_to_plot = pd.DataFrame(0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class',
-                                                           'elec_per_class'])
+    data_to_plot = pd.DataFrame(0.0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class',
+                                                             'elec_per_class'])
     class_names = pd.read_csv(os.path.join(path_to_plotting, 'sia380_1.csv'), index_col='id_class', sep=";")
     data_to_plot = data_to_plot.merge(class_names, left_index=True, right_on='id_class')
 

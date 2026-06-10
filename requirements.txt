@@ -3,12 +3,12 @@ amplpy==0.15.2
 ampl_module_base
 ampl_module_highs
 coloredlogs
-geopandas<1.0.0
+geopandas
 kaleido
 matplotlib
-numpy<2.0.0
+numpy
 openpyxl
-pandas<2.0.0
+pandas>=2.0.0
 plotly
 psycopg2<3.0.0 ; platform_system != "Windows"
 psycopg2-binary<3.0.0
@@ -23,6 +23,6 @@ SALib
 scipy
 setuptools
 shapely
-sqlalchemy<2.0.0
+sqlalchemy>=2.0.0
 sympy
 urllib3

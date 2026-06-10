@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from shapely import wkt
 from sqlalchemy import create_engine, MetaData, select
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import SAWarning
 
 from reho.paths import *
@@ -89,8 +88,8 @@ class QBuildingsReader:
 
         # input
         warnings.filterwarnings('ignore', category=SAWarning)
-        metadata = MetaData(bind=self.db_engine)
-        metadata.reflect(schema=self.db_schema)
+        metadata = MetaData()
+        metadata.reflect(bind=self.db_engine, schema=self.db_schema)
         self.tables = metadata.tables
         self.db = db
 
@@ -239,14 +238,14 @@ class QBuildingsReader:
             raise Exception("The district boundary is not recognized.")
 
         # Select the right boundary
-        sqlQuery = select([self.tables[self.db_schema + '.' + district_boundary]]).where(
+        sqlQuery = select(self.tables[self.db_schema + '.' + district_boundary]).where(
             self.tables[self.db_schema + '.' + district_boundary].columns.id == district_id)
-        self.data[district_boundary] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
+        self.data[district_boundary] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
 
         # Select buildings
-        sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]).where(
+        sqlQuery = select(self.tables[self.db_schema + '.' + 'buildings']).where(
             getattr(self.tables[self.db_schema + '.' + 'buildings'].columns, id_key) == district_id)
-        self.data['buildings'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
+        self.data['buildings'] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
         mask = (self.data['buildings']['egid'].isnull())
         self.data['buildings'] = self.data['buildings'].loc[~mask, :]
 
@@ -271,10 +270,10 @@ class QBuildingsReader:
             # TODO: Correct the roofs and facades selection with the id filtered by select_buildings_data
             self.data['facades'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
-                sqlQuery = select([self.tables[self.db_schema + '.' + 'facades']]) \
+                sqlQuery = select(self.tables[self.db_schema + '.' + 'facades']) \
                     .where(self.tables[self.db_schema + '.' + 'facades'].columns.id_building == id)
                 self.data['facades'] = pd.concat(
-                    (self.data['facades'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
+                    (self.data['facades'], gpd.read_postgis(sqlQuery,
                                                             con=self.db_engine, geom_col='geometry').fillna(np.nan)))
             if to_csv:
                 self.data['facades'].to_csv('facades.csv', index=False)
@@ -285,10 +284,10 @@ class QBuildingsReader:
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
-                sqlQuery = select([self.tables[self.db_schema + '.' + 'roofs']]) \
+                sqlQuery = select(self.tables[self.db_schema + '.' + 'roofs']) \
                     .where(self.tables[self.db_schema + '.' + 'roofs'].columns.id_building == id)
                 self.data['roofs'] = pd.concat(
-                    (self.data['roofs'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
+                    (self.data['roofs'], gpd.read_postgis(sqlQuery,
                                                           con=self.db_engine, geom_col='geometry').fillna(np.nan)))
             if to_csv:
                 self.data['roofs'].to_csv('roofs.csv', index=False)

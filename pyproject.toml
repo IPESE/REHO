@@ -15,14 +15,14 @@ maintainers = [
     {name = "IPESE-IT", email = "it.ipese@epfl.ch"},
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
@@ -35,7 +35,7 @@ dependencies = [
     "matplotlib",
     "numpy",
     "openpyxl",
-    "pandas>=2.0.0",
+    "pandas>=3.0.0",
     "plotly",
     "psycopg2-binary<3.0.0",
     "pvlib==0.13.0",

@@ -439,7 +439,7 @@ def get_mode_speed(units, mode_speed_custom):
 
     mode_speed = units[['Unit', 'UnitOfType']].copy()
     mode_speed = mode_speed.merge(default_speed, how='left')
-    mode_speed['Unit'].fillna(mode_speed['UnitOfType'], axis=0, inplace=True)
+    mode_speed['Unit'] = mode_speed['Unit'].fillna(mode_speed['UnitOfType'])
     mode_speed = mode_speed.set_index(['Unit'])[['Mode_Speed']]
 
     mode_speed_custom = pd.DataFrame.from_dict(mode_speed_custom, orient='index', columns=["Mode_Speed"])

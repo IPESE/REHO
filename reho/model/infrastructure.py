@@ -377,7 +377,11 @@ def prepare_units_df(file, exclude_units=[], grids=None):
                        'stream_Tin', 'stream_Tout']
     try:
         unit_data[list_of_columns] = unit_data[list_of_columns].fillna('').astype(str)
-        unit_data[list_of_columns[1:]].apply(transform_into_list) # keep Unit as str
+        # Columns from list_of_columns[1:] get their string cells replaced by Python lists
+        # (see transform_into_list). Since pandas 3.0 strings are immutable and reject list
+        # values, cast these columns to object dtype before the in-place transformation.
+        unit_data[list_of_columns[1:]] = unit_data[list_of_columns[1:]].astype(object)
+        unit_data[list_of_columns[1:]].apply(transform_into_list)  # keep Unit as str
     except KeyError:
         raise KeyError('There is a name in the columns of your csv. Make sure the columns correspond to the default'
                        ' files in data/infrastructure.')

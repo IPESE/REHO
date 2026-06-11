@@ -243,7 +243,7 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
 
     df_aim = pd.DataFrame()
     for d in index_inter['index_r']:
-        nt = int(df_time.loc[df_time.index == (d - 1), 'timesteps'])
+        nt = int(df_time.loc[df_time.index == (d - 1), 'timesteps'].iloc[0])
         df_d = pd.DataFrame([np.repeat(d, nt), np.arange(1, nt + 1)])
         df_aim = pd.concat([df_aim, df_d.T], ignore_index=True)
 

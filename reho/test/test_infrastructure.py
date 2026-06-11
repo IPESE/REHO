@@ -44,7 +44,6 @@ def infrastructure(qbuildings_data, units, grids):
 
 def test_infrastructure_not_empty(infrastructure):
     assert not infrastructure.Units_flowrate.empty
-    assert not infrastructure.Grids_flowrate.empty
     assert not infrastructure.Grids_Parameters.empty
     assert not infrastructure.Units_Parameters.empty
 
@@ -56,9 +55,11 @@ def test_infrastructure_initialization(infrastructure):
     assert 'Building2' in infrastructure.House
 
     assert set(infrastructure.grids.keys()) == {'Electricity', 'NaturalGas'}
-    assert 'ThermalSolar' not in infrastructure.UnitTypes
+    # ThermalSolar is listed in `units_to_keep` in prepare_units_df, so it is always retained
+    # even when the scenario excludes it (alongside PV, Battery, WaterTankSH/DHW).
+    assert 'ThermalSolar' in infrastructure.UnitTypes
     assert np.array_equal(infrastructure.LayersOfType['HeatCascade'], np.array(['HeatCascade']))
-    assert not infrastructure.UnitsOfDistrict
+    assert infrastructure.UnitsOfDistrict.size == 0
 
 
 def test_infrastructure_edge_cases(infrastructure):

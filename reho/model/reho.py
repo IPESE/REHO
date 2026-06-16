@@ -29,8 +29,10 @@ class REHO(MasterProblem):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
-        
+
         # input attributes
+        if isinstance(scenario, str):
+            scenario = self.build_predefined_scenario(scenario)
         self.scenario = scenario.copy()
         if 'specific' not in self.scenario:
             self.scenario['specific'] = []
@@ -55,6 +57,22 @@ class REHO(MasterProblem):
 
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
+
+    def build_predefined_scenario(self, scenario_name):
+        """
+        Expands a scenario name into its predefined scenario dictionary.
+
+        Currently supports ``"reference"``, which builds an as-is scenario from the QBuildings
+        data: each building's existing heating technology (``source_heating``) and PV capacity
+        (``pv_installation_kW``) are enforced, and any other heating unit is excluded.
+        """
+        if scenario_name == 'reference':
+            enforce_units, exclude_units, pv_capacities = build_reference_scenario(self.buildings_data)
+            if pv_capacities:
+                self.method['fix_units'] = True
+                self.df_fix_Units = pd.DataFrame({'Units_Mult': pv_capacities, 'Units_Use': 1})
+            return {'name': 'reference', 'Objective': 'TOTEX', 'enforce_units': enforce_units, 'exclude_units': exclude_units}
+        raise ValueError("Unknown predefined scenario '%s'. Pass a dict to define a custom scenario." % scenario_name)
 
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']

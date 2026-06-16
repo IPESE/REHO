@@ -380,6 +380,9 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
         'source_heating': 'source_heating',
         'source_hotwater': 'source_hotwater',
 
+        # Existing PV installation, used to build a 'reference' (as-is) scenario
+        'pv_installation_kW': 'pv_installation_kW',
+
         # Thermal envelope
         'thermal_transmittance_signature_kW_m2_K': 'U_h',
         'thermal_specific_capacity_Wh_m2_K': 'HeatCapacity',
@@ -433,6 +436,71 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
     df_buildings = translated_buildings_data
 
     return df_buildings
+
+
+# Heating-source keywords (as found in QBuildings' 'source_heating' field) mapped to the
+# REHO building units that implement them. A building's source_heating can list several
+# sources (e.g. "Oil/Electricity"), in which case all matching units are enforced.
+HEATING_SOURCE_TO_UNITS = {
+    'oil': ['OIL_Boiler'],
+    'gas': ['NG_Boiler'],
+    'wood': ['WOOD_Stove'],
+    'electricity': ['ElectricalHeater_SH', 'ElectricalHeater_DHW'],
+    'district heat': ['DHN_hex'],
+}
+
+# All building units that can be a building's primary heating system, i.e. the candidates
+# from which HEATING_SOURCE_TO_UNITS picks, plus the technologies they compete with.
+PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
+    'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+}
+
+
+def build_reference_scenario(buildings_data):
+    """
+    Builds the 'enforce_units'/'exclude_units' lists and PV capacities for a 'reference' (as-is)
+    scenario: each building's existing heating technology (from 'source_heating') and PV capacity
+    (from 'pv_installation_kW') are enforced, and all other heating units are excluded.
+
+    Parameters
+    ----------
+    buildings_data : dict
+        Dictionary of buildings characteristics, as returned by QBuildingsReader (qbuildings_data['buildings_data']).
+
+    Returns
+    -------
+    enforce_units : list of str
+        Fully qualified unit names (``Unit_Building``) to enforce.
+    exclude_units : list of str
+        Fully qualified unit names (``Unit_Building``) to exclude.
+    pv_capacities : dict
+        Maps fully qualified PV unit names to their existing capacity in kW, to be used with ``df_fix_Units``.
+    """
+    enforce_units = []
+    exclude_units = []
+    pv_capacities = {}
+
+    for building, data in buildings_data.items():
+        source = str(data.get('source_heating', '')).lower()
+        matched_units = set()
+        for keyword, units in HEATING_SOURCE_TO_UNITS.items():
+            if keyword in source:
+                matched_units.update(units)
+
+        if matched_units:
+            enforce_units += [unit + '_' + building for unit in matched_units]
+            exclude_units += [unit + '_' + building for unit in PRIMARY_HEATING_UNITS - matched_units]
+
+        pv_kw = data.get('pv_installation_kW', 0)
+        pv_kw = 0.0 if pd.isna(pv_kw) else float(pv_kw)
+        if pv_kw > 0:
+            enforce_units.append('PV_' + building)
+            pv_capacities['PV_' + building] = pv_kw
+        else:
+            exclude_units.append('PV_' + building)
+
+    return enforce_units, exclude_units, pv_capacities
+
 
 def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
     """

@@ -76,6 +76,9 @@ class REHO(MasterProblem):
 
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
+        if self.method['fix_units'] and self.df_fix_Units.empty:
+            import warnings
+            warnings.warn("fix_units=True but df_fix_Units is empty — no units will be fixed. Assign df_fix_Units before calling single_optimization.")
         if self.method['district-scale'] or self.method['building-scale']:  # decomposition formulation
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
@@ -152,8 +155,8 @@ class REHO(MasterProblem):
             def annualized_investment():
                 if self.method['building-scale'] or self.method['district-scale']:
                     df_inv = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-                    district = (df_inv.Costs_inv[-1] + df_inv.Costs_rep[-1]) / self.ERA
-                    buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
+                    district = (df_inv.Costs_inv.iloc[-1] + df_inv.Costs_rep.iloc[-1]) / self.ERA
+                    buildings = df_inv.Costs_inv.iloc[:-1].div(surfaces.ERA) + df_inv.Costs_rep.iloc[:-1].div(surfaces.ERA)
                 else:
                     tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
                     df_h = write_results.get_ampl_data(ampl, 'Costs_House_inv', multi_index=False)
@@ -168,8 +171,8 @@ class REHO(MasterProblem):
             def opex_per_house():
                 if self.method['building-scale'] or self.method['district-scale']:
                     df_op = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-                    district = df_op.Costs_op[-1] / self.ERA
-                    building = df_op.Costs_op[:-1].div(surfaces.ERA)
+                    district = df_op.Costs_op.iloc[-1] / self.ERA
+                    building = df_op.Costs_op.iloc[:-1].div(surfaces.ERA)
                 else:
                     df_h = write_results.get_ampl_data(ampl, 'Costs_House_op', multi_index=False)
                     df = write_results.get_ampl_data(ampl, 'Costs_op', multi_index=False)
@@ -410,8 +413,9 @@ class REHO(MasterProblem):
         f = self.feasible_solutions - 1
         heat_flow = self.results_MP[0][0][0]["df_District"]["flowrate_max"] * delta_enthalpy
         dhn_inv = self.results_MP[0][0][0]["df_District"].loc["Network", "DHN_inv"]
-        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"][0]
+        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"].iloc[0]
         dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
+        self.infrastructure.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = self.infrastructure.Units_Parameters[["Units_Fmax", "Cost_inv2"]].astype(float)
         for bui in self.infrastructure.houses.keys():
             self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui] * 1.001, dhn_invh]
 

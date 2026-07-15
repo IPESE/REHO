@@ -352,9 +352,9 @@ class MasterProblem:
 
         ampl = REHO.build_model_without_solving()
 
-        if self.method['fix_units']:
-            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
-                if unit == 'PV_' + h:
+        if self.method['fix_units'] and not self.df_fix_Units.empty:
+            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(str(h))]:
+                if unit == 'PV_' + str(h):
                     ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
                     ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
                 else:
@@ -792,9 +792,9 @@ class MasterProblem:
 
         ampl = REHO.build_model_without_solving()
 
-        if self.method['fix_units']:
-            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
-                if unit == 'PV_' + h:
+        if self.method['fix_units'] and not self.df_fix_Units.empty:
+            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(str(h))]:
+                if unit == 'PV_' + str(h):
                     ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
                     ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
                 else:

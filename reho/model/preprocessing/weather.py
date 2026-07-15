@@ -266,7 +266,8 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
         entry = {
             'Date': date.strftime("%Y-%m-%d %H:%M:%S"),
             'Day': mapped_period,
-            'Frequency': durations[mapped_period - 1]
+            'Frequency': durations[mapped_period - 1],
+            'RowOffset': date_idx,
         }
         if 'Weekday' in attributes:
             entry['Weekday'] = values_cluster.loc[values_cluster['time.dd'] == original_period, 'Weekday'].iloc[0]

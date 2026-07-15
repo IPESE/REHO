@@ -279,18 +279,25 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     # Load annual data
     df_annual = pd.read_csv(annual_file, parse_dates=['time(UTC)'])
     df_annual.set_index('time(UTC)', inplace=True)
+    if df_annual.index.tz is not None:
+        df_annual.index = df_annual.index.tz_localize(None)
 
-    # Ensure timezone consistency
-    # annual_tz = df_annual.index.tz
-
-    typical_dates = pd.to_datetime(df_Timestamp['Date']).dt.normalize()
-
+    period_duration = cluster['PeriodDuration']
     df_typical = pd.DataFrame()
 
-    # Extract data for typical days (excluding extreme periods)
-    for date in typical_dates[:-2]:
-        day_data = df_annual[date:date + timedelta(hours=23)]
-        df_typical = pd.concat([df_typical, day_data])
+    # Use row offsets when available (written by generate_weather_data since pandas-3 migration).
+    # This makes extraction independent of the year stored in timestamp.csv, so PVGIS clustering
+    # files (year 1990) can be reused with a custom weather file that uses a different year.
+    if 'RowOffset' in df_Timestamp.columns:
+        for offset in df_Timestamp['RowOffset'].iloc[:-2]:
+            day_data = df_annual.iloc[int(offset): int(offset) + period_duration]
+            df_typical = pd.concat([df_typical, day_data])
+    else:
+        # Fallback for cached files that predate the RowOffset column
+        df_annual = df_annual.sort_index()
+        for date in pd.to_datetime(df_Timestamp['Date']).dt.normalize()[:-2]:
+            day_data = df_annual[date:date + timedelta(hours=23)]
+            df_typical = pd.concat([df_typical, day_data])
 
     # Handle extreme periods (minimum and maximum of the annual data)
     min_values = df_annual.min().to_frame().T
@@ -299,16 +306,10 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     df_typical = pd.concat([df_typical, min_values, max_values], ignore_index=True)
 
     # Create multi-index [Period, Hour]
-    regular_periods = len(typical_dates) - 2
-    periods = list(range(1, regular_periods + 1))
-    hours = list(range(1, cluster['PeriodDuration'] + 1))
-
-    # Add extreme periods with duration = 1
-    periods += [regular_periods + 1, regular_periods + 2]
-    hours += [1, 1]
+    regular_periods = len(df_Timestamp) - 2
 
     df_typical.index = pd.MultiIndex.from_tuples(
-        [(p, h) for p in range(1, regular_periods + 1) for h in range(1, cluster['PeriodDuration'] + 1)] +
+        [(p, h) for p in range(1, regular_periods + 1) for h in range(1, period_duration + 1)] +
         [(regular_periods + 1, 1), (regular_periods + 2, 1)],
         names=['Period', 'Hour']
     )

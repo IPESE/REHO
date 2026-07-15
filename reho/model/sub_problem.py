@@ -260,13 +260,15 @@ class SubProblem:
         all_units = [unit for unit, value in ampl.getVariable('Units_Use').instances()]
         for i in all_units:
             for u in self.scenario_sp['exclude_units']:
-                if ('district' not in i[0]) and ('IP' not in i[0]) and (u in i[0]):  # unit at the building scale
+                # u matches i[0] either as a unit type prefix ('PV' -> 'PV_Building1') or as a fully
+                # qualified unit name ('PV_Building1'); startswith(u + '_') avoids 'Building1' matching 'Building10'
+                if ('district' not in i[0]) and ('IP' not in i[0]) and (i[0] == u or i[0].startswith(u + '_')):  # unit at the building scale
                     ampl.getVariable('Units_Use').get(str(i[0])).fix(0)
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(0)
 
             for u in self.scenario_sp['enforce_units']:
-                if 'district' not in i[0] and u in i[0]:  # unit at the building scale
+                if 'district' not in i[0] and (i[0] == u or i[0].startswith(u + '_')):  # unit at the building scale
                     ampl.getVariable('Units_Use').get(str(i[0])).fix(1)  # !!Fmin = 0, leaves the option to exclude unit
                 elif u in all_units:  # unit at the district scale with problem definition at the district scale
                     ampl.getVariable('Units_Use').get(str(u)).fix(1)
@@ -357,13 +359,11 @@ class SubProblem:
 
         df_end = ampl.getParameter('TimeEnd').getValues().toPandas()
         timesteps = int(df_end['TimeEnd'].sum())
-        df_Streams_T = pd.DataFrame(columns=["Period", "Time", "Streams", "Streams_Tout", "Streams_Tin"])
-        df_Streams_T = df_Streams_T.set_index(["Period", "Time", "Streams"])
-
         index = [[(i, j + 1) for j in list(range(int(df_end["TimeEnd"][i])))] for i in df_end.index]
         index = [j for i in index for j in i]
         index = pd.MultiIndex.from_tuples(index, names=["Period", "Time"])
 
+        streams_frames = []
         for bui in self.infrastructure_sp.houses:
             for unit_data in self.infrastructure_sp.houses[bui]["units"]:
                 for i, T_level in enumerate(unit_data["StreamsOfUnit"]):
@@ -372,14 +372,15 @@ class SubProblem:
                     df["Streams_Tout"] = unit_data["stream_Tout"][i]
                     df["Streams_Tin"] = unit_data["stream_Tin"][i]
                     df.set_index("Streams", append=True, inplace=True)
-                    df_Streams_T = pd.concat([df_Streams_T, df])
+                    streams_frames.append(df)
             for stream in self.infrastructure_sp.StreamsOfBuilding[bui]:
                 df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
                 df["Streams_Tout"] = 40  # default value that is changed in data_stream.dat
                 df["Streams_Tin"] = 50  # default value that is changed in data_stream.dat
                 df.set_index("Streams", append=True, inplace=True)
-                df_Streams_T = pd.concat([df_Streams_T, df])
+                streams_frames.append(df)
 
+        df_Streams_T = pd.concat(streams_frames)
         self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
 
     def set_skydome_parameters(self):

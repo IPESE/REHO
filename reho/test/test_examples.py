@@ -41,8 +41,9 @@ def test_download_examples():
 
 
 def execute_script(script_path):
+    script_path = Path(script_path)
     print(f"Executing {script_path}...")
-    os.system(f"python {script_path}")
+    os.system(f'cd "{script_path.parent}" && python "{script_path.name}"')
 
 
 def test_example_0():
@@ -158,3 +159,31 @@ def test_example_7a():
 def test_example_7b():
     script_path = Path(EXAMPLES_DIR) / "7b_rSOC_H2_export.py"
     execute_script(script_path)
+
+def test_all_examples():
+    test_example_0()
+    test_example_1a()
+    test_example_1b()
+    test_example_2a()
+    test_example_2b()
+    test_example_3a()
+    test_example_3b()
+    test_example_3c()
+    test_example_3d()
+    test_example_3e()
+    test_example_3f()
+    test_example_3g()
+    test_example_3h()
+    test_example_3i()
+    test_example_3j()
+    test_example_4a()
+    test_example_4b()
+    test_example_5a()
+    test_example_5b()
+    test_example_6a()
+    test_example_6b()
+    test_example_7a()
+    test_example_7b()
+
+if __name__ == '__main__':
+    test_all_examples()

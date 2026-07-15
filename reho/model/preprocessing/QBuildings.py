@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from shapely import wkt
 from sqlalchemy import create_engine, MetaData, select
-from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import SAWarning
 
 from reho.paths import *
@@ -88,8 +87,8 @@ class QBuildingsReader:
 
         # input
         warnings.filterwarnings('ignore', category=SAWarning)
-        metadata = MetaData(bind=self.db_engine)
-        metadata.reflect(schema=self.db_schema)
+        metadata = MetaData()
+        metadata.reflect(bind=self.db_engine, schema=self.db_schema)
         self.tables = metadata.tables
         self.db = db
 
@@ -226,6 +225,10 @@ class QBuildingsReader:
 
         # TODO: SQL query to select only buildings, roofs and facades of interest
 
+        # geopandas looks for PostGIS's spatial_ref_sys table which may not exist in all deployments;
+        # suppress the benign fallback warning since epsg:2056 is always the correct CRS here.
+        warnings.filterwarnings("ignore", message="Could not find the spatial reference system table")
+
         if district_boundary == "transformers":
             id_key = "transformer"
         elif district_boundary == "transformers_V2":
@@ -238,14 +241,14 @@ class QBuildingsReader:
             raise Exception("The district boundary is not recognized.")
 
         # Select the right boundary
-        sqlQuery = select([self.tables[self.db_schema + '.' + district_boundary]]).where(
+        sqlQuery = select(self.tables[self.db_schema + '.' + district_boundary]).where(
             self.tables[self.db_schema + '.' + district_boundary].columns.id == district_id)
-        self.data[district_boundary] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
+        self.data[district_boundary] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
 
         # Select buildings
-        sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]).where(
+        sqlQuery = select(self.tables[self.db_schema + '.' + 'buildings']).where(
             getattr(self.tables[self.db_schema + '.' + 'buildings'].columns, id_key) == district_id)
-        self.data['buildings'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
+        self.data['buildings'] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
         mask = (self.data['buildings']['egid'].isnull())
         self.data['buildings'] = self.data['buildings'].loc[~mask, :]
 
@@ -270,10 +273,10 @@ class QBuildingsReader:
             # TODO: Correct the roofs and facades selection with the id filtered by select_buildings_data
             self.data['facades'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
-                sqlQuery = select([self.tables[self.db_schema + '.' + 'facades']]) \
+                sqlQuery = select(self.tables[self.db_schema + '.' + 'facades']) \
                     .where(self.tables[self.db_schema + '.' + 'facades'].columns.id_building == id)
                 self.data['facades'] = pd.concat(
-                    (self.data['facades'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
+                    (self.data['facades'], gpd.read_postgis(sqlQuery,
                                                             con=self.db_engine, geom_col='geometry').fillna(np.nan)))
             if to_csv:
                 self.data['facades'].to_csv('facades.csv', index=False)
@@ -284,10 +287,10 @@ class QBuildingsReader:
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
-                sqlQuery = select([self.tables[self.db_schema + '.' + 'roofs']]) \
+                sqlQuery = select(self.tables[self.db_schema + '.' + 'roofs']) \
                     .where(self.tables[self.db_schema + '.' + 'roofs'].columns.id_building == id)
                 self.data['roofs'] = pd.concat(
-                    (self.data['roofs'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
+                    (self.data['roofs'], gpd.read_postgis(sqlQuery,
                                                           con=self.db_engine, geom_col='geometry').fillna(np.nan)))
             if to_csv:
                 self.data['roofs'].to_csv('roofs.csv', index=False)
@@ -380,6 +383,9 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
         'source_heating': 'source_heating',
         'source_hotwater': 'source_hotwater',
 
+        # Existing PV installation, used to build a 'reference' (as-is) scenario
+        'pv_installation_kW': 'pv_installation_kW',
+
         # Thermal envelope
         'thermal_transmittance_signature_kW_m2_K': 'U_h',
         'thermal_specific_capacity_Wh_m2_K': 'HeatCapacity',
@@ -433,6 +439,118 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
     df_buildings = translated_buildings_data
 
     return df_buildings
+
+
+# Maps source_heating keywords to the REHO unit(s) that implement them.
+# A building's source_heating can list several sources (e.g. "Oil/Electricity"),
+# in which case all matching units are enforced.
+HEATING_SOURCE_TO_UNITS = {
+    'oil':           ['OIL_Boiler'],
+    'gas':           ['NG_Boiler'],
+    'wood':          ['WOOD_Stove'],
+    'electricity':   ['ElectricalHeater_SH', 'ElectricalHeater_DHW'],
+    'district heat': ['DHN_hex'],
+}
+
+# Maps source_hotwater keywords to the REHO unit(s) that implement them.
+# Only contains units that can actually serve DHW.
+# 'wood' is intentionally absent: WOOD_Stove only serves SH in REHO.
+HOTWATER_SOURCE_TO_UNITS = {
+    'oil':           ['OIL_Boiler'],
+    'gas':           ['NG_Boiler'],
+    'electricity':   ['ElectricalHeater_DHW'],
+    'district heat': ['DHN_hex'],
+    'solar':         ['ThermalSolar'],
+}
+
+# All building units that can be a primary heating/DHW system — candidates
+# from the two mappings above plus the technologies they compete with.
+PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
+    'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+}
+
+# Units that can provide DHW heat (UnitOfService contains 'DHW').
+# WOOD_Stove and ElectricalHeater_SH serve SH only and are absent.
+_DHW_CAPABLE_UNITS = {
+    'OIL_Boiler', 'NG_Boiler', 'ElectricalHeater_DHW', 'DHN_hex',
+    'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+}
+
+
+def build_reference_scenario(buildings_data):
+    """
+    Builds the enforce/exclude lists and PV capacities for the 'reference' (as-is) scenario.
+
+    For each building the DHW provider is resolved with this priority:
+
+    1. ``source_hotwater`` field → matched via ``HOTWATER_SOURCE_TO_UNITS``.
+    2. ``source_heating`` unit that also serves DHW (e.g. OIL_Boiler, NG_Boiler).
+    3. Fallback: ``ElectricalHeater_DHW`` (e.g. wood-stove buildings with a standalone
+       electric boiler for hot water, which is common in Switzerland).
+
+    Parameters
+    ----------
+    buildings_data : dict
+        Dictionary of buildings characteristics, as returned by QBuildingsReader.
+
+    Returns
+    -------
+    enforce_units : list of str
+        Fully qualified unit names (``Unit_Building``) to enforce.
+    exclude_units : list of str
+        Fully qualified unit names (``Unit_Building``) to exclude.
+    pv_capacities : dict
+        Fully qualified PV unit names mapped to existing capacity in kW.
+    """
+    enforce_units = []
+    exclude_units = []
+    pv_capacities = {}
+
+    for building, data in buildings_data.items():
+
+        # --- Space heating units (from source_heating) ---
+        source_sh = str(data.get('source_heating', '')).lower()
+        matched_sh = set()
+        for keyword, units in HEATING_SOURCE_TO_UNITS.items():
+            if keyword in source_sh:
+                matched_sh.update(units)
+
+        # --- DHW units: resolve with 3-level priority ---
+        source_hw = str(data.get('source_hotwater', '')).lower()
+        matched_hw = set()
+        for keyword, units in HOTWATER_SOURCE_TO_UNITS.items():
+            if keyword in source_hw:
+                matched_hw.update(units)
+
+        if not matched_hw:
+            # Priority 2: inherit from source_heating if any of its units serve DHW
+            matched_hw = matched_sh & _DHW_CAPABLE_UNITS
+
+        if not matched_hw and matched_sh:
+            # Priority 3: SH units exist but none cover DHW → electric boiler fallback
+            matched_hw = {'ElectricalHeater_DHW'}
+
+        # --- Enforce and exclude ---
+        matched_all = matched_sh | matched_hw
+        if matched_sh:
+            # SH system is known: enforce everything and exclude all competing units
+            enforce_units += [u + '_' + building for u in matched_all]
+            exclude_units += [u + '_' + building for u in PRIMARY_HEATING_UNITS - matched_all]
+        elif matched_hw:
+            # Only DHW system is known: enforce DHW unit, leave SH choice free
+            enforce_units += [u + '_' + building for u in matched_hw]
+
+        # --- PV ---
+        pv_kw = data.get('pv_installation_kW', 0)
+        pv_kw = 0.0 if pd.isna(pv_kw) else float(pv_kw)
+        if pv_kw > 0:
+            enforce_units.append('PV_' + building)
+            pv_capacities['PV_' + building] = pv_kw
+        else:
+            exclude_units.append('PV_' + building)
+
+    return enforce_units, exclude_units, pv_capacities
+
 
 def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
     """
@@ -698,7 +816,7 @@ def return_shadows_id_building(id_building, df):
     for az in df_dome.azimuth:
         df_beta_dome = pd.concat((df_beta_dome, df.beta[df.azimuth == az]), ignore_index=True)
 
-    df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow'})
+    df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow', 'beta': 'Limiting_angle_shadow'})
 
     return df_beta_dome
 

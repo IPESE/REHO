@@ -49,7 +49,7 @@ def test_plot_eud(results):
 def test_plot_profiles(results):
     try:
         units_to_plot = ['ElectricalHeater', 'HeatPump', 'PV', 'NG_Boiler']
-        plotting.plot_profiles(results['totex'][0], units_to_plot, label='EN_long', color='ColorPastel', resolution='weekly',
-                               title="Energy profiles with a weekly moving average").show()
+        plotting.plot_combined_profiles(results['totex'][0], units_to_plot, label='EN_long', color='ColorPastel', resolution='weekly',
+                                         title="Energy profiles with a weekly moving average").show()
     except ImportError as e:
-        pytest.fail(f"plot_profiles failed: {e}")
+        pytest.fail(f"plot_combined_profiles failed: {e}")

@@ -197,7 +197,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
         if df_annuals.loc[x, "Hub"].startswith('Building'):
             df_annuals.loc[x, "Hub"] = "Building"
         else:
-            df_annuals.loc[x, "Hub"] = re.sub("_Building\d+", "", df_annuals.loc[x, "Hub"])
+            df_annuals.loc[x, "Hub"] = re.sub(r"_Building\d+", "", df_annuals.loc[x, "Hub"])
 
     df_label = pd.DataFrame(columns=['pos'])
     df_stv = pd.DataFrame(index=['source', 'target', 'value'])

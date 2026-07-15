@@ -29,8 +29,10 @@ class REHO(MasterProblem):
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
-        
+
         # input attributes
+        if isinstance(scenario, str):
+            scenario = self.build_predefined_scenario(scenario)
         self.scenario = scenario.copy()
         if 'specific' not in self.scenario:
             self.scenario['specific'] = []
@@ -56,8 +58,27 @@ class REHO(MasterProblem):
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
 
+    def build_predefined_scenario(self, scenario_name):
+        """
+        Expands a scenario name into its predefined scenario dictionary.
+
+        Currently supports ``"reference"``, which builds an as-is scenario from the QBuildings
+        data: each building's existing heating technology (``source_heating``) and PV capacity
+        (``pv_installation_kW``) are enforced, and any other heating unit is excluded.
+        """
+        if scenario_name == 'reference':
+            enforce_units, exclude_units, pv_capacities = build_reference_scenario(self.buildings_data)
+            if pv_capacities:
+                self.method['fix_units'] = True
+                self.df_fix_Units = pd.DataFrame({'Units_Mult': pv_capacities, 'Units_Use': 1})
+            return {'name': 'reference', 'Objective': 'TOTEX', 'enforce_units': enforce_units, 'exclude_units': exclude_units}
+        raise ValueError("Unknown predefined scenario '%s'. Pass a dict to define a custom scenario." % scenario_name)
+
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
+        if self.method['fix_units'] and self.df_fix_Units.empty:
+            import warnings
+            warnings.warn("fix_units=True but df_fix_Units is empty — no units will be fixed. Assign df_fix_Units before calling single_optimization.")
         if self.method['district-scale'] or self.method['building-scale']:  # decomposition formulation
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
@@ -134,8 +155,8 @@ class REHO(MasterProblem):
             def annualized_investment():
                 if self.method['building-scale'] or self.method['district-scale']:
                     df_inv = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-                    district = (df_inv.Costs_inv[-1] + df_inv.Costs_rep[-1]) / self.ERA
-                    buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
+                    district = (df_inv.Costs_inv.iloc[-1] + df_inv.Costs_rep.iloc[-1]) / self.ERA
+                    buildings = df_inv.Costs_inv.iloc[:-1].div(surfaces.ERA) + df_inv.Costs_rep.iloc[:-1].div(surfaces.ERA)
                 else:
                     tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
                     df_h = write_results.get_ampl_data(ampl, 'Costs_House_inv', multi_index=False)
@@ -150,8 +171,8 @@ class REHO(MasterProblem):
             def opex_per_house():
                 if self.method['building-scale'] or self.method['district-scale']:
                     df_op = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-                    district = df_op.Costs_op[-1] / self.ERA
-                    building = df_op.Costs_op[:-1].div(surfaces.ERA)
+                    district = df_op.Costs_op.iloc[-1] / self.ERA
+                    building = df_op.Costs_op.iloc[:-1].div(surfaces.ERA)
                 else:
                     df_h = write_results.get_ampl_data(ampl, 'Costs_House_op', multi_index=False)
                     df = write_results.get_ampl_data(ampl, 'Costs_op', multi_index=False)
@@ -392,8 +413,9 @@ class REHO(MasterProblem):
         f = self.feasible_solutions - 1
         heat_flow = self.results_MP[0][0][0]["df_District"]["flowrate_max"] * delta_enthalpy
         dhn_inv = self.results_MP[0][0][0]["df_District"].loc["Network", "DHN_inv"]
-        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"][0]
+        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"].iloc[0]
         dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
+        self.infrastructure.Units_Parameters[["Units_Fmax", "Cost_inv2"]] = self.infrastructure.Units_Parameters[["Units_Fmax", "Cost_inv2"]].astype(float)
         for bui in self.infrastructure.houses.keys():
             self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui] * 1.001, dhn_invh]
 
@@ -441,7 +463,7 @@ class REHO(MasterProblem):
 
         for column in ["Costs_op", "Costs_inv", "Costs_cft", "GWP_op", "GWP_constr"]:
             df_Performance.loc[:, column] = last_results["df_District"][column]
-        df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
+        df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'].iloc[0]
 
         if self.method["actors_problem"]:
             features = ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',

@@ -439,7 +439,7 @@ def get_mode_speed(units, mode_speed_custom):
 
     mode_speed = units[['Unit', 'UnitOfType']].copy()
     mode_speed = mode_speed.merge(default_speed, how='left')
-    mode_speed['Unit'].fillna(mode_speed['UnitOfType'], axis=0, inplace=True)
+    mode_speed['Unit'] = mode_speed['Unit'].fillna(mode_speed['UnitOfType'])
     mode_speed = mode_speed.set_index(['Unit'])[['Mode_Speed']]
 
     mode_speed_custom = pd.DataFrame.from_dict(mode_speed_custom, orient='index', columns=["Mode_Speed"])
@@ -730,7 +730,7 @@ def mobility_demand_from_WP1data(pkm_demand, max_dist=70, nbins=1, modalwindow=0
     df_dist_inf.pkm = df_dist_inf.pkm / df_dist_inf.pkm.sum()
 
     df_dist_inf = df_dist_inf.join(df_modal_split)
-    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].fillna(method='bfill').fillna(method='ffill')
+    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].bfill().ffill()
 
     lowerbound = 0
     step = max_dist / nbins

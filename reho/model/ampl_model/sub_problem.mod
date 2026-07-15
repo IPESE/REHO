@@ -340,8 +340,17 @@ Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + Costs_ins[h]
 					sum{l in ResourceBalances: h in HousesOfLayer[l]}(Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);
 
 subject to Costs_Unit_replacement{u in Units}:
-Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
+Costs_Unit_rep[u] =
 
+    sum{n_rep in 1..floor(n_years/lifetime[u]) - 1}
+    ((1/(1+i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u])
+    +
+    ((n_years - floor(n_years/lifetime[u])*lifetime[u])/ lifetime[u])
+    *
+    (1/(1+i_rate))^(floor(n_years/lifetime[u])*lifetime[u])
+    *
+    Costs_Unit_inv[u];
+	
 subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 

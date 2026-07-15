@@ -26,13 +26,13 @@ def test_clustering(weather_data):
         attributes.append('Emissions')
 
     cl = Clustering(data=weather_data[attributes], nb_clusters=cluster['Periods'], period_duration=cluster['PeriodDuration'],
-                    options={"year-to-day": True, "extreme": []})
+                    cluster=cluster, options={"year-to-day": True, "extreme": []})
     cl.run_clustering()
 
     plot_cluster_KPI_separate(cl.kpis_clu)
     plot_LDC(cl)
 
 
-def test_write_weather_files(qbuildings_data):
+def test_write_weather_files(qbuildings_data, tmp_path):
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-    generate_weather_data(cluster, qbuildings_data)
+    generate_weather_data(cluster, qbuildings_data, str(tmp_path))

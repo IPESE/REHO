@@ -15,14 +15,14 @@ maintainers = [
     {name = "IPESE-IT", email = "it.ipese@epfl.ch"},
 ]
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.11"
 classifiers = [
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
@@ -30,12 +30,12 @@ dependencies = [
     "ampl_module_base",
     "ampl_module_highs",
     "coloredlogs",
-    "geopandas<1.0.0",
+    "geopandas",
     "kaleido",
     "matplotlib",
-    "numpy<2.0.0",
+    "numpy",
     "openpyxl",
-    "pandas<2.0.0",
+    "pandas>=3.0.0",
     "plotly",
     "psycopg2-binary<3.0.0",
     "pvlib==0.13.0",
@@ -49,7 +49,7 @@ dependencies = [
     "scipy",
     "setuptools",
     "shapely",
-    "sqlalchemy<2.0.0",
+    "sqlalchemy>=2.0.0",
     "sympy",
     "urllib3<2"
 ]

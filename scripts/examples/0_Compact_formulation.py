@@ -1,9 +1,11 @@
+import subprocess
+
 from reho.model.reho import *
 from reho.plotting import plotting
-
+from reho.test.test_examples import test_all_examples
 
 if __name__ == '__main__':
-
+        
     # Set building parameters
     reader = QBuildingsReader()  # load QBuildingsReader class
     reader.establish_connection('Geneva')  # connect to QBuildings database
@@ -33,13 +35,16 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario='reference', method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
     reho.save_results(format=['xlsx', 'pickle'], filename='0')
 
     # Plot results
+    # plotting.plot_eud(reho.results).show()
+    plotting.plot_combined_profiles(reho.results['totex'][0], units_to_plot=["HeatPump", "PV", "ElectricalHeater", "Battery"]).show()
+
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
     plotting.plot_performance(reho.results, plot='gwp', indexed_on='Scn_ID', label='EN_long', title="Environmental performance").show()
     plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()

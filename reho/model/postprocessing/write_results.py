@@ -515,7 +515,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df6 = get_ampl_data(ampl, 'GWP_constr')
     df_District = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
     if read_DHN:
-        df7 = np.sqrt(np.sum(df_House[["diameter_max"]] ** 2)).to_frame().transpose()
+        df7 = pd.DataFrame(np.sqrt((df_House[["diameter_max"]] ** 2).sum())).T
         df8 = get_ampl_data(ampl, 'DHN_inv')
         df_District = pd.concat([df_District, df7, df8], axis=1)
 

@@ -1,10 +1,11 @@
+import subprocess
+
 from reho.model.reho import *
 from reho.plotting import plotting
-from reho.test.test_run import test_run
-
+from reho.test.test_examples import test_all_examples
 
 if __name__ == '__main__':
-    
+        
     # Set building parameters
     reader = QBuildingsReader()  # load QBuildingsReader class
     reader.establish_connection('Geneva')  # connect to QBuildings database
@@ -34,7 +35,7 @@ if __name__ == '__main__':
     units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario='reference', method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results

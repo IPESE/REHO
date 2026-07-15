@@ -64,7 +64,7 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
     E_dhw = df_profiles['Q_DHW'] * eta_carnot_dhw
 
     E_dhw_p = E_dhw.groupby(level=['Hub', 'Period']).sum()
-    E_dhw_a = E_dhw_p.mul(df_Time.dp, level='Period', axis=0)
+    E_dhw_a = E_dhw_p.mul(df_Time.dp.reindex(E_dhw_p.index, level='Period'), axis=0)
     E_dhw_a = E_dhw_a.groupby(level='Hub').sum() / 1000
 
     # space heating
@@ -169,10 +169,11 @@ def postcompute_pv_penetration_curtail(df_annual, df_annual_network):
     df_PVP = pd.concat([df_PVP, df_annual['PVC']], axis=1)
     df_PVP.at['Network', 'PVC'] = df_annual.PVC.sum()
 
-    PV_gen_and_PVC = (PV_gen.to_list() + [PV_gen_net]) + df_PVP.PVC / 1000
-    for i, values in enumerate(df_PVP.PVC):
-        if values != 0:
-            df_PVP.PVC[i] = df_PVP.PVC[i] / 1000 / PV_gen_and_PVC[i]  # MWh/MWh
+    pv_gen_list = PV_gen.to_list() + [float(PV_gen_net)]  # positional: N buildings + Network
+    for i, (idx, pvc_kwh) in enumerate(df_PVP['PVC'].items()):
+        if pvc_kwh != 0:
+            pvc_mwh = pvc_kwh / 1000
+            df_PVP.at[idx, 'PVC'] = pvc_mwh / (pv_gen_list[i] + pvc_mwh)  # MWh/MWh
 
     return df_PVP
 
@@ -196,8 +197,8 @@ def postcompute_annual_revenues(df_profiles, df_profiles_net, df_Time):
     RE_t = pd.concat([RE_t, RE_t_net])
 
     RE_p = RE_t.groupby(level=['Hub', 'Period']).sum()
-    RE_a = RE_p.mul(df_Time.dp, axis=0)
-    RE_a = RE_a.groupby('Hub', level=0).sum()
+    RE_a = RE_p.mul(df_Time.dp.reindex(RE_p.index, level='Period'), axis=0)
+    RE_a = RE_a.groupby(level='Hub').sum()
     df_AR = pd.DataFrame(RE_a, columns=['AR'])
 
     return df_AR
@@ -274,26 +275,26 @@ def postcompute_average_emission(local_data, df_annual, df_annual_net, df_profil
 
     # Buildings
     em_el_av_bui = em_supply_dy.mean() * df_profiles.Grid_supply - em_demand_dy.mean() * df_profiles.Grid_demand
-    em_el_av_bui = em_el_av_bui.mul(df_Time.dp, level='Period', axis=0).groupby('Hub').sum()
+    em_el_av_bui = em_el_av_bui.mul(df_Time.dp.reindex(em_el_av_bui.index, level='Period'), axis=0).groupby(level='Hub').sum()
 
     em_el_dy_bui = pd.Series(dtype='float')
     for h in df_annual.index.get_level_values(level='Hub'):
         em_el_dy_bui_h = em_supply_dy * df_profiles.Grid_supply.xs(h,
                                                                    level='Hub') - em_demand_dy * df_profiles.Grid_demand.xs(
             h, level='Hub')
-        em_el_dy_bui_h = em_el_dy_bui_h.mul(df_Time.dp, level='Period', axis=0).sum()
+        em_el_dy_bui_h = em_el_dy_bui_h.mul(df_Time.dp.reindex(em_el_dy_bui_h.index, level='Period'), axis=0).sum()
         em_el_dy_bui_h = pd.DataFrame([em_el_dy_bui_h], index=[h])
         em_el_dy_bui = pd.concat([em_el_dy_bui, em_el_dy_bui_h])
 
     # Network
     em_el_av_net = em_supply_dy.mean() * df_profiles_net.Grid_supply.xs(
         'Electricity') - em_demand_dy.mean() * df_profiles_net.Grid_demand.xs('Electricity')
-    em_el_av_net = em_el_av_net.mul(df_Time.dp, level='Period', axis=0).sum()
+    em_el_av_net = em_el_av_net.mul(df_Time.dp.reindex(em_el_av_net.index, level='Period'), axis=0).sum()
     em_el_av_net = pd.DataFrame([em_el_av_net], index=['Network'])
 
     em_el_dy_net = em_supply_dy * df_profiles_net.Grid_supply.xs(
         'Electricity') - em_demand_dy * df_profiles_net.Grid_demand.xs('Electricity')
-    em_el_dy_net = em_el_dy_net.mul(df_Time.dp, level='Period', axis=0).sum()
+    em_el_dy_net = em_el_dy_net.mul(df_Time.dp.reindex(em_el_dy_net.index, level='Period'), axis=0).sum()
     em_el_dy_net = pd.DataFrame([em_el_dy_net], index=['Network'])
 
     em_el_dy = pd.concat([em_el_dy_bui, em_el_dy_net])
@@ -351,7 +352,7 @@ def postcompute_Grid_param(df_Grid):
     df_max = df.groupby(level=['Hub', 'Period']).max()
     df_mean = df.groupby(level=['Hub', 'Period']).mean().replace(0,
                                                                  1)  # replace 0 with 1 to avoid div by 0,  profiles >0, in case av = 0- whole profile is 0
-    GM = df_max.div(df_mean, level='Hub').groupby('Hub').max()
+    GM = df_max.div(df_mean).groupby(level='Hub').max()
 
     GM = GM.rename(columns={'Grid_supply': 'GMs', 'Grid_demand': 'GMd'})
     GM['GUs'] = GM.GMs
@@ -451,7 +452,7 @@ def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
     """
 
     df_period = df_profiles_house.groupby(level=['Hub', 'Period']).sum()  # 'daily' sum
-    df_period = df_period.mul(df_Time.dp, level='Period', axis=0)  # multiply by frequency
+    df_period = df_period.mul(df_Time.dp.reindex(df_period.index, level='Period'), axis=0)  # multiply by frequency
 
     df_annual = df_period.groupby(level=['Hub']).sum()  # annuals
     df_annual['Cost_supply'] = df_annual['Cost_supply'] / 8760  # average price
@@ -615,27 +616,33 @@ def units_power_profiles_per_building(df_Results, infrastructure, unittype):
 
 
 def remove_building_from_index(df):
-    def filter_building_str(unit_str):
-        parts = unit_str.split('_')
-        if 'Building' in parts[-1]:  # Check if the last part contains 'Building'
-            new_idx = '_'.join(parts[:-1])  # Remove only the last part
-            hub = parts[-1]  # Keep the removed part separately as Hub
-        else:
-            new_idx = unit_str
-            hub = 'Network'
-        return new_idx, hub
+    def split_unit_hub(s):
+        parts = str(s).split('_')
+        if len(parts) > 1 and 'Building' in parts[-1]:
+            return '_'.join(parts[:-1]), parts[-1]
+        return str(s), 'Network'
 
-    index_frame = df.index.to_frame()
-
-    if 'Unit' in index_frame.columns:
-        new_index = [filter_building_str(idx) for idx in index_frame['Unit']]
-        new_index_df = pd.DataFrame(new_index, columns=['Unit', 'Hub'])
-        index_frame[['Unit', 'Hub']] = new_index_df.values
-    elif 'Hub' in index_frame.columns:
-        index_frame['Hub'] = [filter_building_str(idx)[0] for idx in index_frame['Hub']]
-
-    new_index = pd.MultiIndex.from_frame(index_frame)
-    return df.set_index(new_index)
+    idx = df.index
+    if isinstance(idx, pd.MultiIndex):
+        # index=False gives a clean RangeIndex so column assignment is unambiguous
+        frame = idx.to_frame(index=False)
+        if 'Unit' in frame.columns:
+            split = [split_unit_hub(u) for u in frame['Unit']]
+            frame['Unit'] = [s[0] for s in split]
+            if 'Hub' not in frame.columns:
+                frame.insert(frame.columns.get_loc('Unit') + 1, 'Hub', [s[1] for s in split])
+            else:
+                frame['Hub'] = [s[1] for s in split]
+        elif 'Hub' in frame.columns:
+            frame['Hub'] = [split_unit_hub(h)[0] for h in frame['Hub']]
+        return df.set_index(pd.MultiIndex.from_frame(frame))
+    else:
+        # Single-level index: 'OIL_Boiler_Building1' → ('OIL_Boiler', 'Building1')
+        lname = idx.name or 'Unit'
+        split = [split_unit_hub(v) for v in idx]
+        units = [s[0] for s in split]
+        hubs = [s[1] for s in split]
+        return df.set_index(pd.MultiIndex.from_arrays([units, hubs], names=[lname, 'Hub']))
 
 
 def build_df_Economics(df_Results, df_profiles):
@@ -654,8 +661,8 @@ def build_df_Economics(df_Results, df_profiles):
         df_cost['avoided_' + col] = df_profiles.loc[:, col] * df_profiles.loc[:, 'Cost_demand']
         df_impact['avoided_' + col] = df_profiles.loc[:, col] * df_profiles.loc[:, 'GWP_demand']
 
-    df_cost = df_cost.mul(period_duration, level='Period', axis=0).groupby(level='Hub').sum()
-    df_impact = df_impact.mul(period_duration, level='Period', axis=0).groupby(level='Hub').sum()
+    df_cost = df_cost.mul(period_duration.reindex(df_cost.index, level='Period'), axis=0).groupby(level='Hub').sum()
+    df_impact = df_impact.mul(period_duration.reindex(df_impact.index, level='Period'), axis=0).groupby(level='Hub').sum()
     df_cost.loc['Network', :] = df_cost.sum()
     df_impact.loc['Network', :] = df_impact.sum()
 
@@ -675,14 +682,15 @@ def build_df_Economics(df_Results, df_profiles):
         df_grid_cost["price_demand"] += df_grid_t["EV_revenue_ext"].replace(np.nan, 0)
         df_grid_cost["price_supply"] += df_grid_t["EV_cost_ext"].replace(np.nan, 0)
 
-    df_grid_cost = df_grid_cost.mul(period_duration, level='Period', axis=0).groupby(level=['Hub', 'Layer']).sum()
-    df_grid_impact = df_grid_impact.mul(period_duration, level='Period', axis=0).groupby(level=['Hub', 'Layer']).sum()
+    df_grid_cost = df_grid_cost.mul(period_duration.reindex(df_grid_cost.index, level='Period'), axis=0).groupby(level=['Hub', 'Layer']).sum()
+    df_grid_impact = df_grid_impact.mul(period_duration.reindex(df_grid_impact.index, level='Period'), axis=0).groupby(level=['Hub', 'Layer']).sum()
 
     # Unit
     df_unit = df_unit.groupby(level=['Unit', 'Hub']).sum()
     df_unit_cost = df_unit.reset_index().pivot(index='Hub', values='Costs_Unit_inv', columns='Unit')
     df_unit_cost += df_unit.reset_index().pivot(index='Hub', values='Costs_Unit_rep', columns='Unit')
     df_unit_impact = df_unit.reset_index().pivot(index='Hub', values='GWP_Unit_constr', columns='Unit')
+    # Pourquoi pas de replacement pour le GWP
     df_unit_cost.loc['Network', :] = df_unit_cost.sum()
     df_unit_impact.loc['Network', :] = df_unit_impact.sum()
 

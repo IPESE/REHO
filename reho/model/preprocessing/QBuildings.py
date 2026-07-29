@@ -9,7 +9,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely import wkt
-from sqlalchemy import create_engine, MetaData, select
+from sqlalchemy import create_engine, MetaData, select, and_, or_, func
 from sqlalchemy.exc import SAWarning
 
 from reho.paths import *
@@ -19,6 +19,8 @@ Handles data for buildings characterization.
 """
 
 df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))
+
+CRS_QBUILDINGS = 2056  # Swiss coordinate system (CH1903+ / LV95) used in QBuildings
 
 
 class QBuildingsReader:
@@ -35,6 +37,28 @@ class QBuildingsReader:
     load_roofs : bool
         Whether the roofs data should be added.
     """
+
+    # Filter layer -> column of the `buildings` table on which it is applied
+    LAYER_COLUMNS = {
+        'transformers': 'transformer',
+        'transformer': 'transformer',
+        'transformers_V2': 'id_transformers_V2',
+        'geo_girec': 'geo_girec',
+        'neighborhoods': 'id_neighborhood',
+        'neighborhood': 'id_neighborhood',
+        'egid': 'egid',
+        'id_building': 'id_building',
+    }
+
+    # Filter layer -> table holding the corresponding district boundaries
+    DISTRICT_TABLES = {
+        'transformers': 'transformers',
+        'transformer': 'transformers',
+        'transformers_V2': 'transformers_V2',
+        'geo_girec': 'geo_girec',
+        'neighborhoods': 'neighborhoods',
+        'neighborhood': 'neighborhoods',
+    }
 
     def __init__(self, load_facades=False, load_roofs=False):
 
@@ -163,24 +187,37 @@ class QBuildingsReader:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
         return qbuildings
 
-    def read_db(self, district_boundary="transformers", district_id=None, nb_buildings=None, egid=None, to_csv=False, correct_Uh=False):
+    def read_db(self, filters=None, nb_buildings=None, to_csv=False, correct_Uh=False,
+                district_boundary=None, district_id=None, egid=None):
         """
         Reads the database and extracts the relevant buildings data.
-        If only some buildings from the district_id need to be extracted, you can specify the desired number of buildings or, if the EGIDs are known, provide a list of EGIDs.
-        The fields from the database are translated to the nomenclature used in REHO.
+
+        The selection is driven by a ``{layer: value}`` dictionary, where each entry restricts the
+        buildings to those matching the given layer. The district(s) to which the selected buildings
+        belong are retrieved as well, and the fields are translated to the nomenclature used in REHO.
 
         Parameters
         ----------
-        district_boundary : str
-            The boundary of the district. It can be either 'transformers' or 'geo_girec'. By default, a district corresponds to a LV tranformer area as defined in QBuidings database.
-        district_id : int or str
-            ID or name of the district where the buildings lie.
+        filters : dict
+            Selection criteria, given as ``{layer: value}`` and combined with a logical AND. Values
+            can be a scalar or a list. The available layers are:
+
+            - ``transformers`` : LV transformer area (default district boundary in QBuildings)
+            - ``transformers_V2`` : alternative LV transformer areas
+            - ``geo_girec`` : GIREC statistical sectors
+            - ``neighborhoods`` : neighborhoods
+            - ``egid`` : buildings EGIDs
+            - ``id_building`` : QBuildings internal building IDs
+            - ``geometry`` : any geometry, given as a file path (.gpkg, .shp, .geojson...), a WKT
+              string, a shapely geometry or a (Geo)DataFrame. Buildings intersecting it are selected.
         nb_buildings : int
-            Number of buildings to select
-        egid : list
-            To specify a list of buildings their EGIDs
+            Number of buildings to select.
         to_csv : bool
-            To export the data into csv
+            To export the data into csv.
+        correct_Uh : bool
+            To recompute the U values from the buildings characteristics.
+        district_boundary, district_id, egid
+            Deprecated, kept for backward compatibility. Use ``filters`` instead.
 
         Returns
         -------
@@ -193,6 +230,7 @@ class QBuildingsReader:
         -----
         - The use of this function requires the previous creation of a ``QBuildingsReader`` and the use of ``establish_connection('Suisse')``.
         - EGIDs are the postal address unique identifier used in Switzerland. One can find the EGIDs of a given address at the `RegBL <https://www.housing-stat.ch/fr/query/adrtoegid.html>`_.
+        - Geometries are expected in EPSG:2056 (LV95); files carrying their own CRS are reprojected.
         - If ``load_roofs = True`` the roofs are returned as well in the dictionary as a DataFrame under the key ``roofs_data``.
         - If ``load_facades = True`` the facades and the shadows are returned as well in the dictionary as a DataFrame under the keys ``roofs_data`` and ``shadows_data``.
 
@@ -201,7 +239,11 @@ class QBuildingsReader:
         >>> from reho.model.reho import *
         >>> reader = QBuildingsReader(load_roofs=True)
         >>> reader.establish_connection('Suisse')
-        >>> qbuildings_data = reader.read_db(district_id=3658, egid=[954117])
+        >>> qbuildings_data = reader.read_db({'egid': 954117})
+        >>> qbuildings_data = reader.read_db({'transformers': 3658}, nb_buildings=10)
+        >>> qbuildings_data = reader.read_db({'neighborhoods': 10302})
+        >>> qbuildings_data = reader.read_db({'geometry': 'boundary.gpkg'})
+        >>> qbuildings_data = reader.read_db({'geometry': 'MULTIPOLYGON (((2592684 1120074, ...)))'})
 
         >>> qbuildings_data['buildings_data']
         {'buildings_data': {'Building1': {'id_class': 'I', 'ratio': '1.0', 'status': "['existing', 'existing', 'existing']", 'ERA': 1396.0, 'SolarRoofArea': 1121.8206745917826, 'area_facade_m2': 848.6771960464813, 'height_m': 9.211343577064236, 'U_h': 0.00152, 'HeatCapacity': 120.29999999999991, 'T_comfort_min_0': 20.0, 'Th_supply_0': 65.0, 'Th_return_0': 50.0, 'Tc_supply_0': 12.0, 'Tc_return_0': 17.0, 'x': 2592703.9673297284, 'y': 1120087.7339999992, 'z': 572.4461527539248, 'geometry': <POLYGON ((2592684.383 1120074.623, 2592683.644 1120075.443, 2592679.083 112...>, 'transformer': 3658, 'id_building': '40214', 'egid': '954117', 'period': '1981-1990', 'n_p': 34.9, 'energy_heating_signature_kWh_y': 111855.52745599969, 'energy_cooling_signature_kWh_y': 0.0, 'energy_hotwater_signature_kWh_y': 4562.903646729638, 'energy_el_kWh_y': 39088.0}}
@@ -223,34 +265,36 @@ class QBuildingsReader:
 
         """
 
-        # TODO: SQL query to select only buildings, roofs and facades of interest
+        # TODO: SQL query to select only roofs and facades of interest
 
         # geopandas looks for PostGIS's spatial_ref_sys table which may not exist in all deployments;
         # suppress the benign fallback warning since epsg:2056 is always the correct CRS here.
         warnings.filterwarnings("ignore", message="Could not find the spatial reference system table")
 
-        if district_boundary == "transformers":
-            id_key = "transformer"
-        elif district_boundary == "transformers_V2":
-            id_key = "id_transformers_V2"
-        elif district_boundary == "geo_girec":
-            id_key = "geo_girec"
-        elif district_boundary == "neighborhoods":
-            id_key = "id_neighborhood"
-        else:
-            raise Exception("The district boundary is not recognized.")
-
-        # Select the right boundary
-        sqlQuery = select(self.tables[self.db_schema + '.' + district_boundary]).where(
-            self.tables[self.db_schema + '.' + district_boundary].columns.id == district_id)
-        self.data[district_boundary] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
+        filters = dict(filters) if filters else {}
+        # Deprecated arguments are folded into the filters dictionary
+        if district_id is not None:
+            filters[district_boundary or 'transformers'] = district_id
+        if egid is not None:
+            filters['egid'] = egid
+        if not filters:
+            raise ValueError("No filter given, e.g. {'transformers': 234}, {'egid': 1009515} or {'geometry': 'boundary.gpkg'}.")
 
         # Select buildings
-        sqlQuery = select(self.tables[self.db_schema + '.' + 'buildings']).where(
-            getattr(self.tables[self.db_schema + '.' + 'buildings'].columns, id_key) == district_id)
+        table_buildings = self.tables[self.db_schema + '.' + 'buildings']
+        sqlQuery = select(table_buildings).where(and_(*[self._build_condition(table_buildings, layer, value)
+                                                       for layer, value in filters.items()]))
         self.data['buildings'] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
-        mask = (self.data['buildings']['egid'].isnull())
-        self.data['buildings'] = self.data['buildings'].loc[~mask, :]
+        self.data['buildings'] = self.data['buildings'][self.data['buildings']['egid'].notnull()]
+        if self.data['buildings'].empty:
+            raise ValueError("No building found for the filters %s." % filters)
+
+        # Select the boundary of the district(s) the selected buildings belong to
+        district_boundary = next((layer for layer in filters if layer in self.DISTRICT_TABLES), 'transformers')
+        id_key = self.LAYER_COLUMNS[district_boundary]
+        self.read_districts(self.DISTRICT_TABLES[district_boundary], id_key)
+        if self.DISTRICT_TABLES[district_boundary] != 'transformers':
+            self.read_districts('transformers', 'transformer')  # always needed, e.g. for the electricity prices
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
@@ -258,7 +302,8 @@ class QBuildingsReader:
             self.data['buildings'].to_csv('buildings.csv', index=False)
 
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'], district_boundary=id_key)
-        buildings = self.select_buildings_data(nb_buildings, egid)
+        # Buildings selected by their EGID are kept as such, without filtering on their class
+        buildings = self.select_buildings_data(nb_buildings, filter_class='egid' not in filters)
         if to_csv:
             csv_columns = list(buildings[list(buildings.keys())[0]].keys())
             with open('reho_input.csv', 'w') as csvfile:
@@ -300,12 +345,36 @@ class QBuildingsReader:
         if correct_Uh:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
 
-        if qbuildings["buildings_data"] == {}:
-            raise print("Empty building data")
-
         return qbuildings
 
-    def select_buildings_data(self, nb_buildings, egid=None):
+    def _build_condition(self, table, layer, value):
+        """Translates a single ``{layer: value}`` filter into a SQL condition on the buildings table."""
+
+        if layer == 'geometry':
+            geometry = to_shapely(value)
+            return func.ST_Intersects(table.columns.geometry, func.ST_GeomFromText(geometry.wkt, CRS_QBUILDINGS))
+
+        if layer not in self.LAYER_COLUMNS:
+            raise ValueError("Unknown filter layer '%s'. Available: %s and 'geometry'." % (layer, list(self.LAYER_COLUMNS)))
+
+        column = table.columns[self.LAYER_COLUMNS[layer]]
+        values = list(value) if isinstance(value, (list, tuple, set, np.ndarray, pd.Series)) else [value]
+        if layer == 'egid':
+            # EGIDs are stored as text and can be grouped ('1017073/1017074'): match any element of the group
+            return or_(*[column.op('~')(r"(^|/)%s(/|$)" % e) for e in values])
+        return column.in_(values)
+
+    def read_districts(self, table_name, id_key):
+        """Reads the boundaries of the districts to which the selected buildings belong."""
+
+        ids = pd.unique(self.data['buildings'][id_key].dropna()).tolist()
+        table = self.tables[self.db_schema + '.' + table_name]
+        sqlQuery = select(table).where(table.columns.id.in_(ids))
+        self.data[table_name] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
+
+        return self.data[table_name]
+
+    def select_buildings_data(self, nb_buildings, egid=None, filter_class=True):
 
         if egid is None:
             nb_select = 0
@@ -313,7 +382,7 @@ class QBuildingsReader:
             reindex = []
             for i, building in self.data['buildings'].iterrows():
                 # Only execute optimization for complete dictionary else skip and count
-                if re.search('XIII', building['id_class']) is None:
+                if not filter_class or re.search('XIII', building['id_class']) is None:
                     selected_buildings.append(building['id_building'])
                     nb_select += 1
                     reindex.append("Building" + str(nb_select))
@@ -352,6 +421,41 @@ class QBuildingsReader:
                     self.data['facades'].index[self.data['facades']['id_building'] == building['id_building']].to_list()
 
         return selected_data
+
+
+def to_shapely(geometry, crs=CRS_QBUILDINGS):
+    """
+    Converts a geometry into a single shapely geometry expressed in the QBuildings CRS.
+
+    Parameters
+    ----------
+    geometry : str, os.PathLike, shapely geometry, GeoDataFrame or GeoSeries
+        A path to a geographic file (.gpkg, .shp, .geojson...), a WKT string, an already opened
+        (Geo)DataFrame or a shapely geometry.
+    crs : int
+        The CRS in which the geometry is returned.
+
+    Returns
+    -------
+    shapely.geometry.base.BaseGeometry
+        The union of the given geometries.
+    """
+
+    if isinstance(geometry, (str, os.PathLike)) and os.path.exists(geometry):
+        geometry = gpd.read_file(geometry)
+    elif isinstance(geometry, str):
+        geometry = wkt.loads(geometry)
+
+    if isinstance(geometry, (gpd.GeoDataFrame, pd.DataFrame)):
+        geometry = geometry['geometry']
+    if isinstance(geometry, pd.Series) and not isinstance(geometry, gpd.GeoSeries):
+        geometry = gpd.GeoSeries(geometry.apply(lambda g: wkt.loads(g) if isinstance(g, str) else g))
+    if isinstance(geometry, gpd.GeoSeries):
+        if geometry.crs is not None:
+            geometry = geometry.to_crs(crs)
+        return geometry.union_all()
+
+    return geometry  # shapely geometry, assumed to be already in the right CRS
 
 
 def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):

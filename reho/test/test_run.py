@@ -9,7 +9,7 @@ def test_run(save_results=True):
         # Set building parameters
         reader = QBuildingsReader()
         reader.establish_connection('Geneva')
-        qbuildings_data = reader.read_db(district_id=71, egid=['1009515'])
+        qbuildings_data = reader.read_db({'transformers': 71, 'egid': 1009515})
 
         # Select clustering options for weather data
         cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}

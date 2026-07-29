@@ -6,7 +6,7 @@ if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader(load_facades=True, load_roofs=True)
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db(district_id=234, nb_buildings=6, correct_Uh=True)
+    qbuildings_data = reader.read_db({'transformers': 234}, nb_buildings=6, correct_Uh=True)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}

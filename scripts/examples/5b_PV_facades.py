@@ -8,7 +8,7 @@ if __name__ == '__main__':
     reader = QBuildingsReader(load_facades=True, load_roofs=True)
 
     # reader.establish_connection('Suisse')
-    # qbuildings_data = reader.read_db(district_id=3658, nb_buildings=2)
+    # qbuildings_data = reader.read_db({'transformers': 3658}, nb_buildings=2)
 
     # Alternatively, roof orientations and facades can be loaded from csv files
     buildings_filename = str(Path(__file__).parent / 'data' / 'buildings.csv')

@@ -301,10 +301,16 @@ class QBuildingsReader:
         filters = dict(filters) if filters else {}
         # Deprecated arguments are folded into the filters dictionary
         if district_id is not None:
+            warnings.warn("district_boundary/district_id are deprecated, use filters={'%s': %r} instead."
+                           % (district_boundary or 'transformers', district_id), DeprecationWarning, stacklevel=2)
             filters[district_boundary or 'transformers'] = district_id
         if egid is not None:
+            warnings.warn("The egid argument is deprecated, use filters={'egid': %r} instead." % (egid,),
+                           DeprecationWarning, stacklevel=2)
             filters['egid'] = egid
         if id_building is not None:
+            warnings.warn("The id_building argument is deprecated, use filters={'id_building': %r} instead." % (id_building,),
+                           DeprecationWarning, stacklevel=2)
             filters['id_building'] = id_building
         if not filters:
             raise ValueError("No filter given, e.g. {'transformers': 234}, {'egid': 1009515} or {'geometry': 'boundary.gpkg'}.")

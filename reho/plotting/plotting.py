@@ -1280,7 +1280,7 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
     df_buildings = df_buildings.reset_index().merge(df_annuals, on=['Scn_ID', 'Pareto_ID', 'Hub']).set_index(
         ['Scn_ID', 'Pareto_ID', 'Hub'])
     data_to_plot = pd.DataFrame(0.0, index=classes, columns=['area_per_class', 'sh_per_class', 'dhw_per_class',
-                                                             'elec_per_class'])
+                                                             'rSOC_per_class', 'elec_per_class'])
     class_names = pd.read_csv(os.path.join(path_to_plotting, 'sia380_1.csv'), index_col='id_class', sep=";")
     data_to_plot = data_to_plot.merge(class_names, left_index=True, right_on='id_class')
 
@@ -1301,20 +1301,22 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
     hover_template = []
     values_sun = []
     for i in range(len(classes)):
-        [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "Elec"]]
+        [child_name.append(element) for element in [data_to_plot.iloc[i]['class_' + label], "SH", "DHW", "rSOC", "Elec"]]
         [parents_name.append(element) for element in
-         ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],]]
+         ["Total", data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label],
+          data_to_plot.iloc[i]['class_' + label], data_to_plot.iloc[i]['class_' + label]]]  # as many elements as child_name energy carriers
         [values_sun.append(element) for element in [
-            data_to_plot.iloc[i]['sh_per_class'] + data_to_plot.iloc[i]['dhw_per_class'] +
-            data_to_plot.iloc[i]['elec_per_class'],
-            data_to_plot.iloc[i]['sh_per_class'], data_to_plot.iloc[i]['dhw_per_class'],
+            data_to_plot.iloc[i]['sh_per_class'] + data_to_plot.iloc[i]['dhw_per_class'] + data_to_plot.iloc[i]['rSOC_per_class'] + data_to_plot.iloc[i]['elec_per_class'],
+            data_to_plot.iloc[i]['sh_per_class'], data_to_plot.iloc[i]['dhw_per_class'], data_to_plot.iloc[i]['rSOC_per_class'],
             data_to_plot.iloc[i]['elec_per_class']]]
         [text_template.append(element) for element in ['%{label}<br>%{percentParent:.2%}',
+                                                       '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}',
                                                        '%{label}<br>%{percentParent:.2%}']]
         [hover_template.append(element) for element in
          ['<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentParent:.2%}' + liaison + '%{parent}',
+          '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
           '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
           '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}',
           '<i>%{label}</i><br><b>' + hover_text + ': </b>%{value} MWh<br>%{percentRoot:.2%}' + liaison + '%{root}']]
@@ -1609,19 +1611,13 @@ def plot_pareto(results, color='ColorPastel', title=None, return_df=False):
             title="Scenario",
         ),
         yaxis=dict(
-            title="Costs [CHF/yr]",
-            titlefont=dict(
-                color=layout.loc["TOTEX", color]
-            ),
+            title=dict(text="Costs [CHF/yr]", font=dict(color=layout.loc["TOTEX", color])),
             tickfont=dict(
                 color=layout.loc["TOTEX", color]
             )
         ),
         yaxis2=dict(
-            title="GWP [kgCO2/yr]",
-            titlefont=dict(
-                color=layout.loc["GWP", color]
-            ),
+            title=dict(text="GWP [kgCO2/yr]", font=dict(color=layout.loc["GWP", color])),
             tickfont=dict(
                 color=layout.loc["GWP", color]
             )
@@ -1670,12 +1666,13 @@ def plot_pareto_by_objectives(results, objectives=["CAPEX", "OPEX"], style='plot
     df_performance = dict_to_df(results, 'df_Performance').loc[
         (slice(None), slice(None), 'Network'), ["Costs_op", "Costs_inv", "Costs_grid_connection", "Costs_rep",
                                                 "GWP_op", "GWP_constr"]].reset_index(['Scn_ID', 'Hub'])
-    era = dict_to_df(results, 'df_Buildings').loc[(slice(None), 1, slice(None))].ERA.sum()
+    pareto_keys = list(results[list(results.keys())[0]].keys())
+    era = dict_to_df(results, 'df_Buildings').loc[(slice(None), pareto_keys[0], slice(None))].ERA.sum()
     df_performance["CAPEX"] = df_performance["Costs_inv"] + df_performance["Costs_rep"]
     df_performance["OPEX"] = df_performance["Costs_op"] + df_performance["Costs_grid_connection"]
     df_performance["TOTEX"] = df_performance["CAPEX"] + df_performance["OPEX"]
     df_performance["GWP"] = df_performance["GWP_op"] + df_performance["GWP_constr"]
-    df_performance_dict[df_performance.loc[1, "Scn_ID"]] = df_performance[["CAPEX", "OPEX", "TOTEX", "GWP"]].sort_values(by=objectives[0]) / era
+    df_performance_dict[df_performance.loc[pareto_keys[0], "Scn_ID"]] = df_performance[["CAPEX", "OPEX", "TOTEX", "GWP"]].sort_values(by=objectives[0]) / era
 
     if objectives[0] == "CAPEX":
         obj_x = "CAPEX [CHF/m$^2$yr]"

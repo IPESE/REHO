@@ -108,7 +108,7 @@ The example shows the use of two methods:
 The "renovation" method consists in a list of renovation options. Each option contains building elements to renovate. The order does not matter. The buildings elements are: window, facade, roof and footprint.
 For each option, an additional SP is run with the U-value of the renovated building, calculated based on the file `infrastructure/U_values.csv`.
 The MP will receive at each iteration one solution with non-renovated buildings and one solution per renovated option.
-To keep consistency, the non-renovated U-value of the buildings should be taken using the functions *reader.read_db* or *read_csv* with the option *correct_Uh=True*.
+To keep consistency, the non-renovated U-value of the buildings should be taken by creating the reader with the option *QBuildingsReader(correct_Uh=True)*.
 This option uses the values in `infrastructure/U_values.csv` instead of the U-values from QBuildings.
 Investment costs and embodied emissions are calculated based on the file `infrastructure/renovation.csv`.
 

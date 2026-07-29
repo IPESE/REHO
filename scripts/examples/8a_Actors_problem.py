@@ -4,9 +4,9 @@ from reho.model.actors_problem import *
 if __name__ == '__main__':
 
     # Set building parameters
-    reader = QBuildingsReader(load_roofs=True, load_facades=True)
+    reader = QBuildingsReader(load_roofs=True, load_facades=True, correct_Uh=True)
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 234}, nb_buildings=40, correct_Uh=True)
+    qbuildings_data = reader.read_db({'transformers': 234}, nb_buildings=40)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}

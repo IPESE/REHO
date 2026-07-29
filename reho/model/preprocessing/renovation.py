@@ -40,7 +40,7 @@ def renovation_cost_co2(buildings_data, local_data, renovation_option):
     df_U_values, df_costs = select_renovation_option(local_data, renovation_option)
     Uh_ins = U_h_renovation(buildings_data.copy(), df_U_values)
 
-    if Uh - Uh_ins < 1e-6:
+    if Uh - Uh_ins < 1e-6:  # Maybe allow to vary this as well
         impacts = {"cost": 0.0, "gwp": 0.0}
     else:
         mapping = {'<1919': "<1918", '1919-1945': "1919-1948", '1946-1960': "1949-1978", '1961-1970': "1949-1978",
@@ -61,12 +61,15 @@ def renovation_cost_co2(buildings_data, local_data, renovation_option):
 
             impacts[col] = 0
             for i in range(len(periods)):
-                glass = 0.5
-                if id_class[i] in ["I", "II"]:
-                    glass = 0.3
+                if 'glass_ratio' in buildings_data.keys(): # To allow to pass it (useful for sensitivity analysis or case handle by a user)
+                    glass = buildings_data['glass_ratio']
+                else:
+                    glass = 0.5
+                    if id_class[i] in ["I", "II"]:
+                        glass = 0.3
 
                 cost = df_costs[col].xs(mapping[periods[i]])
                 impacts[col] += ratios[i] * (buildings_data["area_facade_m2"] * ((1-glass) * cost["facade"] + glass * cost["window"])
                                + buildings_data["SolarRoofArea"] * cost["roof"] + buildings_data['ERA'] / buildings_data['count_floor'] / 0.93 * cost["footprint"])
 
-    return Uh_ins, impacts["cost"]*1.16, impacts["gwp"]
+    return Uh_ins, impacts["cost"]*1.16, impacts["gwp"] # Pq 1.16 pour le coût?

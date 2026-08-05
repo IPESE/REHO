@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import logging
+import openpyxl
 
 __doc__ = """
 Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
@@ -805,3 +806,31 @@ def filter_numerical_instabilities(df, threshold=1e-4):
         .where(df_clean[num_cols].abs() >= threshold, 0)
     )
     return df_clean
+
+
+def set_df_inputs(scenario, method, cluster, parameters, data_source=None):
+    """
+    Records the inputs that produced a result, so a run can be reported and reproduced from it.
+
+    Returns a DataFrame indexed on (category, key). The buildings themselves are reported in
+    ``df_Buildings``, where egid and id_building are enough to retrieve them.
+    """
+    inputs = {'scenario': scenario, 'method': method, 'cluster': cluster, 'parameters': parameters,
+              'buildings': {'data_source': data_source}}
+
+    records = []
+    for category, entries in inputs.items():
+        for key, value in entries.items():
+            if isinstance(value, (pd.DataFrame, pd.Series, np.ndarray)):
+                value = "<%s shape=%s>" % (type(value).__name__, getattr(value, 'shape', None))
+            records.append({'category': category, 'key': key, 'value': str(value)})
+
+    return pd.DataFrame(records).set_index(['category', 'key'])
+
+
+def auto_adjust_columns(writer, df, sheet_name):
+    worksheet = writer.sheets[sheet_name]
+    for idx, col in enumerate(df.columns, 1):
+        # column header length + extra padding
+        max_length = len(col) + 2
+        worksheet.column_dimensions[openpyxl.utils.get_column_letter(idx)].width = max_length

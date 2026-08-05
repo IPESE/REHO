@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
-    grids = infrastructure.initialize_grids({'Electricity': {},
+    grids = configuration.initialize_grids({'Electricity': {},
                                              'Hydrogen': {"Cost_supply_cst": 0.45, "Cost_demand_cst": 0.2},  # default export price = 0.15 CHF/kWh (5 CHF/kg H2)
                                              'Biomethane': {},
                                              'CO2': {},
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     grids["Electricity"]["ReinforcementOfNetwork"] = np.array([15])  # limit the 2000 kW default value (from layers.csv) for export or import electricity
     grids["Hydrogen"]["ReinforcementOfNetwork"] = np.array([100])  # update the 0 kW default value (from layers.csv) for export or import hydrogen
 
-    units = infrastructure.initialize_units(scenario, grids, interperiod_data=True)  # enable interperiod storage
+    units = configuration.initialize_units(scenario, grids, interperiod_data=True)  # enable interperiod storage
 
     # Set parameters
     parameters = {}

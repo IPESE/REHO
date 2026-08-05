@@ -183,10 +183,10 @@ Core of the optimization model (model objectives, constraints, modeling equation
 .. automodule:: reho.model.actors_problem
     :members:
 
-*infrastructure.py*
+*configuration.py*
 ------------------------------
 
-.. automodule:: reho.model.infrastructure
+.. automodule:: reho.model.configuration
     :members:
 
 *reho.py*

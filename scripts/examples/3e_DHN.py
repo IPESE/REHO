@@ -29,11 +29,11 @@ if __name__ == '__main__':
     parameters = {'T_DHN_supply_cst': np.repeat(20.0, 4), "T_DHN_return_cst": np.repeat(15.0, 4)}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {},
+    grids = configuration.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
                                              'Heat': {}})
 
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
+    units = configuration.initialize_units(scenario, grids, district_data=True)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

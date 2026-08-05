@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
-    grids = infrastructure.initialize_grids({'Electricity': {},
+    grids = configuration.initialize_grids({'Electricity': {},
                                              'Hydrogen': {},
                                              'Biomethane': {},
                                              'CO2': {},
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     grids["Hydrogen"]["ReinforcementOfNetwork"] = np.array([0])  # keep the 0 kW default value (from layers.csv) for export or import hydrogen
 
     # enable district units, interperiod storage units for both (True), district only ('district') or building only ('building')
-    units = infrastructure.initialize_units(scenario, grids, district_data=True, interperiod_data='district')
+    units = configuration.initialize_units(scenario, grids, district_data=True, interperiod_data='district')
 
     # Set parameters
     parameters = {'Network_ext': np.array([0, 0, 15, 10, 0])}  # existing capacities of networks [Electricity, Heat]

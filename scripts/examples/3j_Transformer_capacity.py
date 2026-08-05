@@ -17,8 +17,8 @@ if __name__ == '__main__':
     scenario['enforce_units'] = []
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
+    grids = configuration.initialize_grids()
+    units = configuration.initialize_units(scenario, grids, district_data=True)
 
     grids["Electricity"]["ReinforcementOfNetwork"] = np.array([100, 150, 200, 250])  # available new capacities for Electricity network considering reinforcement
     parameters = {'Network_ext': np.array([100, 1000])}  # existing capacities of networks [Electricity, NaturalGas]

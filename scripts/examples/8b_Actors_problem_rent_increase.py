@@ -29,8 +29,8 @@ if __name__ == '__main__':
               "save_timeseries": False, 'print_logs': True, "save_data_input": True, 'parallel_computation': False}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    grids = configuration.initialize_grids()
+    units = configuration.initialize_units(scenario, grids)
 
     # Define maximum rent affordable
     reho = ActorsModel(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params={'max_iter': 8}, solver="gurobiasl")

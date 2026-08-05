@@ -8,9 +8,9 @@ if __name__ == '__main__':
         
     # Set building parameters
     reader = QBuildingsReader()  # load QBuildingsReader class
-    reader.establish_connection('Geneva')  # connect to QBuildings database
+    reader.establish_connection('Suisse')  # connect to QBuildings database
     # qbuildings_data = reader.read_db({'egid': ['2034144/2034143/2749579/2034146/2034145']})  # read data
-    qbuildings_data = reader.read_db({'transformer': 13}, nb_buildings=5) 
+    qbuildings_data = reader.read_db({'egid': '954117'}, nb_buildings=5) 
 
     # Select clustering options for weather data
     #  - I refers to Irradiance, T to Temperature, and W to Weekday
@@ -31,12 +31,13 @@ if __name__ == '__main__':
     # Watch out the maximum number of buildings is around 10 due to exponential complexity.
     method = {}
 
-    # Initialize available units and grids
-    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv
-    units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
+    # Available units and grids are part of the scenario and are initialized by REHO:
+    #  - scenario['grids'] takes the arguments of configuration.initialize_grids()
+    #  - scenario['units'] takes the arguments of configuration.initialize_units()
+    # The 'reference' scenario below sets them from the existing technologies of each building.
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario='reference', method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, cluster=cluster, scenario='reference', method=method, solver="gurobi")
     reho.single_optimization()
 
     # Save results
@@ -44,8 +45,8 @@ if __name__ == '__main__':
 
     # Plot results
     # plotting.plot_eud(reho.results).show()
-    plotting.plot_combined_profiles(reho.results['totex'][0], units_to_plot=["HeatPump", "PV", "ElectricalHeater", "Battery"]).show()
+    plotting.plot_combined_profiles(reho.results[reho.scenario['name']][0], units_to_plot=["HeatPump", "PV", "ElectricalHeater", "Battery"]).show()
 
     plotting.plot_performance(reho.results, plot='costs', indexed_on='Scn_ID', label='EN_long', title="Economical performance").show()
     plotting.plot_performance(reho.results, plot='gwp', indexed_on='Scn_ID', label='EN_long', title="Environmental performance").show()
-    plotting.plot_sankey(reho.results['totex'][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()
+    plotting.plot_sankey(reho.results[reho.scenario['name']][0], label='EN_long', color='ColorPastel', title="Sankey diagram").show()

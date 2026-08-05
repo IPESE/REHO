@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from reho.model.infrastructure import Infrastructure, initialize_grids, initialize_units
+from reho.model.configuration import Infrastructure, initialize_grids, initialize_units
 
 
 @pytest.fixture(scope="module")

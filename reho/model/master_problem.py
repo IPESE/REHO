@@ -7,7 +7,7 @@ from itertools import groupby
 import coloredlogs
 import pandas as pd
 
-import reho.model.infrastructure as infrastructure
+import reho.model.configuration as configuration
 from reho.model.preprocessing.local_data import *
 import reho.model.preprocessing.mobility_generator as mobility
 import reho.model.postprocessing.write_results as write_results
@@ -72,7 +72,7 @@ class MasterProblem:
         self.buildings_data = qbuildings_data['buildings_data']
         self.ERA = sum([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
 
-        self.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+        self.infrastructure = configuration.Infrastructure(qbuildings_data, units, grids)
         self.infrastructure_SP = dict()
         self.build_infrastructure_SP()
 
@@ -1304,7 +1304,7 @@ class MasterProblem:
         for h in self.buildings_data:
             single_building_data = {"buildings_data": {h: self.buildings_data[h]}}
             building_units = {"building_units": self.infrastructure.units}
-            infrastructure_SP = infrastructure.Infrastructure(single_building_data, building_units, self.infrastructure.grids)
+            infrastructure_SP = configuration.Infrastructure(single_building_data, building_units, self.infrastructure.grids)
 
             # TODO: better integration Units_Parameters specific to each house
             unit_param = self.infrastructure.Units_Parameters.loc[[string.endswith(h) for string in self.infrastructure.Units_Parameters.index]]

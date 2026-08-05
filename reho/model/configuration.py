@@ -6,7 +6,7 @@ import pandas as pd
 from reho.paths import *
 
 __doc__ = """
-File for handling infrastructure parameters.
+File for handling the configuration of an optimization: scenario, units and grids.
 """
 
 
@@ -302,6 +302,21 @@ class Infrastructure:
         df = pd.DataFrame([[unit_param[key] for key in keys]], columns=keys, index=[complete_name])
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])
 
+    @staticmethod
+    def grids_required_by(unit_names, building_data=os.path.join(path_to_infrastructure, "building_units.csv")):
+        """
+        Returns the grid layers the given units need to exist in the model.
+
+        Units whose UnitOfLayer is not covered by the enabled grids are dropped by ``prepare_units_df``.
+        """
+        unit_data = file_reader(building_data)
+        unit_names = set(unit_names)
+
+        layers = set()
+        for _, row in unit_data.iterrows():
+            if row['Unit'] in unit_names:
+                layers.update(layer.strip() for layer in str(row['UnitOfLayer']).split('/') if layer.strip())
+        return layers - {'HeatCascade'}
 
 
 def prepare_units_df(file, exclude_units=[], grids=None):
@@ -438,8 +453,8 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
 
     Examples
     --------
-    >>> units = infrastructure.initialize_units(scenario, grids, building_data="custom_building_units.csv",
-    ...                                         district_data="custom_district_units.csv", interperiod_data=True)
+    >>> units = configuration.initialize_units(scenario, grids, building_data="custom_building_units.csv",
+    ...                                        district_data="custom_district_units.csv", interperiod_data=True)
     """
 
     default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district']
@@ -548,3 +563,136 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
             grids[idx] = grid_dict
 
     return grids
+
+
+class Scenario:
+    """
+    Defines what an optimization runs: its objective and constraints, and the infrastructure it
+    runs on. A scenario is self-sufficient, so that a run can be reproduced and reported from it.
+    """
+
+    # source_heating keyword -> unit(s) implementing it. Several sources can be listed (e.g. "Oil/Electricity").
+    HEATING_SOURCE_TO_UNITS = {
+        'oil':           ['OIL_Boiler'],
+        'gas':           ['NG_Boiler'],
+        'wood':          ['WOOD_Stove'],
+        'electricity':   ['ElectricalHeater_SH', 'ElectricalHeater_DHW'],
+        'district heat': ['DHN_hex'],
+    }
+
+    # source_hotwater keyword -> unit(s) implementing it. 'wood' is absent: WOOD_Stove only serves SH.
+    HOTWATER_SOURCE_TO_UNITS = {
+        'oil':           ['OIL_Boiler'],
+        'gas':           ['NG_Boiler'],
+        'electricity':   ['ElectricalHeater_DHW'],
+        'district heat': ['DHN_hex'],
+        'solar':         ['ThermalSolar'],
+    }
+
+    # Units that can be a primary heating/DHW system, i.e. that compete with each other.
+    PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+    }
+
+    # Units whose UnitOfService contains 'DHW'. WOOD_Stove and ElectricalHeater_SH serve SH only.
+    DHW_CAPABLE_UNITS = {
+        'OIL_Boiler', 'NG_Boiler', 'ElectricalHeater_DHW', 'DHN_hex',
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+    }
+
+    @classmethod
+    def build_predefined(cls, scenario_name, buildings_data):
+        """
+        Expands a scenario name into its scenario dictionary.
+
+        Currently supports ``"reference"``, which enforces the existing heating technology
+        (``source_heating``) and PV capacity (``pv_installation_kW``) of each building.
+        """
+        if scenario_name != 'reference':
+            raise ValueError("Unknown predefined scenario '%s'. Pass a dict to define a custom scenario." % scenario_name)
+
+        enforce_units, exclude_units, _, enforced_types = cls.build_reference(buildings_data)
+
+        # Without the grids they need, the enforced units are dropped and the problem is infeasible.
+        available_grids = {'Electricity': {}}
+        for layer in Infrastructure.grids_required_by(enforced_types):
+            available_grids[layer] = {}
+
+        return {'name': 'reference', 'Objective': 'TOTEX',
+                'enforce_units': enforce_units, 'exclude_units': exclude_units,
+                'grids': {'available_grids': available_grids}}
+
+    @classmethod
+    def build_reference(cls, buildings_data):
+        """
+        Builds the enforce/exclude lists and PV capacities for the 'reference' (as-is) scenario.
+
+        For each building the DHW provider is resolved with this priority:
+
+        1. ``source_hotwater`` field → matched via ``HOTWATER_SOURCE_TO_UNITS``.
+        2. ``source_heating`` unit that also serves DHW (e.g. OIL_Boiler, NG_Boiler).
+        3. Fallback: ``ElectricalHeater_DHW`` (e.g. wood-stove buildings with a standalone
+           electric boiler for hot water, which is common in Switzerland).
+
+        Parameters
+        ----------
+        buildings_data : dict
+            Dictionary of buildings characteristics, as returned by QBuildingsReader.
+
+        Returns
+        -------
+        enforce_units : list of str
+            Fully qualified unit names (``Unit_Building``) to enforce.
+        exclude_units : list of str
+            Fully qualified unit names (``Unit_Building``) to exclude.
+        pv_capacities : dict
+            Fully qualified PV unit names mapped to existing capacity in kW.
+        enforced_types : set of str
+            Unit types (without the building suffix) that are enforced.
+        """
+        enforce_units = []
+        exclude_units = []
+        pv_capacities = {}
+        enforced_types = set()
+
+        for building, data in buildings_data.items():
+
+            source_sh = str(data.get('source_heating', '')).lower()
+            matched_sh = set()
+            for keyword, units in cls.HEATING_SOURCE_TO_UNITS.items():
+                if keyword in source_sh:
+                    matched_sh.update(units)
+
+            source_hw = str(data.get('source_hotwater', '')).lower()
+            matched_hw = set()
+            for keyword, units in cls.HOTWATER_SOURCE_TO_UNITS.items():
+                if keyword in source_hw:
+                    matched_hw.update(units)
+
+            if not matched_hw:
+                # Priority 2: inherit from source_heating if any of its units serve DHW
+                matched_hw = matched_sh & cls.DHW_CAPABLE_UNITS
+
+            if not matched_hw and matched_sh:
+                # Priority 3: SH units exist but none cover DHW → electric boiler fallback
+                matched_hw = {'ElectricalHeater_DHW'}
+
+            matched_all = matched_sh | matched_hw
+            if matched_sh:
+                enforce_units += [u + '_' + building for u in matched_all]
+                exclude_units += [u + '_' + building for u in cls.PRIMARY_HEATING_UNITS - matched_all]
+                enforced_types |= matched_all
+            elif matched_hw:
+                # Only the DHW system is known: leave the SH choice free
+                enforce_units += [u + '_' + building for u in matched_hw]
+                enforced_types |= matched_hw
+
+            pv_kw = data.get('pv_installation_kW', 0)
+            pv_kw = 0.0 if pd.isna(pv_kw) else float(pv_kw)
+            if pv_kw > 0:
+                enforce_units.append('PV_' + building)
+                pv_capacities['PV_' + building] = pv_kw
+            else:
+                exclude_units.append('PV_' + building)
+
+        return enforce_units, exclude_units, pv_capacities, enforced_types

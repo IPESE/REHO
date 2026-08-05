@@ -185,7 +185,7 @@ class SensitivityAnalysis:
         grids = self.reho.infrastructure.grids
         scenario = self.reho.scenario
         district_units = len(self.reho.infrastructure.UnitsOfDistrict) != 0  # True or False
-        units = infrastructure.initialize_units(scenario, grids, district_data=district_units)
+        units = configuration.initialize_units(scenario, grids, district_data=district_units)
         qbuildings_data = {'buildings_data': self.reho.buildings_data}
         n_houses = len(self.reho.buildings_data)
 
@@ -229,7 +229,7 @@ class SensitivityAnalysis:
                     else:
                         self.reho.parameters[parameter] = np.array([value] * n_houses)
 
-            self.reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+            self.reho.infrastructure = configuration.Infrastructure(qbuildings_data, units, grids)
 
             try:
                 tic = time.perf_counter()

@@ -20,12 +20,12 @@ if __name__ == '__main__':
     parameters = dict()
 
     # Initialize available units and grids
-    grids = configuration.initialize_grids({'Electricity': {},
+    grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
                                              'Gasoline': {},
                                              'Mobility': {},
                                              })
-    units = configuration.initialize_units(scenario, grids, district_data=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     method = {'building-scale': True}

@@ -9,7 +9,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely import wkt
-from sqlalchemy import create_engine, MetaData, select, and_, func, String
+from sqlalchemy import create_engine, MetaData, select, and_, func, String, text
 from sqlalchemy.exc import SAWarning
 
 from reho.paths import *
@@ -60,27 +60,37 @@ class QBuildingsReader:
         'neighborhood': 'neighborhoods',
     }
 
-    # Filter layer -> column of the `buildings` table on which it is applied
-    LAYER_COLUMNS = {
-        'transformers': 'transformer',
-        'transformer': 'transformer',
-        'transformers_V2': 'id_transformers_V2',
-        'geo_girec': 'geo_girec',
-        'neighborhoods': 'id_neighborhood',
-        'neighborhood': 'id_neighborhood',
-        'egid': 'egid',
-        'id_building': 'id_building',
+    # source_heating keyword -> unit(s) implementing it. Several sources can be listed (e.g. "Oil/Electricity").
+    HEATING_SOURCE_TO_UNITS = {
+        'oil':           ['OIL_Boiler'],
+        'gas':           ['NG_Boiler'],
+        'wood':          ['WOOD_Stove'],
+        'electricity':   ['ElectricalHeater_SH', 'ElectricalHeater_DHW'],
+        'district heat': ['DHN_hex'],
     }
 
-    # Filter layer -> table holding the corresponding district boundaries
-    DISTRICT_TABLES = {
-        'transformers': 'transformers',
-        'transformer': 'transformers',
-        'transformers_V2': 'transformers_V2',
-        'geo_girec': 'geo_girec',
-        'neighborhoods': 'neighborhoods',
-        'neighborhood': 'neighborhoods',
+    # source_hotwater keyword -> unit(s) implementing it. 'wood' is absent: WOOD_Stove only serves SH.
+    HOTWATER_SOURCE_TO_UNITS = {
+        'oil':           ['OIL_Boiler'],
+        'gas':           ['NG_Boiler'],
+        'electricity':   ['ElectricalHeater_DHW'],
+        'district heat': ['DHN_hex'],
+        'solar':         ['ThermalSolar'],
     }
+
+    # Units that can be a primary heating/DHW system, i.e. that compete with each other.
+    PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+    }
+
+    # Units whose UnitOfService contains 'DHW'. WOOD_Stove and ElectricalHeater_SH serve SH only.
+    DHW_CAPABLE_UNITS = {
+        'OIL_Boiler', 'NG_Boiler', 'ElectricalHeater_DHW', 'DHN_hex',
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+    }
+
+    # Date of the databases predating the [DATE] tag in their table descriptions
+    DEFAULT_DB_DATE = '2023'
 
     def __init__(self, load_facades=False, load_roofs=False, correct_Uh=False):
 
@@ -140,6 +150,31 @@ class QBuildingsReader:
         self.db = db
 
         return
+
+    def read_date_from_description(self, table='buildings'):
+        """
+        Reads the date tagged as ``[DATE]`` in the description of a table of the database.
+
+        Parameters
+        ----------
+        table : str
+            Name of the table whose description is read.
+
+        Returns
+        -------
+        str
+            The date found, or ``DEFAULT_DB_DATE`` for the databases predating the tag.
+        """
+        description = None
+        if self.connection is not None:
+            query = text("SELECT obj_description(CAST(:table AS regclass))")
+            try:
+                description = self.connection.execute(query, {'table': '"%s".%s' % (self.db_schema, table)}).scalar()
+            except Exception as e:
+                warnings.warn("Could not read the description of the table '%s': %s" % (table, e))
+
+        match = re.search(r'\[DATE\]\s*:?\s*([\w-]+)', description or '')
+        return match.group(1) if match else self.DEFAULT_DB_DATE
 
     def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
         """
@@ -210,6 +245,7 @@ class QBuildingsReader:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
 
         qbuildings['data_source'] = buildings_filename
+        qbuildings['data_date'] = None
         return qbuildings
 
     def read_db(self, filters=None, nb_buildings=None, to_csv=False,
@@ -373,7 +409,82 @@ class QBuildingsReader:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
 
         qbuildings['data_source'] = self.db
+        qbuildings['data_date'] = self.read_date_from_description()
         return qbuildings
+
+    def get_reference_reho_units(self, buildings_data):
+        """
+        Returns the units to enforce and exclude to reproduce the existing energy system.
+
+        For each building the DHW provider is resolved with this priority:
+
+        1. ``source_hotwater`` field → matched via ``HOTWATER_SOURCE_TO_UNITS``.
+        2. ``source_heating`` unit that also serves DHW (e.g. OIL_Boiler, NG_Boiler).
+        3. Fallback: ``ElectricalHeater_DHW`` (e.g. wood-stove buildings with a standalone
+           electric boiler for hot water, which is common in Switzerland).
+
+        Parameters
+        ----------
+        buildings_data : dict
+            Dictionary of buildings characteristics, as returned by ``read_db`` or ``read_csv``.
+
+        Returns
+        -------
+        enforce_units : list of str
+            Fully qualified unit names (``Unit_Building``) to enforce.
+        exclude_units : list of str
+            Fully qualified unit names (``Unit_Building``) to exclude.
+        pv_capacities : dict
+            Fully qualified PV unit names mapped to existing capacity in kW.
+
+        Notes
+        -----
+        An enforced unit is only kept if the grid layer it runs on is enabled: an oil-heated
+        building needs ``initialize_grids`` to be given the ``Oil`` layer.
+        """
+        enforce_units = []
+        exclude_units = []
+        pv_capacities = {}
+
+        for building, data in buildings_data.items():
+
+            source_sh = str(data.get('source_heating', '')).lower()
+            matched_sh = set()
+            for keyword, units in self.HEATING_SOURCE_TO_UNITS.items():
+                if keyword in source_sh:
+                    matched_sh.update(units)
+
+            source_hw = str(data.get('source_hotwater', '')).lower()
+            matched_hw = set()
+            for keyword, units in self.HOTWATER_SOURCE_TO_UNITS.items():
+                if keyword in source_hw:
+                    matched_hw.update(units)
+
+            if not matched_hw:
+                # Priority 2: inherit from source_heating if any of its units serve DHW
+                matched_hw = matched_sh & self.DHW_CAPABLE_UNITS
+
+            if not matched_hw and matched_sh:
+                # Priority 3: SH units exist but none cover DHW → electric boiler fallback
+                matched_hw = {'ElectricalHeater_DHW'}
+
+            matched_all = matched_sh | matched_hw
+            if matched_sh:
+                enforce_units += [u + '_' + building for u in matched_all]
+                exclude_units += [u + '_' + building for u in self.PRIMARY_HEATING_UNITS - matched_all]
+            elif matched_hw:
+                # Only the DHW system is known: leave the SH choice free
+                enforce_units += [u + '_' + building for u in matched_hw]
+
+            pv_kw = data.get('pv_installation_kW', 0)
+            pv_kw = 0.0 if pd.isna(pv_kw) else float(pv_kw)
+            if pv_kw > 0:
+                enforce_units.append('PV_' + building)
+                pv_capacities['PV_' + building] = pv_kw
+            else:
+                exclude_units.append('PV_' + building)
+
+        return enforce_units, exclude_units, pv_capacities
 
     def select_buildings(self, filters):
         """

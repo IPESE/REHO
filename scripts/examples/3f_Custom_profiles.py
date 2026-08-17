@@ -25,8 +25,8 @@ if __name__ == '__main__':
     method = {'building-scale': True, 'use_custom_profiles': {'electricity': custom_elec_profile}}
 
     # Initialize available units and grids
-    grids = configuration.initialize_grids()
-    units = configuration.initialize_units(scenario, grids=grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids=grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

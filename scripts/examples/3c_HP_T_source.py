@@ -23,8 +23,8 @@ if __name__ == '__main__':
     method = {'building-scale': True}
 
     # Initialize available units and grids
-    grids = configuration.initialize_grids()
-    units = configuration.initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Set specific parameters
     # Heat pump can have different sources such as air, lake, geothermal

@@ -25,10 +25,10 @@ if __name__ == '__main__':
     # Initialize available units and grids
     # You can use prices coming from the ELCOM public database
     prices = electricity_prices.get_prices_from_elcom_by_city(city=reader, category='H4')
-    grids = configuration.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              })
-    units = configuration.initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

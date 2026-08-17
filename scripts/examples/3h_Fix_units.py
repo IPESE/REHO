@@ -23,8 +23,8 @@ if __name__ == '__main__':
     method = {'building-scale': True, 'fix_units': True}
 
     # Initialize available units and grids
-    grids = configuration.initialize_grids()
-    units = configuration.initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Scenario 1: min TOTEX
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

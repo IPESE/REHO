@@ -439,7 +439,7 @@ Examples `1b_building-scale_Pareto.py` and `2b_district-scale_Pareto.py` can be 
 
 ### Initialize available units and grids
 
-Initializing the energy system structure is done with the {class}`reho.model.configuration.Infrastructure` class.
+Initializing the energy system structure is done with the {class}`reho.model.infrastructure.Infrastructure` class.
 
 Default values for units and grids are proposed, but any parameters can be adapted through providing customized .csv files.
 
@@ -448,7 +448,7 @@ Default values for units and grids are proposed, but any parameters can be adapt
 Grids are initialized with:
 
 ```python
-grids = configuration.initialize_grids(file="reho/data/infratructure/layers.csv")
+grids = infrastructure.initialize_grids(file="reho/data/infratructure/layers.csv")
 ```
 
 Where the file `layers.csv` contains the default parameters for the different energy layers available.
@@ -458,13 +458,13 @@ To use custom prices, there are two options:
 1. Provide another .csv file to the `initialize_grids()` function:
 
 ```python
-grids = configuration.initialize_grids(file="my_custom_layers.csv")
+grids = infrastructure.initialize_grids(file="my_custom_layers.csv")
 ```
 
 2. Use the `Cost_supply_cst` and `Cost_demand_cst` parameters in the `initialize_grids()` function:
 
 ```python
-grids = configuration.initialize_grids({
+grids = infrastructure.initialize_grids({
     'Electricity': {'Cost_supply_cst': 0.30, 'Cost_demand_cst': 0.18},
     'Oil': {'Cost_supply_cst': 0.16}
 })
@@ -472,7 +472,7 @@ grids = configuration.initialize_grids({
 
 In this example, new supply and demand costs for electricity, and a new supply cost oil are specified.
 
-For further explanation, see {func}`reho.model.configuration.initialize_grids`.
+For further explanation, see {func}`reho.model.infrastructure.initialize_grids`.
 
 #### Units
 
@@ -481,7 +481,7 @@ Units are initialized with:
 ```python
 scenario['exclude_units'] = ['ThermalSolar']
 scenario['enforce_units'] = ['HeatPump_Air']
-units = configuration.initialize_units(scenario, grids, building_data="reho/data/infratructure/building_units.csv")
+units = infrastructure.initialize_units(scenario, grids, building_data="reho/data/infratructure/building_units.csv")
 ```
 
 Where:
@@ -496,7 +496,7 @@ Where:
 District units can be enabled with the argument `district_data`:
 
 ```python
-units = configuration.initialize_units(scenario, grids, building_data, district_data="district_units.csv")
+units = infrastructure.initialize_units(scenario, grids, building_data, district_data="district_units.csv")
 ```
 
 Here `district_units.csv` contains the default parameters for district-size units.

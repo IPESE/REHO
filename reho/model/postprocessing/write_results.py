@@ -1,7 +1,13 @@
-import pandas as pd
-import numpy as np
+import datetime
+import importlib.metadata
 import logging
+import subprocess
+
+import numpy as np
 import openpyxl
+import pandas as pd
+
+from reho.paths import path_to_reho
 
 __doc__ = """
 Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
@@ -809,18 +815,44 @@ def filter_numerical_instabilities(df, threshold=1e-4):
     return df_clean
 
 
-def set_df_inputs(scenario, method, cluster, parameters, data_source=None):
+def get_reho_version():
     """
-    Records the inputs that produced a result, so a run can be reported and reproduced from it.
+    Returns the REHO version, suffixed with ' - modified' if the reho folder has uncommitted changes.
+
+    The version comes from the git checkout when there is one, else from the installed package.
+    """
+    try:
+        git = ['git', '-C', path_to_reho]
+        version = subprocess.check_output(git + ['describe', '--tags', '--abbrev=0'],
+                                          stderr=subprocess.DEVNULL, text=True).strip()
+        changes = subprocess.check_output(git + ['status', '--porcelain', '--', path_to_reho],
+                                          stderr=subprocess.DEVNULL, text=True).strip()
+        return version + ' - modified' if changes else version
+    except (subprocess.CalledProcessError, OSError):
+        pass
+
+    try:
+        return importlib.metadata.version('reho')
+    except importlib.metadata.PackageNotFoundError:
+        return 'unknown'
+
+
+def set_df_metadata(scenario, method, cluster, parameters, data_source=None, data_date=None):
+    """
+    Records what produced a result: the inputs of the run, the versions used and the run date.
 
     Returns a DataFrame indexed on (category, key). The buildings themselves are reported in
     ``df_Buildings``, where egid and id_building are enough to retrieve them.
     """
-    inputs = {'scenario': scenario, 'method': method, 'cluster': cluster, 'parameters': parameters,
-              'buildings': {'data_source': data_source}}
+    run = {'reho_version': get_reho_version(),
+           'qbuildings': data_source,
+           'qbuildings_date': data_date,
+           'run_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+    metadata = {'run': run, 'scenario': scenario, 'method': method, 'cluster': cluster, 'parameters': parameters}
 
     records = []
-    for category, entries in inputs.items():
+    for category, entries in metadata.items():
         for key, value in entries.items():
             if isinstance(value, (pd.DataFrame, pd.Series, np.ndarray)):
                 value = "<%s shape=%s>" % (type(value).__name__, getattr(value, 'shape', None))

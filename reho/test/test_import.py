@@ -8,7 +8,7 @@ def test_import_reho_modules():
         'reho.model.master_problem',
         'reho.model.sub_problem',
         'reho.model.actors_problem',
-        'reho.model.configuration',
+        'reho.model.infrastructure',
         'reho.model.preprocessing',
         'reho.model.postprocessing',
         'reho.plotting',

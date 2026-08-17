@@ -17,27 +17,32 @@ if __name__ == '__main__':
     #  - specify the desired number of typical days
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
 
+    # Enforce the existing energy system of each building, to model the reference case
+    enforce_units, exclude_units, pv_capacities = reader.get_reference_reho_units(qbuildings_data['buildings_data'])
+
     # Set scenario
     scenario = dict()
     scenario['Objective'] = 'TOTEX'  # select an objective function as defined in ampl_model/scenario.mod
     scenario['EMOO'] = {}  # remain empty for now
     scenario['specific'] = []  # remain empty for now
-    scenario['name'] = 'totex'  # any name is possible here
-    scenario['exclude_units'] = ['Battery']  # specify some units to be excluded
-    scenario['enforce_units'] = []  # specify some units to be enforced
+    scenario['name'] = 'reference'  # any name is possible here
+    scenario['exclude_units'] = exclude_units  # specify some units to be excluded
+    scenario['enforce_units'] = enforce_units  # specify some units to be enforced
 
     # Set method options (as defined in sub_problem.py > initialize_default_methods)
     # By default a district-scale design is performed with a compact formulation.
     # Watch out the maximum number of buildings is around 10 due to exponential complexity.
-    method = {}
+    method = {'fix_units': bool(pv_capacities)}
 
-    # Available units and grids are part of the scenario and are initialized by REHO:
-    #  - scenario['grids'] takes the arguments of configuration.initialize_grids()
-    #  - scenario['units'] takes the arguments of configuration.initialize_units()
-    # The 'reference' scenario below sets them from the existing technologies of each building.
+    # Initialize available units and grids
+    # The enforced units are only kept if their layer is enabled: an oil-heated building needs the Oil layer.
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'NaturalGas': {}, 'Oil': {}, 'Wood': {}, 'Heat': {}})
+    units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Run optimization
-    reho = REHO(qbuildings_data=qbuildings_data, cluster=cluster, scenario='reference', method=method, solver="gurobi")
+    reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
+    if pv_capacities:  # fix the existing PV capacities (kW)
+        reho.df_fix_Units = pd.DataFrame({'Units_Mult': pv_capacities, 'Units_Use': 1})
     reho.single_optimization()
 
     # Save results

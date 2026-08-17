@@ -24,31 +24,14 @@ class REHO(MasterProblem):
     reho.model.master_problem.MasterProblem
     """
 
-    def __init__(self, qbuildings_data, units=None, grids=None, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs",
+    def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs",
                  DW_params=None):
-
-        if isinstance(scenario, str):
-            scenario = configuration.Scenario.build_predefined(scenario, qbuildings_data['buildings_data'])
-        scenario = scenario.copy()
-
-        if grids is None:
-            grids = configuration.initialize_grids(**scenario.get('grids', {}))
-        else:
-            warnings.warn("Passing 'grids' to REHO is deprecated: define it in scenario['grids'] instead.",
-                          DeprecationWarning, stacklevel=2)
-        if units is None:
-            units = configuration.initialize_units(scenario, grids, **scenario.get('units', {}))
-        else:
-            warnings.warn("Passing 'units' to REHO is deprecated: define it in scenario['units'] instead.",
-                          DeprecationWarning, stacklevel=2)
 
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
 
         # input attributes
-        self.scenario = scenario
-        if scenario.get('name') == 'reference':
-            self.apply_reference_pv_capacities()
+        self.scenario = scenario.copy()
         if 'specific' not in self.scenario:
             self.scenario['specific'] = []
         if 'enforce_units' not in self.scenario:
@@ -72,13 +55,6 @@ class REHO(MasterProblem):
 
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
-
-    def apply_reference_pv_capacities(self):
-        """Fixes existing PV capacities (kW) read from QBuildings for the 'reference' scenario."""
-        _, _, pv_capacities, _ = configuration.Scenario.build_reference(self.buildings_data)
-        if pv_capacities:
-            self.method['fix_units'] = True
-            self.df_fix_Units = pd.DataFrame({'Units_Mult': pv_capacities, 'Units_Use': 1})
 
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
@@ -432,7 +408,7 @@ class REHO(MasterProblem):
         district_units = [i for i in self.infrastructure.district_units if i["UnitOfType"] != "DHN_pipes"]
         units = {"building_units": self.infrastructure.units, "district_units": district_units}
         buildings = {"buildings_data": self.buildings_data}
-        self.infrastructure = configuration.Infrastructure(buildings, units, self.infrastructure.grids)
+        self.infrastructure = infrastructure.Infrastructure(buildings, units, self.infrastructure.grids)
 
     def add_df_Results(self, ampl, Scn_ID, Pareto_ID, scenario):
         if self.method['building-scale'] or self.method['district-scale']:
@@ -447,9 +423,10 @@ class REHO(MasterProblem):
             self.results[Scn_ID][Pareto_ID] = {}
 
         self.results[Scn_ID][Pareto_ID] = df_Results
-        self.results[Scn_ID][Pareto_ID]["df_Inputs"] = write_results.set_df_inputs(
+        self.results[Scn_ID][Pareto_ID]["df_Metadata"] = write_results.set_df_metadata(
             self.scenario, self.method, self.cluster, self.parameters,
-            data_source=self.qbuildings_data.get('data_source'))
+            data_source=self.qbuildings_data.get('data_source'),
+            data_date=self.qbuildings_data.get('data_date'))
 
     def get_df_Results_from_MP_and_SPs(self, Scn_ID, Pareto_ID):
 

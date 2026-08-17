@@ -23,11 +23,11 @@ if __name__ == '__main__':
     method = {'district-scale': True}
 
     # Initialize available units and grids
-    grids = configuration.initialize_grids({'Electricity': {},
+    grids = infrastructure.initialize_grids({'Electricity': {},
                                              'Data': {},
                                              'Heat': {}
                                              })
-    units = configuration.initialize_units(scenario, grids, district_data=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set parameters
     parameters = {'Network_ext': np.array([500, 500, 0]), 'data_EUD_avg': 50}  # existing capacities of networks in alphabetical order

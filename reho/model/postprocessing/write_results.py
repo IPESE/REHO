@@ -274,11 +274,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df33 = get_ampl_data(ampl, 'House_Q_cooling')
         df34 = get_ampl_data(ampl, 'Th_supply', multi_index=True)
         df35 = get_ampl_data(ampl, 'Th_return', multi_index=True)
+        df36 = get_ampl_data(ampl, 'Tc_supply', multi_index=True)
+        df37 = get_ampl_data(ampl, 'Tc_return', multi_index=True)
 
         df4 = get_ampl_data(ampl, 'HeatGains', multi_index=True)
         df5 = get_ampl_data(ampl, 'SolarGains', multi_index=True)
 
-        df_Buildings_t = pd.concat([df1, df2, df31, df32, df33, df34, df35, df4, df5], axis=1)
+        df_Buildings_t = pd.concat([df1, df2, df31, df32, df33, df34, df35, df36, df37, df4, df5], axis=1)
         df_Buildings_t.index.names = ['Hub', 'Period', 'Time']
 
         return df_Buildings_t.sort_index()

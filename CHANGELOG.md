@@ -40,6 +40,8 @@ will break in a future release, 🟢 no action needed.
 | ![Added][added]       | ![Preprocessing][preprocessing]    | **Reference scenario** | If the scenario name is `reference`, it activates a function where we build REHO with the units configuration (heating + dhw system and installed PVs) retrieved from QBuildings. | 🟢 |
 | ![Changed][changed]       | ![Preprocessing][preprocessing]    | **Solar gains** | Change of re-calibration of solar gains and Uh when ERA < Footprint. | 🟢 |
 | ![Changed][changed]       | ![Postprocessing][postprocessing]    | **Sensitivity analysis** | Add an option to do the sensitivity analysis in the buildings data as well as prices. | 🟠 |
+| ![Added][added]       | ![Postprocessing][postprocessing]    | **OSMOSE export** | Add `reho.model.postprocessing.osmose.get_osmose_streams`, which converts the buildings space heating, domestic hot water, and cooling demands of `df_Buildings_t` into a list of heat and cold streams, ready to be used in OSMOSE. Demands are grouped by service and temperature interval (supply and return temperatures within a given tolerance), for each scenario and Pareto step. Takes either the results dictionary or the path to a saved pickle. | 🟢 |
+| ![Added][added]       | ![Postprocessing][postprocessing]    | **Cooling temperatures** | `df_Buildings_t` now also contains the cooling supply and return temperatures (`Tc_supply`, `Tc_return`), next to the heating ones. | 🟢 |
 
 ### Migration notes
 

@@ -110,7 +110,8 @@ class ActorsModel(REHO):
             for param in sample_param.index:
                 self.parameters[param] = sample_param[param]
             self.single_optimization(Pareto_ID=ids)
-            self.results[self.scenario['name']][ids]['Samples']['Sampling_result'] = sample_param
+            for param, value in sample_param.items():
+                self.results[self.scenario['name']][ids]['Samples'][param] = value
             self.add_dual_Results(Scn_ID=self.scenario['name'], Pareto_ID=ids)
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):

@@ -339,11 +339,13 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
     np.array
         Solar gains for each timesteps.
     """
+    # TODO: verify the assumptions of g-value. Solar gains are very important in the final results.
 
     irr = local_data["Irr"]
     buildings_data = qbuildings_data["buildings_data"]
     g = np.repeat(0.45, len(irr))  # g-value SIA 2024
-    g[irr > 0.4] = 0.1  # assumption that if irradiation exceeds 400 W/m2, we use sunblinds
+    g[irr > 400] = 0.1  # assumption that if irradiation exceeds 400 W/m2, we use sunblinds
+    
 
     np_gains = np.array([])
     for b in buildings_data:
@@ -354,16 +356,16 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
             gains = np.zeros(len(irr))
             footprint_factor = buildings_data[b]["area_footprint_m2"] / buildings_data[b]['geometry'].length
             conversion_factor_of_useful_facade = 0.6  # Let us estimate that one "useful facades" is inside and they are not all irradiate
-            df_facade_irr = buildings_data[b]["ERA"] / (buildings_data[b]['count_floor'] * 0.93) / footprint_factor * buildings_data[b]['height_m'] * conversion_factor_of_useful_facade
+            area_facade_irr = buildings_data[b]["ERA"] / (buildings_data[b]['count_floor'] * 0.93) / footprint_factor * buildings_data[b]['height_m'] * conversion_factor_of_useful_facade
         else:    
             if "facades_data" in qbuildings_data.keys():
                 facades = qbuildings_data["facades_data"]
                 facades_b = facades[facades["id_building"] == id_building]
                 df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
                 df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
-                df_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
+                area_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
             else:
-                df_facade_irr = buildings_data[b]['area_facade_m2']
+                area_facade_irr = buildings_data[b]['area_facade_m2']
 
         classes = buildings_data[b]['id_class'].split('/')
         if isinstance(buildings_data[b]['ratio'], float):
@@ -379,7 +381,7 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
                 glass_fraction_2024 = df['Taux de surface vitrée']
                 glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
                 glass_fraction_building += glass_fraction_rooms * float(ratios[i])
-        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * df_facade_irr
+        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * area_facade_irr
             # glass fraction on facades from SIA 2024, 0.9 SIA 2024: acknowledge perpendicular rays
         np_gains = np.append(np_gains, gains)
 

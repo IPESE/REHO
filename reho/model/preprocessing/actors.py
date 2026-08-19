@@ -362,7 +362,7 @@ def get_actor_expenses(actor, building, last_MP_results=None, last_SP_results=No
         owner_sub = last_MP_results['df_District']['owner_subsidies'][building]
         owner_inv = last_MP_results['df_District']['Costs_inv'][building]
         owner_upfront = last_MP_results['df_District']['Costs_House_yearly'][building]
-        owner_pir_min = last_MP_results['Samples']['Owner_PIR_min'].iloc[0,0]
+        owner_pir_min = last_MP_results['Samples']['Owner_PIR_min'].iloc[0]
 
         owner_exp = owner_prof + owner_sub - owner_pir_min * (owner_inv + owner_upfront)
         return owner_exp

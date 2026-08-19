@@ -9,7 +9,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely import wkt
-from sqlalchemy import create_engine, MetaData, select, and_, func, String
+from sqlalchemy import create_engine, MetaData, select, and_, func, String, text
 from sqlalchemy.exc import SAWarning
 
 from reho.paths import *
@@ -60,27 +60,37 @@ class QBuildingsReader:
         'neighborhood': 'neighborhoods',
     }
 
-    # Filter layer -> column of the `buildings` table on which it is applied
-    LAYER_COLUMNS = {
-        'transformers': 'transformer',
-        'transformer': 'transformer',
-        'transformers_V2': 'id_transformers_V2',
-        'geo_girec': 'geo_girec',
-        'neighborhoods': 'id_neighborhood',
-        'neighborhood': 'id_neighborhood',
-        'egid': 'egid',
-        'id_building': 'id_building',
+    # source_heating keyword -> unit(s) implementing it. Several sources can be listed (e.g. "Oil/Electricity").
+    HEATING_SOURCE_TO_UNITS = {
+        'oil':           ['OIL_Boiler'],
+        'gas':           ['NG_Boiler'],
+        'wood':          ['WOOD_Stove'],
+        'electricity':   ['ElectricalHeater_SH', 'ElectricalHeater_DHW'],
+        'district heat': ['DHN_hex'],
     }
 
-    # Filter layer -> table holding the corresponding district boundaries
-    DISTRICT_TABLES = {
-        'transformers': 'transformers',
-        'transformer': 'transformers',
-        'transformers_V2': 'transformers_V2',
-        'geo_girec': 'geo_girec',
-        'neighborhoods': 'neighborhoods',
-        'neighborhood': 'neighborhoods',
+    # source_hotwater keyword -> unit(s) implementing it. 'wood' is absent: WOOD_Stove only serves SH.
+    HOTWATER_SOURCE_TO_UNITS = {
+        'oil':           ['OIL_Boiler'],
+        'gas':           ['NG_Boiler'],
+        'electricity':   ['ElectricalHeater_DHW'],
+        'district heat': ['DHN_hex'],
+        'solar':         ['ThermalSolar'],
     }
+
+    # Units that can be a primary heating/DHW system, i.e. that compete with each other.
+    PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+    }
+
+    # Units whose UnitOfService contains 'DHW'. WOOD_Stove and ElectricalHeater_SH serve SH only.
+    DHW_CAPABLE_UNITS = {
+        'OIL_Boiler', 'NG_Boiler', 'ElectricalHeater_DHW', 'DHN_hex',
+        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
+    }
+
+    # Date of the databases predating the [DATE] tag in their table descriptions
+    DEFAULT_DB_DATE = '2023'
 
     def __init__(self, load_facades=False, load_roofs=False, correct_Uh=False):
 
@@ -140,6 +150,31 @@ class QBuildingsReader:
         self.db = db
 
         return
+
+    def read_date_from_description(self, table='buildings'):
+        """
+        Reads the date tagged as ``[DATE]`` in the description of a table of the database.
+
+        Parameters
+        ----------
+        table : str
+            Name of the table whose description is read.
+
+        Returns
+        -------
+        str
+            The date found, or ``DEFAULT_DB_DATE`` for the databases predating the tag.
+        """
+        description = None
+        if self.connection is not None:
+            query = text("SELECT obj_description(CAST(:table AS regclass))")
+            try:
+                description = self.connection.execute(query, {'table': '"%s".%s' % (self.db_schema, table)}).scalar()
+            except Exception as e:
+                warnings.warn("Could not read the description of the table '%s': %s" % (table, e))
+
+        match = re.search(r'\[DATE\]\s*:?\s*([\w-]+)', description or '')
+        return match.group(1) if match else self.DEFAULT_DB_DATE
 
     def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
         """
@@ -208,6 +243,9 @@ class QBuildingsReader:
 
         if self.correct_Uh:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
+
+        qbuildings['data_source'] = buildings_filename
+        qbuildings['data_date'] = None
         return qbuildings
 
     def read_db(self, filters=None, nb_buildings=None, to_csv=False,
@@ -370,7 +408,83 @@ class QBuildingsReader:
         if self.correct_Uh:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
 
+        qbuildings['data_source'] = self.db
+        qbuildings['data_date'] = self.read_date_from_description()
         return qbuildings
+
+    def get_reference_reho_units(self, buildings_data):
+        """
+        Returns the units to enforce and exclude to reproduce the existing energy system.
+
+        For each building the DHW provider is resolved with this priority:
+
+        1. ``source_hotwater`` field → matched via ``HOTWATER_SOURCE_TO_UNITS``.
+        2. ``source_heating`` unit that also serves DHW (e.g. OIL_Boiler, NG_Boiler).
+        3. Fallback: ``ElectricalHeater_DHW`` (e.g. wood-stove buildings with a standalone
+           electric boiler for hot water, which is common in Switzerland).
+
+        Parameters
+        ----------
+        buildings_data : dict
+            Dictionary of buildings characteristics, as returned by ``read_db`` or ``read_csv``.
+
+        Returns
+        -------
+        enforce_units : list of str
+            Fully qualified unit names (``Unit_Building``) to enforce.
+        exclude_units : list of str
+            Fully qualified unit names (``Unit_Building``) to exclude.
+        pv_capacities : dict
+            Fully qualified PV unit names mapped to existing capacity in kW.
+
+        Notes
+        -----
+        An enforced unit is only kept if the grid layer it runs on is enabled: an oil-heated
+        building needs ``initialize_grids`` to be given the ``Oil`` layer.
+        """
+        enforce_units = []
+        exclude_units = []
+        pv_capacities = {}
+
+        for building, data in buildings_data.items():
+
+            source_sh = str(data.get('source_heating', '')).lower()
+            matched_sh = set()
+            for keyword, units in self.HEATING_SOURCE_TO_UNITS.items():
+                if keyword in source_sh:
+                    matched_sh.update(units)
+
+            source_hw = str(data.get('source_hotwater', '')).lower()
+            matched_hw = set()
+            for keyword, units in self.HOTWATER_SOURCE_TO_UNITS.items():
+                if keyword in source_hw:
+                    matched_hw.update(units)
+
+            if not matched_hw:
+                # Priority 2: inherit from source_heating if any of its units serve DHW
+                matched_hw = matched_sh & self.DHW_CAPABLE_UNITS
+
+            if not matched_hw and matched_sh:
+                # Priority 3: SH units exist but none cover DHW → electric boiler fallback
+                matched_hw = {'ElectricalHeater_DHW'}
+
+            matched_all = matched_sh | matched_hw
+            if matched_sh:
+                enforce_units += [u + '_' + building for u in matched_all]
+                exclude_units += [u + '_' + building for u in self.PRIMARY_HEATING_UNITS - matched_all]
+            elif matched_hw:
+                # Only the DHW system is known: leave the SH choice free
+                enforce_units += [u + '_' + building for u in matched_hw]
+
+            pv_kw = data.get('pv_installation_kW', 0)
+            pv_kw = 0.0 if pd.isna(pv_kw) else float(pv_kw)
+            if pv_kw > 0:
+                enforce_units.append('PV_' + building)
+                pv_capacities['PV_' + building] = pv_kw
+            else:
+                exclude_units.append('PV_' + building)
+
+        return enforce_units, exclude_units, pv_capacities
 
     def select_buildings(self, filters):
         """
@@ -586,117 +700,6 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
     return df_buildings
 
 
-# Maps source_heating keywords to the REHO unit(s) that implement them.
-# A building's source_heating can list several sources (e.g. "Oil/Electricity"),
-# in which case all matching units are enforced.
-HEATING_SOURCE_TO_UNITS = {
-    'oil':           ['OIL_Boiler'],
-    'gas':           ['NG_Boiler'],
-    'wood':          ['WOOD_Stove'],
-    'electricity':   ['ElectricalHeater_SH', 'ElectricalHeater_DHW'],
-    'district heat': ['DHN_hex'],
-}
-
-# Maps source_hotwater keywords to the REHO unit(s) that implement them.
-# Only contains units that can actually serve DHW.
-# 'wood' is intentionally absent: WOOD_Stove only serves SH in REHO.
-HOTWATER_SOURCE_TO_UNITS = {
-    'oil':           ['OIL_Boiler'],
-    'gas':           ['NG_Boiler'],
-    'electricity':   ['ElectricalHeater_DHW'],
-    'district heat': ['DHN_hex'],
-    'solar':         ['ThermalSolar'],
-}
-
-# All building units that can be a primary heating/DHW system — candidates
-# from the two mappings above plus the technologies they compete with.
-PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
-    'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
-}
-
-# Units that can provide DHW heat (UnitOfService contains 'DHW').
-# WOOD_Stove and ElectricalHeater_SH serve SH only and are absent.
-_DHW_CAPABLE_UNITS = {
-    'OIL_Boiler', 'NG_Boiler', 'ElectricalHeater_DHW', 'DHN_hex',
-    'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
-}
-
-
-def build_reference_scenario(buildings_data):
-    """
-    Builds the enforce/exclude lists and PV capacities for the 'reference' (as-is) scenario.
-
-    For each building the DHW provider is resolved with this priority:
-
-    1. ``source_hotwater`` field → matched via ``HOTWATER_SOURCE_TO_UNITS``.
-    2. ``source_heating`` unit that also serves DHW (e.g. OIL_Boiler, NG_Boiler).
-    3. Fallback: ``ElectricalHeater_DHW`` (e.g. wood-stove buildings with a standalone
-       electric boiler for hot water, which is common in Switzerland).
-
-    Parameters
-    ----------
-    buildings_data : dict
-        Dictionary of buildings characteristics, as returned by QBuildingsReader.
-
-    Returns
-    -------
-    enforce_units : list of str
-        Fully qualified unit names (``Unit_Building``) to enforce.
-    exclude_units : list of str
-        Fully qualified unit names (``Unit_Building``) to exclude.
-    pv_capacities : dict
-        Fully qualified PV unit names mapped to existing capacity in kW.
-    """
-    enforce_units = []
-    exclude_units = []
-    pv_capacities = {}
-
-    for building, data in buildings_data.items():
-
-        # --- Space heating units (from source_heating) ---
-        source_sh = str(data.get('source_heating', '')).lower()
-        matched_sh = set()
-        for keyword, units in HEATING_SOURCE_TO_UNITS.items():
-            if keyword in source_sh:
-                matched_sh.update(units)
-
-        # --- DHW units: resolve with 3-level priority ---
-        source_hw = str(data.get('source_hotwater', '')).lower()
-        matched_hw = set()
-        for keyword, units in HOTWATER_SOURCE_TO_UNITS.items():
-            if keyword in source_hw:
-                matched_hw.update(units)
-
-        if not matched_hw:
-            # Priority 2: inherit from source_heating if any of its units serve DHW
-            matched_hw = matched_sh & _DHW_CAPABLE_UNITS
-
-        if not matched_hw and matched_sh:
-            # Priority 3: SH units exist but none cover DHW → electric boiler fallback
-            matched_hw = {'ElectricalHeater_DHW'}
-
-        # --- Enforce and exclude ---
-        matched_all = matched_sh | matched_hw
-        if matched_sh:
-            # SH system is known: enforce everything and exclude all competing units
-            enforce_units += [u + '_' + building for u in matched_all]
-            exclude_units += [u + '_' + building for u in PRIMARY_HEATING_UNITS - matched_all]
-        elif matched_hw:
-            # Only DHW system is known: enforce DHW unit, leave SH choice free
-            enforce_units += [u + '_' + building for u in matched_hw]
-
-        # --- PV ---
-        pv_kw = data.get('pv_installation_kW', 0)
-        pv_kw = 0.0 if pd.isna(pv_kw) else float(pv_kw)
-        if pv_kw > 0:
-            enforce_units.append('PV_' + building)
-            pv_capacities['PV_' + building] = pv_kw
-        else:
-            exclude_units.append('PV_' + building)
-
-    return enforce_units, exclude_units, pv_capacities
-
-
 def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
     """
     Parameters
@@ -743,28 +746,36 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
         b_value_floor = pd.read_csv(os.path.join(path_to_sia, 'b_value_floor.csv'), sep=";").set_index("U_footprint")
         b_value = b_value_floor[min(b_value_floor.columns, key=lambda x: abs(float(x) - footprint_factor))]
 
-        if df_h["ERA"] < 0.5 * (0.93 * df_h["area_footprint_m2"] * df_h['count_floor']):
+        if df_h["ERA"] < 0.7 * (0.93 * df_h["area_footprint_m2"] * df_h['count_floor']):
             # When we have case where the ERA is particularly lower than the footprint (because some spaces do not need to be heated),
             # issues arise from gains and losses
 
             df_h["area_facade_m2"] = df_h["ERA"] / footprint_factor * df_h['height_m']
+            downscaling = df_h["ERA"] / (0.93 * df_h["area_footprint_m2"] * df_h['count_floor'])
+            df_h["SolarRoofArea"] = df_h["SolarRoofArea"] * downscaling
+            df_h["area_footprint_m2"] = df_h["area_footprint_m2"] * downscaling
 
         U_h_ins_data = 0
         for j in range(len(periods)):
             glass_fraction = 0.5
             if id_class[j] in ["I", "II"]:
                 glass_fraction = 0.3
-            # TODO: add heat recovery
-            ventilation = 0.7 / 3600 * df_h["ERA"] * 2.5 * (1200 - 0.14 * 400)  # SIA 380/1
+            thermal_capacity_air = (1200 - 0.14 * 610) / 3600   # Wh/K/m3 SIA 380/1
+            air_renewal = 0.7 / 2.5  # 1/h
+            volume = df_h['ERA'] * 2.5  # m3
+            ventilation = air_renewal * volume * thermal_capacity_air / 1000  # kW/K
 
             uh_period = uh_data.loc[periods[j]]
             b = b_value.loc[min(b_value.index, key=lambda x: abs(float(x) - uh_period["U_footprint"] * 1000))]
+            b_roof = 1
+            if df_h['SolarRoofArea'] > df_h["area_footprint_m2"]*1.1:  # non heated space under roof
+                b_roof = 0.9
 
             U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_period["U_facade"] +
-                             df_h['ERA'] / df_h['count_floor'] / 0.93  * uh_period["U_footprint"]*b +
+                             df_h["area_footprint_m2"] * uh_period["U_footprint"]*b +
                              df_h['area_facade_m2'] * glass_fraction * uh_period["U_window"] +
-                             df_h['SolarRoofArea'] * uh_period["U_roof"] +
-                             ventilation/1000) * ratios[j] / df_h['ERA']
+                             df_h['SolarRoofArea'] * uh_period["U_roof"] * b_roof +
+                             ventilation) * ratios[j] / df_h['ERA']
         df_buildings[i]["U_h"] = U_h_ins_data
 
     return df_buildings

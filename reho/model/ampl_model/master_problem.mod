@@ -9,6 +9,7 @@ set Layers;
 set LayerTypes;
 set LayersOfType{LayerTypes} within Layers;
 set ResourceBalances := if (exists{t in LayerTypes} t = 'ResourceBalance') then ({l in LayersOfType["ResourceBalance"]}) else ({});
+set Distances default {"long","short"}; 
 
 set UnitTypes default {};
 set Units default {};
@@ -77,7 +78,7 @@ param Units_flowrate_in{l in ResourceBalances, u in Units}  >=0 default 0;
 param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 
 param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 default 0;
-
+param DailyDist{dist in Distances} default 36.8; # km - [1] Caution : unlinked default value duplicata in generate_mobility_parameters
 
 param data_EUD_avg{l in ResourceBalances: l = 'Data'} default 0;
 param data_EUD{l in ResourceBalances, p in Period, t in Time[p]} default data_EUD_avg[l];
@@ -236,17 +237,8 @@ subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}}:
 Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_Unit_replacement{u in Units diff {"DHN_pipes_district"}}:
-Costs_Unit_rep[u] =
+Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
-    sum{n_rep in 1..floor(n_years/lifetime[u]) - 1}
-    ((1/(1+i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u])
-    +
-    ((n_years - floor(n_years/lifetime[u])*lifetime[u])/ lifetime[u])
-    *
-    (1/(1+i_rate))^(floor(n_years/lifetime[u])*lifetime[u])
-    *
-    Costs_Unit_inv[u];
-    
 subject to Costs_replacement:
 Costs_rep =  sum{u in Units diff {"DHN_pipes_district"}} Costs_Unit_rep[u];
 
@@ -385,10 +377,12 @@ var renter_subsidies{h in House} >= 0;
 var owner_subsidies{h in House} >= 0;
 var penalty_actors >= 0;
 
+param beta_GWP_MP default 0;
+
 subject to penalties_contraints:
 penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op + penalty_actors + 
             sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
-             + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]);
+             + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]) + GWP_tot * beta_GWP_MP;
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Objective functions

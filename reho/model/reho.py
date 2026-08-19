@@ -1,6 +1,6 @@
 import os.path
 import pickle
-import openpyxl
+import warnings
 
 from reho.model.master_problem import *
 from reho.model.postprocessing.KPIs import *
@@ -31,8 +31,6 @@ class REHO(MasterProblem):
         self.initialize_optimization_tracking_attributes()
 
         # input attributes
-        if isinstance(scenario, str):
-            scenario = self.build_predefined_scenario(scenario)
         self.scenario = scenario.copy()
         if 'specific' not in self.scenario:
             self.scenario['specific'] = []
@@ -58,26 +56,9 @@ class REHO(MasterProblem):
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
 
-    def build_predefined_scenario(self, scenario_name):
-        """
-        Expands a scenario name into its predefined scenario dictionary.
-
-        Currently supports ``"reference"``, which builds an as-is scenario from the QBuildings
-        data: each building's existing heating technology (``source_heating``) and PV capacity
-        (``pv_installation_kW``) are enforced, and any other heating unit is excluded.
-        """
-        if scenario_name == 'reference':
-            enforce_units, exclude_units, pv_capacities = build_reference_scenario(self.buildings_data)
-            if pv_capacities:
-                self.method['fix_units'] = True
-                self.df_fix_Units = pd.DataFrame({'Units_Mult': pv_capacities, 'Units_Use': 1})
-            return {'name': 'reference', 'Objective': 'TOTEX', 'enforce_units': enforce_units, 'exclude_units': exclude_units}
-        raise ValueError("Unknown predefined scenario '%s'. Pass a dict to define a custom scenario." % scenario_name)
-
     def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
         if self.method['fix_units'] and self.df_fix_Units.empty:
-            import warnings
             warnings.warn("fix_units=True but df_fix_Units is empty — no units will be fixed. Assign df_fix_Units before calling single_optimization.")
         if self.method['district-scale'] or self.method['building-scale']:  # decomposition formulation
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
@@ -110,7 +91,7 @@ class REHO(MasterProblem):
         if exitcode == 'infeasible':
             sys.exit(exitcode)
 
-    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
+    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None, read_DHN=False):
 
         # Initiation
         self.pool = mp.Pool(self.cpu_use)
@@ -120,7 +101,7 @@ class REHO(MasterProblem):
         self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
         self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
         self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
         # Iteration
         while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
@@ -128,7 +109,7 @@ class REHO(MasterProblem):
             self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
             self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
             self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
             if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
                 break
@@ -137,9 +118,9 @@ class REHO(MasterProblem):
         self.logger.info(self.stopping_criteria)
         self.iter += 1
         self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
         self.pool.close()
-
+        self.pool.join()
         return None, None
 
     def generate_pareto_curve(self):
@@ -442,6 +423,10 @@ class REHO(MasterProblem):
             self.results[Scn_ID][Pareto_ID] = {}
 
         self.results[Scn_ID][Pareto_ID] = df_Results
+        self.results[Scn_ID][Pareto_ID]["df_Metadata"] = write_results.set_df_metadata(
+            self.scenario, self.method, self.cluster, self.parameters,
+            data_source=self.qbuildings_data.get('data_source'),
+            data_date=self.qbuildings_data.get('data_date'))
 
     def get_df_Results_from_MP_and_SPs(self, Scn_ID, Pareto_ID):
 
@@ -474,7 +459,7 @@ class REHO(MasterProblem):
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
             df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
 
-        if self.method["renovation"] is not None:
+        if "is_ins" in self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"]:
             df_renovation = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][['is_ins']]
             df_Performance = pd.concat([df_Performance, df_renovation], axis=1)
 
@@ -536,14 +521,8 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                # Only consider PeriodStandard (without extreme days) to compute annual balance
-                PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
-                    ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
-
-                # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(
-                    df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
-                    level='Period', axis=0).sum() / 1000
+                # get annual values df_Unit_t using dp
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp[:-2], axis=0).sum() / 1000
 
                 # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')
@@ -744,15 +723,7 @@ class REHO(MasterProblem):
                                 df = df.loc[~(df[cols_to_check] == 0).all(axis=1)]
 
                             df.to_excel(writer, sheet_name=df_name)
-                            auto_adjust_columns(writer, df, df_name)
+                            write_results.auto_adjust_columns(writer, df, df_name)
 
                     writer.close()
                     self.logger.info('Results are saved in ' + result_file_path)
-
-
-def auto_adjust_columns(writer, df, sheet_name):
-    worksheet = writer.sheets[sheet_name]
-    for idx, col in enumerate(df.columns, 1):
-        # Calculate the width needed based on maximum length in column
-        max_length = len(col) + 2  # column header length + extra padding
-        worksheet.column_dimensions[openpyxl.utils.get_column_letter(idx)].width = max_length

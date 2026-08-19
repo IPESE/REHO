@@ -76,6 +76,12 @@ Core of the optimization model (model objectives, constraints, modeling equation
 .. automodule:: reho.model.postprocessing.KPIs
     :members:
 
+`osmose.py`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: reho.model.postprocessing.osmose
+    :members:
+
 `sensitivity_analysis.py`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

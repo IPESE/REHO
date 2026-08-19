@@ -1,6 +1,13 @@
-import pandas as pd
-import numpy as np
+import datetime
+import importlib.metadata
 import logging
+import subprocess
+
+import numpy as np
+import openpyxl
+import pandas as pd
+
+from reho.paths import path_to_reho
 
 __doc__ = """
 Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
@@ -57,8 +64,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df_PerformanceBuilding = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
         df_PerformanceNetwork = pd.concat([df_N1, df_N2, df_N3, df_N4, df_N5, df_N6], axis=1)
 
-        if method['renovation'] is not None:
-            df8 = get_ampl_data(ampl, 'Costs_ins') * tau_ins[0]
+        df8 = get_ampl_data(ampl, 'Costs_ins') * tau_ins[0]
+        if method['renovation'] is not None or df8.Costs_ins.sum() != 0:
             df_N8 = pd.DataFrame({'Costs_ins': [df8.sum()['Costs_ins']]})
             df_PerformanceBuilding = pd.concat([df_PerformanceBuilding, df8], axis=1)
             df_PerformanceNetwork = pd.concat([df_PerformanceNetwork, df_N8], axis=1)
@@ -267,11 +274,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df33 = get_ampl_data(ampl, 'House_Q_cooling')
         df34 = get_ampl_data(ampl, 'Th_supply', multi_index=True)
         df35 = get_ampl_data(ampl, 'Th_return', multi_index=True)
+        df36 = get_ampl_data(ampl, 'Tc_supply', multi_index=True)
+        df37 = get_ampl_data(ampl, 'Tc_return', multi_index=True)
 
         df4 = get_ampl_data(ampl, 'HeatGains', multi_index=True)
         df5 = get_ampl_data(ampl, 'SolarGains', multi_index=True)
 
-        df_Buildings_t = pd.concat([df1, df2, df31, df32, df33, df34, df35, df4, df5], axis=1)
+        df_Buildings_t = pd.concat([df1, df2, df31, df32, df33, df34, df35, df36, df37, df4, df5], axis=1)
         df_Buildings_t.index.names = ['Hub', 'Period', 'Time']
 
         return df_Buildings_t.sort_index()
@@ -642,7 +651,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     else:
         df_Results["df_Interperiod"] = pd.DataFrame()
 
-    if method["renovation"] is not None:
+    df1 = get_ampl_data(ampl, 'is_ins')
+    if method["renovation"] is not None or df1.is_ins.sum() != 0:
         df1 = get_ampl_data(ampl, 'is_ins')
         df_renovation = pd.concat([df1], axis=1)
         df_network = df_renovation.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
@@ -672,6 +682,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         # Total expenses and profits of each type of actor
         df_Results["df_Actors"] = get_ampl_data(ampl, 'objective_functions')
+        df_Results["df_Actors"].at["Cost_travel", "objective_functions"] = get_ampl_data(ampl, 'Cost_travel').values.item()
 
         df1 = get_ampl_data(ampl, 'C_op_renters_to_utility')
         df2 = get_ampl_data(ampl, 'C_op_renters_to_owners')
@@ -704,13 +715,17 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         df_Results["df_Actors_dual"] = pd.concat([df1, df2, df3], axis=1)
 
-        df_Results["Samples"] = dict()
-        df_Results["Samples"]["Owner_PIR_min"] = get_ampl_data(ampl, 'owner_PIR_min')
-        df_Results["Samples"][("Owner_PIR_max")] = get_ampl_data(ampl, 'owner_PIR_max')
-        df_Results["Samples"]["Renter_Epsilon"] = get_ampl_data(ampl, 'renter_expense_max')
+        # Actor epsilons of this run: the PIR bounds are scalars, broadcast over the houses
+        # against which Renter_Epsilon is defined (houses + Network total).
         renter_series = get_ampl_data(ampl, 'renter_expense_max')['renter_expense_max']
         network_total = pd.Series({'Network': renter_series.sum()}, name='renter_expense_max')
-        df_Results["Samples"]["Renter_Epsilon"] = pd.concat([renter_series, network_total])
+        renter_epsilon = pd.concat([renter_series, network_total])
+
+        df_Results["Samples"] = pd.DataFrame({
+            "Owner_PIR_min": get_ampl_data(ampl, 'owner_PIR_min').iloc[0, 0],
+            "Owner_PIR_max": get_ampl_data(ampl, 'owner_PIR_max').iloc[0, 0],
+            "Renter_Epsilon": renter_epsilon,
+        })
 
     for key, df in df_Results.items():
         df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
@@ -805,3 +820,57 @@ def filter_numerical_instabilities(df, threshold=1e-4):
         .where(df_clean[num_cols].abs() >= threshold, 0)
     )
     return df_clean
+
+
+def get_reho_version():
+    """
+    Returns the REHO version, suffixed with ' - modified' if the reho folder has uncommitted changes.
+
+    The version comes from the git checkout when there is one, else from the installed package.
+    """
+    try:
+        git = ['git', '-C', path_to_reho]
+        version = subprocess.check_output(git + ['describe', '--tags', '--abbrev=0'],
+                                          stderr=subprocess.DEVNULL, text=True).strip()
+        changes = subprocess.check_output(git + ['status', '--porcelain', '--', path_to_reho],
+                                          stderr=subprocess.DEVNULL, text=True).strip()
+        return version + ' - modified' if changes else version
+    except (subprocess.CalledProcessError, OSError):
+        pass
+
+    try:
+        return importlib.metadata.version('reho')
+    except importlib.metadata.PackageNotFoundError:
+        return 'unknown'
+
+
+def set_df_metadata(scenario, method, cluster, parameters, data_source=None, data_date=None):
+    """
+    Records what produced a result: the inputs of the run, the versions used and the run date.
+
+    Returns a DataFrame indexed on (category, key). The buildings themselves are reported in
+    ``df_Buildings``, where egid and id_building are enough to retrieve them.
+    """
+    run = {'reho_version': get_reho_version(),
+           'qbuildings': data_source,
+           'qbuildings_date': data_date,
+           'run_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+    metadata = {'run': run, 'scenario': scenario, 'method': method, 'cluster': cluster, 'parameters': parameters}
+
+    records = []
+    for category, entries in metadata.items():
+        for key, value in entries.items():
+            if isinstance(value, (pd.DataFrame, pd.Series, np.ndarray)):
+                value = "<%s shape=%s>" % (type(value).__name__, getattr(value, 'shape', None))
+            records.append({'category': category, 'key': key, 'value': str(value)})
+
+    return pd.DataFrame(records).set_index(['category', 'key'])
+
+
+def auto_adjust_columns(writer, df, sheet_name):
+    worksheet = writer.sheets[sheet_name]
+    for idx, col in enumerate(df.columns, 1):
+        # column header length + extra padding
+        max_length = len(col) + 2
+        worksheet.column_dimensions[openpyxl.utils.get_column_letter(idx)].width = max_length

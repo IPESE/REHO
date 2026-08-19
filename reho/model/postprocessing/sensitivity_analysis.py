@@ -109,11 +109,11 @@ class SensitivityAnalysis:
             except ValueError:
                 pass
 
-        if unit_parameter != []:  # Add units parameters
+        if unit_parameter != [] and 'units' in SA_parameters:  # Add units parameters
             for unit in units:
                 for parameter in unit_parameter:
                     value = default_units_values[default_units_values.index.str.contains(unit)][parameter].iloc[0]
-                    name = "units+-+" + str(unit) + str(parameter)
+                    name = "units+-+" + str(unit) + "___" + str(parameter)
                     if unit in SA_parameters['units']:
                         SA_parameters[name] = SA_parameters['units'][unit]
                     else:    
@@ -233,7 +233,7 @@ class SensitivityAnalysis:
 
             try:
                 tic = time.perf_counter()
-                self.reho.single_optimization(Pareto_ID="/".join(pareto_name))  # Optimize the modified model
+                self.reho.single_optimization(Pareto_ID="-".join(pareto_name))  # Optimize the modified model
                 toc = time.perf_counter()
                 time_spent = toc - tic
 

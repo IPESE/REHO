@@ -439,7 +439,7 @@ Examples `1b_building-scale_Pareto.py` and `2b_district-scale_Pareto.py` can be 
 
 ### Initialize available units and grids
 
-Initializing the energy system structure is done with the {class}`reho.model.infrastructure.infrastructure` class.
+Initializing the energy system structure is done with the {class}`reho.model.infrastructure.Infrastructure` class.
 
 Default values for units and grids are proposed, but any parameters can be adapted through providing customized .csv files.
 

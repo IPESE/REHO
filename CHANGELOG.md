@@ -20,6 +20,18 @@ will break in a future release, 🟢 no action needed.
 [postprocessing]: https://img.shields.io/badge/-Postprocessing-orange
 [plotting]: https://img.shields.io/badge/-Plotting-purple
 
+## [v2.0.1]
+
+| Type                  | Category                          | Title | Description                                                                                                                                                                                        | Breaking |
+|-----------------------|------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+| ![Added][added]       | ![Postprocessing][postprocessing]    | **OSMOSE export** | Add `reho.model.postprocessing.osmose.get_osmose_streams`, which converts the buildings space heating, domestic hot water, and cooling demands of `df_Buildings_t` into a list of heat and cold streams, ready to be used in OSMOSE. Demands are grouped by service and temperature interval (supply and return temperatures within a given tolerance), for each scenario and Pareto step. Takes either the results dictionary or the path to a saved pickle. | 🟢 |
+| ![Added][added]       | ![Postprocessing][postprocessing]    | **Cooling temperatures** | `df_Buildings_t` now also contains the cooling supply and return temperatures (`Tc_supply`, `Tc_return`), next to the heating ones. | 🟢 |
+|  |  |  |  |  |
+| ![Added][added]       | ![Model][model]    | **Renovation value recovery** | Added a `renovation_value_share` parameter, representing the share of renovation cost offset by the resulting increase in house value. | 🟢 |
+| ![Changed][changed]   | ![Model][model]    | **Mobility** | Added a cost of mobility to the actors problem and simplified the mobility model. Removed the obligation to have an EV charger in the district when an ICE vehicle is present. `ebike.mod` was deleted along the way while `ElectricBike_district` stayed selectable, which broke examples `6a` and `6b`; the file is restored — flagged in case dropping electric bikes was in fact intended. | 🟢 |
+| ![Changed][changed]   | ![Model][model]    | **Actors** | `Samples` is now a DataFrame instead of a `dict`, so it no longer breaks the result filtering and the xlsx export — a long-standing bug that made every actors run crash, unrelated to pandas 3.0. `Cost_travel` is written as a scalar, which pandas 3.0 requires. A warning is now logged when `Network_ext` is below the district peak demand: the decomposition initiation then caps grid use below that peak, and the sub-problems come back infeasible at the coldest hour without anything pointing at the network. | 🟢 |
+| ![Fixed][fixed]       | ![Model][model]    | **Corrections** | Transmission of results from the sub-problem to the master problem: PV production, mobility extreme periods, and `df_Annuals`. Restored the `data_EUD` declarations in `master_problem.mod`, without which any scenario using the `DataHeat` unit (example `3l`) failed. Realigned the sensitivity analysis with the parameter format introduced by "Adapt SA for buildings data" — unit keys, the optional `units` group, and a `Pareto_ID` that no longer reads as a directory path when saving (example `4b`). | 🟢 |
+
 ## [v2.0.0]
 
 

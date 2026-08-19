@@ -303,7 +303,6 @@ class Infrastructure:
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])
 
 
-
 def prepare_units_df(file, exclude_units=[], grids=None):
     """
     Prepares the df that will be used by initialize_units.
@@ -439,7 +438,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     Examples
     --------
     >>> units = infrastructure.initialize_units(scenario, grids, building_data="custom_building_units.csv",
-    ...                                         district_data="custom_district_units.csv", interperiod_data=True)
+    ...                                        district_data="custom_district_units.csv", interperiod_data=True)
     """
 
     default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district']

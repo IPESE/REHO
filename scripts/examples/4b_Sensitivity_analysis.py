@@ -30,7 +30,8 @@ if __name__ == '__main__':
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     SA = SensitivityAnalysis(reho, SA_type="Monte_Carlo", sampling_parameters=8)
 
-    SA_parameters = {'Elec_retail': [0.2, 0.45], 'Elec_feedin': [0.0, 0.15], 'NG_retail': [0.2, 0.4]}
+    # Parameters are grouped by type ('grids', 'units', 'buildings'), which determines how they are applied.
+    SA_parameters = {'grids': {'Elec_retail': [0.2, 0.45], 'Elec_feedin': [0.0, 0.15], 'NG_retail': [0.2, 0.4]}}
     SA.build_SA(unit_parameter=['Cost_inv1', 'Cost_inv2'], SA_parameters=SA_parameters)
     SA.run_SA()
 

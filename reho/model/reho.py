@@ -91,7 +91,7 @@ class REHO(MasterProblem):
         if exitcode == 'infeasible':
             sys.exit(exitcode)
 
-    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
+    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None, read_DHN=False):
 
         # Initiation
         self.pool = mp.Pool(self.cpu_use)
@@ -101,7 +101,7 @@ class REHO(MasterProblem):
         self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
         self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
         self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
         # Iteration
         while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
@@ -109,7 +109,7 @@ class REHO(MasterProblem):
             self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
             self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
             self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
+            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
             if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
                 break
@@ -118,9 +118,9 @@ class REHO(MasterProblem):
         self.logger.info(self.stopping_criteria)
         self.iter += 1
         self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
         self.pool.close()
-
+        self.pool.join()
         return None, None
 
     def generate_pareto_curve(self):
@@ -459,7 +459,7 @@ class REHO(MasterProblem):
             df_Results["df_Actors"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_Actors"]
             df_Results["Samples"] = self.results_MP[Scn_ID][Pareto_ID][self.iter]["Samples"]
 
-        if self.method["renovation"] is not None:
+        if "is_ins" in self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"]:
             df_renovation = self.results_MP[Scn_ID][Pareto_ID][self.iter]["df_District"][['is_ins']]
             df_Performance = pd.concat([df_Performance, df_renovation], axis=1)
 
@@ -521,14 +521,8 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                # Only consider PeriodStandard (without extreme days) to compute annual balance
-                PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
-                    ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
-
-                # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(
-                    df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
-                    level='Period', axis=0).sum() / 1000
+                # get annual values df_Unit_t using dp
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp[:-2], axis=0).sum() / 1000
 
                 # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')

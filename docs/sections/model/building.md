@@ -579,6 +579,22 @@ C^{\text{ren}}_b = \sum_{e \in \mathbb{E}^*_b} c^{\text{ren}}_{b,e}\, A_{b,e}
 \mathrm{GWP}^{\text{ren}}_b = \sum_{e \in \mathbb{E}^*_b} cc^{\text{ren}}_{b,e}\, A_{b,e}
 ```
 
+### Annualization and value recovery
+
+$C^{\text{ren}}_b$ is annualized with its own capital recovery factor, based on a
+renovation lifetime $n^{\text{ins}}$ (typically longer than the general project horizon
+$n$), and only a share $\theta$ of it is charged as a cost — the rest is assumed
+recovered through the building's increased market value:
+
+```{math}
+:label: eq_ren_annuity
+\boldsymbol{C}^{\text{CAPEX,ren}}_b = \theta\, C^{\text{ren}}_b\, \frac{i(1+i)^{n^{\text{ins}}}}{(1+i)^{n^{\text{ins}}}-1}
+```
+
+$\theta \in [0,1]$ (default 0.5) is exposed as the AMPL parameter
+`renovation_value_share`, overridable from the Python frontend via the `parameters`
+dict, e.g. `parameters={'renovation_value_share': 0.3}`.
+
 ### Coupling with the building model
 
 For each building, a discrete set of scenarios is pre-computed:

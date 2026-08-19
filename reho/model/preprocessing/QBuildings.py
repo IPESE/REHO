@@ -746,28 +746,36 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
         b_value_floor = pd.read_csv(os.path.join(path_to_sia, 'b_value_floor.csv'), sep=";").set_index("U_footprint")
         b_value = b_value_floor[min(b_value_floor.columns, key=lambda x: abs(float(x) - footprint_factor))]
 
-        if df_h["ERA"] < 0.5 * (0.93 * df_h["area_footprint_m2"] * df_h['count_floor']):
+        if df_h["ERA"] < 0.7 * (0.93 * df_h["area_footprint_m2"] * df_h['count_floor']):
             # When we have case where the ERA is particularly lower than the footprint (because some spaces do not need to be heated),
             # issues arise from gains and losses
 
             df_h["area_facade_m2"] = df_h["ERA"] / footprint_factor * df_h['height_m']
+            downscaling = df_h["ERA"] / (0.93 * df_h["area_footprint_m2"] * df_h['count_floor'])
+            df_h["SolarRoofArea"] = df_h["SolarRoofArea"] * downscaling
+            df_h["area_footprint_m2"] = df_h["area_footprint_m2"] * downscaling
 
         U_h_ins_data = 0
         for j in range(len(periods)):
             glass_fraction = 0.5
             if id_class[j] in ["I", "II"]:
                 glass_fraction = 0.3
-            # TODO: add heat recovery
-            ventilation = 0.7 / 3600 * df_h["ERA"] * 2.5 * (1200 - 0.14 * 400)  # SIA 380/1
+            thermal_capacity_air = (1200 - 0.14 * 610) / 3600   # Wh/K/m3 SIA 380/1
+            air_renewal = 0.7 / 2.5  # 1/h
+            volume = df_h['ERA'] * 2.5  # m3
+            ventilation = air_renewal * volume * thermal_capacity_air / 1000  # kW/K
 
             uh_period = uh_data.loc[periods[j]]
             b = b_value.loc[min(b_value.index, key=lambda x: abs(float(x) - uh_period["U_footprint"] * 1000))]
+            b_roof = 1
+            if df_h['SolarRoofArea'] > df_h["area_footprint_m2"]*1.1:  # non heated space under roof
+                b_roof = 0.9
 
             U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_period["U_facade"] +
-                             df_h['ERA'] / df_h['count_floor'] / 0.93  * uh_period["U_footprint"]*b +
+                             df_h["area_footprint_m2"] * uh_period["U_footprint"]*b +
                              df_h['area_facade_m2'] * glass_fraction * uh_period["U_window"] +
-                             df_h['SolarRoofArea'] * uh_period["U_roof"] +
-                             ventilation/1000) * ratios[j] / df_h['ERA']
+                             df_h['SolarRoofArea'] * uh_period["U_roof"] * b_roof +
+                             ventilation) * ratios[j] / df_h['ERA']
         df_buildings[i]["U_h"] = U_h_ins_data
 
     return df_buildings

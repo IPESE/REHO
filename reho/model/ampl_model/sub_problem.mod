@@ -315,6 +315,7 @@ param Costs_House_limit{h in House} default 0;						# CHF/yr
 param Cost_inv1{u in Units} default 0;								# CHF
 param Cost_inv2{u in Units} default 0;								# CHF/...
 param Costs_ins{h in House} default 0;
+param renovation_value_share default 0.5;								#-			: share of renovation cost recovered through increased house value
 param Costs_House_upfront_m2 default 7759;
 param Costs_House_upfront{h in House} := ERA[h]* Costs_House_upfront_m2;
 param Costs_House_yearly{h in House} := Costs_House_upfront[h]/100 + Costs_House_upfront[h] * i_rate * (0.13/(1-(1+i_rate)^(-15)) + 0.67/(1-(1+i_rate)^(-70))) - Costs_House_upfront[h] * (1/15+1/70);
@@ -336,7 +337,7 @@ subject to Costs_Unit_capex{u in Units}:
 Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_House_capex{h in House}:
-Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + Costs_ins[h] * tau_ins / tau+
+Costs_House_inv[h] = sum{u in UnitsOfHouse[h]}(Costs_Unit_inv[u]) + renovation_value_share*Costs_ins[h] * tau_ins / tau+
 					sum{l in ResourceBalances: h in HousesOfLayer[l]}(Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);
 
 subject to Costs_Unit_replacement{u in Units}:
@@ -355,7 +356,7 @@ subject to Costs_House_replacement{h in House}:
 Costs_House_rep[h] = sum{u in UnitsOfHouse[h],n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
 
 subject to Costs_Grid_supply:
-Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{h in House}(Costs_ins[h]) * tau_ins / tau + 
+Costs_inv =  sum{u in Units}(Costs_Unit_inv[u]) + sum{h in House}(renovation_value_share*Costs_ins[h]) * tau_ins / tau +
 			sum{l in ResourceBalances, h in HousesOfLayer[l]} (Cost_line_inv1[l]*Use_Line_capacity[l,h]+Cost_line_inv2[l]*(LineCapacity[l,h]-Line_ext[h,l] * (1-Use_Line_capacity[l,h]))*Line_Length[h,l]);#+ sum{l in ResourceBalances} (Cost_network_inv1[l]*Use_Network_capacity[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l]));
 
 subject to Costs_replacement:

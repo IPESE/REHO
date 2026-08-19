@@ -20,6 +20,18 @@ will break in a future release, 🟢 no action needed.
 [postprocessing]: https://img.shields.io/badge/-Postprocessing-orange
 [plotting]: https://img.shields.io/badge/-Plotting-purple
 
+## [v2.0.1]
+
+| Type                  | Category                          | Title | Description                                                                                                                                                                                        | Breaking |
+|-----------------------|------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+| ![Added][added]       | ![Postprocessing][postprocessing]    | **OSMOSE export** | Add `reho.model.postprocessing.osmose.get_osmose_streams`, which converts the buildings space heating, domestic hot water, and cooling demands of `df_Buildings_t` into a list of heat and cold streams, ready to be used in OSMOSE. Demands are grouped by service and temperature interval (supply and return temperatures within a given tolerance), for each scenario and Pareto step. Takes either the results dictionary or the path to a saved pickle. | 🟢 |
+| ![Added][added]       | ![Postprocessing][postprocessing]    | **Cooling temperatures** | `df_Buildings_t` now also contains the cooling supply and return temperatures (`Tc_supply`, `Tc_return`), next to the heating ones. | 🟢 |
+|  |  |  |  |  |
+| ![Changed][changed]   | ![Model][model]    | **Mobility cost (actors problem)** | Added a cost of mobility to the actors problem, simplified the mobility model, and removed the electric bike option. | 🟠 |
+| ![Fixed][fixed]       | ![Model][model]    | **SP → MP results transmission** | Corrected the transmission of results from the sub-problem to the master problem: PV production, mobility extreme periods, and `df_Annuals`. | 🟢 |
+| ![Added][added]       | ![Model][model]    | **Renovation value recovery** | Added a `renovation_value_share` parameter, representing the share of renovation cost offset by the resulting increase in house value. | 🟢 |
+| ![Changed][changed]   | ![Model][model]    | **EV charger requirement** | Removed the obligation to have an EV charger in the district when an ICE vehicle is present. | 🟢 |
+
 ## [v2.0.0]
 
 
@@ -40,8 +52,6 @@ will break in a future release, 🟢 no action needed.
 | ![Added][added]       | ![Preprocessing][preprocessing]    | **Reference scenario** | If the scenario name is `reference`, it activates a function where we build REHO with the units configuration (heating + dhw system and installed PVs) retrieved from QBuildings. | 🟢 |
 | ![Changed][changed]       | ![Preprocessing][preprocessing]    | **Solar gains** | Change of re-calibration of solar gains and Uh when ERA < Footprint. | 🟢 |
 | ![Changed][changed]       | ![Postprocessing][postprocessing]    | **Sensitivity analysis** | Add an option to do the sensitivity analysis in the buildings data as well as prices. | 🟠 |
-| ![Added][added]       | ![Postprocessing][postprocessing]    | **OSMOSE export** | Add `reho.model.postprocessing.osmose.get_osmose_streams`, which converts the buildings space heating, domestic hot water, and cooling demands of `df_Buildings_t` into a list of heat and cold streams, ready to be used in OSMOSE. Demands are grouped by service and temperature interval (supply and return temperatures within a given tolerance), for each scenario and Pareto step. Takes either the results dictionary or the path to a saved pickle. | 🟢 |
-| ![Added][added]       | ![Postprocessing][postprocessing]    | **Cooling temperatures** | `df_Buildings_t` now also contains the cooling supply and return temperatures (`Tc_supply`, `Tc_return`), next to the heating ones. | 🟢 |
 
 ### Migration notes
 

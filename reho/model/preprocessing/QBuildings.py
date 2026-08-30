@@ -153,7 +153,7 @@ class QBuildingsReader:
             self.data['facades'] = read_geometry(self.data['facades'])
             self.data['facades'] = translate_facades_to_REHO(self.data['facades'], self.data['buildings'])
             qbuildings['facades_data'] = self.data['facades']
-            qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'])
+           # qbuildings['shadows_data'] = return_shadows_district(qbuildings['buildings_data'], self.data['facades'])
 
         if self.load_roofs:
             self.data['roofs'] = file_reader(path_handler(roofs_filename))
@@ -454,7 +454,7 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
 
     return df_buildings
 
-def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
+def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None, sample=None):
     """
     Parameters
     ----------
@@ -501,7 +501,7 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
         b_value_floor = pd.read_csv(os.path.join(path_to_sia, 'b_value_floor.csv'), sep=";").set_index("U_footprint")
         b_value = b_value_floor[min(b_value_floor.columns, key=lambda x: abs(float(x) - footprint_factor))]
 
-        if df_h["ERA"] < 0.5 * (0.93 * df_h["area_footprint_m2"] * df_h['count_floor']):
+        if df_h["ERA"] < 0.93 * df_h["area_footprint_m2"] * df_h['count_floor']:
             # When we have case where the ERA is particularly lower than the footprint (because some spaces do not need to be heated),
             # issues arise from gains and losses
             downscaling = df_h["ERA"] / (0.93 * df_h["area_footprint_m2"] * df_h['count_floor'])
@@ -524,6 +524,13 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
             b_roof = 1
             if df_h['SolarRoofArea'] > df_h["area_footprint_m2"]*1.1:  # non heated space under roof
                 b_roof = 0.9
+
+            if isinstance(sample, pd.Series):
+                uh_period = uh_period + sample["U"]/1000
+                ventilation = ventilation / 0.7 * (0.7 + sample["vent"])
+                b = 0.6 + sample["b"]
+                df_buildings[i]["g_glass"] = sample["g"]
+                df_buildings[i]["g_glass_shade"] = sample["g_shade"]
 
             U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_period["U_facade"] +
                              df_h["area_footprint_m2"] * uh_period["U_footprint"]*b +

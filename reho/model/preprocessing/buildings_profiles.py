@@ -341,8 +341,9 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
 
     irr = local_data["Irr"]
     buildings_data = qbuildings_data["buildings_data"]
-    g = np.repeat(0.45, len(irr))  # g-value SIA 2024
-    g[irr > 0.4] = 0.1  # assumption that if irradiation exceeds 400 W/m2, we use sunblinds
+    bui = list(buildings_data.keys())[0]
+    g = np.repeat(buildings_data[bui]["g_glass"], len(irr))  # g-value SIA 2024
+    g[irr > 0.3] = buildings_data[bui]["g_glass"] * buildings_data[bui]["g_glass_shade"]  # assumption that if irradiation exceeds 400 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:

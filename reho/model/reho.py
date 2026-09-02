@@ -56,10 +56,10 @@ class REHO(MasterProblem):
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
 
-    def single_optimization(self, Pareto_ID=0, read_DHN=False):
+    def single_optimization(self, Pareto_ID=0):
         Scn_ID = self.scenario['name']
         if self.method['district-scale'] or self.method['building-scale']:  # decomposition formulation
-            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
+            ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
 
         else:  # compact formulation
             if self.method['use_facades'] or self.method['use_pv_orientation']:
@@ -84,22 +84,21 @@ class REHO(MasterProblem):
         self.add_df_Results(ampl, Scn_ID, Pareto_ID, self.scenario)
         self.get_KPIs(Scn_ID, Pareto_ID=Pareto_ID)
 
-        gc.collect()  # free memory
         del ampl
         if exitcode == 'infeasible':
             sys.exit(exitcode)
 
-    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None, read_DHN=False):
+    def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None):
 
         # Initiation
-        self.pool = mp.Pool(self.cpu_use)
+        self.ensure_pool()
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
         self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
         self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
         self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
 
         # Iteration
         while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
@@ -107,7 +106,7 @@ class REHO(MasterProblem):
             self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
             self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
             self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
+            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID)
 
             if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
                 break
@@ -116,9 +115,8 @@ class REHO(MasterProblem):
         self.logger.info(self.stopping_criteria)
         self.iter += 1
         self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
-        self.pool.close()
-        self.pool.join()
+        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID)
+
         return None, None
 
     def generate_pareto_curve(self):
@@ -134,8 +132,8 @@ class REHO(MasterProblem):
             def annualized_investment():
                 if self.method['building-scale'] or self.method['district-scale']:
                     df_inv = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-                    district = (df_inv.Costs_inv[-1] + df_inv.Costs_rep[-1]) / self.ERA
-                    buildings = df_inv.Costs_inv[:-1].div(surfaces.ERA) + df_inv.Costs_rep[:-1].div(surfaces.ERA)
+                    district = (df_inv.Costs_inv.iloc[-1] + df_inv.Costs_rep.iloc[-1]) / self.ERA
+                    buildings = df_inv.Costs_inv.iloc[:-1].div(surfaces.ERA) + df_inv.Costs_rep.iloc[:-1].div(surfaces.ERA)
                 else:
                     tau = ampl.getParameter('tau').getValues().toList()  # annuality factor
                     df_h = write_results.get_ampl_data(ampl, 'Costs_House_inv', multi_index=False)
@@ -150,8 +148,8 @@ class REHO(MasterProblem):
             def opex_per_house():
                 if self.method['building-scale'] or self.method['district-scale']:
                     df_op = self.results[Scn_ID][Pareto_ID]["df_Performance"]
-                    district = df_op.Costs_op[-1] / self.ERA
-                    building = df_op.Costs_op[:-1].div(surfaces.ERA)
+                    district = df_op.Costs_op.iloc[-1] / self.ERA
+                    building = df_op.Costs_op.iloc[:-1].div(surfaces.ERA)
                 else:
                     df_h = write_results.get_ampl_data(ampl, 'Costs_House_op', multi_index=False)
                     df = write_results.get_ampl_data(ampl, 'Costs_op', multi_index=False)
@@ -215,7 +213,6 @@ class REHO(MasterProblem):
 
             obj_values = get_objectives_values(ampl, self.scenario["Objective"], Pareto_ID=1)
 
-            gc.collect()  # free memory
             self.logger.info('The lower bound of the ' + str(objective1) + 'value is: ' + str(obj_values["district_obj1"]))
             return obj_values
 
@@ -246,7 +243,6 @@ class REHO(MasterProblem):
 
             obj_values = get_objectives_values(ampl, self.scenario["Objective"], Pareto_ID=Pareto_ID)
 
-            gc.collect()  # free memory
             self.logger.info('The upper bound of the ' + str(self.scenario["Objective"][0]) + 'value is: ' + str(obj_values["district_obj1"]))
             return obj_values
 
@@ -323,7 +319,6 @@ class REHO(MasterProblem):
             self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
 
             del ampl
-            gc.collect()  # free memory
 
         if not self.method['switch_off_second_objective']:
 
@@ -362,7 +357,6 @@ class REHO(MasterProblem):
                 self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
 
                 del ampl
-                gc.collect()  # free memory
 
         sort_pareto_points()
 
@@ -370,7 +364,7 @@ class REHO(MasterProblem):
 
     def get_DHN_costs(self):
 
-        self.pool = mp.Pool(self.cpu_use)
+        self.ensure_pool()
         self.iter = 0  # new scenario has to start at iter = 0
         method = self.method['building-scale']
         self.method['building-scale'] = True
@@ -392,12 +386,11 @@ class REHO(MasterProblem):
         f = self.feasible_solutions - 1
         heat_flow = self.results_MP[0][0][0]["df_District"]["flowrate_max"] * delta_enthalpy
         dhn_inv = self.results_MP[0][0][0]["df_District"].loc["Network", "DHN_inv"]
-        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"][0]
+        tau = self.results_SP[0][0][0][f]["Building1"]["df_Performance"]["ANN_factor"].iloc[0]
         dhn_invh = dhn_inv / (tau * sum(heat_flow[0:-1]))
         for bui in self.infrastructure.houses.keys():
             self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui] * 1.001, dhn_invh]
 
-        self.pool.close()
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 
@@ -441,7 +434,7 @@ class REHO(MasterProblem):
 
         for column in ["Costs_op", "Costs_inv", "Costs_cft", "GWP_op", "GWP_constr"]:
             df_Performance.loc[:, column] = last_results["df_District"][column]
-        df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'][0]
+        df_Performance.loc['Network', 'ANN_factor'] = df_Performance['ANN_factor'].iloc[0]
 
         if self.method["actors_problem"]:
             features = ['C_op_renters_to_utility', 'C_op_renters_to_owners', 'C_op_utility_to_owners', 'owner_inv',
@@ -514,8 +507,14 @@ class REHO(MasterProblem):
 
         for i, unit in enumerate(self.infrastructure.UnitsOfDistrict):
             for key in self.infrastructure.district_units[i]["UnitOfLayer"]:
-                # get annual values df_Unit_t using dp
-                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(df_Time.dp[:-2], axis=0).sum() / 1000
+                # Only consider PeriodStandard (without extreme days) to compute annual balance
+                PeriodStandard = list(range(1, self.results_SP[ids['Scn_ID']][ids['Pareto_ID']][ids['Iter']][
+                    ids['FeasibleSolution']][ids["House"]]["df_Index"]["PeriodOfYear"].max() + 1))
+
+                # Filter `df_Time.dp` to include only the selected periods, then apply the calculation
+                data = last_results["df_Unit_t"].xs((key, unit), level=('Layer', 'Unit')).mul(
+                    df_Time.dp.loc[df_Time.dp.index.get_level_values("Period").isin(PeriodStandard)],
+                    level='Period', axis=0).sum() / 1000
 
                 # Initialize values in df_network for the specified (key, unit) tuple
                 df_network.loc[(key, unit), :] = float('nan')

@@ -62,6 +62,29 @@ def read_sia_2024_profiles(status, df):
     return df_el_add, df_el_light, df_el_appliance, df_dhw, df_occupancy, df_heat_gain
 
 
+_daily_profile_cache = {}
+
+
+def get_daily_profiles_cached(status, class_380, date, df_SIA_380, df_SIA_2024):
+    """
+    Memoized wrapper around ``daily_profiles_with_monthly_deviation``.
+
+    The daily profile only depends on the building status, the SIA 380/1 class and,
+    through the monthly and weekly deviation factors, on the month and the day
+    category (weekday / Saturday / Sunday) — not on the building itself. The SIA
+    norm tables are static, so results are cached at module level and shared
+    across buildings and across successive REHO instances.
+    """
+    day_category = date.weekday() if date.weekday() >= 5 else 0
+    key = (status, class_380, date.month, day_category)
+    profiles = _daily_profile_cache.get(key)
+    if profiles is None:
+        rooms = read_sia2024_rooms_sia380_1(class_380, df_SIA_380)
+        profiles = daily_profiles_with_monthly_deviation(status, rooms, date, df_SIA_2024)
+        _daily_profile_cache[key] = profiles
+    return profiles
+
+
 def daily_profiles_with_monthly_deviation(status, rooms, date, df):
     """
     Returns daily profiles for electricity demand, DHW demand, occupancy, electricity heat gains, and heat gains from people.

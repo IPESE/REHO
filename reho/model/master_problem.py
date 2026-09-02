@@ -18,6 +18,73 @@ __doc__ = """
 File for handling data and optimization for an AMPL master problem.
 """
 
+_sia_data_cache = {}
+
+
+def _load_sia_data():
+    """SIA norm tables are static package data — read them once per process."""
+    if not _sia_data_cache:
+        _sia_data_cache["df_SIA_380"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
+        _sia_data_cache["df_SIA_2024"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'],
+                                                       engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+    return _sia_data_cache
+
+
+def _sp_solver_attributes(Scn_ID, Pareto_ID, ampl):
+    """Standalone extraction of solver statistics for one solved AMPL instance."""
+    time = ampl.getValue('_total_solve_time')
+    constr = ampl.getValue('_ncons')
+    pres_constr = ampl.getValue('_sncons')  # after presolve
+    var = ampl.getValue('_nvars')
+    pres_var = ampl.getValue('_snvars')  # after presolve
+    binaries = ampl.getValue('_snbvars')  # after presolve
+    integer = ampl.getValue('_snivars')  # after presolve
+    no_ojectives = ampl.getValue('_snobjs')  # after presolve
+    val_objectives = ampl.getCurrentObjective().getValues().toList()[0]
+
+    mux = pd.MultiIndex.from_tuples([(Scn_ID, Pareto_ID)], names=['Scn_ID', 'Pareto_ID'])
+    df = pd.DataFrame([[time, constr, pres_constr, var, pres_var, binaries, integer, no_ojectives, val_objectives]], index=mux,
+                      columns=['solving_time', 'constraints', 'presolve_constraints', 'variables', 'presolve_variables',
+                               'presolve_binaries', 'presolve_integer', 'no_objective', 'val_objective'])
+    return df
+
+
+def _solve_SP_task(task):
+    """
+    Builds, solves and extracts one building's sub-problem from a self-contained task
+    payload (built by ``MasterProblem.prepare_SP_task``). Runs in a worker process:
+    the payload holds only this building's data, not the whole MasterProblem.
+    """
+    h = task['h']
+    sp = SubProblem(task['infrastructure_SP'], task['buildings_data_SP'], task['local_data'],
+                    task['parameters_SP'], task['set_indexed_SP'], task['cluster'],
+                    task['scenario'], task['method'], task['solver'], task.get('qbuildings_data'))
+    ampl = sp.build_model_without_solving()
+
+    df_fix_Units = task.get('df_fix_Units')
+    if task['method']['fix_units'] and df_fix_Units is not None and not df_fix_Units.empty:
+        for unit in df_fix_Units.index[df_fix_Units.index.str.contains(str(h))]:
+            if unit == 'PV_' + str(h):
+                ampl.getVariable('Units_Mult').get(unit).fix(df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                ampl.getVariable('Units_Use').get(unit).fix(float(df_fix_Units.Units_Use.loc[unit]))
+            else:
+                ampl.getVariable('Units_Mult').get(unit).fix(df_fix_Units.Units_Mult.loc[unit])
+                ampl.getVariable('Units_Use').get(unit).fix(float(df_fix_Units.Units_Use.loc[unit]))
+
+    ampl.solve()
+    exitcode = exitcode_from_ampl(ampl)
+
+    df_Results = write_results.get_df_Results_from_SP(ampl, task['scenario'], task['method'], task['buildings_data_SP'])
+    attr = _sp_solver_attributes(task['Scn_ID'], task['Pareto_ID'], ampl)
+
+    del ampl
+    if exitcode != 0:
+        # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
+        if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
+            raise Exception('Sub problem did not converge with building', h)
+
+    return df_Results, attr
+
 
 class MasterProblem:
     """
@@ -81,11 +148,8 @@ class MasterProblem:
         else:
             self.cluster = copy.deepcopy(cluster)
 
-        # load SIA norms
-        sia_data = dict()
-        sia_data["df_SIA_380"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
-        sia_data["df_SIA_2024"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'],
-                                                engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+        # load SIA norms (cached at module level: static files, re-used across REHO instances)
+        sia_data = _load_sia_data()
 
         # retrieve location data
         self.local_data = return_local_data(cluster, qbuildings_data)
@@ -264,34 +328,124 @@ class MasterProblem:
 
         return
 
+    def ensure_pool(self):
+        """
+        Returns the shared worker pool, creating it on first use.
+
+        The pool is kept alive across successive optimizations (workers are daemonic and
+        die with the main process), so repeated ``single_optimization`` calls do not pay
+        the process-spawn and package-import cost again.
+        """
+        if getattr(self, 'pool', None) is None:
+            self.pool = mp.Pool(self.cpu_use)
+        return self.pool
+
     def launch_SP_multiprocessing(self, scenario, Scn_ID, Pareto_ID, epsilon_init, beta, initiation=True, renovation_options=None):
 
-        if self.method['parallel_computation']:
-            # to run multiprocesses, a copy of the model is performed with pickles -> make sure there are no ampl libraries
-            if initiation:
-                results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, renovation_options)) for h in self.infrastructure.houses}
-            else:
-                results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h, renovation_options)) for h in self.infrastructure.houses}
+        tasks = {h: self.prepare_SP_task(scenario, Scn_ID, Pareto_ID, h, epsilon_init=epsilon_init, beta=beta, initiation=initiation, renovation_options=renovation_options) for h in self.infrastructure.houses}
+        collected = {}
 
-            # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
-            while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
-                time.sleep(1)
+        if self.method['parallel_computation']:
+            results = {h: self.pool.apply_async(_solve_SP_task, args=(tasks[h],)) for h in self.infrastructure.houses}
 
             # the memory to write and share results is not parallel -> results have to be stored outside calculation
             for h in self.infrastructure.houses:
-                (df_Results, attr) = results[h].get()
-                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+                collected[h] = results[h].get()
         else:
             for h in self.infrastructure.houses:
-                if initiation:
-                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, renovation_options)
-                else:
-                    df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h, renovation_options)
+                collected[h] = _solve_SP_task(tasks[h])
 
-                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+        for h, (df_Results, attr) in collected.items():
+            self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
         self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
         return
+
+    def prepare_SP_task(self, scenario, Scn_ID, Pareto_ID, h, epsilon_init=None, beta=None, initiation=True, renovation_options=None):
+        """
+        Assembles the self-contained payload for one building's sub-problem.
+
+        All the model-dependent preparation (parameter splitting, duals, beta values)
+        happens here in the main process; the returned dict is what gets pickled to a
+        worker, so it only contains this building's slice of the district data.
+        """
+        scenario = copy.deepcopy(scenario)
+
+        if initiation:
+            if self.method["print_logs"]:
+                print('INITIATE HOUSE: ' + h)
+
+            # find district structure and parameter for one single building
+            buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h)
+
+            # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
+            if epsilon_init is not None and self.method['building-scale']:
+                emoo = scenario["EMOO"].copy()
+                for key in ["EMOO_grid", "EMOO_GU_demand", "EMOO_GU_supply"]:
+                    emoo.pop(key)
+                if len(emoo) == 1:
+                    scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
+                else:
+                    raise warnings.warn("Multiple epsilon constraints")
+            elif not self.method['building-scale']:
+                scenario, beta_list = self.get_beta_values(scenario, beta)
+                parameters_SP['beta_duals'] = beta_list
+        else:
+            self.logger.info('iterate HOUSE: ' + h + 'iteration: ' + str(self.iter))
+
+            # Give dual variables to Subproblem
+            pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
+            pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
+            pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
+
+            parameters_SP = dict()
+            if self.method['actors_problem']:
+                parameters_SP.update(
+                    actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID,
+                                                self.iter, h))
+            # find district structure, objective, beta and parameter for one single building
+            buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
+
+            parameters_SP['Cost_supply_network'] = pi
+            parameters_SP['Cost_demand_network'] = pi * (1 - 1e-9)
+            parameters_SP['Cost_supply'] = pi_h
+            parameters_SP['Cost_demand'] = pi_h * (1 - 1e-9)
+            parameters_SP['GWP_supply'] = pi_GWP
+            parameters_SP['GWP_demand'] = pi_GWP.mul(0)
+
+            beta_series = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
+            scenario, beta_list = self.get_beta_values(scenario, beta_series)
+            if "beta_duals" in parameters_SP:
+                for key in parameters_SP["beta_duals"].index.get_level_values("Obj_fct").unique():
+                    beta_list.loc[key] = parameters_SP["beta_duals"].xs(key).xs(h)[0]
+            parameters_SP['beta_duals'] = beta_list
+
+        if renovation_options is not None:
+            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
+            buildings_data_SP[h]["renovation"] = renovation_options
+
+        # ship only the location data the sub-problem consumes (Irr_yearly is only needed with use_pv_orientation)
+        local_data_SP = dict(self.local_data)
+        if not (self.method['use_pv_orientation'] or self.method['use_facades']):
+            local_data_SP.pop('Irr_yearly', None)
+        local_data_SP.pop('sun_azimuth', None)
+        local_data_SP.pop('df_renovation', None)
+        local_data_SP.pop('df_renovation_targets', None)
+
+        task = {'h': h, 'Scn_ID': Scn_ID, 'Pareto_ID': Pareto_ID,
+                'infrastructure_SP': self.infrastructure_SP[h],
+                'buildings_data_SP': buildings_data_SP,
+                'parameters_SP': parameters_SP,
+                'set_indexed_SP': set_indexed_SP,
+                'local_data': local_data_SP,
+                'cluster': self.cluster,
+                'scenario': scenario,
+                'method': self.method,
+                'solver': self.solver,
+                'df_fix_Units': self.df_fix_Units if self.method['fix_units'] else None}
+        if self.method['use_facades'] or self.method['use_pv_orientation']:
+            task['qbuildings_data'] = self.qbuildings_data
+        return task
 
     def SP_initiation_execution(self, scenario, Scn_ID=0, Pareto_ID=1, h=None, epsilon_init=None, beta=None, renovation_options=None):
         """
@@ -319,61 +473,9 @@ class MasterProblem:
         attr :
             results of the optimization process (CPU time, objective value, nb variables or constraints, ...)
         """
-        if self.method["print_logs"]:
-            print('INITIATE HOUSE: ' + h)
-
-        # find district structure and parameter for one single building
-        buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h)
-
-        if renovation_options is not None:
-            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
-            buildings_data_SP[h]["renovation"] = renovation_options
-
-        # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
-        if epsilon_init is not None and self.method['building-scale']:
-            emoo = scenario["EMOO"].copy()
-            for key in ["EMOO_grid", "EMOO_GU_demand", "EMOO_GU_supply"]:
-                emoo.pop(key)
-            if len(emoo) == 1:
-                scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
-            else:
-                raise warnings.warn("Multiple epsilon constraints")
-        elif not self.method['building-scale']:
-            scenario, beta_list = self.get_beta_values(scenario, beta)
-            parameters_SP['beta_duals'] = beta_list
-
-        if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method,
-                              self.solver, self.qbuildings_data)
-        else:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method,
-                              self.solver)
-
-        ampl = REHO.build_model_without_solving()
-
-        if self.method['fix_units']:
-            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
-                if unit == 'PV_' + h:
-                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
-                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
-                else:
-                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
-                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
-
-        ampl.solve()
-        exitcode = exitcode_from_ampl(ampl)
-
-        df_Results = write_results.get_df_Results_from_SP(ampl, scenario, self.method, buildings_data_SP)
-        attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
-
-        del ampl
-        gc.collect()  # free memory
-        if exitcode != 0:
-            # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
-            if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
-                raise Exception('Sub problem did not converge with building', h)
-
-        return df_Results, attr
+        task = self.prepare_SP_task(scenario, Scn_ID, Pareto_ID, h, epsilon_init=epsilon_init, beta=beta,
+                                    initiation=True, renovation_options=renovation_options)
+        return _solve_SP_task(task)
 
     def MP_iteration(self, scenario, binary, Scn_ID=0, Pareto_ID=1, read_DHN=False):
         """
@@ -710,7 +812,6 @@ class MasterProblem:
         exitcode = exitcode_from_ampl(ampl_MP)
 
         del ampl_MP
-        gc.collect()
         if exitcode != 0:
             raise Exception('Master problem did not converge')
 
@@ -759,72 +860,8 @@ class MasterProblem:
         ------
         ValueError: If the SP optimization did not converge
         """
-        self.logger.info('iterate HOUSE: ' + h + 'iteration: ' + str(self.iter))
-
-        # Give dual variables to Subproblem
-        pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
-        pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
-        pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
-
-        parameters_SP = dict()
-        if self.method['actors_problem']:
-            parameters_SP.update(actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID, self.iter, h))
-        # find district structure, objective, beta and parameter for one single building
-        buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
-
-        parameters_SP['Cost_supply_network'] = pi
-        parameters_SP['Cost_demand_network'] = pi * (1 - 1e-9)
-        parameters_SP['Cost_supply'] = pi_h
-        parameters_SP['Cost_demand'] = pi_h * (1 - 1e-9)
-        parameters_SP['GWP_supply'] = pi_GWP
-        parameters_SP['GWP_demand'] = pi_GWP.mul(0)
-
-        beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
-        scenario, beta_list = self.get_beta_values(scenario, beta)
-
-        if "beta_duals" in parameters_SP:
-            for key in parameters_SP["beta_duals"].index.get_level_values("Obj_fct").unique():
-                beta_list.loc[key] = parameters_SP["beta_duals"].xs(key).xs(h)[0]
-        parameters_SP['beta_duals'] = beta_list
-
-        if renovation_options is not None:
-            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
-            buildings_data_SP[h]["renovation"] = renovation_options
-
-        # Execute optimization
-        if self.method['use_facades'] or self.method['use_pv_orientation']:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster,
-                              scenario, self.method, self.solver, self.qbuildings_data)
-        else:
-            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster,
-                              scenario, self.method, self.solver)
-
-        ampl = REHO.build_model_without_solving()
-
-        if self.method['fix_units']:
-            for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
-                if unit == 'PV_' + h:
-                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
-                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
-                else:
-                    ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
-                    ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
-
-        ampl.solve()
-        exitcode = exitcode_from_ampl(ampl)
-
-        df_Results = write_results.get_df_Results_from_SP(ampl, scenario, self.method, buildings_data_SP)
-        attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
-
-        del ampl
-        gc.collect()  # free memory
-
-        if exitcode != 0:
-            # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
-            if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
-                raise Exception('Sub problem did not converge with building', h)
-
-        return df_Results, attr
+        task = self.prepare_SP_task(scenario, Scn_ID, Pareto_ID, h, initiation=False, renovation_options=renovation_options)
+        return _solve_SP_task(task)
 
     def check_Termination_criteria(self, scenario, Scn_ID=0, Pareto_ID=1):
         """
@@ -1174,20 +1211,7 @@ class MasterProblem:
         df : pd.DataFrame
             Information on the optimization (CPU time, nb constraints, ...)
         """
-        time = ampl.getValue('_total_solve_time')
-        constr = ampl.getValue('_ncons')
-        pres_constr = ampl.getValue('_sncons')  # after presolve
-        var = ampl.getValue('_nvars')
-        pres_var = ampl.getValue('_snvars')  # after presolve
-        binaries = ampl.getValue('_snbvars')  # after presolve
-        integer = ampl.getValue('_snivars')  # after presolve
-        no_ojectives = ampl.getValue('_snobjs')  # after presolve
-        val_objectives = ampl.getCurrentObjective().getValues().toList()[0]
-
-        mux = pd.MultiIndex.from_tuples([(Scn_ID, Pareto_ID)], names=['Scn_ID', 'Pareto_ID'])
-        df = pd.DataFrame([[time, constr, pres_constr, var, pres_var, binaries, integer, no_ojectives, val_objectives]], index=mux,
-                          columns=['solving_time', 'constraints', 'presolve_constraints', 'variables', 'presolve_variables',
-                                   'presolve_binaries', 'presolve_integer', 'no_objective', 'val_objective'])
+        df = _sp_solver_attributes(Scn_ID, Pareto_ID, ampl)
 
         if not self.method['district-scale']:  # for decompose method, stored in solver_attributes_MP or _SP
             self.solver_attributes = pd.concat([self.solver_attributes, df])

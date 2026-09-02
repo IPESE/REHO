@@ -136,7 +136,13 @@ class SubProblem:
         # -SOLVER OPTIONS
         ampl.setOption('solver', self.solver)
         if self.solver == "gurobi":
-            ampl.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
+            gurobi_options = 'NodeFileStart=0.5 IntFeasTol=1e-6'
+            # opt-in: pinning each SP to few threads multiplies district-level throughput
+            # (concurrent multi-threaded solves oversubscribe the CPU), but the different
+            # MIP search path can shift objectives within solver tolerances (~0.1-0.3%)
+            if self.method_sp.get('solver_threads_SP'):
+                gurobi_options += ' threads=%d' % int(self.method_sp['solver_threads_SP'])
+            ampl.eval("option gurobi_options '%s';" % gurobi_options)
 
         # -----------------------------------------------------------------------------------------------------#
         #  MODEL FILES
@@ -668,6 +674,8 @@ def initialize_default_methods(method):
 
     if 'fix_units' not in method:
         method['fix_units'] = False
+    if 'solver_threads_SP' not in method:
+        method['solver_threads_SP'] = None
 
     if 'use_dynamic_emission_profiles' not in method:
         method['use_dynamic_emission_profiles'] = False

@@ -7,7 +7,7 @@ Extracts the results from the AMPL model and converts it to Python dictionary an
 """
 
 
-def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
+def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, tolerance_filtering=1e-4):
     def set_df_performance(ampl, scenario):
         df1 = get_ampl_data(ampl, 'Costs_House_op')  # without the comfort penalty costs
         df1 = df1.rename(columns={'Costs_House_op': 'Costs_op'})
@@ -417,10 +417,14 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True):
             df = df.fillna(0)  # replace all NaN with zeros
             df = df.loc[~(df == 0).all(axis=1)]  # drop all lines with only zeros
 
+    for key, df in df_Results.items():
+        df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
+
+
     return df_Results
 
 
-def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}):
+def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}, tolerance_filtering = 1e-4):
     df_Results = dict()
 
     # Dantzig Wolfe algorithm
@@ -504,7 +508,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df6 = get_ampl_data(ampl, 'GWP_constr')
     df_District = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
     if read_DHN:
-        df7 = np.sqrt(np.sum(df_House[["diameter_max"]] ** 2)).to_frame().transpose()
+        df7 = pd.DataFrame(np.sqrt((df_House[["diameter_max"]] ** 2).sum())).T
         df8 = get_ampl_data(ampl, 'DHN_inv')
         df_District = pd.concat([df_District, df7, df8], axis=1)
 
@@ -700,6 +704,9 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         network_total = pd.Series({'Network': renter_series.sum()}, name='renter_expense_max')
         df_Results["Samples"]["Renter_Epsilon"] = pd.concat([renter_series, network_total])
 
+    for key, df in df_Results.items():
+        df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
+
     return df_Results
 
 
@@ -772,3 +779,18 @@ def get_ampl_dual_values_in_pandas(ampl, ampl_name, multi_index):
         df.index = pd.MultiIndex.from_tuples(df.index)
 
     return df
+
+
+def filter_numerical_instabilities(df, threshold=1e-4):
+    """
+    Return a copy of df where any numeric cell with |value| < threshold
+    has been replaced by exact 0.
+    """
+    df_clean = df.copy()
+
+    # select only the numeric columns
+    num_cols = df_clean.select_dtypes(include=[np.number]).columns
+
+    # where absolute value is below threshold, set to 0
+    df_clean[num_cols] = (df_clean[num_cols].where(df_clean[num_cols].abs() >= threshold, 0))
+    return df_clean

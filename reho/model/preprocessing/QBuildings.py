@@ -526,9 +526,12 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None, sample=None):
                 b_roof = 0.9
 
             if isinstance(sample, pd.Series):
-                uh_period = uh_period + sample["U"]/1000
-                ventilation = ventilation / 0.7 * (0.7 + sample["vent"])
-                b = 0.6 + sample["b"]
+                uh_period["U_facade"] = sample["Uf"] / 1000
+                uh_period["U_window"] = sample["Uw"] / 1000
+                uh_period["U_footprint"] = sample["Us"] / 1000
+                uh_period["U_roof"] = sample["Ur"] / 1000
+                ventilation = ventilation / 0.7 * sample["vent"]
+                b = sample["b"]
                 df_buildings[i]["g_glass"] = sample["g"]
                 df_buildings[i]["g_glass_shade"] = sample["g_shade"]
 

@@ -49,12 +49,9 @@ def return_local_data(cluster, qbuildings_data):
 
     bui_id = list(qbuildings_data['buildings_data'].keys())[0]
     lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data'][bui_id]['x'], qbuildings_data['buildings_data'][bui_id]['y'])
-    df_sun_position = pd.DataFrame()
-    for day in local_data["df_Timestamp"]["Date"][0:-2]:
-        for i in range(24):
-            df_sun_position = pd.concat([df_sun_position, pvlib.solarposition.get_solarposition(day+timedelta(hours=i), lat, long)])
-    for day in local_data["df_Timestamp"]["Date"][-2:]:
-        df_sun_position = pd.concat([df_sun_position, pvlib.solarposition.get_solarposition(day + timedelta(hours=13), lat, long)])
+    timestamps = [day + timedelta(hours=i) for day in local_data["df_Timestamp"]["Date"][0:-2] for i in range(24)]
+    timestamps += [day + timedelta(hours=13) for day in local_data["df_Timestamp"]["Date"][-2:]]
+    df_sun_position = pvlib.solarposition.get_solarposition(pd.DatetimeIndex(timestamps), lat, long)
     local_data["sun_azimuth"] = df_sun_position["azimuth"] - 90
 
     typical_data = pd.read_csv(os.path.join(clustering_directory, 'typical_data.csv'))

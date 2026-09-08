@@ -127,7 +127,7 @@ class MasterProblem:
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity',
                                                 "max_share", "min_share", "max_share_modes", "min_share_modes", "n_ICEperhab",
                                                 "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Ext_district",
-                                                "Network_lifetime", "HydrogenAnnualExport_district","data_EUD_avg"],
+                                                "Network_lifetime", "HydrogenAnnualExport_district","data_EUD_avg", "SOEC_conv_eff","SOFC_elec_eff_CH4"],
                          "list_constraints_MP": [],
                          "list_set_indexed_MP": ["Districts", "Distances"]
                          }
@@ -728,6 +728,10 @@ class MasterProblem:
                 df = pd.DataFrame(MP_parameters[i])
                 ampl_MP.setData(df)
 
+            elif isinstance(MP_parameters[i], dict):
+                Para = ampl_MP.getParameter(i)
+                Para.setValues(MP_parameters[i])
+
             elif isinstance(MP_parameters[i], list):
                 Para = ampl_MP.getParameter(i)
                 Para.setValues(np.array(MP_parameters[i]))
@@ -764,7 +768,8 @@ class MasterProblem:
                 for tech in self.fix_units_list:
                     tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
 
-                    unit_name = f"{tech}_district"
+                    unit_name = tech
+                    #unit_name = f"{tech}_district"
                     try:
                         # --- Case 1: Unit exists in df -> fix to provided values
                         if unit_name in self.df_fix_Units.index:

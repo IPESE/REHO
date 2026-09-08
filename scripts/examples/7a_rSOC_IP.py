@@ -15,7 +15,7 @@ if __name__ == '__main__':
     scenario['Objective'] = 'TOTEX'
     scenario['name'] = 'totex'
     scenario['exclude_units'] = ["FC", "ETZ", "Battery_IP", "Battery", "H2_storage_IP", "HeatPump_Geothermal"]
-    scenario['enforce_units'] = ["HeatPump_Waste_heat"]
+    scenario['enforce_units'] = []
 
     # Set method options
     method = {'interperiod_storage': True,

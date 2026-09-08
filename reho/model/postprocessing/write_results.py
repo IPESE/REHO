@@ -738,68 +738,71 @@ def set_df_Interperiod(ampl):
     IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "PTES_E_Stored")
 
     if IP_stor_list:
-        df_IP_storage = pd.concat(IP_stor_list, axis=1)
+        try:
+            df_IP_storage = pd.concat(IP_stor_list, axis=1)
 
-        df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
-        vol_all = []
-        P_all = []
-        Z_all = []
-        for stor in list(df_IP_storage.columns):
-            mol = stor.split("_")[0]
-            if mol in ["PTES", "BAT"]:
-                vol_all.append(np.nan)
-                P_all.append(np.nan)
-                Z_all.append(np.nan)
-                continue
+            df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
+            vol_all = []
+            P_all = []
+            Z_all = []
+            for stor in list(df_IP_storage.columns):
+                mol = stor.split("_")[0]
+                if mol in ["PTES", "BAT"]:
+                    vol_all.append(np.nan)
+                    P_all.append(np.nan)
+                    Z_all.append(np.nan)
+                    continue
 
-            try:
-                vol = round(get_ampl_data(ampl, mol + "_stor_volume", multi_index=False).iloc[0][0], 3)
-                P = round(get_ampl_data(ampl, mol + "_stor_pressure", multi_index=False).iloc[0][0], 1)
-                Z = round(get_ampl_data(ampl, "Z_" + mol + "_max", multi_index=False).iloc[0][0], 3)
-            except Exception:
-                vol, P, Z = np.nan, np.nan, np.nan
+                try:
+                    vol = round(get_ampl_data(ampl, mol + "_stor_volume", multi_index=False).iloc[0][0], 3)
+                    P = round(get_ampl_data(ampl, mol + "_stor_pressure", multi_index=False).iloc[0][0], 1)
+                    Z = round(get_ampl_data(ampl, "Z_" + mol + "_max", multi_index=False).iloc[0][0], 3)
+                except Exception:
+                    vol, P, Z = np.nan, np.nan, np.nan
 
-            vol_all.append(vol)
-            P_all.append(P)
-            Z_all.append(Z)
+                vol_all.append(vol)
+                P_all.append(P)
+                Z_all.append(Z)
 
-        if len(vol_all) > 0:
-            # ⚠️ Inject general info rows before re-indexation
-            general_info = pd.DataFrame(
-                [
-                    vol_all,
-                    P_all,
-                    Z_all
-                ],
-                index=pd.MultiIndex.from_tuples(
-                    [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
-                    names=['Building', 'HourOfYear']
-                ),
-                columns=df_IP_storage.columns
-            )
-        else:
-            general_info = pd.DataFrame()
-        # Convert df_IP_storage to MultiIndex if it's not already
-        if df_IP_storage.index.nlevels == 1:
-            new_level = list(range(len(df_IP_storage)))
-            original_index = df_IP_storage.index.tolist()
-            assert len(original_index) == len(new_level), "Length mismatch"
-            df_IP_storage.index = pd.MultiIndex.from_arrays(
-                [original_index, new_level],
-                names=["Building", "HourOfYear"]
-            )
+            if len(vol_all) > 0:
+                # ⚠️ Inject general info rows before re-indexation
+                general_info = pd.DataFrame(
+                    [
+                        vol_all,
+                        P_all,
+                        Z_all
+                    ],
+                    index=pd.MultiIndex.from_tuples(
+                        [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
+                        names=['Building', 'HourOfYear']
+                    ),
+                    columns=df_IP_storage.columns
+                )
+            else:
+                general_info = pd.DataFrame()
+            # Convert df_IP_storage to MultiIndex if it's not already
+            if df_IP_storage.index.nlevels == 1:
+                new_level = list(range(len(df_IP_storage)))
+                original_index = df_IP_storage.index.tolist()
+                assert len(original_index) == len(new_level), "Length mismatch"
+                df_IP_storage.index = pd.MultiIndex.from_arrays(
+                    [original_index, new_level],
+                    names=["Building", "HourOfYear"]
+                )
 
-        # Overwrite with correct MultiIndex naming
-        df_IP_storage.index.names = ['Building', 'HourOfYear']
+            # Overwrite with correct MultiIndex naming
+            df_IP_storage.index.names = ['Building', 'HourOfYear']
 
-        # 🔗 Concatenate the info rows and data rows
-        df_IP_storage = pd.concat([general_info, df_IP_storage])
+            # 🔗 Concatenate the info rows and data rows
+            df_IP_storage = pd.concat([general_info, df_IP_storage])
 
-        # Final cleanup
-        df_IP_storage = df_IP_storage.fillna(0)
-        df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
-        df_IP_storage = df_IP_storage.sort_index()
-
+            # Final cleanup
+            df_IP_storage = df_IP_storage.fillna(0)
+            df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
+            df_IP_storage = df_IP_storage.sort_index()
+        except:
+            print('No interperiod storage available.')
+            df_IP_storage = pd.DataFrame()
     else:
         df_IP_storage = pd.DataFrame()
 

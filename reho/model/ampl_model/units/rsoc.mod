@@ -13,19 +13,19 @@
 
 # These efficiencies come from Aspen/OSMOSE modelling (Arthur Waeber / Xinyi Wei / Shivom Sharma)
 param SOFC_elec_eff_H2{u in UnitsOfType['rSOC']} >=0, <=1 default 0.6209; # (elec output/H2 LHV) Optimal design, rounded down
-param SOFC_therm_eff_H2_high_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.4174; # (heat output/H2 LHV) including condensation of produced steam
-param SOFC_therm_eff_H2_mid_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.0194; # (heat output/H2 LHV) including condensation of produced steam
+param SOFC_therm_eff_H2_high_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.2798; # (heat output/H2 LHV) including condensation of produced steam
+param SOFC_therm_eff_H2_mid_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.1075; # (heat output/H2 LHV) including condensation of produced steam
 param SOFC_therm_eff_H2_low_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.1162; # (heat output/H2 LHV) including condensation of produced steam
 
 param SOFC_elec_eff_CH4{u in UnitsOfType['rSOC']} >=0, <=1 default 0.6430; # (elec output/CH4 LHV) Optimal design rounded down
 param SOFC_therm_eff_CH4_high_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.2972; # (heat output/CH4 LHV) including condensation of produced steam
-param SOFC_therm_eff_CH4_mid_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.0413; # (heat output/CH4 LHV) including condensation of produced steam
-param SOFC_therm_eff_CH4_low_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.1043; # (heat output/CH4 LHV) including condensation of produced steam
+param SOFC_therm_eff_CH4_mid_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.0413; # (heat output/CH4 LHV)
+param SOFC_therm_eff_CH4_low_T{u in UnitsOfType['rSOC']} >=0, <=1 default 0.1043; # (heat output/CH4 LHV)
 
 param SOEC_conv_eff{u in UnitsOfType['rSOC']} >=0, <=1 default 0.9543; # (H2 LHV/elec input) eff (includes High T heat that is provided through electrical heaters)
 param SOEC_therm_eff_high_T{u in UnitsOfType['rSOC']} <=1 default -0.1794; # (heat input/elec input) eff # Requires Heat (since Methanator is modelled appart) rounded up since heat required
-param SOEC_therm_eff_mid_T{u in UnitsOfType['rSOC']} <=1 default 0.0000; # (heat input/elec input) eff # Requires Heat (since Methanator is modelled appart) rounded up since heat required
-param SOEC_therm_eff_low_T{u in UnitsOfType['rSOC']} <=1 default 0.021; # (heat input/elec input) eff # Requires Heat (since Methanator is modelled appart) rounded up since heat required
+param SOEC_therm_eff_mid_T{u in UnitsOfType['rSOC']} <=1 default 0.0000; # (heat input/elec input) eff
+param SOEC_therm_eff_low_T{u in UnitsOfType['rSOC']} <=1 default 0.021; # (heat input/elec input) eff
 
 param SOEC_power_max_limit_in{u in UnitsOfType['rSOC']} >=0 default 3;
 param SOFC_power_max_limit_out{u in UnitsOfType['rSOC']} >=0 default 1;

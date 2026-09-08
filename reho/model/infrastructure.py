@@ -461,6 +461,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         u for u in default_units_to_exclude
         if u not in scenario["enforce_units"]
     ]
+
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:
@@ -472,37 +473,169 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         building_units['UnitOfService'] = building_units['UnitOfService'].apply(
             lambda services: [s for s in services if s != 'rSOC_heat'])
 
-    building_units= np.array(building_units.to_dict(orient="records"))
+    building_units = np.array(building_units.to_dict(orient="records"))
 
-    if interperiod_data != 'district' and interperiod_data is not None and ~interperiod_data:
-        building_units_IP = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "building_units_IP.csv"), exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
-    elif isinstance(interperiod_data, dict) and 'building_units_IP' in interperiod_data:
-        building_units_IP = np.array(prepare_units_df(interperiod_data["building_units_IP"], exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
-    else:
-        building_units_IP = []
+    # =========================================================
+    # Interperiod data handling
+    # =========================================================
+
+    if interperiod_data is None:
+        interperiod_data = {}
+
+    if interperiod_data:
+        interperiod_data = {'building': True}
+
+        if district_data:
+            interperiod_data['district'] = True
+
+    if not isinstance(interperiod_data, dict):
+        raise TypeError(
+            "interperiod_data must be either None or a dictionary"
+        )
+
+    # =========================================================
+    # Building interperiod units
+    # =========================================================
+
+    building_units_IP = []
+
+    if 'building' in interperiod_data:
+
+        default_building_ip = os.path.join(
+            path_to_infrastructure,
+            "building_units_IP.csv"
+        )
+
+        building_ip_data = interperiod_data['building']
+
+        # True -> default csv
+        if building_ip_data is True:
+            building_ip_path = default_building_ip
+
+        # String -> try loading custom csv
+        elif isinstance(building_ip_data, str):
+
+            try:
+                _ = prepare_units_df(
+                    building_ip_data,
+                    exclude_units=exclude_units,
+                    grids=grids
+                )
+
+                building_ip_path = building_ip_data
+
+            except Exception:
+                print(
+                    "Error in loading building interperiod file. "
+                    "Default building_units_IP.csv will be used."
+                )
+
+                building_ip_path = default_building_ip
+
+        # Anything else -> default csv
+        else:
+            building_ip_path = default_building_ip
+
+        building_units_IP = np.array(
+            prepare_units_df(
+                building_ip_path,
+                exclude_units=exclude_units,
+                grids=grids
+            ).to_dict(orient="records")
+        )
 
     if len(building_units_IP) > 0:
         building_units = np.concatenate([building_units, building_units_IP])
 
+    # =========================================================
+    # District units
+    # =========================================================
+
     if district_data is True:
-        district_units = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids).to_dict(orient="records"))
+        district_units = np.array(
+            prepare_units_df(
+                os.path.join(path_to_infrastructure, "district_units.csv"),
+                exclude_units,
+                grids=grids
+            ).to_dict(orient="records")
+        )
+
     elif isinstance(district_data, str):
-        district_units = np.array(prepare_units_df(district_data, exclude_units, grids=grids).to_dict(orient="records"))
+
+        district_units = np.array(
+            prepare_units_df(
+                district_data,
+                exclude_units,
+                grids=grids
+            ).to_dict(orient="records")
+        )
+
     else:
         district_units = []
 
+    # =========================================================
+    # District interperiod units
+    # =========================================================
+
     if district_data is not None:
-        if interperiod_data != 'building' and interperiod_data is not None:
-            district_units_IP = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units,grids=grids).to_dict(orient="records"))
-        elif isinstance(interperiod_data, dict) and 'district_units_IP' in interperiod_data:
-            district_units_IP = np.array(prepare_units_df(interperiod_data["district_units_IP"], exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
-        else:
-            district_units_IP = []
+
+        district_units_IP = []
+
+        if 'district' in interperiod_data:
+
+            default_district_ip = os.path.join(
+                path_to_infrastructure,
+                "district_units_IP.csv"
+            )
+
+            district_ip_data = interperiod_data['district']
+
+            # True -> default csv
+            if district_ip_data is True:
+                district_ip_path = default_district_ip
+
+            # String -> try loading custom csv
+            elif isinstance(district_ip_data, str):
+
+                try:
+                    _ = prepare_units_df(
+                        district_ip_data,
+                        exclude_units=exclude_units,
+                        grids=grids
+                    )
+
+                    district_ip_path = district_ip_data
+
+                except Exception:
+
+                    print(
+                        "Error in loading district interperiod file. "
+                        "Default district_units_IP.csv will be used."
+                    )
+
+                    district_ip_path = default_district_ip
+
+            # Anything else -> default csv
+            else:
+                district_ip_path = default_district_ip
+
+            district_units_IP = np.array(
+                prepare_units_df(
+                    district_ip_path,
+                    exclude_units=exclude_units,
+                    grids=grids
+                ).to_dict(orient="records")
+            )
 
         if len(district_units_IP) > 0:
-            district_units = np.concatenate([district_units,district_units_IP])
+            district_units = np.concatenate(
+                [district_units, district_units_IP]
+            )
 
-    units = {"building_units": building_units, "district_units": district_units}
+    units = {
+        "building_units": building_units,
+        "district_units": district_units
+    }
 
     return units
 

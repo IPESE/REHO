@@ -245,7 +245,17 @@ subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}}:
 Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
 subject to Costs_Unit_replacement{u in Units diff {"DHN_pipes_district"}}:
-Costs_Unit_rep[u] = sum{n_rep in 1..(n_years/lifetime[u])-1 by 1}( (1/(1 + i_rate))^(n_rep*lifetime[u])*Costs_Unit_inv[u] );
+
+Costs_Unit_rep[u] =
+
+    sum{n_rep in 1..floor(n_years/lifetime[u]) - 1}
+    ((1/(1+i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u])
+    +
+    ((n_years - floor(n_years/lifetime[u])*lifetime[u])/ lifetime[u])
+    *
+    (1/(1+i_rate))^(floor(n_years/lifetime[u])*lifetime[u])
+    *
+    Costs_Unit_inv[u];
 
 subject to Costs_replacement:
 Costs_rep =  sum{u in Units diff {"DHN_pipes_district"}} Costs_Unit_rep[u];
@@ -379,7 +389,7 @@ Costs_tot + EMOO_slack_totex = EMOO_TOTEX * Area_tot;
 subject to EMOO_elec_export_constraint:
 sum{l in ResourceBalances, p in PeriodStandard,t in Time[p]} ( Network_demand[l,p,t] - Network_supply[l,p,t] ) / 1000  =  EMOO_slack_elec_export + EMOO_elec_export * (sum{h in House} ERA[h]);
 
-param penalty_ratio default 1e-6;
+param penalty_ratio default 1e-5;
 var penalties default 0;
 
 var renter_subsidies{h in House} >= 0;

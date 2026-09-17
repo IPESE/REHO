@@ -85,7 +85,7 @@ METHOD_DESCRIPTIONS = {
     "save_data_input": "Store the optimization inputs (``df_Buildings``, ``df_Weather``, ``df_Index``) in the results.",
     "save_timeseries": "Store the time-resolved results (``df_Buildings_t``, ``df_Unit_t``).",
     "save_streams": "Store the heat-cascade stream results (``df_Streams_t``).",
-    "extract_parameters": "Extract every parameter passed to AMPL, for debugging.",
+    "extract_parameters": "Store every parameter passed to AMPL in ``df_Parameters``, for debugging.",
     "print_logs": "Print the progress of the optimization.",
     "actors_problem": "Solve the multi-actor master problem, minimizing one stakeholder's costs under epsilon constraints on the others.",
     "renovation": "List of renovation packages to offer, e.g. ``['window/facade', 'roof']``. ``None`` disables renovation.",

@@ -1,13 +1,16 @@
-"""Tests for the post-processing of the results: indicators, sensitivity analysis."""
+"""Tests for the post-processing of the results: indicators, sensitivity analysis, AMPL extraction, export."""
 
 from types import SimpleNamespace
+from unittest import mock
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from reho.model import reho as reho_module
 from reho.model.postprocessing.KPIs import postcompute_annual_COP
 from reho.model.postprocessing.sensitivity_analysis import SensitivityAnalysis
+from reho.model.postprocessing.write_results import get_ampl_parameters
 
 
 class TestAnnualCOP:
@@ -87,3 +90,57 @@ class TestSensitivityAnalysis:
         assert energy["E_unit"] == {"PV": 6.0, "NG_Boiler": 7.0}
         assert energy["E_unit_PV"].tolist() == [2.0, 2.0]
         assert sa.SA_results["dict_df_results"][0]["NG_Network_t"] is not None
+
+
+class TestAMPLParameters:
+    @pytest.fixture
+    def ampl(self):
+        parameters = {
+            "a": (0, pd.DataFrame({"a": [3]})),
+            "b": (1, pd.DataFrame({"b": [1.5, 2.5]}, index=["x", "y"])),
+            "c": (2, pd.DataFrame({"c": [4.0, 5.0]}, index=[("x", 1), ("y", 2)])),
+            "d": (0, pd.DataFrame({"d": ["hi"]})),
+            "f": (1, RuntimeError("No values for f.")),
+        }
+
+        class Data:
+            def __init__(self, df):
+                self.df = df
+
+            def toPandas(self):
+                return self.df
+
+        class AMPL:
+            def getParameters(self):
+                return [(name, SimpleNamespace(indexarity=lambda arity=arity: arity)) for name, (arity, _) in parameters.items()]
+
+            def getData(self, name):
+                value = parameters[name][1]
+                if isinstance(value, Exception):
+                    raise value
+                return Data(value)
+
+        return AMPL()
+
+    def test_every_value_is_one_row(self, ampl):
+        df = get_ampl_parameters(ampl)
+        assert df.index.names == ["Parameter", "Index"]
+        assert df["Value"].to_dict() == {
+            ("a", ""): 3, ("b", "x"): 1.5, ("b", "y"): 2.5, ("c", "x,1"): 4.0, ("c", "y,2"): 5.0, ("d", ""): "hi",
+        }
+
+
+class TestSaveResults:
+    def test_table_too_large_for_xlsx_is_left_out(self, tmp_path, monkeypatch):
+        # Raising would lose every other table of the file, e.g. once extract_parameters is enabled
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setattr(reho_module, "XLSX_MAX_ROWS", 10)
+        model = reho_module.REHO.__new__(reho_module.REHO)
+        model.logger = mock.Mock()
+        model.results = {"totex": {0: {"df_Small": pd.DataFrame({"a": [1.0, 2.0]}),
+                                       "df_Large": pd.DataFrame({"a": np.arange(1.0, 21.0)})}}}
+
+        model.save_results(format=["xlsx"], filename="run")
+
+        assert pd.ExcelFile(tmp_path / "results" / "run_totex.xlsx").sheet_names == ["df_Small"]
+        assert "df_Large" in model.logger.warning.call_args.args

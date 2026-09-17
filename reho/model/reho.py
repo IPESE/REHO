@@ -63,6 +63,10 @@ __all__ = [
 # reho.paths used to do implicitly.
 load_ampl_environment()
 
+#: Largest sheet an xlsx file holds; larger result tables are left out of the xlsx export.
+XLSX_MAX_ROWS = 1_048_576
+XLSX_MAX_COLUMNS = 16_384
+
 
 class REHO(MasterProblem):
     """
@@ -820,6 +824,11 @@ class REHO(MasterProblem):
             df_Streams_t = df_Streams_t.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
             df_Results["df_Streams_t"] = df_Streams_t
 
+        if self.method["extract_parameters"]:
+            # Parameters of the sub-problems selected, per building
+            df_Parameters = self.get_final_SPs_results(MP_selection, 'df_Parameters')
+            df_Results["df_Parameters"] = df_Parameters.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution'])
+
         return df_Results
 
     def get_final_SPs_results(self, MP_selection, df_name):
@@ -890,6 +899,9 @@ class REHO(MasterProblem):
         -----
         If 'erase_file' is set to False, a unique counter is added to the filename to avoid overwriting existing files.
 
+        A table too large for an xlsx sheet, such as ``df_Parameters`` for a large district, is left
+        out of the xlsx files with a warning; the pickle format keeps it.
+
         """
         try:
             os.makedirs('results')
@@ -946,6 +958,14 @@ class REHO(MasterProblem):
 
                                 # Drop rows where all considered columns are zeros
                                 df = df.loc[~(df[cols_to_check] == 0).all(axis=1)]
+
+                            # The header rows and the index columns take room in the sheet too
+                            if (len(df) + df.columns.nlevels + 1 > XLSX_MAX_ROWS
+                                    or len(df.columns) + df.index.nlevels > XLSX_MAX_COLUMNS):
+                                self.logger.warning(
+                                    "%s (%d rows, %d columns) does not fit in an xlsx sheet and is left out of %s: "
+                                    "save the results as pickle to keep it.", df_name, len(df), len(df.columns), result_file_path)
+                                continue
 
                             df.to_excel(writer, sheet_name=df_name)
                             write_results.auto_adjust_columns(writer, df, df_name)

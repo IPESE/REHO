@@ -30,6 +30,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     - ``save_streams``: adds ``df_Streams_t``.
     - ``use_pv_orientation`` or ``use_facades``: adds ``df_PV_Surface`` and ``df_PV_orientation``.
     - ``interperiod_storage``: adds ``df_Interperiod``.
+    - ``extract_parameters``: adds ``df_Parameters``, see :func:`get_ampl_parameters`.
 
     The DataFrames are described in :doc:`/sections/results`.
 
@@ -454,14 +455,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     if method['use_pv_orientation'] or method['use_facades']:
         df_Results["df_PV_Surface"], df_Results["df_PV_orientation"] = set_dfs_pv(ampl)
 
-    if method["extract_parameters"]:
-        parameters_record = {}
-        for p, ampl_obj in ampl.getParameters():
-            try:
-                parameters_record[p] = ampl.getData(p).toPandas()
-            except Exception as exc:
-                logger.debug('Parameter %s could not be extracted (%s).', p, exc)
-
     if method["interperiod_storage"]:
         df_Results["df_Interperiod"] = set_df_Interperiod(ampl)
 
@@ -473,6 +466,9 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     for key, df in df_Results.items():
         df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
 
+    if method["extract_parameters"]:
+        # Added after the filtering, which removes solver noise, not small input values
+        df_Results["df_Parameters"] = get_ampl_parameters(ampl)
 
     return df_Results
 
@@ -938,6 +934,41 @@ def get_ampl_dual_values_in_pandas(ampl, ampl_name, multi_index):
         df.index = pd.MultiIndex.from_tuples(df.index)
 
     return df
+
+
+def get_ampl_parameters(ampl):
+    """
+    Read every parameter of an AMPL model into a single table.
+
+    The parameters without any value, e.g. declared without data nor default, are skipped.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        Session holding the model and its data.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Column ``Value``, indexed by ``Parameter`` and ``Index``, the position of the value in the
+        parameter as comma-separated text (empty for a scalar parameter).
+    """
+    frames = []
+    for name, parameter in ampl.getParameters():
+        try:
+            values = ampl.getData(name).toPandas()[name]
+        except Exception as exc:
+            logger.debug('Parameter %s could not be extracted (%s).', name, exc)
+            continue
+        if parameter.indexarity() == 0:
+            index = [""] * len(values)
+        else:
+            index = [",".join(map(str, i)) if isinstance(i, tuple) else str(i) for i in values.index]
+        frames.append(pd.DataFrame({"Parameter": name, "Index": index, "Value": values.to_numpy()}))
+
+    if not frames:
+        return pd.DataFrame(columns=["Value"], index=pd.MultiIndex.from_arrays([[], []], names=["Parameter", "Index"]))
+    return pd.concat(frames, ignore_index=True).set_index(["Parameter", "Index"])
 
 
 def filter_numerical_instabilities(df, threshold=1e-4):

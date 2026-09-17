@@ -1,4 +1,4 @@
-"""Tests for the preprocessing of the model inputs: typical periods."""
+"""Tests for the preprocessing of the model inputs: typical periods, SIA profiles."""
 
 import os
 
@@ -8,6 +8,12 @@ import pytest
 
 from reho.model.preprocessing import weather
 from reho.model.preprocessing.clustering import Clustering
+from reho.model.preprocessing.sia_parser import (
+    daily_profiles_with_monthly_deviation,
+    read_sia2024_rooms_sia380_1,
+    read_sia_2024_profiles,
+)
+from reho.paths import path_to_sia_equivalence, path_to_sia_norms
 
 HOURS = 24
 
@@ -120,3 +126,21 @@ class TestTypicalPeriods:
         assert set(_read_index_csv(tmp_path).values()) == {1, 2}
         dates = pd.read_csv(tmp_path / "timestamp.csv", parse_dates=["Date"])["Date"].dt.day.tolist()
         assert dates == [2, 5, 2, 7]
+
+
+class TestSIAProfiles:
+    @pytest.fixture(scope="class")
+    def sia_2024(self):
+        return pd.read_excel(path_to_sia_norms, sheet_name=["profiles", "calculs", "data"], engine="openpyxl",
+                             index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
+
+    def test_electrical_heat_gains_come_from_appliances_and_lighting(self, sia_2024):
+        rooms = read_sia2024_rooms_sia380_1("I", pd.read_csv(path_to_sia_equivalence, sep=";", index_col=[0], header=[0]))
+        additional_lighting = read_sia_2024_profiles("standard", sia_2024)[0]
+        # Housing has no additional (showroom) lighting, so all its electricity turns into gains.
+        assert not additional_lighting.multiply(rooms.values, axis=0).dropna().to_numpy().any()
+
+        profiles = daily_profiles_with_monthly_deviation("standard", rooms, pd.Timestamp("2005-01-12"), sia_2024)
+
+        np.testing.assert_allclose(profiles["elecgain_W/m2"], 0.7 * profiles["electricity_W/m2"])
+        assert profiles["elecgain_W/m2"].sum() > 0

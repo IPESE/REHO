@@ -140,7 +140,7 @@ def daily_profiles_with_monthly_deviation(status, rooms, date, df):
         weekly_factor[df_free == 2] = 0  # rooms which are not used on a Saturday
 
     # get 2024 profiles
-    df_el_appliance, df_el_light, df_el_add, df_dhw, df_occupancy, df_heat_gain = read_sia_2024_profiles(status, df)
+    df_el_add, df_el_light, df_el_appliance, df_dhw, df_occupancy, df_heat_gain = read_sia_2024_profiles(status, df)
     df_el = df_el_appliance + df_el_light + df_el_add  # W/m2
     df_el_gain = df_el_appliance + df_el_light
     # adjust for current day of the year

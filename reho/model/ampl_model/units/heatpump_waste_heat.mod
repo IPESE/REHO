@@ -106,7 +106,7 @@ param HP_COP_WH{h in House,u in UnitsOfType['HeatPump_WH'] inter UnitsOfHouse[h]
 		max{Th in HP_Tsink_WH,Tc in HP_Tsource_WH}(HP_Eta_nominal_WH[u,Th,Tc]*(T+273.15)/(T-Tc));
 
 # Declaring heating power variable
-var HP_Power_WH{h in House, u in UnitsOfType['HeatPump_WH'] inter UnitsOfHouse[h], p in Period, t in Time[p], T in HP_Tsupply} >= 0, <= Units_Fmax[u]*HP_COP_WH[h,u,p,t,T];
+var HP_Power_WH{h in House, u in UnitsOfType['HeatPump_WH'] inter UnitsOfHouse[h], p in Period, t in Time[p], T in HP_Tsupply} >= 0, <= Units_Fmax[u]/HP_COP_WH[h,u,p,t,T];
 
 # Heating output
 subject to HP_heating_output_WH{h in House,u in UnitsOfType['HeatPump_WH'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p],T in HP_Tsupply: T = Streams_Tin[st,p,t]}:
@@ -138,12 +138,11 @@ param DHN_CO2_efficiency_WH default 0.95;  # Efficiency based on literature
 #subject to enforce_DHN_WH{h in House, u in {'DHN_hex_'&h}, v in {'HeatPump_WH_DHN_'&h}}:
 #	0.95 * sum{p in PeriodStandard, t in Time[p]}(House_Q_heating[h,p,t]* dp[p] * dt[p]) <= sum{p in PeriodStandard, t in Time[p]} (Units_demand['Heat',u,p,t]  * dp[p] * dt[p] + sum{st in StreamsOfUnit[v], se in ServicesOfStream[st]} (Streams_Q[se,st,p,t] * dp[p] * dt[p]));
 
-param COP_20_80_DHN
-subject to HP_SourceHeat_Limit {h in House, u in UnitsOfType['HeatPump_WH'] inter UnitsOfHouse[h], p in Period, t in Time[p]
-}:
+# The heat drawn from the source cannot exceed the waste heat available
+subject to HP_SourceHeat_Limit {h in House, u in UnitsOfType['HeatPump_WH'] inter UnitsOfHouse[h], p in Period, t in Time[p]}:
   sum{T in HP_Tsupply}
-    (HP_COP_WH[h,u,p,t,T] - 1) * HP_Power_WH[h,u,p,t,T] +
+    (HP_COP_WH[h,u,p,t,T] - 1) * HP_Power_WH[h,u,p,t,T]
   <= waste_heat_available[p,t];
 
 subject to HeatPump_WH_only_if_one_HP{h in House,u in UnitsOfType['HeatPump_WH'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
-	Units_Use[u] <= sum{uu in UnitsOfType['HeatPump']} Units_Use[uu];
+	Units_Use[u] <= sum{uu in UnitsOfType['HeatPump'] inter UnitsOfHouse[h]} Units_Use[uu];

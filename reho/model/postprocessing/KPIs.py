@@ -437,9 +437,8 @@ def postcompute_annual_COP(df_annuals, infrastructure):
     """
     Annual coefficient of performance of the heat pumps.
 
-    The COP of a heat pump is the heat it supplies over the electricity it consumes during the year.
-    The COP of a building is that of the first of its heat pumps listed in the infrastructure, and
-    the COP of the district that of all the heat pumps together.
+    The COP is the heat supplied by the heat pumps over the electricity they consume during the year:
+    those of the building for each building, and all of them for the district.
 
     Parameters
     ----------
@@ -454,34 +453,25 @@ def postcompute_annual_COP(df_annuals, infrastructure):
         Column ``COP``, one row per building with a heat pump plus ``Network``; NaN when the heat
         pumps consume no electricity.
     """
-    df = pd.DataFrame(index=['Network'])
-    total_heat_network = 0
-    total_HP_el = 0
+    heat = {'Network': 0}
+    electricity = {'Network': 0}
     for HP in infrastructure.UnitsOfType['HeatPump']:
-        # get values for each AW in the district
         df_annuals_HP = df_annuals.xs(HP, level='Hub')
+        heat_HP = df_annuals_HP.drop('Electricity').sum()['Supply_MWh']
+        electricity_HP = df_annuals_HP.xs('Electricity').Demand_MWh
 
-        df_el_all = df_annuals_HP.xs('Electricity')
-        df_heat_all = df_annuals_HP.drop('Electricity').sum()
-        if df_el_all.Demand_MWh == 0:
-            COP = np.nan
-        else:
-            COP = df_heat_all['Supply_MWh'] / df_el_all.Demand_MWh
+        # A building may have several heat pumps (air, geothermal, ...): they are combined
+        hubs = [house for house, units in infrastructure.UnitsOfHouse.items() if HP in units] + ['Network']
+        for hub in hubs:
+            heat[hub] = heat.get(hub, 0) + heat_HP
+            electricity[hub] = electricity.get(hub, 0) + electricity_HP
 
-        # assign to house and df
-        for key, units in infrastructure.UnitsOfHouse.items():
-            if HP in units and key not in df.index:
-                df.at[key, 'COP'] = COP
-
-        # sum for network average
-        total_heat_network = total_heat_network + df_heat_all['Supply_MWh']
-        total_HP_el = total_HP_el + df_el_all.Demand_MWh
-    if total_HP_el == 0:
-        df.at['Network', 'COP'] = np.nan
-    else:
-        df.at['Network', 'COP'] = total_heat_network / total_HP_el
+    df = pd.DataFrame(index=list(heat), columns=['COP'], dtype=float)
+    for hub in heat:
+        df.at[hub, 'COP'] = heat[hub] / electricity[hub] if electricity[hub] != 0 else np.nan
 
     return df
+
 
 def postcompute_actors_KPI(df_Performance, Samples):
     """

@@ -4,6 +4,9 @@ import pytest
 from reho.test.test_run import test_run
 from reho.plotting import plotting
 
+# The results are produced by test_run when they are not already saved.
+pytestmark = [pytest.mark.slow, pytest.mark.needs_ampl, pytest.mark.needs_network]
+
 
 @pytest.fixture(scope="module", autouse=True)
 def generate_test_results():

@@ -4,6 +4,9 @@ from reho.model.preprocessing.QBuildings import QBuildingsReader
 from reho.model.reho import REHO
 from reho.plotting import plotting
 
+# Reads the QBuildings database, downloads the weather and solves a problem.
+pytestmark = [pytest.mark.slow, pytest.mark.needs_ampl, pytest.mark.needs_network]
+
 
 def test_run(save_results=True):
 

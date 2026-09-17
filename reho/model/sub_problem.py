@@ -1,18 +1,74 @@
-import itertools as itertools
-import logging
+"""Building-scale optimization problem.
 
-from amplpy import AMPL, Environment
+A :class:`SubProblem` gathers every input of one building (or of the whole
+district, in the compact formulation), hands them to AMPL, and solves the MILP.
+In the Dantzig-Wolfe decomposition it is the *column generator*: each solve
+proposes one more candidate energy-system configuration to the master problem.
+
+See also
+--------
+reho.model.master_problem.MasterProblem : district-scale problem coordinating the sub-problems.
+reho.model.reho.REHO : user-facing entry point.
+"""
+
+import os
+
+import numpy as np
+import pandas as pd
 
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
 import reho.model.preprocessing.weather as weather
+from reho.logger import get_logger
+from reho.model.ampl_interface import (
+    BUILDING_UNIT_MODELS,
+    INTERPERIOD_BUILDING_UNIT_MODELS,
+    create_ampl_session,
+    exitcode_from_ampl,
+    read_unit_models,
+)
+from reho.model.options import initialize_default_methods
+from reho.model.preprocessing.QBuildings import return_shadows_id_building
 from reho.model.preprocessing.skydome import irradiation_to_df
-from reho.model.preprocessing.QBuildings import *
-import reho.model.preprocessing.actors as actors
-from reho.model.preprocessing import renovation
+from reho.paths import path_to_ampl_model, path_to_clustering, path_to_district_units, path_to_skydome
 
-__doc__ = """
-File for handling data and optimization for an AMPL sub-problem.
-"""
+#: Names re-exported for ``from reho.model.sub_problem import *`` and for
+#: backwards compatibility: both helpers used to be defined in this module.
+__all__ = ["SubProblem", "initialize_default_methods", "exitcode_from_ampl"]
+
+logger = get_logger(__name__)
+
+#: Building characteristics forwarded as-is to the AMPL model.
+BUILDING_PARAMETERS_TO_AMPL = [
+    "ERA", "SolarRoofArea", "U_h", "HeatCapacity",
+    "T_comfort_min_0", "Th_supply_0", "Th_return_0", "Tc_supply_0", "Tc_return_0",
+]
+
+#: Constant temperature of a heat source, per source keyword found in the unit name [degC].
+#: ``Air`` and ``DHN`` are time-resolved and handled separately.
+DEFAULT_HP_SOURCE_TEMPERATURES = {"Lake": 7.5, "Geothermal": 8.0}
+
+#: Heat-pump source keywords, matched against the unit name, most specific first.
+HP_SOURCE_KEYWORDS = ("Air", "Lake", "Geothermal", "DHN")
+
+#: Air-conditioner sink keywords. ``DHN`` comes first because 'AirConditioner_DHN'
+#: also contains 'Air'.
+AC_SINK_KEYWORDS = ("DHN", "Air")
+
+#: Fallback mean district-heating-network temperature when none is given [degC].
+DEFAULT_DHN_TEMPERATURE = 16.0
+
+#: Epsilon constraints dropped by default, and restored only when the scenario asks for them.
+_EPSILON_CONSTRAINTS = [
+    "EMOO_CAPEX_constraint", "EMOO_OPEX_constraint", "EMOO_TOTEX_constraint", "EMOO_GWP_constraint",
+    "EMOO_elec_export_constraint", "EMOO_GU_demand_constraint", "EMOO_GU_supply_constraint",
+    "EMOO_grid_constraint", "EMOO_network_constraint",
+]
+
+#: Optional constraints dropped by default, and restored only when scenario['specific'] asks for them.
+_SPECIFIC_CONSTRAINTS = [
+    "disallow_exchanges_1", "disallow_exchanges_2", "no_ElectricalHeater_without_HP",
+    "no_NG_boiler_with_HP", "forced_H2_annual_export", "forced_H2_fixed_daily_export",
+]
 
 
 class SubProblem:
@@ -87,132 +143,50 @@ class SubProblem:
         return ampl
 
     def initialize_parameters_for_ampl_and_python(self):
-        # -----------------------------------------------------------------------------------------------------#
-        # Default methods
-        # -----------------------------------------------------------------------------------------------------#
+        """Complete the method options and collect the per-building AMPL parameters.
+
+        A value given in ``parameters`` overrides the one read from
+        ``buildings_data``, and then applies to every building of the sub-problem.
+        """
         self.method_sp = initialize_default_methods(self.method_sp)
-        # -----------------------------------------------------------------------------------------------------#
-        # Input Parameter Preparation
-        # -----------------------------------------------------------------------------------------------------#
 
-        # prepare input parameter which are used in AMPL model
-
-        buildings_to_ampl = ['ERA', 'SolarRoofArea', 'U_h', 'HeatCapacity',
-                             'T_comfort_min_0', 'Th_supply_0', 'Th_return_0', 'Tc_supply_0', 'Tc_return_0']
-
-        for parameter in buildings_to_ampl:
-            self.parameters_to_ampl[parameter] = {}
-            for i, b in enumerate(self.buildings_data_sp):
-                if parameter not in self.parameters_sp:
-                    self.parameters_to_ampl[parameter][b] = self.buildings_data_sp[b][parameter]
-                else:
-                    self.parameters_to_ampl[parameter][b] = self.parameters_sp[parameter]
+        for parameter in BUILDING_PARAMETERS_TO_AMPL:
+            overridden = parameter in self.parameters_sp
+            self.parameters_to_ampl[parameter] = {
+                building: (self.parameters_sp[parameter] if overridden else self.buildings_data_sp[building][parameter])
+                for building in self.buildings_data_sp
+            }
 
     def init_ampl_model(self):
+        """Open an AMPL session and read the sub-problem model plus its technologies.
 
-        if "AMPL_PATH" in os.environ:
-            try:
-                ampl = AMPL(Environment(os.environ["AMPL_PATH"]))
-            except:
-                print(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.\n"
-                       "Fallback to the amplpy modules.")
-                try:
-                    from amplpy import modules
-                    modules.load()
-                    ampl = AMPL()
-                except:
-                    raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license.")
-        else:
-            try:
-                from amplpy import modules
-                modules.load()
-                ampl = AMPL()
-            except:
-                raise Exception("No AMPL license was found. Please refer to the documentation to set the AMPL license.")
+        Returns
+        -------
+        amplpy.AMPL
+            A session holding ``sub_problem.mod``, ``scenario.mod`` and one
+            ``.mod`` file per technology present in the infrastructure.
 
-        # -AMPL (GNU) OPTIONS
-        ampl.setOption('solution_round', 11)
+        See also
+        --------
+        reho.model.ampl_interface.BUILDING_UNIT_MODELS : registry of technology model files.
+        """
+        ampl = create_ampl_session(self.solver, print_logs=self.method_sp["print_logs"])
 
-        ampl.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
-        ampl.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
-        ampl.setOption('presolve_fixeps', 1e-9)
-        if not self.method_sp['print_logs']:
-            ampl.setOption('show_stats', 0)
-            ampl.setOption('solver_msg', 0)
+        ampl.read("sub_problem.mod")
+        ampl.read("scenario.mod")
 
-        # -SOLVER OPTIONS
-        ampl.setOption('solver', self.solver)
-        if self.solver == "gurobi":
-            ampl.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
+        unit_types = self.infrastructure_sp.UnitTypes
+        # PV has two formulations; the oriented one also models roof/facade surfaces.
+        pv_override = {"PV": "pv_orientation.mod"} if self.method_sp["use_pv_orientation"] else None
+        read_unit_models(ampl, BUILDING_UNIT_MODELS, unit_types, overrides=pv_override)
 
-        # -----------------------------------------------------------------------------------------------------#
-        #  MODEL FILES
-        # -----------------------------------------------------------------------------------------------------#
-        ampl.cd(path_to_ampl_model)
-        ampl.read('sub_problem.mod')
-        ampl.read('scenario.mod')
-        # Energy conversion Units
-        ampl.cd(path_to_units)
-        if 'ElectricalHeater' in self.infrastructure_sp.UnitTypes:
-            ampl.read('electrical_heater.mod')
-        if 'NG_Boiler' in self.infrastructure_sp.UnitTypes:
-            ampl.read('ng_boiler.mod')
-        if 'OIL_Boiler' in self.infrastructure_sp.UnitTypes:
-            ampl.read('oil_boiler.mod')
-        if 'WOOD_Stove' in self.infrastructure_sp.UnitTypes:
-            ampl.read('wood_stove.mod')
-        if 'HeatPump' in self.infrastructure_sp.UnitTypes:
-            ampl.read('heatpump.mod')
-        if 'AirConditioner' in self.infrastructure_sp.UnitTypes:
-            ampl.read('air_conditioner.mod')
-        if 'ThermalSolar' in self.infrastructure_sp.UnitTypes:
-            ampl.read('thermal_solar.mod')
-        if 'DataHeat' in self.infrastructure_sp.UnitTypes:
-            ampl.read('data_heat.mod')
-        if 'DHN_hex' in self.infrastructure_sp.UnitTypes:
-            ampl.read('dhn_hex.mod')
-            ampl.read('dhn_pipes.mod')
-        if 'PV' in self.infrastructure_sp.UnitTypes:
-            if self.method_sp['use_pv_orientation']:
-                ampl.read('pv_orientation.mod')
-            else:
-                ampl.read('pv.mod')
-        if 'rSOC' in self.infrastructure_sp.UnitTypes:
-            ampl.read('rsoc.mod')
-        if "Methanator" in self.infrastructure_sp.UnitTypes:
-            ampl.read('methanator.mod')
-        if 'FuelCell' in self.infrastructure_sp.UnitTypes:
-            ampl.read('fuel_cell.mod')
-        if 'Electrolyzer' in self.infrastructure_sp.UnitTypes:
-            ampl.read('electrolyzer.mod')
-        if 'WaterTankSH' in self.infrastructure_sp.UnitTypes:
-            ampl.read('heatstorage.mod')
-        if 'WaterTankDHW' in self.infrastructure_sp.UnitTypes:
-            ampl.read('dhwstorage.mod')
-        if 'Battery' in self.infrastructure_sp.UnitTypes:
-            ampl.read('battery.mod')
-        # ampl.read('heat_curtailment.mod')
+        if self.method_sp["interperiod_storage"]:
+            read_unit_models(ampl, INTERPERIOD_BUILDING_UNIT_MODELS, unit_types)
 
-        # Load interperiod storage units
-        if self.method_sp['interperiod_storage']:
-            ampl.cd(path_to_units_interperiod)
-
-            if 'Battery_interperiod' in self.infrastructure_sp.UnitTypes:
-                ampl.read('battery_IP.mod')
-            if 'H2storage' in self.infrastructure_sp.UnitTypes:
-                ampl.read('H2storage_IP.mod')
-            if 'CH4storage' in self.infrastructure_sp.UnitTypes:
-                ampl.read('CH4storage_IP.mod')
-            if 'CO2storage' in self.infrastructure_sp.UnitTypes:
-                ampl.read('CO2storage_IP.mod')
-
-            # if 'WaterTankSH_interperiod' in self.infrastructure_sp.UnitTypes:
-            #    ampl.read('heatstorage_IP.mod')
-
-        # Load EV units (district-scale, but can be included in building-scale)
-        if 'EV' in self.infrastructure_sp.UnitTypes:
+        # Electric vehicles are a district unit, but may also be owned by a single building.
+        if "EV" in unit_types:
             ampl.cd(path_to_district_units)
-            ampl.read('evehicle.mod')
+            ampl.read("evehicle.mod")
 
         return ampl
 
@@ -287,73 +261,107 @@ class SubProblem:
         # Reference temperature
         self.parameters_to_ampl['T_comfort_min'] = buildings_profiles.reference_temperature_profile(self.parameters_to_ampl, self.cluster_sp)
 
+    def _dhn_mean_temperature(self, timesteps):
+        """Mean district-heating temperature seen by a DHN-coupled heat pump or chiller.
+
+        A time-resolved pair (``T_DHN_supply``/``T_DHN_return``) wins over a constant
+        pair (``*_cst``); when neither is given, :data:`DEFAULT_DHN_TEMPERATURE` is used.
+
+        Parameters
+        ----------
+        timesteps : int
+            Length of the profile to build.
+
+        Returns
+        -------
+        numpy.ndarray
+            Mean network temperature for each timestep [degC].
+        """
+        if "T_DHN_supply" in self.parameters_sp and "T_DHN_return" in self.parameters_sp:
+            return (self.parameters_sp["T_DHN_supply"] + self.parameters_sp["T_DHN_return"]) / 2
+        if "T_DHN_supply_cst" in self.parameters_sp and "T_DHN_return_cst" in self.parameters_sp:
+            mean = (self.parameters_sp["T_DHN_supply_cst"] + self.parameters_sp["T_DHN_return_cst"]) / 2
+            return np.repeat(mean, timesteps)
+        logger.debug("No DHN temperature given, using the default of %s degC.", DEFAULT_DHN_TEMPERATURE)
+        return np.repeat(DEFAULT_DHN_TEMPERATURE, timesteps)
+
+    def _source_temperature_profiles(self, units, timesteps, custom_key, keywords, role):
+        """Build the source-temperature profile of every heat pump or air conditioner.
+
+        The source is deduced from the unit name: a fragment listed in
+        ``parameters[custom_key]`` wins, then the first matching keyword of
+        ``keywords``.
+
+        Parameters
+        ----------
+        units : iterable of str
+            Unit names, e.g. ``['HeatPump_Air_Building1', 'HeatPump_DHN_Building1']``.
+        timesteps : int
+            Number of timesteps of a single profile.
+        custom_key : str
+            ``'T_source'`` or ``'T_source_cool'``: the ``parameters`` entry holding
+            user-defined source temperatures, as ``{name fragment: temperature}``.
+        keywords : tuple of str
+            Source keywords to look for in the unit name, **most specific first**
+            (``'AirConditioner_DHN'`` contains both ``DHN`` and ``Air``).
+        role : str
+            Wording used in the error message ('heat pump source' / 'air conditioner sink').
+
+        Returns
+        -------
+        numpy.ndarray
+            Concatenated profiles, in the order of ``units``.
+
+        Raises
+        ------
+        ValueError
+            If the source of a unit cannot be deduced from its name.
+        """
+        custom_sources = list(self.parameters_sp.get(custom_key, {}))
+        profiles = []
+
+        for unit in units:
+            matching = [source for source in custom_sources if source in unit]
+            if matching:
+                profiles.append(np.repeat(self.parameters_sp[custom_key][matching[0]], timesteps))
+                continue
+
+            keyword = next((k for k in keywords if k in unit), None)
+            if keyword == "Air":
+                profiles.append(np.asarray(self.parameters_to_ampl["T_ext"]))
+            elif keyword == "DHN":
+                profiles.append(self._dhn_mean_temperature(timesteps))
+            elif keyword is not None:
+                profiles.append(np.repeat(DEFAULT_HP_SOURCE_TEMPERATURES[keyword], timesteps))
+            else:
+                raise ValueError(
+                    f"Undefined {role} for unit {unit!r}. Name it after a known source "
+                    f"({', '.join(keywords)}) or declare its temperature in parameters[{custom_key!r}]."
+                )
+
+        return np.concatenate(profiles) if profiles else np.array([])
+
     def set_HP_parameters(self, ampl):
+        """Derive the source temperature of every heat pump and air conditioner.
 
-        df_end = ampl.getParameter('TimeEnd').getValues().toPandas()
-        timesteps = int(df_end['TimeEnd'].sum())  # total number of timesteps
-        sources = []
-        if 'T_source' in self.parameters_sp:
-            sources = self.parameters_sp['T_source'].keys()
+        The resulting ``T_source`` / ``T_source_cool`` profiles are what the AMPL
+        model turns into a Carnot-based, temperature-dependent COP.
+        """
+        df_end = ampl.getParameter("TimeEnd").getValues().toPandas()
+        timesteps = int(df_end["TimeEnd"].sum())
 
-        T_source = []
-        if 'HeatPump' in self.infrastructure_sp.UnitsOfType:
-            for unit in self.infrastructure_sp.UnitsOfType['HeatPump']:
-                if any([i in unit for i in sources]):  # if T_source defined from script
-                    source = list(itertools.compress(sources, [i in unit for i in sources]))[0]
-                    T_source = np.concatenate([T_source, np.repeat(self.parameters_sp['T_source'][source], timesteps)])
-                elif 'Air' in unit:
-                    T_source = np.concatenate([T_source, self.parameters_to_ampl['T_ext']])
-                elif 'Lake' in unit:
-                    T_source = np.concatenate([T_source, np.repeat(7.5, timesteps)])
-                elif 'Geothermal' in unit:
-                    T_source = np.concatenate([T_source, np.repeat(8, timesteps)])
-                elif 'DHN' in unit:
-                    if 'T_DHN_supply' and 'T_DHN_return' in self.parameters_sp:
-                        T_DHN_mean = (self.parameters_sp["T_DHN_supply"] + self.parameters_sp["T_DHN_return"]) / 2
-                    elif 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters_sp:
-                        T_DHN_mean = (self.parameters_sp["T_DHN_supply_cst"] + self.parameters_sp["T_DHN_return_cst"]) / 2
-                        T_DHN_mean = np.repeat(T_DHN_mean, timesteps)
-                    else:
-                        T_DHN_mean = np.repeat(16, timesteps)
-                    T_source = np.concatenate([T_source, T_DHN_mean])
-                else:
-                    raise Exception('HP source undefined')
-
-            self.parameters_to_ampl['T_source'] = T_source
-            if 'T_source' in self.parameters_sp:
-                del self.parameters_sp["T_source"]
-
-        sources = []
-        if 'T_source_cool' in self.parameters_sp:
-            sources = self.parameters_sp['T_source_cool'].keys()
-
-        T_source_cool = np.array([])
-        if 'AirConditioner' in self.infrastructure_sp.UnitsOfType:
-            for unit in self.infrastructure_sp.UnitsOfType['AirConditioner']:
-                # if T_source_cool defined from script
-                if any([i in unit for i in sources]):
-                    source = list(itertools.compress(sources, [i in unit for i in sources]))[0]
-                    T_source_cool = np.concatenate([T_source_cool, np.repeat(self.parameters_sp['T_source_cool'][source], timesteps)])
-
-                elif "DHN" in unit:
-                    if 'T_DHN_supply' and 'T_DHN_return' in self.parameters_sp:
-                        T_DHN_mean = (self.parameters_sp["T_DHN_supply"] + self.parameters_sp["T_DHN_return"]) / 2
-                    elif 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters_sp:
-                        T_DHN_mean = (self.parameters_sp["T_DHN_supply_cst"] + self.parameters_sp["T_DHN_return_cst"]) / 2
-                        T_DHN_mean = np.repeat(T_DHN_mean, timesteps)
-                    else:
-                        T_DHN_mean = np.repeat(16, timesteps)
-                    T_source_cool = np.concatenate([T_source_cool, T_DHN_mean])
-
-                elif "Air" in unit:
-                    T_source_cool = np.concatenate([T_source_cool, self.parameters_to_ampl['T_ext']])
-
-                else:
-                    raise Exception('AC sink undefined')
-
-            self.parameters_to_ampl['T_source_cool'] = T_source_cool
-            if 'T_source_cool' in self.parameters_sp:
-                del self.parameters_sp["T_source_cool"]
+        for unit_type, custom_key, keywords, role in (
+            ("HeatPump", "T_source", HP_SOURCE_KEYWORDS, "heat pump source"),
+            ("AirConditioner", "T_source_cool", AC_SINK_KEYWORDS, "air conditioner sink"),
+        ):
+            if unit_type not in self.infrastructure_sp.UnitsOfType:
+                continue
+            self.parameters_to_ampl[custom_key] = self._source_temperature_profiles(
+                self.infrastructure_sp.UnitsOfType[unit_type], timesteps, custom_key, keywords, role
+            )
+            # The mapping form ({source: temperature}) is not what AMPL expects: drop it
+            # now that it has been expanded into a per-timestep profile.
+            self.parameters_sp.pop(custom_key, None)
 
     def set_streams_temperature(self, ampl):
 
@@ -476,7 +484,7 @@ class SubProblem:
                     df_facades['Facades_ID'].values)
                 index = pd.MultiIndex.from_tuples([(b, f) for f in facades])
                 df = pd.DataFrame(df_facades['AREA'].values, index=index,
-                                  columns=['HouseSurfaceArea'])  # Pq attribuer ici HouseSurfaceArea comme l'aire des facades?
+                                  columns=['HouseSurfaceArea'])
                 self.parameters_to_ampl['HouseSurfaceArea'] = pd.concat(
                     [self.parameters_to_ampl['HouseSurfaceArea'], df])
                 # self.parameters_to_ampl['HouseSurfaceArea'].sort_index(inplace = True)
@@ -547,172 +555,101 @@ class SubProblem:
         return ampl
 
     def set_scenario(self, ampl):
+        """Apply the scenario: objective function, epsilon constraints, specific constraints.
 
-        # Set objective function
-        for objective_name, objective_formulation in ampl.getObjectives():
-            objective_formulation.drop()
+        All optional constraints are dropped first and restored only when the
+        scenario asks for them, so that a session always reflects exactly what
+        was requested — never a leftover from a previous configuration.
+        """
+        for _, objective in ampl.getObjectives():
+            objective.drop()
+        self._restore_objective(ampl)
 
-        if 'Objective' in self.scenario_sp:
+        for constraint in _EPSILON_CONSTRAINTS:
+            ampl.getConstraint(constraint).drop()
+        for name, value in self.scenario_sp.get("EMOO", {}).items():
+            self._restore_epsilon_constraint(ampl, name, value)
+
+        for constraint in _SPECIFIC_CONSTRAINTS:
+            ampl.getConstraint(constraint).drop()
+        self._drop_technology_constraints(ampl)
+
+        for name in self.scenario_sp.get("specific", []):
             try:
-                ampl.getObjective(self.scenario_sp['Objective']).restore()
-            except KeyError:
-                ampl.getObjective('TOTEX').restore()
-                logging.warning('Objective function "' + str(self.scenario_sp['Objective']) +
-                                '" was not found in ampl model, TOTEX minimization was set instead.')
-        else:
-            ampl.getObjective('TOTEX').restore()
-            logging.warning('No objective function was found in scenario dictionary, TOTEX minimization was set instead.')
-
-        # Set epsilon constraints
-        ampl.getConstraint('EMOO_CAPEX_constraint').drop()
-        ampl.getConstraint('EMOO_OPEX_constraint').drop()
-        ampl.getConstraint('EMOO_TOTEX_constraint').drop()
-        ampl.getConstraint('EMOO_GWP_constraint').drop()
-
-        ampl.getConstraint('EMOO_elec_export_constraint').drop()
-
-        ampl.getConstraint('EMOO_GU_demand_constraint').drop()
-        ampl.getConstraint('EMOO_GU_supply_constraint').drop()
-        ampl.getConstraint('EMOO_grid_constraint').drop()
-        ampl.getConstraint('EMOO_network_constraint').drop()
-
-        if 'EMOO' in self.scenario_sp:
-            for epsilon_constraint in self.scenario_sp['EMOO']:
-                try:
-                    ampl.getConstraint(epsilon_constraint + '_constraint').restore()
-                    if isinstance(self.scenario_sp['EMOO'][epsilon_constraint], dict):
-                        epsilon_parameter = ampl.getParameter(epsilon_constraint)
-                        epsilon_parameter.setValues(self.scenario_sp['EMOO'][epsilon_constraint])
-                    else:
-                        epsilon_parameter = ampl.getParameter(epsilon_constraint)
-                        epsilon_parameter.setValues([self.scenario_sp['EMOO'][epsilon_constraint]])
-                except:
-                    logging.warning('EMOO constraint ' + str(epsilon_constraint) + ' was not found in ampl subproblem and was thus ignored.')
-
-        # Set specific constraints
-        ampl.getConstraint('disallow_exchanges_1').drop()
-        ampl.getConstraint('disallow_exchanges_2').drop()
-        ampl.getConstraint('no_ElectricalHeater_without_HP').drop()
-        ampl.getConstraint('no_NG_boiler_with_HP').drop()
-        ampl.getConstraint('forced_H2_annual_export').drop()
-        ampl.getConstraint('forced_H2_fixed_daily_export').drop()
-
-        if 'PV' in self.infrastructure_sp.UnitsOfType:
-            ampl.getConstraint('enforce_PV_max').drop()
-        if 'HeatPump' in self.infrastructure_sp.UnitsOfType:
-            ampl.getConstraint('enforce_DHN').drop()
-            if not any("DHN" in unit for unit in self.infrastructure_sp.UnitsOfType['HeatPump']):
-                ampl.getConstraint('DHN_heat').drop()
-
-        if self.method_sp['use_pv_orientation']:
-            ampl.getConstraint('enforce_PV_max_fac').drop()
-            if not self.method_sp['use_facades']:
-                ampl.getConstraint('limits_maximal_PV_to_fac').drop()
-
-        if 'specific' in self.scenario_sp:
-            for specific_constraint in self.scenario_sp['specific']:
-                try:
-                    ampl.getConstraint(specific_constraint).restore()
-                except:
-                    logging.warning('Specific constraint "' + str(specific_constraint) + '" was not found in ampl subproblem and was thus ignored.')
+                ampl.getConstraint(name).restore()
+            except Exception:
+                logger.warning("Specific constraint %r was not found in the AMPL sub-problem and was ignored.", name)
 
         return ampl
 
-    def solve_model(self):
+    def _restore_objective(self, ampl):
+        """Activate the objective named in the scenario, falling back on TOTEX."""
+        objective = self.scenario_sp.get("Objective")
+        if objective is None:
+            logger.warning("No objective function in the scenario dictionary, minimizing TOTEX instead.")
+        else:
+            try:
+                ampl.getObjective(objective).restore()
+                return
+            except Exception:
+                logger.warning("Objective function %r was not found in the AMPL model, minimizing TOTEX instead.", objective)
+        ampl.getObjective("TOTEX").restore()
+
+    @staticmethod
+    def _restore_epsilon_constraint(ampl, name, value):
+        """Activate one epsilon constraint and set its right-hand side."""
+        try:
+            ampl.getConstraint(name + "_constraint").restore()
+            ampl.getParameter(name).setValues(value if isinstance(value, dict) else [value])
+        except Exception:
+            logger.warning("EMOO constraint %r was not found in the AMPL sub-problem and was ignored.", name)
+
+    def _drop_technology_constraints(self, ampl):
+        """Drop the optional constraints that only exist for some technologies."""
+        units_of_type = self.infrastructure_sp.UnitsOfType
+
+        if "PV" in units_of_type:
+            ampl.getConstraint("enforce_PV_max").drop()
+
+        if "HeatPump" in units_of_type:
+            ampl.getConstraint("enforce_DHN").drop()
+            if not any("DHN" in unit for unit in units_of_type["HeatPump"]):
+                ampl.getConstraint("DHN_heat").drop()
+
+        if self.method_sp["use_pv_orientation"]:
+            ampl.getConstraint("enforce_PV_max_fac").drop()
+            if not self.method_sp["use_facades"]:
+                ampl.getConstraint("limits_maximal_PV_to_fac").drop()
+
+    def solve_model(self, diagnose_infeasibility=False):
+        """Build and solve the sub-problem.
+
+        Parameters
+        ----------
+        diagnose_infeasibility : bool, optional
+            Ask the solver for an irreducible infeasible subsystem (IIS) and print
+            the offending constraints and variables. Useful to understand why a
+            building cannot be supplied; noticeably slower. Default is False.
+
+        Returns
+        -------
+        ampl : amplpy.AMPL
+            The solved session, from which results are extracted.
+        exitcode : int or str
+            ``0`` when solved, else the AMPL ``solve_result``.
+        """
         ampl = self.build_model_without_solving()
 
-        debugging = False
-        if debugging:
-            # ampl.exportData('loaded_data.dat')
-            # ampl.expotModel('loaded_model.mod')
-            ampl.eval('suffix iis symbolic OUT;')
-            ampl.setOption('presolve', 1)
+        if diagnose_infeasibility:
+            ampl.eval("suffix iis symbolic OUT;")
+            ampl.setOption("presolve", 1)
 
         ampl.solve()
 
-        if debugging:
+        if diagnose_infeasibility:
             ampl.eval('display {i in 1.._ncons: _con[i].iis <> "0"} (_conname[i], _con[i].iis);')
             ampl.eval('for {i in 1.._ncons: _con[i].iis <> "0"} expand _con[i]; ')
             ampl.eval('display{j in 1.._nvars: _var[j].iis <> "0"}(_varname[j], _var[j].iis);')
 
-        exitcode = exitcode_from_ampl(ampl)
-        return ampl, exitcode
+        return ampl, exitcode_from_ampl(ampl)
 
-
-def initialize_default_methods(method):
-    """
-    Sets the default options for an optimization.
-    """
-    if method is None:
-        method = {}
-
-    if 'use_facades' not in method:
-        method['use_facades'] = False
-    if 'use_pv_orientation' not in method:
-        method['use_pv_orientation'] = False
-
-    if 'include_stochasticity' not in method:
-        method['include_stochasticity'] = False
-    if 'sd_stochasticity' not in method:
-        method['sd_stochasticity'] = [0.1, 1]
-
-    if 'building-scale' not in method:
-        method['building-scale'] = False
-    if 'district-scale' not in method:
-        method['district-scale'] = False
-    if 'parallel_computation' not in method:
-        method['parallel_computation'] = True
-    if 'switch_off_second_objective' not in method:
-        method['switch_off_second_objective'] = False
-    if 'skip_initiation' not in method:
-        method['skip_initiation'] = False
-
-    if 'fix_units' not in method:
-        method['fix_units'] = False
-
-    if 'use_dynamic_emission_profiles' not in method:
-        method['use_dynamic_emission_profiles'] = False
-    if 'use_custom_profiles' not in method:
-        method['use_custom_profiles'] = False
-
-    if 'include_all_solutions' not in method:
-        method['include_all_solutions'] = False
-    if 'save_data_input' not in method:
-        method['save_data_input'] = True
-    if 'save_timeseries' not in method:
-        method['save_timeseries'] = True
-    if 'save_streams' not in method:
-        method['save_streams'] = False
-    if 'extract_parameters' not in method:
-        method['extract_parameters'] = False
-    if 'print_logs' not in method:
-        method['print_logs'] = True
-
-    if 'actors_problem' not in method:
-        method['actors_problem'] = False
-    if method['actors_problem']:
-        method["include_all_solutions"] = True
-        method["district-scale"] = True
-
-    if 'DHN_CO2' not in method:
-        method['DHN_CO2'] = False
-
-    if 'interperiod_storage' not in method:
-        method['interperiod_storage'] = False
-
-    if "external_district" not in method:
-        method['external_district'] = False
-
-    if method['building-scale']:
-        method['include_all_solutions'] = False  # avoid interactions between optimization scenarios
-        method['district-scale'] = True  # building-scale approach is also using the decomposition algorithm, but with only 1 MP optimization (DW_params['max_iter'] = 1)
-
-    if 'renovation' not in method:
-        method['renovation'] = None # decision of renovation strategies
-
-    return method
-
-
-def exitcode_from_ampl(ampl):
-    solve_result = ampl.getData('solve_result').toList()[0]
-    return 0 if solve_result == 'solved' else solve_result

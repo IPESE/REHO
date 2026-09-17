@@ -3,11 +3,21 @@ import os.path
 import numpy as np
 import pandas as pd
 
-from reho.paths import *
+from reho.paths import file_reader, path_to_infrastructure
 
 __doc__ = """
 File for handling infrastructure parameters.
 """
+
+#: Energy layers activated when the caller does not specify any.
+DEFAULT_GRIDS = {'Electricity': {}, 'NaturalGas': {}}
+
+#: Units kept even when the scenario excludes them, because excluding a unit is
+#: about the *heating system* choice; these are always installable on top of it.
+ALWAYS_AVAILABLE_UNIT_TYPES = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "ThermalSolar"]
+
+#: Units removed from every scenario by default (not yet validated, or superseded).
+DEFAULT_UNITS_TO_EXCLUDE = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district']
 
 
 class Infrastructure:
@@ -284,7 +294,10 @@ class Infrastructure:
                     Hin[s] = 0
                     Hout[s] = 1
                 else:
-                    raise ('Stream ' + str(s) + ' cannot be classified as cold or hot')
+                    raise ValueError(
+                        f"Stream {s!r} is neither hot nor cold: a stream name must contain exactly one "
+                        "'_h_' (hot) or '_c_' marker, e.g. 'NG_Boiler_Building1_h_ht'."
+                    )
 
         dfin = pd.DataFrame.from_dict(Hin, orient='index', columns=['Streams_Hin'])
         dfout = pd.DataFrame.from_dict(Hout, orient='index', columns=['Streams_Hout'])
@@ -303,7 +316,7 @@ class Infrastructure:
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])
 
 
-def prepare_units_df(file, exclude_units=[], grids=None):
+def prepare_units_df(file, exclude_units=None, grids=None):
     """
     Prepares the df that will be used by initialize_units.
 
@@ -335,9 +348,11 @@ def prepare_units_df(file, exclude_units=[], grids=None):
 
     def transform_into_list(column):
         for idx, row in column.items():
+            # Cells hold '/'-separated lists that are numeric ('80/60') or symbolic
+            # ('DHW/ SH'); try the numeric reading first and fall back on strings.
             try:
                 new_value = [float(el) for el in row.split('/') if el != '']
-            except:
+            except ValueError:
                 new_value = [el.strip() for el in row.split('/') if el != '']
             if unit_data.index.get_loc(idx) == 0 and new_value == []:
                 unit_data.at[idx, column.name] = ['']
@@ -370,6 +385,7 @@ def prepare_units_df(file, exclude_units=[], grids=None):
 
         return row
 
+    exclude_units = [] if exclude_units is None else exclude_units
     unit_data = file_reader(file)
 
     list_of_columns = ['Unit', 'UnitOfLayer', 'UnitOfService', 'StreamsOfUnit', 'Units_flowrate_in', 'Units_flowrate_out',
@@ -390,7 +406,7 @@ def prepare_units_df(file, exclude_units=[], grids=None):
 
     # Determine valid grid layers
     grid_layers = list(grids.keys()) + ['HeatCascade'] if grids else ['Electricity', 'NaturalGas', 'HeatCascade']
-    units_to_keep = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "ThermalSolar"]
+    units_to_keep = ALWAYS_AVAILABLE_UNIT_TYPES
 
     # Filter valid units first
     valid_units = unit_data[
@@ -441,11 +457,8 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     ...                                        district_data="custom_district_units.csv", interperiod_data=True)
     """
 
-    default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district']
-    if "exclude_units" not in scenario:
-        exclude_units = default_units_to_exclude
-    else:
-        exclude_units = scenario["exclude_units"] + default_units_to_exclude
+    scenario = scenario or {}
+    exclude_units = list(scenario.get("exclude_units", [])) + DEFAULT_UNITS_TO_EXCLUDE
 
     building_units = prepare_units_df(building_data, exclude_units, grids)
 
@@ -488,8 +501,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     return units
 
 
-def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
-                     file=os.path.join(path_to_infrastructure, "layers.csv")):
+def initialize_grids(available_grids=None, file=os.path.join(path_to_infrastructure, "layers.csv")):
     """
     Initializes grid information for the energy system.
 
@@ -521,6 +533,8 @@ def initialize_grids(available_grids={'Electricity': {}, 'NaturalGas': {}},
     >>> available_grids = {'Electricity': {'Cost_demand_cst': 0.1, 'GWP_supply_cst': 0.05}, 'NaturalGas': {'Cost_supply_cst': 0.15}}
     >>> grids = initialize_grids(available_grids, file="custom_layers.csv")
     """
+
+    available_grids = DEFAULT_GRIDS.copy() if available_grids is None else available_grids
 
     grid_data = file_reader(file)
     grid_data = grid_data.set_index("Grid")

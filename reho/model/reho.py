@@ -1,27 +1,97 @@
-import os.path
+"""User-facing entry point of REHO.
+
+:class:`REHO` assembles the pieces: it builds the optimization problem from the
+buildings, units, grids and scenario given by the user, runs it (single
+optimization or Pareto front, compact formulation or Dantzig-Wolfe
+decomposition), computes the key performance indicators and saves the results.
+
+Examples
+--------
+>>> from reho import REHO, QBuildingsReader, initialize_grids, initialize_units
+>>> reader = QBuildingsReader()
+>>> qbuildings_data = reader.read_csv("data/buildings.csv", nb_buildings=2)
+>>> grids = initialize_grids()
+>>> units = initialize_units({"exclude_units": []}, grids)
+>>> reho = REHO(qbuildings_data, units, grids, scenario={"Objective": "TOTEX"},
+...             method={"building-scale": True})
+>>> reho.single_optimization()
+>>> reho.save_results(format=["xlsx", "pickle"], filename="my_run")
+
+See also
+--------
+reho.model.master_problem.MasterProblem : decomposition machinery this class inherits from.
+reho.model.options : the ``method``, ``scenario`` and ``DW_params`` dictionaries.
+"""
+
+import gc
+import multiprocessing as mp
+import os
 import pickle
 import warnings
+from pathlib import Path  # noqa: F401  (re-exported for scripts doing `from reho.model.reho import *`)
 
-from reho.model.master_problem import *
-from reho.model.postprocessing.KPIs import *
-from reho.paths import *
+import numpy as np
+import pandas as pd
 
-from reho.model.postprocessing.write_results import get_ampl_data
+import reho.model.infrastructure as infrastructure
+import reho.model.postprocessing.write_results as write_results
+from reho.model.master_problem import CP_WATER, DELTA_H_CO2, DEFAULT_DHN_DELTA_T, MasterProblem
+from reho.model.options import initialize_default_scenario
+from reho.model.postprocessing.KPIs import calculate_KPIs
+from reho.model.preprocessing.QBuildings import QBuildingsReader
+from reho.model.sub_problem import SubProblem, exitcode_from_ampl, initialize_default_methods
+from reho.paths import load_ampl_environment
 
-__doc__ = """
-File for constructing and solving the optimization problem.
-"""
+#: Public surface of ``from reho.model.reho import *``. Prefer explicit imports
+#: (``from reho import REHO, QBuildingsReader``); this list exists so that the run
+#: scripts written against earlier REHO versions keep working unchanged.
+__all__ = [
+    "REHO",
+    "QBuildingsReader",
+    "SubProblem",
+    "MasterProblem",
+    "infrastructure",
+    "initialize_default_methods",
+    "initialize_default_scenario",
+    "exitcode_from_ampl",
+    "Path",
+    "np",
+    "pd",
+]
+
+# Make AMPL_PATH available to every problem built from this module, as importing
+# reho.paths used to do implicitly.
+load_ampl_environment()
 
 
 class REHO(MasterProblem):
     """
     Performs the single or multi-objective optimization.
 
-    Parameters are inherited from ``MasterProblem``.
+    Parameters
+    ----------
+    scenario : dict, optional
+        Objective function, epsilon constraints and units to enforce or exclude.
+        Missing keys are completed with :data:`reho.model.options.DEFAULT_SCENARIO`.
+        Add ``nPareto`` to request a Pareto front, see :meth:`generate_pareto_curve`.
+    solver : str, optional
+        Solver used by AMPL. Default is ``'highs'``, which ships with REHO.
+
+    Other Parameters
+    ----------------
+    qbuildings_data, units, grids, parameters, set_indexed, cluster, method, DW_params
+        Inherited from :class:`~reho.model.master_problem.MasterProblem`.
+
+    Attributes
+    ----------
+    results : dict
+        ``results[scenario_name][pareto_id]`` -> dict of result DataFrames.
+        Filled by :meth:`single_optimization` and :meth:`generate_pareto_curve`.
 
     See also
     --------
     reho.model.master_problem.MasterProblem
+    reho.model.options.initialize_default_scenario
     """
 
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None, cluster=None, method=None, scenario=None, solver="highs",
@@ -30,57 +100,108 @@ class REHO(MasterProblem):
         super().__init__(qbuildings_data, units, grids, parameters, set_indexed, cluster, method, solver, DW_params)
         self.initialize_optimization_tracking_attributes()
 
-        # input attributes
-        self.scenario = scenario.copy()
-        if 'specific' not in self.scenario:
-            self.scenario['specific'] = []
-        if 'enforce_units' not in self.scenario:
-            self.scenario['enforce_units'] = []
-        if 'exclude_units' not in self.scenario:
-            self.scenario['exclude_units'] = []
-        if 'EMOO' not in self.scenario:
-            self.scenario['EMOO'] = {}
-        if 'EMOO_grid' not in self.scenario['EMOO']:
-            self.scenario['EMOO']['EMOO_grid'] = 0.0
-        if 'name' not in self.scenario:
-            self.scenario['name'] = 'default_name'
-        if 'nPareto' not in self.scenario:
+        self.scenario = initialize_default_scenario(scenario)
+        if 'nPareto' in self.scenario:
+            self.nPareto = self.scenario['nPareto']  # intermediate points
+            self.total_Pareto = self.nPareto * 2 + 2  # both objectives, plus the two boundaries
+        else:
             self.nPareto = 1  # no curve, single execution
             self.total_Pareto = 1
-        else:
-            self.nPareto = self.scenario['nPareto']  # intermediate points
-            self.total_Pareto = self.nPareto * 2 + 2  # total pareto points: both objectives plus boundaries
 
         self.results = dict()
 
         self.solver_attributes = pd.DataFrame()
         self.epsilon_constraints = {}
 
+    def build_sub_problem(self, scenario=None, infrastructure=None, buildings_data=None, parameters=None, set_indexed=None):
+        """Instantiate a :class:`~reho.model.sub_problem.SubProblem` with this run's context.
+
+        Centralises the choice of passing ``qbuildings_data`` along: the roof and
+        facade geometries are only needed — and only available — when the PV
+        orientation or facade methods are enabled.
+
+        Parameters
+        ----------
+        scenario, infrastructure, buildings_data, parameters, set_indexed : optional
+            Override the corresponding attribute of ``self``, which is what the
+            decomposition does when it solves one building at a time.
+
+        Returns
+        -------
+        reho.model.sub_problem.SubProblem
+        """
+        needs_geometry = self.method['use_facades'] or self.method['use_pv_orientation']
+        return SubProblem(
+            self.infrastructure if infrastructure is None else infrastructure,
+            self.buildings_data if buildings_data is None else buildings_data,
+            self.local_data,
+            self.parameters if parameters is None else parameters,
+            self.set_indexed if set_indexed is None else set_indexed,
+            self.cluster,
+            self.scenario if scenario is None else scenario,
+            self.method,
+            self.solver,
+            self.qbuildings_data if needs_geometry else None,
+        )
+
+    def fix_unit_sizes(self, ampl, house=None):
+        """Fix the installed capacities to the values of ``self.df_fix_Units``.
+
+        Used by ``method['fix_units']`` to evaluate the operation of a design that
+        was decided elsewhere, for instance the optimum of a previous scenario.
+
+        Parameters
+        ----------
+        ampl : amplpy.AMPL
+            A built, not yet solved session.
+        house : str, optional
+            Restrict the fixing to the units of that building. Default is all units.
+
+        Notes
+        -----
+        PV capacities are relaxed by 1e-9 because the AMPL model bounds the panel
+        area by the available roof area; fixing the two to the exact same value
+        makes the problem infeasible on rounding alone.
+        """
+        units = self.df_fix_Units.index
+        if house is not None:
+            units = units[units.str.contains(str(house))]
+
+        for unit in units:
+            is_pv = ('PV' in unit) if house is None else (unit == 'PV_' + str(house))
+            multiplier = self.df_fix_Units.Units_Mult.loc[unit]
+            ampl.getVariable('Units_Mult').get(unit).fix(multiplier * (1 - 1e-9) if is_pv else multiplier)
+            ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
+
     def single_optimization(self, Pareto_ID=0):
+        """Run one optimization and store its results under ``self.results``.
+
+        The formulation follows ``method``: Dantzig-Wolfe decomposition when
+        ``building-scale`` or ``district-scale`` is set, compact formulation
+        otherwise.
+
+        Parameters
+        ----------
+        Pareto_ID : int, optional
+            Index under which to store the results. Default is 0.
+
+        Raises
+        ------
+        RuntimeError
+            If the problem is infeasible.
+        """
         Scn_ID = self.scenario['name']
         if self.method['fix_units'] and self.df_fix_Units.empty:
-            warnings.warn("fix_units=True but df_fix_Units is empty — no units will be fixed. Assign df_fix_Units before calling single_optimization.")
+            warnings.warn("fix_units=True but df_fix_Units is empty - no units will be fixed. "
+                          "Assign df_fix_Units before calling single_optimization.")
+
         if self.method['district-scale'] or self.method['building-scale']:  # decomposition formulation
             ampl, exitcode = self.execute_dantzig_wolfe_decomposition(self.scenario, Scn_ID, Pareto_ID=Pareto_ID)
-
         else:  # compact formulation
-            if self.method['use_facades'] or self.method['use_pv_orientation']:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster, self.scenario, self.method, self.solver, self.qbuildings_data)
-            else:
-                reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster, self.scenario, self.method, self.solver)
-            ampl = reho.build_model_without_solving()
-
+            ampl = self.build_sub_problem().build_model_without_solving()
             if self.method['fix_units']:
-                for unit in self.df_fix_Units.index:
-                    if 'PV' in unit:
-                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
-                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
-                    else:
-                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
-                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
-
+                self.fix_unit_sizes(ampl)
             ampl.solve()
-
             exitcode = exitcode_from_ampl(ampl)
 
         self.add_df_Results(ampl, Scn_ID, Pareto_ID, self.scenario)
@@ -89,7 +210,11 @@ class REHO(MasterProblem):
         gc.collect()  # free memory
         del ampl
         if exitcode == 'infeasible':
-            sys.exit(exitcode)
+            raise RuntimeError(
+                f"Scenario {Scn_ID!r} (Pareto point {Pareto_ID}) is infeasible. "
+                "Check that the available units can supply every end-use demand, and that the "
+                "network capacities (Network_ext) and epsilon constraints leave a feasible region."
+            )
 
     def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None, read_DHN=False):
 
@@ -203,12 +328,7 @@ class REHO(MasterProblem):
             if self.method['district-scale']:
                 ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=1)
             else:
-                if self.method['use_facades'] or self.method['use_pv_orientation']:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                      scenario, self.method, self.solver, self.qbuildings_data)
-                else:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                      scenario, self.method, self.solver)
+                reho = self.build_sub_problem(scenario)
                 ampl, exitcode = reho.solve_model()
 
             scenario = {'Objective': objective1}
@@ -234,12 +354,7 @@ class REHO(MasterProblem):
             if self.method['district-scale']:
                 ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=Pareto_ID)
             else:
-                if self.method['use_facades'] or self.method['use_pv_orientation']:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                      scenario, self.method, self.solver, self.qbuildings_data)
-                else:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed, self.cluster,
-                                      scenario, self.method, self.solver)
+                reho = self.build_sub_problem(scenario)
                 ampl, exitcode = reho.solve_model()
 
             scenario = {'Objective': objective2}
@@ -313,12 +428,7 @@ class REHO(MasterProblem):
             if self.method['district-scale']:
                 ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
             else:
-                if self.method['use_facades'] or self.method['use_pv_orientation']:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                      self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
-                else:
-                    reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters, self.set_indexed,
-                                      self.cluster, scenario, self.method, self.solver)
+                reho = self.build_sub_problem(scenario)
                 ampl, exitcode = reho.solve_model()
 
             self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
@@ -352,12 +462,7 @@ class REHO(MasterProblem):
                 if self.method['district-scale']:
                     ampl, exitcode = self.execute_dantzig_wolfe_decomposition(scenario, Scn_ID, Pareto_ID=nParetoIT, epsilon_init=epsilon_init)
                 else:
-                    if self.method['use_facades'] or self.method['use_pv_orientation']:
-                        reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
-                                          self.set_indexed, self.cluster, scenario, self.method, self.solver, self.qbuildings_data)
-                    else:
-                        reho = SubProblem(self.infrastructure, self.buildings_data, self.local_data, self.parameters,
-                                          self.set_indexed, self.cluster, scenario, self.method, self.solver)
+                    reho = self.build_sub_problem(scenario)
                     ampl, exitcode = reho.solve_model()
 
                 self.add_df_Results(ampl, Scn_ID, nParetoIT, scenario)
@@ -371,7 +476,14 @@ class REHO(MasterProblem):
         self.logger.info(str(obj1_min) + " " + str(obj1_max))
 
     def get_DHN_costs(self):
+        """Size the district-heating pipes and turn their cost into a per-building parameter.
 
+        Runs one building-scale decomposition with the DHN enforced, reads the
+        resulting network flow rates and investment, then rewrites
+        ``infrastructure.Units_Parameters`` so that the following optimization
+        charges each building for its own connection. ``DHN_pipes`` is removed
+        from the district units, since it is now accounted for building by building.
+        """
         self.pool = mp.Pool(self.cpu_use)
         self.iter = 0  # new scenario has to start at iter = 0
         method = self.method['building-scale']
@@ -383,13 +495,13 @@ class REHO(MasterProblem):
         self.initiate_decomposition(SP_scenario_init, Scn_ID=0, Pareto_ID=0)
         self.MP_iteration(scenario_MP, Scn_ID=0, binary=False, Pareto_ID=0, read_DHN=True)
 
-        if not self.method["DHN_CO2"]:
-            if "T_DHN_supply_cst" in self.parameters and "T_DHN_return_cst" in self.parameters:
-                delta_enthalpy = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"]).mean() * 4.18
-            else:
-                delta_enthalpy = 10 * 4.18
+        if self.method["DHN_CO2"]:
+            delta_enthalpy = DELTA_H_CO2  # latent heat of the CO2 carrier
+        elif "T_DHN_supply_cst" in self.parameters and "T_DHN_return_cst" in self.parameters:
+            dT = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"])
+            delta_enthalpy = dT.mean() * CP_WATER
         else:
-            delta_enthalpy = 179.5
+            delta_enthalpy = DEFAULT_DHN_DELTA_T * CP_WATER
 
         f = self.feasible_solutions - 1
         heat_flow = self.results_MP[0][0][0]["df_District"]["flowrate_max"] * delta_enthalpy
@@ -573,16 +685,15 @@ class REHO(MasterProblem):
 
         # Add interperiod storage to results dictionary
         if self.method["interperiod_storage"]:
+            # Inter-period storage may exist only at the building scale, only at the
+            # district scale, or at neither: an absent frame is not an error.
             try:
                 df_interperiod = self.get_final_SPs_results(MP_selection, 'df_Interperiod')
                 df_interperiod = df_interperiod.droplevel(['Scn_ID', 'Pareto_ID', 'Iter', 'FeasibleSolution', 'house'])
-            except:
+            except KeyError:
                 df_interperiod = pd.DataFrame()
 
-            try:
-                df_interperiod_district = last_results["df_Interperiod"]
-            except:
-                df_interperiod_district = pd.DataFrame()
+            df_interperiod_district = last_results.get("df_Interperiod", pd.DataFrame())
 
             df_interperiod_all = pd.concat([df_interperiod, df_interperiod_district], axis=0)
             df_interperiod_all = df_interperiod_all.sort_index(level=0)

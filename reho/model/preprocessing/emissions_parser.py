@@ -1,4 +1,6 @@
-from reho.paths import *
+import os
+
+from reho.paths import path_to_clustering, path_to_emissions
 import pandas as pd
 import numpy as np
 import datetime

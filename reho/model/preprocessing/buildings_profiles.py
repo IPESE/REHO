@@ -1,6 +1,11 @@
 from datetime import timedelta
-from reho.model.preprocessing.sia_parser import *
-from reho.model.preprocessing.QBuildings import *
+import numpy as np
+import pandas as pd
+
+from reho.logger import get_logger
+from reho.model.preprocessing.sia_parser import daily_profiles_with_monthly_deviation, read_sia2024_rooms_sia380_1
+
+logger = get_logger(__name__)
 
 __doc__ = """
 Generates the buildings profiles for domestic hot water (DHW) demand, domestic electricity demand, internal heat gains, and solar gains.
@@ -246,7 +251,7 @@ def create_random_var(sd_amplitude, sd_timeshift):
     mu = 1
     RV_scaling = np.random.normal(mu, sd_amplitude, 5)
     if RV_scaling.argmin() < 0:
-        print("-------------- Negative value in the intensity variation --------------")
+        logger.warning('Negative value in the intensity variation: the stochasticity standard deviation is too large.')
 
     # create the random variable for time-shift in standard profiles
     mu = 0

@@ -1,9 +1,41 @@
 import warnings
-from reho.paths import *
+import os
+
+from reho.logger import get_logger
+from reho.paths import path_to_clustering, path_to_infrastructure, path_to_mobility
+
+logger = get_logger(__name__)
+
+
+def _day_type(days_mapping, day):
+    """Map a weekday index to the day-type suffix used in the daily-profiles file.
+
+    Parameters
+    ----------
+    days_mapping : dict
+        Weekday index -> day-type suffix, e.g. ``{0: 'wd', 5: 'we'}``.
+    day : hashable
+        Weekday of the typical period being built.
+
+    Returns
+    -------
+    str
+        The day-type suffix.
+
+    Raises
+    ------
+    KeyError
+        If the weekday has no declared day type.
+    """
+    try:
+        return days_mapping[day]
+    except KeyError:
+        raise KeyError(
+            f"Day type {day!r} is not declared in the mobility day mapping (known: {sorted(days_mapping)})."
+        ) from None
 import reho.model.preprocessing.weather as weather
 import pandas as pd
 import numpy as np
-import copy
 
 __doc__ = """
 Processes data for parameters related to the Mobility Layer. 
@@ -139,15 +171,20 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
 
     for dist in distances:
         for j, day in enumerate(list(timestamp.Weekday)[:-2]):
+            daytype = _day_type(days_mapping, day)
             try:
-                profile = profiles_demand[[f"dem{days_mapping[day]}_{dist}"]].copy()
-                profile.rename(columns={f"dem{days_mapping[day]}_{dist}": "Domestic_energy_pkm"}, inplace=True)
-            except:
+                profile = profiles_demand[[f"dem{daytype}_{dist}"]].copy()
+                profile.rename(columns={f"dem{daytype}_{dist}": "Domestic_energy_pkm"}, inplace=True)
+            except KeyError:
+                # No profile for that travel distance: fall back on the generic one.
                 try:
-                    profile = profiles_demand[[f"dem{days_mapping[day]}_def"]].copy()  # default profile
-                    profile.rename(columns={f"dem{days_mapping[day]}_def": "Domestic_energy_pkm"}, inplace=True)
-                except:
-                    raise (f"Demand profile error : no default demand profile for {day} daytype")
+                    profile = profiles_demand[[f"dem{daytype}_def"]].copy()
+                    profile.rename(columns={f"dem{daytype}_def": "Domestic_energy_pkm"}, inplace=True)
+                except KeyError:
+                    raise KeyError(
+                        f"No mobility demand profile 'dem{daytype}_{dist}' nor default 'dem{daytype}_def' "
+                        f"for day type {day!r} in the daily-profiles file."
+                    ) from None
             profile.index.name = 't'
             profile.reset_index(inplace=True)
             profile['p'] = j + 1
@@ -198,10 +235,7 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
     daily_profile = pd.DataFrame(columns=['u', 'p', 't', 'Daily_Profile'])
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            dd = profiles_input[["dem" + days_mapping[day] + "_def"]].copy()
-        except:
-            raise ("day type not possible")
+        dd = profiles_input[["dem" + _day_type(days_mapping, day) + "_def"]].copy()
         dd_filter = dd.astype('bool')
 
         profile = profiles_input.loc[:, profiles_input.columns.str.contains(f"prf{days_mapping[day]}")].copy()
@@ -249,10 +283,9 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
     EV_units = list(units[units.UnitOfType == "EV"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_") & profiles_input.columns.str.contains(days_mapping[day])].copy()
-        except:
-            raise ("day type not possible")
+        daytype = _day_type(days_mapping, day)
+        EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_")
+                                            & profiles_input.columns.str.contains(daytype)].copy()
 
         cpf = EV_profiles.loc[:, EV_profiles.columns.str.contains("cpf")].copy()
         cpf['default'] = cpf['EV_cpf' + days_mapping[day]]
@@ -300,10 +333,9 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping):
     EV_units = list(units[units.UnitOfType == "EV"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_") & profiles_input.columns.str.contains(days_mapping[day])].copy()
-        except:
-            raise ("day type not possible")
+        daytype = _day_type(days_mapping, day)
+        EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_")
+                                            & profiles_input.columns.str.contains(daytype)].copy()
 
         out = EV_profiles.loc[:, EV_profiles.columns.str.contains("out")].copy()
         out['default'] = out['EV_out' + days_mapping[day]]
@@ -349,10 +381,9 @@ def get_activity_profile(units, timestamp, profiles_input, days_mapping):
     EV_units = list(units[units.UnitOfType == "EV"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_") & profiles_input.columns.str.contains(days_mapping[day])].copy()
-        except:
-            raise ("day type not possible")
+        daytype = _day_type(days_mapping, day)
+        EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_")
+                                            & profiles_input.columns.str.contains(daytype)].copy()
 
         act = EV_profiles.loc[:, EV_profiles.columns.str.startswith("EV_a")].copy()
         act.columns = [x.split('_')[1][1:-3] for x in act.columns]
@@ -398,11 +429,9 @@ def get_Ebike_charging(units, timestamp, profiles_input, days_mapping):
     EBike_units = list(units[units.UnitOfType == "EBike"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        try:
-            EBike_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EBike_") &
-                                                   profiles_input.columns.str.contains(days_mapping[day])].copy()
-        except:
-            raise ("day type not possible")
+        daytype = _day_type(days_mapping, day)
+        EBike_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EBike_")
+                                               & profiles_input.columns.str.contains(daytype)].copy()
 
         cpf = EBike_profiles.loc[:, EBike_profiles.columns.str.contains("cpf")].copy()
         cpf['default'] = cpf['EBike_cpf' + days_mapping[day]]
@@ -553,7 +582,7 @@ def generate_transport_units_sets(transportunits):
 
 # FUNCTIONS FOR CO-OPTIMIZATION =========================================================================================
 
-def rho_param(ext_districts, rho, activities=["work", "leisure", "travel"]):
+def rho_param(ext_districts, rho, activities=None):
     """
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
     
@@ -572,6 +601,7 @@ def rho_param(ext_districts, rho, activities=["work", "leisure", "travel"]):
     
 
     """
+    activities = ["work", "leisure", "travel"] if activities is None else activities
     share = pd.DataFrame(index=ext_districts, columns=activities).fillna(1 / len(ext_districts))
     for act in share.columns:
         if act in rho.columns:

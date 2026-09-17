@@ -1,7 +1,9 @@
+import os
+
 import numpy as np
 import pandas as pd
 
-from reho.paths import *
+from reho.paths import path_to_skydome
 
 __doc__ = """
 Generates a skydome decomposition into patches for PV orientation.

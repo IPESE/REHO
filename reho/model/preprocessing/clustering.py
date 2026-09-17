@@ -4,6 +4,10 @@ from pyclustering.utils import calculate_distance_matrix
 import numpy as np
 import pandas as pd
 
+from reho.logger import get_logger
+
+logger = get_logger(__name__)
+
 __doc__ = """
 Clustering algorithm for input data reduction.
 """
@@ -117,7 +121,7 @@ class Clustering:
                     df_res[str(n_clust_tot)] = year_results[str(n_clusters)]
         else:
             for n_clusters in self.nb_clusters:
-                print('Applying algorithm for', n_clusters, 'clusters')
+                logger.info('Applying the clustering algorithm for %s clusters.', n_clusters)
                 df = self.__run_KMedoids(self.attr_nor, n_clusters)
                 df_res[str(n_clusters)] = df[str(n_clusters)]
 
@@ -208,4 +212,4 @@ class Clustering:
                     self.nbr_opt = iteration
                     break
 
-        print("N_k optimal: " + str(self.nbr_opt))
+        logger.info('Optimal number of typical periods: %s', self.nbr_opt)

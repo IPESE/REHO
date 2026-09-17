@@ -1,5 +1,14 @@
 from scipy.stats import qmc
-from reho.model.reho import *
+import math
+
+import numpy as np
+import pandas as pd
+
+import reho.model.preprocessing.actors as actors  # noqa: F401  (re-exported, see __all__)
+from reho.model.reho import REHO
+
+#: Backwards-compatible surface of ``from reho.model.actors_problem import *``.
+__all__ = ["ActorsModel", "REHO", "actors", "np", "pd"]
 
 __doc__ = """
 File for constructing and solving the optimization for the actor-based problem formulation.

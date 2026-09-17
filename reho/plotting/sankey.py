@@ -2,8 +2,8 @@ import re
 import pandas as pd
 import numpy as np
 
-from reho.paths import *
-from reho.plotting.utils import *
+from reho.plotting.utils import layout
+
 
 __doc__ = """
 Builds a dataframe for the visualization of annual flows from REHO results in the form of a Sankey diagram.

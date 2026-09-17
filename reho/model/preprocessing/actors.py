@@ -1,4 +1,6 @@
-from reho.paths import *
+import os
+
+from reho.paths import path_to_actor
 import pandas as pd
 import numpy as np
 import sympy as sp
@@ -66,7 +68,7 @@ def generate_renter_expense_max(method='absolute', **kwargs):
         raise ValueError(f"Unknown method '{method}'. Must be 'absolute' or 'increase'.")
 
 
-def generate_renter_expense_max_absolute(qbuildings_data, income, rent_income_ratio=None, types=["rent"]):
+def generate_renter_expense_max_absolute(qbuildings_data, income, rent_income_ratio=None, types=None):
     """
     Calculate maximum rental expense based on absolute income values and building characteristics.
 
@@ -111,6 +113,7 @@ def generate_renter_expense_max_absolute(qbuildings_data, income, rent_income_ra
 
     # Load rent proportion data
     rent_percentage = pd.read_csv(os.path.join(path_to_actor, 'rent_proportion.csv'))
+    types = ["rent"] if types is None else types
     income_thresholds_rent = rent_percentage["Income"].to_numpy() * 12
 
     # Determine rent-to-income ratio
@@ -346,10 +349,10 @@ def get_actor_expenses(actor, building, last_MP_results=None, last_SP_results=No
 
     # build self-consumption per building
     self_cons = {}
-    for b, sp in last_SP_results.items():
-        # assume sp['df_Unit_t'] and sp['df_Grid_t'] have MultiIndex: (Layer, Hub, Period, Time)
-        prod = sp['df_Unit_t']['Units_supply']['Electricity'].sum()
-        grid = sp['df_Grid_t']['Grid_demand']['Electricity'].sum()
+    for b, building_results in last_SP_results.items():
+        # df_Unit_t and df_Grid_t have a MultiIndex: (Layer, Hub, Period, Time)
+        prod = building_results['df_Unit_t']['Units_supply']['Electricity'].sum()
+        grid = building_results['df_Grid_t']['Grid_demand']['Electricity'].sum()
         self_cons[b] = prod - grid
 
     if actor.lower() == "renters":

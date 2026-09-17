@@ -1,13 +1,15 @@
 import datetime
 import importlib.metadata
-import logging
 import subprocess
 
 import numpy as np
 import openpyxl
 import pandas as pd
 
+from reho.logger import get_logger
 from reho.paths import path_to_reho
+
+logger = get_logger(__name__)
 
 __doc__ = """
 Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
@@ -82,8 +84,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
 
         df_Performance = pd.concat([df_Performance, df_Epsilon], axis=1)
         df_Performance.index.names = ['Hub']
-        if method['print_logs']:
-            print(df_Performance)
+        logger.info("%s", df_Performance)
 
         return df_Performance.sort_index()
 
@@ -161,8 +162,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df_Unit = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
-        if method['print_logs']:
-            print(df_Unit)
+        logger.info("%s", df_Unit)
 
         # Unit_t
         df1 = get_ampl_data(ampl, 'Units_demand', multi_index=True)
@@ -422,8 +422,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         for p, ampl_obj in ampl.getParameters():
             try:
                 parameters_record[p] = ampl.getData(p).toPandas()
-            except:
-                logging.info(p)
+            except Exception as exc:
+                logger.debug('Parameter %s could not be extracted (%s).', p, exc)
 
     if method["interperiod_storage"]:
         df_Results["df_Interperiod"] = set_df_Interperiod(ampl)
@@ -440,7 +440,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     return df_Results
 
 
-def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}, tolerance_filtering = 1e-4):
+def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario=None, tolerance_filtering=1e-4):
+    scenario = {} if scenario is None else scenario
     df_Results = dict()
 
     # Dantzig Wolfe algorithm
@@ -610,8 +611,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Unit.at["DHN_pipes_district", ("Units_Use", "Units_Mult", "Costs_Unit_inv")] = [1, 1, get_ampl_data(ampl, 'DHN_inv')["DHN_inv"][0]]
     df_Results["df_Unit"] = df_Unit.sort_index()
 
-    if method['print_logs']:
-        print(df_Unit)
+    logger.info("%s", df_Unit)
 
     # Unit_t
     if len(district.UnitsOfDistrict) > 0:
@@ -746,8 +746,9 @@ def set_df_Interperiod(ampl):
             df1.index = df1.index.str.split("_").str[-1]
             if not df1.empty:
                 IP_stor_list.append(df1)
-        except:
-            df1 = None
+        except Exception as exc:
+            # The variable belongs to a storage technology absent from this problem.
+            logger.debug('Inter-period variable %s is not part of this problem (%s).', var, exc)
 
         return IP_stor_list
 
@@ -805,9 +806,22 @@ def get_ampl_dual_values_in_pandas(ampl, ampl_name, multi_index):
 
 
 def filter_numerical_instabilities(df, threshold=1e-4):
-    """
-    Return a copy of df where any numeric cell with |value| < threshold
-    has been replaced by exact 0.
+    """Round to exact zero the numeric cells whose absolute value is below a threshold.
+
+    MILP solvers return values such as 1e-12 where the model means zero; keeping
+    them makes results files noisy and comparisons between runs unreliable.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Results frame to clean. It is not modified.
+    threshold : float, optional
+        Absolute value below which a cell is considered zero. Default is 1e-4.
+
+    Returns
+    -------
+    pandas.DataFrame
+        A copy of ``df`` with the small values zeroed.
     """
     df_clean = df.copy()
 

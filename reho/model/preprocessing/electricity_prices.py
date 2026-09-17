@@ -1,5 +1,17 @@
+import re
 import urllib3
-from reho.model.preprocessing.QBuildings import *
+import os
+
+import geopandas as gpd
+import pandas as pd
+
+from dotenv import load_dotenv
+
+from reho.logger import get_logger
+from reho.model.preprocessing.QBuildings import QBuildingsReader
+from reho.paths import path_to_elcom
+
+logger = get_logger(__name__)
 import time
 from datetime import date, datetime
 from typing import Dict, Optional, Union
@@ -327,7 +339,7 @@ def get_providers_by_municipality_id(city=None, from_csv=False):
             mask = (communes['id_city'] == city) + (communes['commune'] == city)
             communes = communes.loc[mask]
             if communes.empty:
-                print('No corresponding city to the given identifier')
+                logger.warning('No city matches the given identifier.')
 
     else:
         query = """
@@ -605,7 +617,7 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
         mask = (cities['id_city'] == city) + (cities['commune'] == city)
         cities = cities[mask]
         if cities.empty:
-            print('No corresponding city with that name')
+            logger.warning('No city matches that name.')
         city = cities.iloc[0]['id_city']
         city_query = '<' + city_link + str(city) + '>'
     elif isinstance(city, int):
@@ -828,19 +840,20 @@ def get_injection_prices(city=None, year=2024, category=None, tva=None):
             json_data = response.content.decode('utf-8')
             json_data = json.loads(json_data)
             if not json_data['valid']:
-                print(f'{json_data["code"]}: {json_data["details"]}')
+                logger.error('ELCOM API error %s: %s', json_data['code'], json_data['details'])
                 continue
         else:
             raise ExecutionError(f"{response.status_code}")
 
         try:
-            # TODO: add a code to adapt the prices to the category given, as a function of what is defined
+            # TODO: adapt the prices to the consumption category given by the caller
             commune_price = {'id_city': commune.id_city, 'municipality': commune.commune,
                              'id_operator': int(json_data['nrElcom']), 'operator': json_data['nomEw'],
                              'federal_tariff': float(json_data['energy1']), 'origin_bonus': float(json_data['eco1']),
                              'totalcosts': float(json_data['energy1']) + float(json_data['eco1'])
                              }
-        except:
+        except (KeyError, TypeError, ValueError) as exc:
+            logger.warning('Incomplete ELCOM injection price for %s, skipped (%s).', commune.commune, exc)
             continue
         commune_price = pd.DataFrame(commune_price, index=[commune.Index])
         injection_prices = pd.concat([injection_prices, commune_price])

@@ -3,7 +3,10 @@ import calendar
 import numpy as np
 import pandas as pd
 
-from reho.paths import *
+import os
+
+from reho.model.preprocessing.weather import get_cluster_file_ID  # noqa: F401  (re-exported)
+from reho.paths import path_to_plotting
 
 __doc__ = """
 Utilities for plotting functions.
@@ -180,70 +183,37 @@ def prepare_dfs(df_Economics, indexed_on='Scn_ID', neg=False, include_avoided=Fa
 
 
 def remove_building_from_index(df):
-    """
-    Removes the Building_[123] appended to the name of the units in the index
-    """
+    """Strip the building suffix from the ``Unit`` and ``Hub`` index levels.
 
-    def filter_building_str(str):
-        str_split = str.split("_")
-        if len(str_split) > 2:
-            new_idx = "_".join(str.split("_", 2)[:2])
-        else:
-            new_idx = str_split[0]
-        return new_idx
-
-    new_index = []
-    index_frame = df.index.to_frame()
-    if 'Unit' in index_frame.columns:
-        for idx in index_frame['Unit']:
-            new_index.append(filter_building_str(idx))
-        index_frame['Unit'] = new_index
-    if 'Hub' in index_frame.columns:
-        for idx in index_frame['Hub']:
-            new_index.append(filter_building_str(idx))
-        index_frame['Hub'] = new_index
-
-    index_modified = pd.MultiIndex.from_frame(index_frame)
-
-    return df.set_index(index_modified)
-
-
-def get_cluster_file_ID(cluster):
-    """
-    Gets the weather file ID that corresponds to the specifications provided in the REHO initalization.
-
-    The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
-    ``cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}``
-    Will yield to:
-    ``File_ID = 'Geneva_10_24_T_I_W'``
+    ``'HeatPump_Air_Building1'`` becomes ``'HeatPump_Air'``, so that the same
+    technology installed in several buildings aggregates into one series when
+    plotting.
 
     Parameters
     ----------
-    cluster : dict
-        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
+    df : pandas.DataFrame
+        Frame whose index has a ``Unit`` and/or a ``Hub`` level.
 
     Returns
     -------
-    str
-        A literal representation to identify the location and clustering attritutes.
+    pandas.DataFrame
+        The same frame, re-indexed.
+
+    See also
+    --------
+    reho.model.postprocessing.KPIs.remove_building_from_index
+        Same name, different purpose: it *splits* the building out into its own
+        index level rather than discarding it.
     """
-    if 'T' in cluster['Attributes']:
-        T = '_T'
-    else:
-        T = ''
-    if 'I' in cluster['Attributes']:
-        I = '_I'
-    else:
-        I = ''
-    if 'W' in cluster['Attributes']:
-        W = '_W'
-    else:
-        W = ''
-    if 'E' in cluster['Attributes']:
-        E = '_E'
-    else:
-        E = ''
 
-    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + T + I + W + E
+    def strip_building(name):
+        parts = str(name).split("_")
+        # Unit names are '<type>_<variant>_<building>' or '<type>_<building>'.
+        return "_".join(parts[:2]) if len(parts) > 2 else parts[0]
 
-    return File_ID
+    index_frame = df.index.to_frame()
+    for level in ("Unit", "Hub"):
+        if level in index_frame.columns:
+            index_frame[level] = [strip_building(value) for value in index_frame[level]]
+
+    return df.set_index(pd.MultiIndex.from_frame(index_frame))

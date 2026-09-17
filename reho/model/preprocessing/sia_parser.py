@@ -42,7 +42,9 @@ def read_sia_2024_profiles(status, df):
         df_aim = df["data"].iloc[:, 37]
         df_el_appliance = df_el_ap_norm.mul(df_aim, axis=0)
     else:
-        raise 'Building status unknown'
+        raise ValueError(
+            f"Unknown building status {status!r}. Expected one of 'existing', 'standard', 'aim' or 'target'."
+        )
 
     df_el_light = df["calculs"].iloc[:, 26:50]
     df_el_light.columns = df_el_appliance.columns  # columns 1-24 - hours of the day

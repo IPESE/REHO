@@ -1,22 +1,69 @@
+"""District-scale optimization problem.
+
+:class:`MasterProblem` implements the Dantzig-Wolfe decomposition: it coordinates
+one :class:`~reho.model.sub_problem.SubProblem` per building, selects a convex
+combination of the configurations they propose, and returns the dual values that
+steer the next round of sub-problems.
+
+See also
+--------
+reho.model.sub_problem.SubProblem : building-scale problem, generates the columns.
+reho.model.reho.REHO : user-facing entry point.
+"""
+
 import copy
 import gc
-import time
 import multiprocessing as mp
+import os
+import time
+import warnings
 from itertools import groupby
 
-import coloredlogs
+import geopandas as gpd
+import numpy as np
 import pandas as pd
 
 import reho.model.infrastructure as infrastructure
-from reho.model.preprocessing.local_data import *
-import reho.model.preprocessing.mobility_generator as mobility
 import reho.model.postprocessing.write_results as write_results
+import reho.model.preprocessing.actors as actors
+import reho.model.preprocessing.buildings_profiles as buildings_profiles
+import reho.model.preprocessing.mobility_generator as mobility
+from reho.logger import configure_logging, get_logger
+from reho.model.ampl_interface import (
+    DISTRICT_UNIT_MODELS,
+    INTERPERIOD_DISTRICT_UNIT_MODELS,
+    create_ampl_session,
+    exitcode_from_ampl,
+    read_unit_models,
+)
+from reho.model.options import initialise_DW_params, initialize_default_methods
+from reho.model.preprocessing import renovation
+from reho.model.preprocessing.local_data import return_local_data
+from reho.model.sub_problem import SubProblem
+from reho.paths import (
+    path_to_ampl_model,
+    path_to_clustering,
+    path_to_district_units,
+    path_to_sia_equivalence,
+    path_to_sia_norms,
+    path_to_units,
+)
 
-from reho.model.sub_problem import *
+__all__ = ["MasterProblem"]
 
-__doc__ = """
-File for handling data and optimization for an AMPL master problem.
-"""
+logger = get_logger(__name__)
+
+#: Specific heat capacity of water, used to size district-heating flow rates [kJ/(kg.K)].
+CP_WATER = 4.18
+
+#: Latent enthalpy of the CO2 heat carrier, used when method['DHN_CO2'] is set [kJ/kg].
+DELTA_H_CO2 = 179.5
+
+#: Default temperature difference between DHN supply and return when none is given [K].
+DEFAULT_DHN_DELTA_T = 10.0
+
+#: Clustering options applied when the caller does not provide any.
+DEFAULT_CLUSTER = {"Location": "Geneva", "Attributes": ["T", "I", "W"], "Periods": 10, "PeriodDuration": 24}
 
 
 class MasterProblem:
@@ -62,10 +109,8 @@ class MasterProblem:
 
         # methods
         self.method = initialize_default_methods(method)
-        self.logger = logging.getLogger(__name__)
-        if method['print_logs']:
-            coloredlogs.install(level=logging.INFO, logger=self.logger, isatty=True,
-                                fmt="%(message)s", stream=sys.stdout)
+        self.logger = get_logger(__name__)
+        configure_logging(enabled=self.method['print_logs'])
 
         # infrastructure
         self.qbuildings_data = qbuildings_data
@@ -76,10 +121,7 @@ class MasterProblem:
         self.infrastructure_SP = dict()
         self.build_infrastructure_SP()
 
-        if cluster is None:
-            self.cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-        else:
-            self.cluster = copy.deepcopy(cluster)
+        self.cluster = copy.deepcopy(DEFAULT_CLUSTER if cluster is None else cluster)
 
         # load SIA norms
         sia_data = dict()
@@ -88,7 +130,7 @@ class MasterProblem:
                                                 engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
 
         # retrieve location data
-        self.local_data = return_local_data(cluster, qbuildings_data)
+        self.local_data = return_local_data(self.cluster, qbuildings_data)
 
         if parameters is None:
             self.parameters = {}
@@ -116,7 +158,8 @@ class MasterProblem:
             self.DW_params = {}  # init of values in initiate_decomposition method
         else:
             self.DW_params = copy.deepcopy(DW_params)
-        self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
+        self.DW_params = initialise_DW_params(self.DW_params, self.cluster, self.buildings_data,
+                                              building_scale=self.method['building-scale'])
         self.cpu_use = mp.cpu_count()
 
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
@@ -330,8 +373,7 @@ class MasterProblem:
         attr :
             results of the optimization process (CPU time, objective value, nb variables or constraints, ...)
         """
-        if self.method["print_logs"]:
-            print('INITIATE HOUSE: ' + h)
+        self.logger.info('INITIATE HOUSE: %s', h)
 
         # find district structure and parameter for one single building
         buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h)
@@ -348,7 +390,10 @@ class MasterProblem:
             if len(emoo) == 1:
                 scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
             else:
-                raise warnings.warn("Multiple epsilon constraints")
+                raise ValueError(
+                    f"Expected a single epsilon constraint to initialise the decomposition of building {h}, "
+                    f"got {sorted(emoo)}. Constrain one objective at a time."
+                )
         elif not self.method['building-scale']:
             scenario, beta_list = self.get_beta_values(scenario, beta)
             parameters_SP['beta_duals'] = beta_list
@@ -386,6 +431,61 @@ class MasterProblem:
 
         return df_Results, attr
 
+    def _build_MP_model(self, read_DHN=False):
+        """Open an AMPL session and read the master-problem model and its district units.
+
+        Parameters
+        ----------
+        read_DHN : bool, optional
+            Also read ``dhn.mod``, which sizes the district-heating pipes.
+
+        Returns
+        -------
+        amplpy.AMPL
+            A session holding the master problem, its technologies and the
+            typical-period frequencies of the current cluster.
+
+        See also
+        --------
+        reho.model.ampl_interface.DISTRICT_UNIT_MODELS : registry of district technology model files.
+        """
+        ampl_MP = create_ampl_session(
+            self.solver,
+            print_logs=self.method['print_logs'],
+            options={'rel_boundtol': 1e-12},
+            evals=('option show_boundtol 0;', 'option abs_boundtol 1e-10;'),
+        )
+        ampl_MP.read('master_problem.mod')
+
+        district_units = self.infrastructure.UnitsOfDistrict
+
+        # The district battery reuses the building-scale model file.
+        if "Battery_district" in district_units:
+            ampl_MP.cd(path_to_units)
+            ampl_MP.read('battery.mod')
+
+        ampl_MP.cd(path_to_district_units)
+        if "Mobility" in self.infrastructure.UnitsOfLayer:
+            ampl_MP.read('mobility.mod')
+        read_unit_models(ampl_MP, DISTRICT_UNIT_MODELS, district_units)
+
+        if read_DHN:
+            ampl_MP.cd(path_to_district_units)
+            ampl_MP.read('dhn.mod')
+
+        if self.method["actors_problem"]:
+            ampl_MP.cd(path_to_ampl_model)
+            ampl_MP.read('actors_problem.mod')
+
+        if self.method["interperiod_storage"]:
+            read_unit_models(ampl_MP, INTERPERIOD_DISTRICT_UNIT_MODELS, district_units)
+
+        ampl_MP.cd(os.path.join(path_to_clustering, self.local_data['File_ID']))
+        ampl_MP.readData('frequency.csv')
+        ampl_MP.readData('index.csv')
+        ampl_MP.cd(path_to_ampl_model)
+        return ampl_MP
+
     def MP_iteration(self, scenario, binary, Scn_ID=0, Pareto_ID=1, read_DHN=False):
         """
 
@@ -412,102 +512,7 @@ class MasterProblem:
         ValueError: If the sets are not arrays or if the parameters are not arrays or floats or dataframes. Or if the MP optimization did not converge
         """
 
-        if "AMPL_PATH" in os.environ:
-            try:
-                ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
-            except:
-                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
-        else:
-            try:
-                from amplpy import modules
-                modules.load()
-                ampl_MP = AMPL()
-            except:
-                raise Exception(
-                    "No AMPL license was found. Please refer to the documentation to set the AMPL license: https://reho.readthedocs.io/en/main/sections/5_Getting_started.html#ampl-license")
-
-        # AMPL (GNU) OPTIONS
-        ampl_MP.setOption('solution_round', 11)
-        ampl_MP.setOption('rel_boundtol', 1e-12)
-        ampl_MP.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
-        ampl_MP.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
-        ampl_MP.setOption('presolve_fixeps', 1e-9)
-        if not self.method['print_logs']:
-            ampl_MP.setOption('show_stats', 0)
-            ampl_MP.setOption('solver_msg', 0)
-
-        # -SOLVER OPTIONS
-        ampl_MP.setOption('solver', self.solver)
-        if self.solver == "gurobi":
-            ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
-
-        ampl_MP.eval('option show_boundtol 0;')
-        ampl_MP.eval('option abs_boundtol 1e-10;')
-
-        # Load Master Problem (MP) Formulation
-        ampl_MP.cd(path_to_ampl_model)
-        ampl_MP.read('master_problem.mod')
-
-        # Load battery units (district-scale, but same model as building-scale)
-        ampl_MP.cd(path_to_units)
-        if "Battery_district" in self.infrastructure.UnitsOfDistrict:
-            ampl_MP.read('battery.mod')
-
-        # Load district units
-        ampl_MP.cd(path_to_district_units)
-        if len(self.infrastructure.UnitsOfDistrict) > 0:
-            ampl_MP.cd(path_to_district_units)
-            if "Mobility" in self.infrastructure.UnitsOfLayer:
-                ampl_MP.read('mobility.mod')
-            if "EV_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('evehicle.mod')
-            if "Bike_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('bike.mod')
-            if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ebike.mod')
-            if "ICE_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('icevehicle.mod')
-            if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ng_boiler_district.mod')
-            if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('heatpump_district.mod')
-            if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ng_cogeneration_district.mod')
-            if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('rsoc_district.mod')
-            if "MTR_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('methanator_district.mod')
-            if "ElectricalHeater_other_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('electrical_heater_district.mod')
-            if "Datacenter_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('datacenter_district.mod')
-            if "ORC_DC_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read('ORC_DC_district.mod')
-        if read_DHN:
-            ampl_MP.read('dhn.mod')
-
-        if self.method["actors_problem"]:
-            ampl_MP.cd(path_to_ampl_model)
-            ampl_MP.read('actors_problem.mod')
-
-        # Load interperiod storage units
-        ampl_MP.cd(path_to_units_interperiod)
-        if self.method["interperiod_storage"]:
-            if "Battery_IP_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read("battery_IP.mod")
-            if "CH4_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read("CH4storage_IP.mod")
-            if "H2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read("H2storage_IP.mod")
-            if "CO2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
-                ampl_MP.read("CO2storage_IP.mod")
-
-        clustering_directory = os.path.join(path_to_clustering, self.local_data['File_ID'])
-        ampl_MP.cd(clustering_directory)
-
-        ampl_MP.readData('frequency.csv')
-        ampl_MP.readData('index.csv')
-        ampl_MP.cd(path_to_ampl_model)
+        ampl_MP = self._build_MP_model(read_DHN)
 
         # -------------------------------------------------------------------------------------------------------------
         # Set Parameters, only bool to choose if including all solutions found also from other Pareto_IDs
@@ -556,11 +561,11 @@ class MasterProblem:
                 MP_parameters[param] = mobility_parameters[param]
 
         if read_DHN:
-            if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
-                if not self.method["DHN_CO2"]:
-                    dT = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"])
-                    MP_parameters['delta_enthalpy'] = dT.mean() * 4.18
-                    MP_parameters['density'] = 1000
+            has_dhn_temperatures = 'T_DHN_supply_cst' in self.parameters and 'T_DHN_return_cst' in self.parameters
+            if has_dhn_temperatures and not self.method["DHN_CO2"]:
+                dT = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"])
+                MP_parameters['delta_enthalpy'] = dT.mean() * CP_WATER
+                MP_parameters['density'] = 1000  # water [kg/m3]
 
             if "area_district" not in MP_parameters:
                 min_x, min_y, max_x, max_y = gpd.GeoDataFrame.from_dict(self.buildings_data, orient="index").total_bounds
@@ -608,12 +613,12 @@ class MasterProblem:
             MP_parameters["Uh"] = pd.DataFrame.from_dict({house: self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})
             MP_parameters["Uh_ins"] = df_Buildings[["U_h"]].rename(columns={"U_h": "Uh_ins"})
 
-        if "Heat" in self.infrastructure.grids.keys():
-            if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
-                T_DHN_mean = (self.parameters["T_DHN_supply_cst"] + self.parameters["T_DHN_return_cst"]) / 2
-                if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
-                    MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
-                    MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
+        if ("Heat" in self.infrastructure.grids
+                and "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict
+                and 'T_DHN_supply_cst' in self.parameters and 'T_DHN_return_cst' in self.parameters):
+            T_DHN_mean = (self.parameters["T_DHN_supply_cst"] + self.parameters["T_DHN_return_cst"]) / 2
+            MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
+            MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
         if read_DHN:
             MP_set_indexed["House_ID"] = np.array([int(s.replace("Building", "")) for s in list(self.infrastructure.houses.keys())])
 
@@ -959,28 +964,6 @@ class MasterProblem:
     #
     ####################################################################################################################
 
-    def initialise_DW_params(self, DW_params, cluster, buildings_datas):
-        if 'timesteps' not in DW_params:
-            DW_params['timesteps'] = cluster['Periods'] * cluster['PeriodDuration'] + 2
-        if 'max_iter' not in DW_params:
-            DW_params['max_iter'] = 15
-        if 'n_houses' not in DW_params:
-            DW_params['n_houses'] = len(buildings_datas.keys())
-        if 'iter_no_improv' not in DW_params:
-            DW_params['iter_no_improv'] = 5
-        if 'threshold_subP_value' not in DW_params:
-            DW_params['threshold_subP_value'] = 0
-        if 'threshold_no_improv' not in DW_params:
-            DW_params['threshold_no_improv'] = 0.00005
-        if 'grid_cost_exchange' not in DW_params:
-            DW_params['grid_cost_exchange'] = 0.0
-        if 'weight_lagrange_cst' not in DW_params:
-            DW_params['weight_lagrange_cst'] = 2.0
-        if self.method['building-scale']:
-            DW_params['max_iter'] = 1
-
-        return DW_params
-
     def get_final_MP_results(self, Pareto_ID=1, Scn_ID=0):
         """
         Builds the final design and operating results based on the optimal set of lambdas.
@@ -1056,8 +1039,10 @@ class MasterProblem:
         for cst in list_constraints:
             try:
                 ampl.getConstraint(cst).drop()
-            except:
-                pass
+            except Exception:
+                # Constraints belonging to technologies absent from this problem are
+                # simply not declared in the model: there is nothing to drop.
+                self.logger.debug("Constraint %r is not part of the master problem, not dropped.", cst)
 
         if 'EMOO' in scenario:
             emoo = scenario['EMOO'].copy()
@@ -1085,7 +1070,7 @@ class MasterProblem:
             beta_list = beta
             beta_list = beta_list.replace(0, 1e-6)
         else:
-            raise warnings.warn("Wrong type beta")
+            raise TypeError(f"beta must be a float, an int, a pandas Series or None, got {type(beta).__name__}.")
 
         # select objective using beta values
         if scenario['Objective'] in ['TOTEX', 'TOTEX_actor']:
@@ -1108,7 +1093,10 @@ class MasterProblem:
                 else:
                     beta_list["OPEX"] = beta
             elif len(emoo) > 1:
-                raise warnings.warn("Multiple epsilon constraints")
+                raise ValueError(
+                    f"Expected at most one objective-level epsilon constraint, got {sorted(emoo)}. "
+                    "Constrain one objective at a time."
+                )
 
         scenario = self.remove_emoo_constraints(scenario)
         return scenario, beta_list
@@ -1298,17 +1286,20 @@ class MasterProblem:
                         parameters_SP[key] = self.parameters[key]
                 else:
                     if len(self.parameters[key]) == len(self.buildings_data):
+                        # One value per building: positional for arrays and lists, label-based for pandas.
                         try:
-                            parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
-                        except:
-                            parameters_SP[key] = self.parameters[key].iloc[[ID]]  # one parameter per building
+                            parameters_SP[key] = self.parameters[key][ID]
+                        except (KeyError, IndexError, TypeError):
+                            parameters_SP[key] = self.parameters[key].iloc[[ID]]
                     else:
+                        # One time series per building, stored as a single flat array.
                         try:
                             timesteps = int(len(self.parameters[key]) / len(self.buildings_data))
-                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps)  # for time series
+                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps)
                             parameters_SP[key] = profile_building_x[ID]
-                        except:
-                            parameters_SP[key] = self.parameters[key]  # one parameter for all buildings
+                        except (AttributeError, ValueError):
+                            # Not reshapeable: a single value shared by every building.
+                            parameters_SP[key] = self.parameters[key]
 
         for key in self.set_indexed:
             if key not in self.lists_MP["list_set_indexed_MP"]:

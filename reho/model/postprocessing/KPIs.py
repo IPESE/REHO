@@ -616,6 +616,29 @@ def units_power_profiles_per_building(df_Results, infrastructure, unittype):
 
 
 def remove_building_from_index(df):
+    """Split the building suffix of a unit name out into its own ``Hub`` index level.
+
+    ``'OIL_Boiler_Building1'`` becomes ``('OIL_Boiler', 'Building1')``, and a name
+    carrying no building suffix is attributed to ``'Network'``. Both a single-level
+    and a MultiIndex are accepted.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Frame indexed by unit name, with or without an existing ``Hub`` level.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The same frame, indexed by ``(Unit, Hub)``.
+
+    See also
+    --------
+    reho.plotting.utils.remove_building_from_index
+        Same name, different purpose: it *discards* the building suffix so that a
+        technology aggregates across buildings.
+    """
+
     def split_unit_hub(s):
         parts = str(s).split('_')
         if len(parts) > 1 and 'Building' in parts[-1]:

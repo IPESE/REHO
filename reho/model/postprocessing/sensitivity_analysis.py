@@ -8,7 +8,23 @@ from SALib.sample import sobol as sobol_sample
 from qmcpy import Sobol
 from scipy.stats import qmc
 
-from reho.model.reho import *
+import os
+import pickle
+import time
+
+import numpy as np
+import pandas as pd
+
+import reho.model.infrastructure as infrastructure
+from reho.model.preprocessing.QBuildings import QBuildingsReader  # noqa: F401  (re-exported, see __all__)
+
+from reho.logger import get_logger
+from reho.model.reho import REHO  # noqa: F401  (re-exported, see __all__)
+
+#: Backwards-compatible surface of ``from ...sensitivity_analysis import *``.
+__all__ = ["SensitivityAnalysis", "REHO", "QBuildingsReader", "infrastructure", "np", "pd"]
+
+logger = get_logger(__name__)
 
 __doc__ = """
 Performs a sensitivity analysis on the optimization.
@@ -67,7 +83,7 @@ class SensitivityAnalysis:
         KPI_list = ['OPEX', 'CAPEX', 'TOTEX', 'GWP']
         return unit_list, KPI_list
 
-    def build_SA(self, unit_parameter=['Cost_inv1', 'Cost_inv2'], SA_parameters={}):
+    def build_SA(self, unit_parameter=None, SA_parameters=None):
         """
         - Generates the list of parameters for the SA, their values and type of variation range
         - Generates the problem of the SA, i.e. define the parameters and theirs bounds
@@ -87,6 +103,9 @@ class SensitivityAnalysis:
         sampling : array
             Sampling values
         """
+        unit_parameter = ['Cost_inv1', 'Cost_inv2'] if unit_parameter is None else unit_parameter
+        SA_parameters = {} if SA_parameters is None else SA_parameters
+
         def flatten_nested_dict(d, parent_key='', sep='+-+'):
             items = {}
             for k, v in d.items():
@@ -191,7 +210,7 @@ class SensitivityAnalysis:
 
         # Modify the attributes of the model and run SA
         for j in range(intermediate_start, len(self.sampling)):
-            print("Optimization number", str(j + 1) + "/" + str(len(self.sampling)))
+            logger.info('Optimization number %s/%s', j + 1, len(self.sampling))
 
             sample = self.sampling[j]
             pareto_name = []

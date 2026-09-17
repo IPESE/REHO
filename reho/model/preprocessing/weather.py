@@ -1,10 +1,15 @@
 import math
+import os
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import calendar
-from reho.paths import *
+from reho.logger import get_logger
+from reho.paths import file_reader, path_handler
 from reho.model.preprocessing.clustering import Clustering
+
+logger = get_logger(__name__)
 import pvlib
 from pyproj import Transformer
 
@@ -23,7 +28,7 @@ def get_weather_data(qbuildings_data):
     coordinates = pvgis_data[1]['inputs']['location']
     weather_data = pvgis_data[0]
 
-    print(f'The weather data have been extracted from the PVGIS database for : {coordinates}.')
+    logger.info('Weather data extracted from the PVGIS database for %s.', coordinates)
 
     # Rename columns
     weather_data = weather_data.rename(columns={'temp_air': 'Text', 'ghi': 'Irr'})
@@ -44,7 +49,7 @@ def read_custom_weather(path_to_weather_file):
     """
 
     weather_data = file_reader(path_handler(path_to_weather_file), index_col=0)
-    print(f'Annual weather data have been loaded from {path_handler(path_to_weather_file)}.')
+    logger.info('Annual weather data loaded from %s.', path_handler(path_to_weather_file))
 
     return weather_data
 
@@ -164,7 +169,7 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
 
     write_weather_files(clustering_directory, attributes, data_cls, data_idy)
 
-    print(f'Clustering for weather data finished. Results have been saved in {clustering_directory}.')
+    logger.info('Weather clustering finished, results saved in %s.', clustering_directory)
 
 
 def write_weather_files(clustering_directory, attributes, values_cluster, index_inter):
@@ -278,45 +283,43 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     df_timestamp.to_csv(os.path.join(clustering_directory, 'timestamp.csv'), index=False)
 
 
+#: Clustering attribute -> the suffix it contributes to the weather file ID.
+CLUSTER_ATTRIBUTE_SUFFIXES = {"T": "_T", "I": "_I", "W": "_W", "E": "_E"}
+
+
 def get_cluster_file_ID(cluster):
     """
-    Gets the weather file ID that corresponds to the specifications provided in the reho initalization.
+    Get the weather file ID corresponding to a set of clustering options.
 
-    The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
-    ``cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}``
-    Will yield to:
-    ``File_ID = 'Geneva_10_24_T_I_W'``
+    The ID concatenates ``Location_Periods_PeriodDuration`` and the attributes, in
+    the canonical order T, I, W, E — not in the order the caller listed them, so
+    that two equivalent option dictionaries map to the same cached files.
 
     Parameters
     ----------
     cluster : dict
-        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
+        Contains a ``Location`` (str), some ``Attributes`` (list, among ``'T'``
+        for temperature, ``'I'`` for irradiance, ``'W'`` for weekday and ``'E'``
+        for emissions), a number of periods ``Periods`` (int) and a
+        ``PeriodDuration`` (int).
 
     Returns
     -------
     str
-        A literal representation to identify the location and clustering attritutes.
+        Identifier of the location and clustering attributes, e.g.
+        ``'Geneva_10_24_T_I_W'``.
+
+    Examples
+    --------
+    >>> get_cluster_file_ID({'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'],
+    ...                      'Periods': 10, 'PeriodDuration': 24})
+    'Geneva_10_24_T_I_W'
     """
-    if 'T' in cluster['Attributes']:
-        T = '_T'
-    else:
-        T = ''
-    if 'I' in cluster['Attributes']:
-        I = '_I'
-    else:
-        I = ''
-    if 'W' in cluster['Attributes']:
-        W = '_W'
-    else:
-        W = ''
-    if 'E' in cluster['Attributes']:
-        E = '_E'
-    else:
-        E = ''
-
-    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + T + I + W + E
-
-    return File_ID
+    attributes = "".join(
+        suffix for attribute, suffix in CLUSTER_ATTRIBUTE_SUFFIXES.items()
+        if attribute in cluster["Attributes"]
+    )
+    return f"{cluster['Location']}_{cluster['Periods']}_{cluster['PeriodDuration']}{attributes}"
 
 
 def plot_cluster_KPI_separate(df, save_fig=False):
@@ -384,7 +387,7 @@ def plot_cluster_KPI_separate(df, save_fig=False):
 
 def plot_LDC(cl, save_fig=False):
     nbr_plot = cl.nbr_opt
-    print('Plotting for number of typical days:', nbr_plot)
+    logger.info('Plotting for %s typical days.', nbr_plot)
 
     # Get original (non-clustered) data
     T_org = cl.data_org['Text']

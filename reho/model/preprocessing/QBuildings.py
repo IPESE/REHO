@@ -12,11 +12,14 @@ from shapely import wkt
 from sqlalchemy import create_engine, MetaData, select, and_, func, String, text
 from sqlalchemy.exc import SAWarning
 
-from reho.paths import *
+from reho.logger import get_logger
+from reho.paths import file_reader, path_handler, path_to_infrastructure, path_to_qbuildings, path_to_sia, path_to_skydome
 
 __doc__ = """
 Handles data for buildings characterization.
 """
+
+logger = get_logger(__name__)
 
 df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))
 
@@ -106,50 +109,66 @@ class QBuildingsReader:
 
     def establish_connection(self, db):
         """
-        Allows to establish the connection with one of the QBuildings database.
+        Connect to one of the QBuildings databases.
 
         Parameters
         ----------
         db : str
-            Name of the database to which we want to connect
+            Name of the database, matching a ``<db>.ini`` file in
+            ``reho/data/QBuildings/`` (``Geneva``, ``Suisse``, ...).
 
+        Returns
+        -------
+        QBuildingsReader
+            ``self``, so the call can be chained with :meth:`read_db`.
+
+        Raises
+        ------
+        FileNotFoundError
+            If no configuration file exists for ``db``.
+        ConnectionError
+            If the database cannot be reached. Reading buildings from a CSV file
+            with :meth:`read_csv` needs no connection at all.
         """
-        # Database connection
-        file_ini = path_to_qbuildings + "/" + db + ".ini"
+        file_ini = os.path.join(path_to_qbuildings, db + ".ini")
+        if not os.path.isfile(file_ini):
+            available = sorted(f[:-4] for f in os.listdir(path_to_qbuildings) if f.endswith(".ini"))
+            raise FileNotFoundError(f"No configuration file for the database {db!r}. Available: {available}.")
 
         project = configparser.ConfigParser()
         project.read(file_ini)
+        if 'database' not in project:
+            raise KeyError(f"{file_ini} has no [database] section.")
 
-        # Database
+        settings = project['database']
         self.db_schema = "Processed"
         try:
-            db_engine_str = 'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(project['database']['username'],
-                                                                          project['database']['password'],
-                                                                          project['database']['host'],
-                                                                          project['database']['port'],
-                                                                          project['database']['database'])
-            self.db_engine = create_engine(db_engine_str)
+            self.db_engine = create_engine(
+                'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(
+                    settings['username'], settings['password'], settings['host'],
+                    settings['port'], settings['database'])
+            )
             self.connection = self.db_engine.connect()  # test connection
-            print('Connected to database')
+        except Exception as exc:
+            # Failing here used to be logged and ignored, which surfaced much later
+            # as an opaque error on a None engine.
+            raise ConnectionError(
+                f"Cannot connect to the QBuildings database {db!r} "
+                f"(host {settings['host']}:{settings['port']}, database {settings['database']}, "
+                f"user {settings['username']}): {exc}. Check your network access to the EPFL server, "
+                "or read the buildings from a CSV file with QBuildingsReader.read_csv()."
+            ) from exc
 
-        except Exception as e:
-            print(f'Cannot connect to database engine: {e}')
+        logger.info('Connected to the %s QBuildings database (host %s:%s, database %s, user %s).',
+                    db, settings['host'], settings['port'], settings['database'], settings['username'])
 
-        if 'database' in project:
-            print('\thost: {}\n\tport: {}\n\tdatabase: {}\n\tusername: {}'.format(
-                project['database']['host'],
-                project['database']['port'],
-                project['database']['database'],
-                project['database']['username']))
-
-        # input
         warnings.filterwarnings('ignore', category=SAWarning)
         metadata = MetaData()
         metadata.reflect(bind=self.db_engine, schema=self.db_schema)
         self.tables = metadata.tables
         self.db = db
 
-        return
+        return self
 
     def read_date_from_description(self, table='buildings'):
         """
@@ -207,7 +226,7 @@ class QBuildingsReader:
 
         Example
         -------
-        >>> from reho.model.reho import *
+        >>> from reho import QBuildingsReader
         >>> reader = QBuildingsReader(load_roofs=True)
         >>> qbuildings_data = reader.read_csv("buildings.csv", roofs_filename="roofs.csv", nb_buildings=7)
 
@@ -297,7 +316,7 @@ class QBuildingsReader:
 
         Examples
         --------
-        >>> from reho.model.reho import *
+        >>> from reho import QBuildingsReader
         >>> reader = QBuildingsReader(load_roofs=True)
         >>> reader.establish_connection('Suisse')
         >>> qbuildings_data = reader.read_db({'egid': 954117})
@@ -693,7 +712,7 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
         try:
             translated_buildings_data[REHO_index] = df_buildings[key]
         except KeyError:
-            print('Key %s not in the dictionary' % key)
+            logger.debug('Key %s is absent from the buildings data and was skipped.', key)
 
     df_buildings = translated_buildings_data
 
@@ -805,7 +824,7 @@ def translate_facades_to_REHO(df_facades, df_buildings):
         try:
             translated_facades_data[REHO_index] = df_facades[key]
         except KeyError:
-            print('Key %s not in the dictionary' % key)
+            logger.debug('Key %s is absent from the buildings data and was skipped.', key)
 
     df_facades = translated_facades_data
     df_facades['CX'] = df_facades['geometry'].centroid.x
@@ -843,7 +862,7 @@ def translate_roofs_to_REHO(df_roofs):
         try:
             translated_roofs_data[REHO_index] = df_roofs[key]
         except KeyError:
-            print('Key %s not in the dictionary' % key)
+            logger.debug('Key %s is absent from the buildings data and was skipped.', key)
 
     df_roofs = translated_roofs_data
 
@@ -923,7 +942,7 @@ def neighbourhood_angles(buildings, facades):
             df_c['dxy'] = (df_c.dx * df_c.dx + df_c.dy * df_c.dy) ** 0.5
             heights = df_district.height_m.values
             if facades_build.loc[f]['coord_Z0'] is None:
-                print('Missing value coord_Z0, not possible to use_facades')
+                logger.warning('Facade %s has no coord_Z0: it is skipped by the shadow model.', f)
                 continue
             df_c['dz'] = df_district.z.values + heights - facades_build.loc[f]['coord_Z0']
             # facades.loc[f]['HEIGHT_Z'] + facades.loc[f]['HEIGHT'] #take foot of facades/ HEIGHT_Z is upperbound
@@ -955,7 +974,7 @@ def return_shadows_district(buildings, facades):
             idx = np.repeat(id_building, len(df_id_building))
             df_id_building = df_id_building.set_index(idx)
         else:
-            print('NO DATA AVAILABLE FOR id_building ' + str(id_building))
+            logger.warning('No shadow data available for id_building %s, filling with NaN.', id_building)
             df_id_building = pd.DataFrame(index=[id_building],
                                           columns=['tanb', 'beta', 'azimuth', 'id_building'])  # pass NaN instead
         df_shadows = pd.concat((df_shadows, df_id_building))
@@ -982,7 +1001,7 @@ def read_geometry(df):
     Avoid issues with geometry when reading data from a csv
     """
     if 'geometry' not in df.columns:
-        print("No geometry specified in the dataframe.")
+        logger.debug('No geometry column in the buildings data.')
         return df
     else:
         if isinstance(df["geometry"], gpd.geoseries.GeoSeries):
@@ -992,5 +1011,5 @@ def read_geometry(df):
                 geometry = gpd.GeoSeries.from_wkt(df['geometry'])
                 return gpd.GeoDataFrame(df, geometry=geometry)
             except TypeError:
-                print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings.")
+                logger.warning('The geometry column is neither WKB nor WKT, so it comes from neither PostGIS nor QBuildings; leaving it untouched.')
                 return df

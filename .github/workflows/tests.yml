@@ -1,0 +1,128 @@
+name: Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Offline tier: the tests that need no license, no solver, no database and no network.
+  # The others are marked slow and run locally, see the testing section of the developer guide.
+  fast:
+    name: Fast tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # setuptools-scm derives the version from the git history
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install REHO
+        run: |
+          python -m pip install --upgrade pip
+          pip install --extra-index-url https://pypi.ampl.com -e ".[test]"
+
+      - name: Run the offline test-suite
+        run: pytest reho/test -m "not slow" -v
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ruff
+        run: pip install ruff
+
+      # Undefined names and unused imports break a run at import time; style issues
+      # are reported but do not fail the build.
+      - name: Check for errors
+        run: ruff check reho --select F,E9
+
+      - name: Report style issues
+        run: ruff check reho || true
+
+  build:
+    name: Build the distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build the sdist and the wheel
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+          python -m twine check dist/*
+
+      # The AMPL model and the reference data are shipped as package data; a broken
+      # package-data declaration produces a wheel that imports but cannot solve.
+      - name: Check that the model and the data are in the wheel
+        run: |
+          python - <<'PY'
+          import glob, zipfile
+          names = zipfile.ZipFile(sorted(glob.glob("dist/*.whl"))[-1]).namelist()
+          def count(suffix):
+              return len([n for n in names if n.endswith(suffix)])
+          assert count(".mod") > 40, f"only {count('.mod')} AMPL model files in the wheel"
+          assert count(".csv") > 15, f"only {count('.csv')} data files in the wheel"
+          assert "reho/model/reho.py" in names
+          assert "reho/data/SIA/sia2024_data.xlsx" in names
+          print(f"wheel OK: {len(names)} entries")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distribution
+          path: dist/
+
+  docs:
+    name: Build the documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install the documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+
+      # -W turns Sphinx warnings into errors: a broken cross-reference or a missing
+      # document fails the build instead of silently degrading the published site.
+      - name: Build the HTML documentation
+        run: sphinx-build -b html -W --keep-going docs docs/_build/html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: docs/_build/html/

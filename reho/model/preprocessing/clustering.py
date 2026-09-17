@@ -51,7 +51,7 @@ class Clustering:
         The results are stored in the object:
 
         - ``results['idx']``: for each number of clusters (column), the medoid that represents each
-          period, as the 0-based index of the medoid period.
+          period, as the number of the medoid period, counted from 1.
         - ``kpis_clu``: LDC, MAE, RMSD and MAPE of each solution, per attribute.
         - ``attr_clu``: the normalized data rebuilt from the medoids, for each solution.
         - ``nbr_opt``: the selected number of clusters, the first one whose successor improves the MAPE
@@ -102,7 +102,9 @@ class Clustering:
         cluster_assignments = np.zeros(len(matrix), dtype=int)
         for cluster_idx, cluster_points in enumerate(kmedoids_instance.get_clusters()):
             for point in cluster_points:
-                cluster_assignments[point] = kmedoids_instance.get_medoids()[cluster_idx]
+                # Periods are numbered from 1, as in the single-period case above and wherever the
+                # assignments are read: pyclustering's medoid indices start at 0.
+                cluster_assignments[point] = kmedoids_instance.get_medoids()[cluster_idx] + 1
 
         return pd.DataFrame({str(n_clusters): cluster_assignments})
 

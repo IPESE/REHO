@@ -13,9 +13,12 @@ import pvlib
 from pyproj import Transformer
 
 import reho.model.preprocessing.weather as weather
+from reho.logger import get_logger
 from reho.paths import path_to_clustering, path_to_infrastructure, path_to_skydome
 
 __all__ = ["return_local_data"]
+
+logger = get_logger(__name__)
 
 #: Coordinate reference system of the buildings' x/y coordinates (CH1903+ / LV95).
 CRS_BUILDINGS = "EPSG:2056"
@@ -34,7 +37,9 @@ def return_local_data(cluster, qbuildings_data):
 
     The weather file of the requested location and clustering options is generated
     on first use and cached under ``data/clustering/<File_ID>/`` in the working
-    directory, so a second run with the same options reuses it.
+    directory, so a second run with the same options reuses it. A cache written by an
+    earlier version of REHO is rebuilt, see
+    :func:`~reho.model.preprocessing.weather.typical_periods_are_current`.
 
     Parameters
     ----------
@@ -70,8 +75,13 @@ def return_local_data(cluster, qbuildings_data):
     local_data["File_ID"] = File_ID
 
     clustering_directory = os.path.join(path_to_clustering, File_ID)
-    if not os.path.exists(clustering_directory):
-        os.makedirs(clustering_directory)
+    if not weather.typical_periods_are_current(clustering_directory):
+        if os.path.isdir(clustering_directory):
+            logger.warning(
+                "The typical periods cached in %s were written by an earlier version of REHO and are rebuilt: "
+                "results will differ from the runs that used them.", clustering_directory
+            )
+        os.makedirs(clustering_directory, exist_ok=True)
         weather.generate_weather_data(cluster, qbuildings_data, clustering_directory)
 
     df_timestamp = pd.read_csv(os.path.join(clustering_directory, "timestamp.csv"))

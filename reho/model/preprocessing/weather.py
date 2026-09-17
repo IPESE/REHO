@@ -54,9 +54,41 @@ def read_custom_weather(path_to_weather_file):
     return weather_data
 
 
+#: Version of the typical-period files written by :func:`generate_weather_data`. Increase it when
+#: these files change, so that the files cached by earlier versions of REHO are rebuilt. Version 2
+#: fixed a one-day shift between each typical period and the day of the year it was selected from.
+TYPICAL_PERIODS_VERSION = 2
+
+#: File, in each clustering directory, recording the version of its typical periods.
+TYPICAL_PERIODS_VERSION_FILE = "typical_periods_version.txt"
+
+
+def typical_periods_are_current(clustering_directory):
+    """
+    Whether a clustering directory holds typical periods written by this version of REHO.
+
+    Parameters
+    ----------
+    clustering_directory : str
+        Directory of the typical periods of a location, e.g. ``data/clustering/Geneva_10_24_T_I_W``.
+
+    Returns
+    -------
+    bool
+        False when the directory does not exist, or when its typical periods were written by an
+        earlier version of REHO and must be rebuilt.
+    """
+    try:
+        with open(os.path.join(clustering_directory, TYPICAL_PERIODS_VERSION_FILE)) as file:
+            return int(file.read().strip()) == TYPICAL_PERIODS_VERSION
+    except (OSError, ValueError):
+        return False
+
+
 def generate_weather_data(cluster, qbuildings_data, clustering_directory):
     """
-    This function is called if the clustered weather data specified by File_ID do not exist yet.
+    This function is called if the clustered weather data specified by File_ID do not exist yet,
+    or were written by an earlier version of REHO (see :func:`typical_periods_are_current`).
     Applies the clustering method (see Clustering class) and writes several files as output.
 
     Parameters
@@ -151,9 +183,9 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
     # Get the max irradiance from the same period (for the max temperature)
     T_max['Irr'] = cl.data_org.loc[T_period[1] * hours_per_period: (T_period[1] + 1) * hours_per_period - 1, 'Irr'].max()
 
-    # Set the time for the new rows (variable hours per period)
-    T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0], 1, 1]
-    T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1], 1, 1]
+    # Set the time for the new rows (variable hours per period); periods of the year are numbered from 1
+    T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0] + 1, 1, 1]
+    T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1] + 1, 1, 1]
 
     # Append the new extreme values to the data
     new_index_min = len(data_cls)  # Dynamically find the next available index
@@ -167,12 +199,15 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
         max_time_dd = len(cl.attr_org)
         data_idy = pd.concat([data_idy, pd.DataFrame([[max_time_dd + 1, max_time_dd + 1]], columns=data_idy.columns)], ignore_index=True)
 
-    write_weather_files(clustering_directory, attributes, data_cls, data_idy)
+    write_weather_files(clustering_directory, attributes, data_cls, data_idy, period_duration=hours_per_period)
+    # Written last, so that a generation interrupted midway is redone the next time
+    with open(os.path.join(clustering_directory, TYPICAL_PERIODS_VERSION_FILE), 'w') as file:
+        file.write(str(TYPICAL_PERIODS_VERSION))
 
     logger.info('Weather clustering finished, results saved in %s.', clustering_directory)
 
 
-def write_weather_files(clustering_directory, attributes, values_cluster, index_inter):
+def write_weather_files(clustering_directory, attributes, values_cluster, index_inter, period_duration=24):
     """
     Writes the clustering results computed from ``generate_weather_data`` as CSV files in folder clustering_directory.
 
@@ -183,9 +218,13 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     attributes : list
         Contains the clustering attributes, among 'Text', 'Irr', 'Weekday', and 'Emissions'.
     values_cluster : pd.DataFrame
-        Produced by ``generate_weather_data``.
+        Produced by ``generate_weather_data``: the rows of every period, the typical periods first
+        and the two extreme periods last. Each period starts at ``time.hh`` = 1, and ``time.dd`` is
+        the number of the period of the year it comes from, counted from 1.
     index_inter : pd.DataFrame
         Produced by ``generate_weather_data``.
+    period_duration : int, optional
+        Number of hours of a period. Default is 24.
 
     Notes
     -----
@@ -204,25 +243,23 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     typical_data = values_cluster[typical_cols]
     typical_data.to_csv(os.path.join(clustering_directory, 'typical_data.csv'), index=False)
 
+    # Periods are told apart by their position, not by the period of the year they come from:
+    # an extreme period can come from the same day as a typical period.
+    starts = (values_cluster['time.hh'] == 1).to_numpy()
+    period_of_row = np.cumsum(starts)
+    days = values_cluster.loc[starts, 'time.dd'].astype(int).tolist()
+    durations = values_cluster.loc[starts, 'dt'].tolist()
+    timesteps = np.bincount(period_of_row)[1:].tolist()
+
     # Frequency
-    periods = values_cluster['time.dd'].unique()
-    period_mapping = {period: idx + 1 for idx, period in enumerate(periods)}
-
-    durations = []
-    timesteps = []
-    for period in periods:
-        period_df = values_cluster[values_cluster['time.dd'] == period]
-        durations.append(period_df['dt'].iloc[0])
-        timesteps.append(len(period_df))
-
     with open(os.path.join(clustering_directory, 'frequency.csv'), 'w') as file:
         file.write('set Period := \n')
-        for p in range(1, len(periods) + 1):
+        for p in range(1, len(days) + 1):
             file.write(f'{p}\n')
         file.write(';\n')
 
         file.write('set PeriodStandard := \n')
-        for p in range(1, len(periods) - 1):
+        for p in range(1, len(days) - 1):
             file.write(f'{p}\n')
         file.write(';\n')
 
@@ -236,19 +273,16 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
             file.write(f'{idx} {tstep}\n')
         file.write(';\n')
 
-    # Index
-    df_time = pd.DataFrame({
-        'originalday': periods,
-        'frequency': durations,
-        'timesteps': timesteps
-    })
-
-    dict_index = {day: idx + 1 for idx, day in enumerate(df_time['originalday'])}
-    index_inter['index_r'] = index_inter['inter_t'].map(dict_index)
+    # Index: the typical period of each period of the year. The typical periods come before the
+    # extreme ones, so the first period coming from a given day is the typical one.
+    period_of_day = {}
+    for period, day in enumerate(days, start=1):
+        period_of_day.setdefault(day, period)
+    index_inter['index_r'] = index_inter['inter_t'].map(period_of_day)
 
     df_aim = pd.DataFrame()
     for d in index_inter['index_r']:
-        nt = int(df_time.loc[df_time.index == (d - 1), 'timesteps'].iloc[0])
+        nt = timesteps[d - 1]
         df_d = pd.DataFrame([np.repeat(d, nt), np.arange(1, nt + 1)])
         df_aim = pd.concat([df_aim, df_d.T], ignore_index=True)
 
@@ -264,22 +298,22 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     annual_data = pd.read_csv(os.path.join(clustering_directory, 'annual_data.csv'), parse_dates=['time(UTC)'])
     timestamp_data = []
 
-    for original_period, mapped_period in period_mapping.items():
-        date_idx = (original_period-1) * 24
+    for period, day in enumerate(days, start=1):
+        row_offset = (day - 1) * period_duration
 
-        date = annual_data.iloc[date_idx]['time(UTC)']
+        date = annual_data.iloc[row_offset]['time(UTC)']
         entry = {
             'Date': date.strftime("%Y-%m-%d %H:%M:%S"),
-            'Day': mapped_period,
-            'Frequency': durations[mapped_period - 1],
-            'RowOffset': date_idx,
+            'Day': period,
+            'Frequency': durations[period - 1],
+            'RowOffset': row_offset,
         }
         if 'Weekday' in attributes:
-            entry['Weekday'] = values_cluster.loc[values_cluster['time.dd'] == original_period, 'Weekday'].iloc[0]
+            entry['Weekday'] = values_cluster.loc[period_of_row == period, 'Weekday'].iloc[0]
 
         timestamp_data.append(entry)
 
-    df_timestamp = pd.DataFrame(timestamp_data).sort_values(by='Day')
+    df_timestamp = pd.DataFrame(timestamp_data)
     df_timestamp.to_csv(os.path.join(clustering_directory, 'timestamp.csv'), index=False)
 
 

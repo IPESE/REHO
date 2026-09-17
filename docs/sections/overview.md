@@ -16,7 +16,7 @@
 | **Package name**| Renewable Energy Hub Optimizer (REHO) |
 | **Version** | {{ version }} |
 | **Last update**  | {{ today }} |
-| **Authors**      | Dorsan Lepour, Joseph Loustau, Cédric Terrier, Ziqian Wang |
+| **Authors**      | Dorsan Lepour, Joseph Loustau, Cédric Terrier |
 
 The transition to sustainable energy systems in the face of growing renewable energy adoption and electrification is
 a complex and critical challenge. Renewable Energy Hub Optimizer (REHO) emerges as a powerful decision support

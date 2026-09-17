@@ -8,6 +8,29 @@ They should give you a brief overview of REHO's capabilities and to test the var
 Since the content of the `scripts/examples/` subfolder is git-tracked, you should not modify these files directly, but rather copy their contents into any other subfolder of `scripts/` that you have yourself created. The content there (code, data, results, and figures) will be ignored by the git versioning.
 :::
 
+:::{tip}
+The examples set `solver="gurobi"` to keep their runtime short. Drop that argument
+to fall back on HiGHS, the open-source solver that ships with REHO.
+
+They double as REHO's integration test-suite: `REHO_RUN_EXAMPLES=1 pytest reho/test/test_examples.py`
+runs every one of them and fails if any exits with an error.
+:::
+
+## 0. Compact formulation
+
+The simplest way to run REHO: one MILP covering the whole district, with no
+decomposition. This is the default when `method` names neither `building-scale`
+nor `district-scale`. It is exact, but the problem grows exponentially with the
+number of buildings — about ten is the practical limit, beyond which one of the
+decomposed formulations below is needed.
+
+The script is also the most heavily commented of the examples, and the best
+starting point to understand what each input dictionary does.
+
+```{literalinclude} ../../scripts/examples/0_Compact_formulation.py
+:language: python
+```
+
 ## 1. Building-scale
 
 ### Single-optimization
@@ -121,6 +144,7 @@ Investment costs and embodied emissions are calculated based on the file `infras
 Liquid cooled data centers (direct-on-chip cooling) produce heat at a temperature of 60-75 °C, which can be used for district heating networks or valorized with Organic Rankine Cycles. This example shows how the demand for data can be set through an average known value of electricity consumption of data centers in an urban energy hub and how the waste heat from such district-level data centers can be used through an Organic Rankine Cycle. Assuming a temperature of 75°C, a cycle efficiency is used to abstract the model.
 
 ```{literalinclude} ../../scripts/examples/3l_Datacenter.py
+:language: python
 ```
 
 ## 4. Global features
@@ -169,6 +193,10 @@ Multiple districts can be optimized together in order to calculate EV charging e
 This feature can be used to conduct analyses on EV fleets at the city scale.
 Example 6b demonstrates how to use this feature step by step. Only one district is optimized with external charging option available. The optimized district is also parameterized with a load on EV charger representing incoming EVs from other districts.
 
+```{literalinclude} ../../scripts/examples/6b_Mobility_externaldistricts.py
+:language: python
+```
+
 ## 7. Interperiod storage
 
 Investigate interperiod storage units in a building facing grid constraints (e.g. a building with limited import or export capacity).
@@ -176,16 +204,19 @@ Investigate interperiod storage units in a building facing grid constraints (e.g
 ### Hybrid biomethane/CO2 storage
 
 ```{literalinclude} ../../scripts/examples/7a_rSOC_IP.py
+:language: python
 ```
 
 ### Hydrogen production and export
 
 ```{literalinclude} ../../scripts/examples/7b_rSOC_H2_export.py
+:language: python
 ```
 
 ### District-scale rSOC with IP storage
 
 ```{literalinclude} ../../scripts/examples/7c_district_IP.py
+:language: python
 ```
 
 ## 8. Actors model

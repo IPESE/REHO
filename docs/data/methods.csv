@@ -1,25 +1,23 @@
-﻿Method name;Description;Default behavior
-**Solar methods**;;
-*use_facades*;Allows to consider the facades for PV panels installation;False
-*use_pv_orientation*;Considers the orientation for the solar potential estimation, including a shadow model from neighbor buildings;False
-**Optimization methods**;;
-*building-scale*;Optimizes by considering than each building is an independent system;False
-*district-scale*;Optimizes by allowing exchanges between buildings and the use of district units;False
-*parallel_computation*;Allows to solve sub-problems in parallel;True
-*switch_off_second_objective*;To generate the Pareto curve by minimizing only one objective and constraining the other one. By default, both objectives are successively minimized and constrained.;False
-**Profiles**;;
-*include_stochasticity*;Includes variability among SIA typical consumption profiles;False
-*sd_stochasticity*;If include_stochasticity is True, specify the variability parameters through a list [sd_consumption, sd_timeshift] where sd_consumption is the standard deviation on the profile value, and sd_timeshift is the standard deviation on the profile time shift;None
-*use_dynamic_emission_profiles*;Uses hourly values for electricity GWP;False
-*use_custom_profiles*;Allows to replace SIA profiles for DHW [L/h], electricity demands [W/h] and people gains [W/h] by custom ones, via a dictionary where the key is among [‘electricity’, ‘dhw’, ‘occupancy’] and the value is the path to the file;False
-**Saving options**;;
-*include_all_solutions*;For a district-scale optimization, gives the results from the SPs;False
-*save_input_data*;Adds in the results file the input data (df_Buildings, df_Weather, df_Index);True
-*save_timeseries*;Adds in the results file the timeseries results (df_Buildings_t and df_Unit_t);True
-*save_streams*;Adds in the results file the streams-timeseries results (df_Streams_t);False
-*extract_parameters*;To extract all the parameters used in the optimization;False
-*print_logs*;Prints the logs of the optimization(s);True
-**Other**;;
-*actors_problem*;Changes the MP to solve: instead of considering the district as a single entity to optimize, different stakeholders portfolios are considered where the objective function is the minimization of the costs for one particular actor, while the costs of the other actors are constrained with parameterized epsilon values;False
-*DHN_CO2*;To use CO2 in the DHN as heat carrier (default fluid is water);False
-*interperiod_storage*;Allows the usage of long-term storage units;False
+Method name;Description;Default value
+*use_facades*;Consider building facades as a surface available for PV panels.;``False``
+*use_pv_orientation*;Account for roof orientation and the shadows cast by neighbouring buildings in the solar potential.;``False``
+*building-scale*;Optimize each building as an independent system (one master-problem iteration).;``False``
+*district-scale*;Allow energy exchanges between buildings and the use of district units (Dantzig-Wolfe decomposition).;``False``
+*parallel_computation*;Solve the sub-problems in parallel processes.;``True``
+*switch_off_second_objective*;Build the Pareto curve by minimizing only the first objective and constraining the second.;``False``
+*skip_initiation*;Skip the sub-problem initiation round of the decomposition.;``False``
+*fix_units*;Fix unit sizes to the values of ``REHO.df_fix_Units`` instead of optimizing them.;``False``
+*include_all_solutions*;Let the master problem reuse the sub-problem solutions found for other Pareto points.;``False``
+*include_stochasticity*;Add variability to the SIA typical consumption profiles.;``False``
+*sd_stochasticity*;``[sd_consumption, sd_timeshift]`` used when ``include_stochasticity`` is enabled.;``[0.1, 1]``
+*use_custom_profiles*;Replace the SIA profiles by custom files, as ``{'electricity'|'dhw'|'occupancy': path}``.;``False``
+*save_data_input*;Store the optimization inputs (``df_Buildings``, ``df_Weather``, ``df_Index``) in the results.;``True``
+*save_timeseries*;Store the time-resolved results (``df_Buildings_t``, ``df_Unit_t``).;``True``
+*save_streams*;Store the heat-cascade stream results (``df_Streams_t``).;``False``
+*extract_parameters*;Store every parameter passed to AMPL in ``df_Parameters``, for debugging.;``False``
+*print_logs*;Print the progress of the optimization.;``True``
+*actors_problem*;Solve the multi-actor master problem, minimizing one stakeholder's costs under epsilon constraints on the others.;``False``
+*renovation*;List of renovation packages to offer, e.g. ``['window/facade', 'roof']``. ``None`` disables renovation.;``None``
+*DHN_CO2*;Use CO2 rather than water as the district-heating heat carrier.;``False``
+*interperiod_storage*;Enable seasonal storage units, chained across typical periods.;``False``
+*external_district*;Model exchanges with neighbouring districts declared in ``set_indexed['Districts']``.;``False``

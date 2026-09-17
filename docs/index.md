@@ -25,6 +25,13 @@ sustainable energy system planning.
 
 Start with a quick summary of what is REHO and what it can do.
 :::
+
+:::{grid-item-card} {octicon}`git-branch` Releases
+:link: sections/releases
+:link-type: doc
+
+Find here the code versions, the license, how to cite and the list of the related works.
+:::
 ::::
 
 ::::{grid}
@@ -36,11 +43,28 @@ Start with a quick summary of what is REHO and what it can do.
 Describes the mathematical formulation behind the REHO model — building, district, and actors scales.
 :::
 
+:::{grid-item-card} {octicon}`database` Data reference
+:link: sections/data/index
+:link-type: doc
+
+The inputs — every reference data file shipped with REHO — and the outputs — every DataFrame an optimization produces.
+:::
+::::
+
+::::{grid}
+
 :::{grid-item-card} {octicon}`package` Package structure
 :link: sections/package_structure
 :link-type: doc
 
-Describes the content of the REHO package, with a description of functions you will come to use.
+How the REHO package is laid out, and the API reference of every module, class and function.
+:::
+
+:::{grid-item-card} {octicon}`tools` Developer guide
+:link: sections/developer_guide
+:link-type: doc
+
+How a run flows through the package, how to extend, test and document REHO, and how to contribute.
 :::
 ::::
 
@@ -61,16 +85,6 @@ Still not sure how you should use REHO? Here are examples that include various f
 :::
 ::::
 
-::::{grid}
-
-:::{grid-item-card} {octicon}`git-branch` Releases
-:link: sections/releases
-:link-type: doc
-
-Find here the code versions, the license, how to cite and the list of the related works.
-:::
-::::
-
 ```{toctree}
 :maxdepth: 1
 :hidden:
@@ -78,10 +92,11 @@ Find here the code versions, the license, how to cite and the list of the relate
 sections/overview
 sections/releases
 sections/model/index
+sections/data/index
 sections/package_structure
+sections/developer_guide
 sections/getting_started
 sections/examples
-sections/contribute
 sections/appendix
 ```
 
@@ -138,8 +153,8 @@ git clone https://github.com/IPESE/REHO.git
 
 * Dorsan **Lepour** (2020-present)
 * Cédric **Terrier** (2021-present)
-* Joseph **Loustau** (2022-2024)
-* Ziqian **Wang** (2025-present)
+* Joseph **Loustau** (2022-present)
+* Ziqian **Wang** (2025-2026)
 
 ```{raw} html
 <p>&nbsp;</p>

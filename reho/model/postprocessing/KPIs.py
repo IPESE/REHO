@@ -626,7 +626,7 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data):
     Returns
     -------
     df_KPI : pandas.DataFrame
-        Indicators, described in :doc:`/sections/results`.
+        Indicators, described in :doc:`/sections/data/output`.
     df_Economics : pandas.DataFrame
         Costs and emissions by item, see :func:`build_df_Economics`.
 

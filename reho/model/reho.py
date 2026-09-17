@@ -631,7 +631,7 @@ class REHO(MasterProblem):
         Returns
         -------
         dict
-            Result DataFrames, described in :doc:`/sections/results`.
+            Result DataFrames, described in :doc:`/sections/data/output`.
         """
 
         df_Results = dict()

@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
+    // ── External links of the navigation bar (REHO-fm): open in a new tab ────
+    document.querySelectorAll('a.nav-external').forEach(function (link) {
+        link.setAttribute('target', '_blank');
+        link.setAttribute('rel', 'noopener noreferrer');
+    });
+
     var path = window.location.pathname;
     var isModelPage = path.includes('/sections/model/');
     var isModelIndex = path.endsWith('/model/index.html') || path.endsWith('/model/');

@@ -32,7 +32,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     - ``interperiod_storage``: adds ``df_Interperiod``.
     - ``extract_parameters``: adds ``df_Parameters``, see :func:`get_ampl_parameters`.
 
-    The DataFrames are described in :doc:`/sections/results`.
+    The DataFrames are described in :doc:`/sections/data/output`.
 
     Parameters
     ----------

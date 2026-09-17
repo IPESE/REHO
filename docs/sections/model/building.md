@@ -302,8 +302,8 @@ environmental performance.
 An hourly annual model has 8 760 timesteps — too many for tractable district-scale MILP.
 A **K-Medoids clustering** aggregates the year into $|\mathbb{P}|$ typical days (usually
 10–15), each assigned a weight $d_p$ proportional to its number of occurrences.
-Clustering features include temperature, irradiance, weekday type, and optionally carbon
-intensity of the grid or ICT demand profiles.
+Clustering features include temperature, irradiance, weekday type, and optionally ICT
+demand profiles.
 
 Weights $d_p$ (days/year) and $d_t$ (hours/timestep) are used throughout to recover
 annual totals from the reduced set of operating hours.

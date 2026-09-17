@@ -1,6 +1,9 @@
+# Documentation toolchain. The REHO package itself is mocked by
+# `autodoc_mock_imports` in conf.py, so its scientific dependencies are not needed here.
 sphinx
 sphinxcontrib-bibtex
 sphinx-design
 pydata_sphinx_theme
 sphinx-copybutton
 myst-parser
+requests

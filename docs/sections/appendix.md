@@ -24,6 +24,20 @@ They are reported in Tables {ref}`tbl-building-units-csv` and {ref}`tbl-district
 :class: longtable
 ```
 
+## Building affectation classes
+
+The SIA 380/1 norm classifies a building by its affectation. The `id_class` field of
+the buildings input data uses the Roman numerals of the first column; a building
+mixing several affectations lists them separated by `/`, with the corresponding
+area shares in `ratio`.
+
+(tbl-sia380)=
+```{csv-table} SIA 380/1 building affectation classes
+:file: ../../reho/plotting/sia380_1.csv
+:header-rows: 1
+:delim: ;
+```
+
 ## Grids
 
 (tbl-grid)=

@@ -1,0 +1,9 @@
+Parameter;Description;Default value
+*max_iter*;"Maximum number of master-problem iterations; the last one solves the binary master problem.";``15``
+*iter_no_improv*;Number of consecutive iterations without improvement that stops the decomposition.;``5``
+*threshold_subP_value*;Reduced cost above which a sub-problem solution is considered non-improving.;``0``
+*threshold_no_improv*;Relative objective improvement below which an iteration counts as 'no improvement'.;``5e-05``
+*grid_cost_exchange*;Cost charged on energy exchanged between buildings.;``0.0``
+*weight_lagrange_cst*;Weight of the Lagrangian term in the sub-problem objective.;``2.0``
+*timesteps*;Number of timesteps, derived from the cluster: ``Periods * PeriodDuration + 2`` extreme periods.;derived
+*n_houses*;Number of buildings in the district, derived from ``qbuildings_data``.;derived

@@ -36,7 +36,7 @@ git clone https://github.com/IPESE/REHO.git
 
 ### Python 3
 
-You will need [Python3](https://www.python.org/downloads/). REHO is compatible with Python 3.9 and above.
+You will need [Python3](https://www.python.org/downloads/). REHO requires Python 3.11 or above.
 
 As IDE we recommend to use [PyCharm](https://www.jetbrains.com/pycharm/), but [Visual Studio Code](https://code.visualstudio.com/) (VS Code) is also a good choice.
 
@@ -218,11 +218,23 @@ The REHO repository can be forked or cloned depending on the intended use. If yo
 
 #### Requirements
 
-Please include a `venv` at the project root folder and install dependencies with:
+Create a virtual environment at the project root and install REHO in editable mode,
+so that your changes to the source take effect immediately:
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+source .venv/bin/activate          # .venv\Scripts\activate on Windows
+pip install --extra-index-url https://pypi.ampl.com -e .
 ```
+
+To also get the test-suite, the documentation toolchain and the linter:
+
+```bash
+pip install --extra-index-url https://pypi.ampl.com -e ".[dev]"
+```
+
+The runtime dependencies are declared once, in `pyproject.toml`; `requirements.txt`
+simply installs the package itself, so the two lists cannot drift apart.
 
 
 #### Checking proper installation
@@ -247,6 +259,75 @@ However, for your future work and own case-studies with REHO, you can create any
 
 
 ## Running REHO
+
+A complete run is six steps: describe the buildings, choose the weather, define the
+scenario, declare which technologies and energy carriers are available, pick the
+method, and optimize.
+
+```python
+from reho import REHO, QBuildingsReader, initialize_grids, initialize_units
+
+# 1. Buildings
+reader = QBuildingsReader()
+reader.establish_connection('Geneva')
+qbuildings_data = reader.read_db({'transformers': 234}, nb_buildings=2)
+
+# 2. Weather, reduced to typical periods
+cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+
+# 3. Scenario
+scenario = {'Objective': 'TOTEX', 'name': 'totex', 'exclude_units': ['ThermalSolar']}
+
+# 4. Energy carriers, then the technologies that use them - in that order
+grids = initialize_grids()
+units = initialize_units(scenario, grids)
+
+# 5. Method
+method = {'building-scale': True}
+
+# 6. Optimize
+reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids,
+            cluster=cluster, scenario=scenario, method=method)
+reho.single_optimization()
+reho.save_results(format=['xlsx', 'pickle'], filename='my_run')
+```
+
+Results land in `reho.results['totex'][0]`, a dictionary of DataFrames documented in
+{doc}`data/output`.
+
+:::{tip}
+Scripts written for earlier REHO versions start with `from reho.model.reho import *`.
+That still works — the module re-exports the same names — but importing explicitly
+from `reho` makes it clear where each object comes from.
+:::
+
+### Controlling the output
+
+REHO logs through the standard `logging` module and never writes to `stdout`
+directly, so the verbosity is yours to set:
+
+```python
+from reho.logger import configure_logging
+
+configure_logging("DEBUG")          # everything, including solver details
+configure_logging(enabled=False)    # silence REHO
+```
+
+`method['print_logs'] = False` is the shorthand applied by the `REHO` class.
+
+### Typos are reported
+
+An unrecognised option is no longer silently ignored — it is reported, with the
+closest match:
+
+```pycon
+>>> reho = REHO(..., method={'district_scale': True})
+UserWarning: Unknown method option(s): 'district_scale' (did you mean 'district-scale'?). They will be ignored.
+```
+
+The complete list of valid options is {ref}`tbl-methods`.
+
+### Reference scripts
 
 The following paragraphs describe the content of `reho/test/test_run.py` and `reho/test/test_plot.py`. These latter should allow you to get started with the tool and conduct your first optimizations.
 
@@ -376,6 +457,10 @@ Where:
 - `'Periods'` relates to the desired number of typical periods.
 - `'PeriodDuration'` is the typical period duration (24h is the default choice, corresponding to a typical day).
 
+The typical periods are written to `data/clustering/<Location>_<Periods>_<PeriodDuration>_<Attributes>/`, next to the run
+script, and reused by the next runs with the same options. REHO rebuilds them when they were written by an earlier
+version of REHO.
+
 :::{note}
 `scripts/examples/3f_Custom_profiles.py` shows how to provide custom weather data.
 :::
@@ -504,11 +589,33 @@ Here `district_units.csv` contains the default parameters for district-size unit
 ### Set method options
 
 You can use different methodology options in REHO, specified in the `method` dictionary.
-The methods available are listed in {ref}`tbl-methods`.
+The methods available are listed in {ref}`tbl-methods`. Any option you leave out keeps
+its default value, and any option REHO does not recognise is reported as a warning.
 
 (tbl-methods)=
 ```{csv-table} List of the available methods in REHO
 :file: ../data/methods.csv
+:header-rows: 1
+:delim: ;
+:class: longtable
+```
+
+:::{note}
+This table is generated from {data}`reho.model.options.DEFAULT_METHODS` when the
+documentation is built, so it always matches the defaults the code applies.
+:::
+
+#### Decomposition hyper-parameters
+
+A district-scale run can be tuned through the `DW_params` dictionary, which controls
+how long the Dantzig-Wolfe decomposition iterates and when it stops.
+
+```python
+reho = REHO(..., DW_params={'max_iter': 10, 'iter_no_improv': 3})
+```
+
+```{csv-table} Hyper-parameters of the decomposition
+:file: ../data/dw_params.csv
 :header-rows: 1
 :delim: ;
 :class: longtable
@@ -595,9 +702,15 @@ Pareto_ID = list(results[Scn_ID[0]].keys())
 df_Results = results[Scn_ID[0]][Pareto_ID[0]]
 ```
 
-Where `df_Results` corresponds to the output of one single-optimization, and is a dictionary containing the following dataframes: `df_Performance`, `df_Annuals`, `df_Buildings`, `df_Unit`, `df_Unit_t`, `df_Grid_t`, `df_Buildings_t`, `df_Time`, `df_Weather`, `df_Index`, `df_KPIs`, `df_Economics`.
+Where `df_Results` corresponds to the output of one single optimization: a dictionary
+of DataFrames — `df_Performance`, `df_Annuals`, `df_Buildings`, `df_Unit`, `df_Unit_t`,
+`df_Grid_t`, `df_Buildings_t`, `df_Time`, `df_Weather`, `df_Index`, `df_KPIs`,
+`df_Economics` and a few more depending on the method options.
 
-Refer to {mod}`reho.model.postprocessing.write_results` for more information about the content of these dataframes.
+**{doc}`data/output` documents every one of them**, with the meaning and the unit of each
+column. One thing to keep in mind when post-processing a time-resolved frame: a
+timestep stands for a whole typical period, so weight it by `df_Time.dp` before
+summing to a yearly value.
 
 ### Plot results
 

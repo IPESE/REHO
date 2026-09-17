@@ -1,4 +1,4 @@
-"""Tests for the preprocessing of the model inputs: typical periods, SIA profiles."""
+"""Tests for the preprocessing of the model inputs: typical periods, SIA profiles, web queries."""
 
 import os
 
@@ -8,6 +8,7 @@ import pytest
 
 from reho.model.preprocessing import weather
 from reho.model.preprocessing.clustering import Clustering
+from reho.model.preprocessing.electricity_prices import requests_retry_session
 from reho.model.preprocessing.sia_parser import (
     daily_profiles_with_monthly_deviation,
     read_sia2024_rooms_sia380_1,
@@ -155,3 +156,10 @@ class TestSIAProfiles:
 
         np.testing.assert_allclose(profiles["elecgain_W/m2"], 0.7 * profiles["electricity_W/m2"])
         assert profiles["elecgain_W/m2"].sum() > 0
+
+
+class TestWebQueries:
+    def test_retries_apply_to_http_and_https(self):
+        session = requests_retry_session(retries=5)
+        for url in ("http://example.org", "https://example.org"):
+            assert session.get_adapter(url).max_retries.total == 5

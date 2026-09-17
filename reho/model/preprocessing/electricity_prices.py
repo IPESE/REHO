@@ -73,7 +73,7 @@ def requests_retry_session(
     Returns
     -------
     requests.Session
-        The session, with the retry policy mounted on ``https://`` URLs.
+        The session, with the retry policy mounted on ``http://`` and ``https://`` URLs.
     """
     session = session or rq.Session()
     retry = urllib3.util.Retry(
@@ -84,7 +84,7 @@ def requests_retry_session(
         status_forcelist=status_forcelist,
     )
     adapter = rq.adapters.HTTPAdapter(max_retries=retry)
-    session.mount("https://", adapter)
+    session.mount("http://", adapter)
     session.mount("https://", adapter)
 
     return session

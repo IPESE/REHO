@@ -293,7 +293,7 @@ def _warn_about_unknown_keys(given, known, label, strict):
     messages = []
     for key in unknown:
         close = difflib.get_close_matches(str(key), [str(k) for k in known], n=1, cutoff=0.6)
-        hint = f", did you mean {close[0]!r}?" if close else ""
+        hint = f" (did you mean {close[0]!r}?)" if close else ""
         messages.append(f"{key!r}{hint}")
 
     message = f"Unknown {label} option(s): " + "; ".join(messages) + ". They will be ignored."

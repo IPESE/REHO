@@ -11,6 +11,7 @@ from reho.model import reho as reho_module
 from reho.model.postprocessing.KPIs import postcompute_annual_COP
 from reho.model.postprocessing.sensitivity_analysis import SensitivityAnalysis
 from reho.model.postprocessing.write_results import get_ampl_parameters
+from reho.plotting.utils import monthly_average
 
 
 class TestAnnualCOP:
@@ -128,6 +129,13 @@ class TestAMPLParameters:
         assert df["Value"].to_dict() == {
             ("a", ""): 3, ("b", "x"): 1.5, ("b", "y"): 2.5, ("c", "x,1"): 4.0, ("c", "y,2"): 5.0, ("d", ""): "hi",
         }
+
+
+class TestMonthlyAverage:
+    def test_constant_profile(self):
+        results = {"df_Index": pd.DataFrame({"PeriodOfYear": 1}, index=pd.Index(range(1, 8761), name="HourOfYear"))}
+        profile = pd.Series(1.0, index=pd.MultiIndex.from_product([[1], range(1, 25)], names=["Period", "Time"]))
+        np.testing.assert_allclose(monthly_average(results, profile), np.ones(12))
 
 
 class TestSaveResults:

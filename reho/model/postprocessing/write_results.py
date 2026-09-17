@@ -214,7 +214,12 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
             df6 = get_ampl_data(ampl, "EV_supply_travel", multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             if len(ampl.getSet('Districts').getValues().toList()) > 0:
-                df7 = get_ampl_data(df, 'EV_demand_ext', multi_index=True)
+                # Indexed by (activity, district, unit, period, time): one column per activity and
+                # district, as in the results of the master problem.
+                df7 = get_ampl_data(ampl, 'EV_demand_ext', multi_index=True)
+                df7 = df7[['EV_demand_ext']].unstack(level=[0, 1])
+                df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j, k in df7.columns]
+                df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
             else:
                 df7 = pd.DataFrame()
             df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)

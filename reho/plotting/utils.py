@@ -206,7 +206,7 @@ def monthly_average(results, df_to_extract):
         data_id = df_to_extract.xs(id_period)
         np_month = np.concatenate((np_month, data_id))
         if ranges[month][1] == hour:
-            np_to_extract = np.append(np_to_extract, np.sum(np_month) / (ranges[month][1] - ranges[month][0]))
+            np_to_extract = np.append(np_to_extract, np.sum(np_month) / (ranges[month][1] - ranges[month][0] + 1))
             np_month = np.array([])
 
     return np_to_extract

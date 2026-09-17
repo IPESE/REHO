@@ -219,8 +219,8 @@ var waste_heat_available{p in Period, t in Time[p]} >= 0;
 #subject to no_H2_import_subproblem:
 #        Network_capacity['Hydrogen'] <= 0;
 
-subject to only_1_long_term_storage:
-    Units_Use['CH4_storage_IP_Building1'] + Units_Use['PTES_storage_IP_Building1'] <= 1;
+subject to only_1_long_term_storage{h in House}:
+    sum{ut in {'CH4storage', 'PTES_storage'} inter UnitTypes, u in UnitsOfType[ut] inter UnitsOfHouse[h]} Units_Use[u] <= 1;
 
 
 

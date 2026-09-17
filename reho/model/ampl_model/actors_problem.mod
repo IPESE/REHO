@@ -41,8 +41,9 @@ var C_op_renters_to_utility{h in House} >= 0;
 var C_op_renters_to_owners{h in House} >= 0;
 var C_op_renters_mobility{h in House} >=0;
 
-subject to Costs_opex_renter0{h in House}:
-C_op_renters_mobility[h] = Cost_travel * sum{d in Distances} DailyDist[d] / EV_eff_travel / EV_eff_ch / ff_EV["EV_district"] * Population * 365 * ERA[h] / sum{i in House}(ERA[i]) * sum{t in Distances} (max_share_modes["cars", t]-max_share_modes["PT", t]-max_share_modes["MD", t]);                                             
+# With electric vehicles in the district, the mobility costs of the renters are defined in actors_mobility.mod
+subject to Costs_opex_renter0_no_mobility{h in House: "EV_district" not in Units}:
+C_op_renters_mobility[h] = 0;
 
 subject to Costs_opex_renter1{h in House}:
 C_op_renters_to_utility[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_supply_district[l,f,h] * Grid_supply[l,f,h,p,t]  * dp[p] * dt[p] )+ C_op_renters_mobility[h];                                             

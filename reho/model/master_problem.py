@@ -737,6 +737,8 @@ class MasterProblem:
         if self.method["actors_problem"]:
             ampl_MP.cd(path_to_ampl_model)
             ampl_MP.read('actors_problem.mod')
+            if "EV_district" in district_units:
+                ampl_MP.read('actors_mobility.mod')  # needs the parameters of the mobility sector
 
         if self.method["interperiod_storage"]:
             read_unit_models(ampl_MP, INTERPERIOD_DISTRICT_UNIT_MODELS, district_units)

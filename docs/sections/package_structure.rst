@@ -100,7 +100,8 @@ containing all AMPL files:
 - ``master_problem.mod`` models the district-scale coordination problem of the
   decomposition approach.
 - ``actors_problem.mod`` models the stakeholders (responsibilities, interactions,
-  limitations).
+  limitations), and ``actors_mobility.mod`` the mobility costs of the renters, read
+  only when the district includes electric vehicles.
 - ``scenario.mod`` holds the objective functions, the epsilon constraints, and the
   optional constraints that can be enabled to model a particular scenario.
 - ``units/`` contains one model file per technology. Two sub-folders group them:

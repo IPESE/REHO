@@ -44,7 +44,7 @@ def test_registered_model_files_exist(name):
 
 def test_core_model_files_exist():
     for file_name in ["sub_problem.mod", "master_problem.mod", "scenario.mod",
-                      "actors_problem.mod", "data_stream.dat"]:
+                      "actors_problem.mod", "actors_mobility.mod", "data_stream.dat"]:
         assert os.path.isfile(os.path.join(path_to_ampl_model, file_name))
 
 

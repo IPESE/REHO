@@ -189,6 +189,9 @@ class SensitivityAnalysis:
         """
         Launches all optimizations of the SA and store their results.
 
+        The main results of each optimization and its objective value are recorded in ``SA_results``
+        and ``objective_values``, see :meth:`extract_results`.
+
         Parameters
         -----------
 
@@ -197,16 +200,9 @@ class SensitivityAnalysis:
         save_inter_nb_iter : int
             Step at which the intermediary save is done
         save_time_opt : boolean
-            Ceates a .txt file and write the time for each optimization
+            Creates a .txt file and write the time for each optimization
         intermediate_start :int
             Starts the SA from a specific sampling point
-
-        Returns
-        ---------
-        SA_results : dict
-            Contains the number of the optimization and a dictionary regrouping all main results of the optimizations
-        objective_values : list
-            Values of the objective function for each optimization
         """
 
         path_to_SA_results = 'results/'
@@ -268,9 +264,11 @@ class SensitivityAnalysis:
 
             try:
                 tic = time.perf_counter()
-                self.reho.single_optimization(Pareto_ID="-".join(pareto_name))  # Optimize the modified model
+                pareto_id = "-".join(pareto_name)
+                self.reho.single_optimization(Pareto_ID=pareto_id)  # Optimize the modified model
                 toc = time.perf_counter()
                 time_spent = toc - tic
+                self.extract_results(self.reho, j, Pareto_ID=pareto_id)
 
                 self.reho.initialize_optimization_tracking_attributes()
 
@@ -334,11 +332,11 @@ class SensitivityAnalysis:
             plt.savefig(path_to_SA_results + 'Morris_' + self.district_name + '.png', format='png', dpi=300)
         plt.show()
 
-    def extract_results(self, reho, j):
+    def extract_results(self, reho, j, Pareto_ID=0):
         """
         Record the main results of one optimization of the analysis.
 
-        The results stored in ``reho.results[SA_type][0]`` are appended to:
+        The results stored in ``reho.results[<scenario name>][Pareto_ID]`` are appended to:
 
         - ``SA_results['num_optimizations']``: the number of the optimization;
         - ``SA_results['dict_df_results']``: the annual and hourly exchanges of electricity and natural
@@ -347,8 +345,7 @@ class SensitivityAnalysis:
         - ``objective_values``: the TOTEX of the district, i.e. its investment, operation and
           replacement costs.
 
-        :meth:`run_SA` does not call it: it is meant to be called after each optimization whose results
-        are stored under the name of the type of analysis.
+        :meth:`run_SA` calls it after each optimization.
 
         Parameters
         ----------
@@ -356,33 +353,39 @@ class SensitivityAnalysis:
             Model holding the results of the optimization.
         j : int
             Number of the optimization.
+        Pareto_ID : int or str, optional
+            Key of the results of the optimization, under the name of the scenario. Default is 0.
         """
         unit_list, KPI_list = self.get_lists()
+        results = reho.results[reho.scenario["name"]][Pareto_ID]
+        df_Annuals = results["df_Annuals"]
+        df_Grid_t = results["df_Grid_t"]
+        df_Performance = results["df_Performance"]
 
+        network_t = df_Grid_t.xs("Network", level="Hub")
+        network_layers = network_t.index.get_level_values("Layer")
+        annual_network = df_Annuals.xs("Network", level="Hub")
         dict_res = {
-            'Annual_Network_Exchange': reho.results[self.SA_type][0].df_Annuals.xs("Network", level=1).loc[["Electricity", "NaturalGas"]][
-                ['Demand_MWh', 'Supply_MWh']],
-            'Elec_Network_t': reho.results[self.SA_type][0].df_Grid_t.xs("Network", level="Hub").xs("Electricity")[['Grid_demand', 'Grid_supply']],
-            'NG_Network_t': reho.results[self.SA_type][0].df_Grid_t.xs("Network", level="Hub").xs("NaturalGas")[['Grid_demand', 'Grid_supply']],
-            'df_Unit': reho.results[self.SA_type][0].df_Unit['Units_Mult'],
-            'Performance_Network': reho.results[self.SA_type][0].df_Performance.xs("Network")
+            'Annual_Network_Exchange': annual_network[annual_network.index.isin(["Electricity", "NaturalGas"])][['Demand_MWh', 'Supply_MWh']],
+            'Elec_Network_t': network_t.xs("Electricity")[['Grid_demand', 'Grid_supply']],
+            'NG_Network_t': network_t.xs("NaturalGas")[['Grid_demand', 'Grid_supply']] if "NaturalGas" in network_layers else None,
+            'df_Unit': results["df_Unit"]['Units_Mult'],
+            'Performance_Network': df_Performance.xs("Network")
         }
 
         self.SA_results['num_optimizations'].append(j)
         self.SA_results['dict_df_results'].append(dict_res)
-        self.objective_values.append(reho.results[self.SA_type][0].df_Performance['Costs_inv']['Network'] + reho.results[self.SA_type][0].df_Performance['Costs_op']['Network'] + reho.results[self.SA_type][0].df_Performance['Costs_rep']['Network'])
+        self.objective_values.append(df_Performance.loc['Network', ['Costs_inv', 'Costs_op', 'Costs_rep']].sum())
 
-        df_Grid_t = reho.results[self.SA_type][0].df_Grid_t[['Grid_demand', 'Grid_supply']].groupby(['Layer', 'Hub', 'Period']).sum()
-        df_Annuals = reho.results[self.SA_type][0].df_Annuals
-        df_Unit_t = reho.results[self.SA_type][0].df_Unit_t.groupby(['Layer', 'Unit', 'Period']).sum()
+        df_Grid_p = df_Grid_t[['Grid_demand', 'Grid_supply']].groupby(level=['Layer', 'Hub', 'Period']).sum()
+        df_Unit_p = results["df_Unit_t"].groupby(level=['Layer', 'Unit', 'Period']).sum()
+        units_electricity = df_Unit_p.xs("Electricity", level="Layer")
+        hubs = df_Annuals.index.get_level_values('Hub')
 
-        dict_res_ES = {'E_sector': df_Annuals.groupby(['Layer']).sum(),
-                       'InAndOutDistrict': df_Grid_t.xs("Network", level="Hub"),
-                       'E_unit': {},
-                       'E_resource': df_Unit_t[['Units_demand', 'Units_supply']].groupby(['Layer', 'Period']).sum(),
-                       'E_unit_PV': df_Unit_t.xs("Electricity", level="Layer").query('Unit.str.startswith("PV")').groupby(['Period']).sum()['Units_supply']}
-
-        for unit in unit_list:
-            dict_res_ES['E_unit'][unit] = df_Annuals.query('Hub.str.startswith("' + str(unit) + '")')['Supply_MWh'].values.sum()
+        dict_res_ES = {'E_sector': df_Annuals.groupby(level='Layer').sum(),
+                       'InAndOutDistrict': df_Grid_p.xs("Network", level="Hub"),
+                       'E_unit': {unit: df_Annuals.loc[hubs.str.startswith(str(unit)), 'Supply_MWh'].sum() for unit in unit_list},
+                       'E_resource': df_Unit_p[['Units_demand', 'Units_supply']].groupby(level=['Layer', 'Period']).sum(),
+                       'E_unit_PV': units_electricity[units_electricity.index.get_level_values('Unit').str.startswith('PV')].groupby(level='Period').sum()['Units_supply']}
 
         self.SA_results['dict_res_ES'].append(dict_res_ES)

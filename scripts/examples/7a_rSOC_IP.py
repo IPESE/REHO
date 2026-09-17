@@ -1,4 +1,6 @@
-from reho.model.reho import *
+import numpy as np
+
+from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 from reho.plotting import plotting
 
 if __name__ == '__main__':
@@ -22,7 +24,7 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
-    grids = infrastructure.initialize_grids({'Electricity': {},
+    grids = initialize_grids({'Electricity': {},
                                              'Hydrogen': {},
                                              'Biomethane': {},
                                              'CO2': {},
@@ -31,7 +33,7 @@ if __name__ == '__main__':
     grids["Electricity"]["ReinforcementOfNetwork"] = np.array([5])  # limit the 2000 kW default value (from layers.csv) for export or import electricity
     grids["Hydrogen"]["ReinforcementOfNetwork"] = np.array([0])  # keep the 0 kW default value (from layers.csv) for export or import hydrogen
 
-    units = infrastructure.initialize_units(scenario, grids, interperiod_data=True)  # enable interperiod storage
+    units = initialize_units(scenario, grids, interperiod_data=True)  # enable interperiod storage
 
     # Set parameters
     parameters = {}

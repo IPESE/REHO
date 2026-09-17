@@ -1,8 +1,5 @@
-import subprocess
-
-from reho.model.reho import *
+from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 from reho.plotting import plotting
-from reho.test.test_examples import test_all_examples
 
 if __name__ == '__main__':
         
@@ -31,8 +28,8 @@ if __name__ == '__main__':
     method = {}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv
-    units = infrastructure.initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
+    grids = initialize_grids()  # grids parameters are based on data/infrastructure/layers.csv
+    units = initialize_units(scenario, grids)  # units are based on data/infrastructure/building_units.csv
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

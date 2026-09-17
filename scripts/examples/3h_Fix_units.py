@@ -1,6 +1,7 @@
-from reho.model.reho import *
-from reho.plotting import plotting
+import pandas as pd
 
+from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.plotting import plotting
 
 if __name__ == '__main__':
 
@@ -23,8 +24,8 @@ if __name__ == '__main__':
     method = {'building-scale': True, 'fix_units': True}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    grids = initialize_grids()
+    units = initialize_units(scenario, grids)
 
     # Scenario 1: min TOTEX
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

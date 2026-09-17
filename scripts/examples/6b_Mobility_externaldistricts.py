@@ -1,5 +1,8 @@
-from reho.model.reho import *
-from reho.model.preprocessing.mobility_generator import *
+import numpy as np
+import pandas as pd
+
+from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.model.preprocessing.mobility_generator import rho_param
 from reho.plotting import plotting
 
 if __name__ == '__main__':
@@ -20,12 +23,12 @@ if __name__ == '__main__':
     scenario['enforce_units'] = ['EV_district']
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {},
+    grids = initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
                                              'Gasoline': {},
                                              'Mobility': {},
                                              })
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
+    units = initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     method = {'building-scale': True, 'external_district': True}

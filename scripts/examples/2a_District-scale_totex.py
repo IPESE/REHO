@@ -1,5 +1,4 @@
-from reho.model.reho import *
-
+from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 
 if __name__ == '__main__':
 
@@ -23,8 +22,8 @@ if __name__ == '__main__':
     DW_params = {'max_iter': 2}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids()
-    units = infrastructure.initialize_units(scenario, grids)
+    grids = initialize_grids()
+    units = initialize_units(scenario, grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, DW_params=DW_params, solver="gurobi")

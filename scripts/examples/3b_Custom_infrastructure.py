@@ -1,5 +1,6 @@
-from reho.model.reho import *
+from pathlib import Path
 
+from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 
 if __name__ == '__main__':
 
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     # You can add more resources layers besides electricity and natural gas, and adapt their prices
     # - directly within the script
     # - or through a custom csv file based on the default values from data/infrastructure/layers.csv
-    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
+    grids = initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              'Wood': {},
                                              'Oil': {},
@@ -34,7 +35,7 @@ if __name__ == '__main__':
     # Units specifications can also be adapted through a custom csv file based on the default values from data/infrastructure/building_units.csv
     # You can simply create a new file and specify the path to it in the initialize_units function
     path_to_custom_units = str(Path(__file__).parent / 'data' / 'custom_building_units.csv')
-    units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
+    units = initialize_units(scenario, grids, building_data=path_to_custom_units)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

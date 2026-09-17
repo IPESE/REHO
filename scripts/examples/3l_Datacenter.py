@@ -1,6 +1,7 @@
-from reho.model.reho import *
-from reho.plotting import plotting
+import numpy as np
 
+from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.plotting import plotting
 
 if __name__ == '__main__':
 
@@ -23,11 +24,11 @@ if __name__ == '__main__':
     method = {'district-scale': True}
 
     # Initialize available units and grids
-    grids = infrastructure.initialize_grids({'Electricity': {},
+    grids = initialize_grids({'Electricity': {},
                                              'Data': {},
                                              'Heat': {}
                                              })
-    units = infrastructure.initialize_units(scenario, grids, district_data=True)
+    units = initialize_units(scenario, grids, district_data=True)
 
     # Set parameters
     parameters = {'Network_ext': np.array([500, 500, 0]), 'data_EUD_avg': 50}  # existing capacities of networks in alphabetical order

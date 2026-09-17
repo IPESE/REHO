@@ -105,8 +105,8 @@ param HP_COP{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in 
 	else
 		max{Th in HP_Tsink,Tc in HP_Tsource}(HP_Eta_nominal[u,Th,Tc]*(T+273.15)/(T-Tc));
 
-# Declaring heating power variable
-var HP_Power{h in House, u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h], p in Period, t in Time[p], T in HP_Tsupply} >= 0, <= Units_Fmax[u]*HP_COP[h,u,p,t,T];
+# Declaring electric power variable
+var HP_Power{h in House, u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h], p in Period, t in Time[p], T in HP_Tsupply} >= 0, <= Units_Fmax[u]/HP_COP[h,u,p,t,T];
 
 # Heating output
 subject to HP_heating_output{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p],T in HP_Tsupply: T = Streams_Tin[st,p,t]}:
@@ -120,7 +120,7 @@ subject to HP_power_input{h in House, u in UnitsOfType['HeatPump'] inter UnitsOf
 subject to HP_sizing{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 	sum{T in HP_Tsupply} HP_COP[h,u,p,t,T]*(HP_Power[h,u,p,t,T]/HP_Pmax[h,u,p,t,T]) <= Units_Mult[u];
 
-# DWH production
+# DHW production
 subject to HP_EB_c2{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 sum{st in StreamsOfUnit[u]: Streams_Tin[st,p,t] < 55} Streams_Q['DHW',st,p,t] = 0;
 

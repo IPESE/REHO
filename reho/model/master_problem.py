@@ -1124,8 +1124,10 @@ class MasterProblem:
         and GWP. The objective of the scenario gets a weight of 1 (OPEX and CAPEX both, for TOTEX), the
         others a negligible weight of 1e-6. A number ``beta`` is the weight of a secondary objective,
         which diversifies the configurations proposed during the initiation: the objective constrained
-        by the epsilon constraint of the scenario if there is one, OPEX otherwise. Finally, the epsilon
-        constraints on the objectives are removed from the scenario (see :meth:`remove_emoo_constraints`).
+        by the epsilon constraint of the scenario if there is one; otherwise CAPEX when minimizing OPEX,
+        and OPEX for the other objectives. Finally, the epsilon constraints on the objectives are removed
+        from the scenario returned (see :meth:`remove_emoo_constraints`); the scenario given is left
+        unchanged.
 
         Parameters
         ----------
@@ -1150,6 +1152,10 @@ class MasterProblem:
             If the scenario has epsilon constraints on more than one objective.
         """
         scenario = scenario.copy()
+        # The epsilon constraints are removed below: without a copy of their dictionary, the next
+        # buildings solved in the same process would no longer see them.
+        scenario['EMOO'] = dict(scenario.get('EMOO', {}))
+        objective = scenario['Objective']
         if isinstance(beta, (float, int, type(None))):
             index = list(self.flags.keys())  # list of objective function
             beta_list = pd.Series(np.zeros(len(index)), index=index) + 1e-6  # default penalty on other objectives
@@ -1160,10 +1166,10 @@ class MasterProblem:
             raise TypeError(f"beta must be a float, an int, a pandas Series or None, got {type(beta).__name__}.")
 
         # select objective using beta values
-        if scenario['Objective'] in ['TOTEX', 'TOTEX_actor']:
+        if objective in ['TOTEX', 'TOTEX_actor']:
             beta_list[['CAPEX', 'OPEX']] = 1
         else:
-            beta_list[scenario['Objective']] = 1
+            beta_list[objective] = 1
         scenario['Objective'] = 'SP_obj_fct'
 
         # add beta values on emoo constraint
@@ -1175,7 +1181,7 @@ class MasterProblem:
                 key = list(emoo.keys())[0].replace("EMOO_", "")
                 beta_list[key] = beta
             elif len(emoo) == 0:
-                if scenario["Objective"] == "OPEX":
+                if objective == "OPEX":
                     beta_list["CAPEX"] = beta
                 else:
                     beta_list["OPEX"] = beta

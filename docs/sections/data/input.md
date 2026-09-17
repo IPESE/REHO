@@ -100,20 +100,27 @@ Default values: {ref}`tbl-building-units-csv` and {ref}`tbl-district-units-csv`.
 
 Same schema. These technologies are only loaded when `method['interperiod_storage']`
 is enabled: their state of charge is chained across typical periods, which makes
-seasonal storage representable.
+seasonal storage representable. Which of the two files are read, and whether custom
+files replace them, is set by `interperiod_data` in
+{func}`~reho.model.infrastructure.initialize_units`.
+
+The pumped thermal energy storage is made of two units, a conversion unit
+(`PTES_conversion`) and a reservoir (`PTES_storage`): its model is read only when both
+are available.
 
 ### `development.csv` — technologies under development
 
 Same schema, not loaded by default. Holds formulations that are being validated
-(pit thermal energy storage, latent heat storage) and whose `.mod` files live in
-`ampl_model/units/development/`. Not part of the supported model.
+(latent heat storage, inter-period water tank, heat curtailment) and whose `.mod` files
+live in `ampl_model/units/development/`. Not part of the supported model.
 
 ### `HP_parameters.csv`, `AC_parameters.csv` — part-load performance
 
 Performance maps of heat pumps and air conditioners, read by
 {func}`~reho.model.infrastructure.read_performance_map`. Semicolon-separated, indexed by
 sink and source temperature: the two index columns are named after the AMPL sets they
-fill.
+fill. The heat pumps on waste heat (`HeatPump_WH`) use the map of the heat pumps, under
+names suffixed with `_WH` (`HP_Tsink_WH`, `HP_Eta_nominal_WH`, ...).
 
 | Column | Unit | Meaning |
 |---|---|---|

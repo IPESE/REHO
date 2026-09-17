@@ -4,9 +4,10 @@ Method name;Description;Default value
 *building-scale*;Optimize each building as an independent system (one master-problem iteration).;``False``
 *district-scale*;Allow energy exchanges between buildings and the use of district units (Dantzig-Wolfe decomposition).;``False``
 *parallel_computation*;Solve the sub-problems in parallel processes.;``True``
+*solver_threads_SP*;Maximum number of solver threads per sub-problem (Gurobi only). With ``parallel_computation``, a few threads avoid oversubscribing the CPU, but change the search path of the solver: the objective may move within its tolerances.;``None``
 *switch_off_second_objective*;Build the Pareto curve by minimizing only the first objective and constraining the second.;``False``
 *skip_initiation*;Skip the sub-problem initiation round of the decomposition.;``False``
-*fix_units*;Fix unit sizes to the values of ``REHO.df_fix_Units`` instead of optimizing them.;``False``
+*fix_units*;Fix unit sizes to the values of ``REHO.df_fix_Units`` instead of optimizing them. ``REHO.fix_units_list`` restricts it to the listed technologies, whose units absent from ``df_fix_Units`` are then not installed.;``False``
 *include_all_solutions*;Let the master problem reuse the sub-problem solutions found for other Pareto points.;``False``
 *include_stochasticity*;Add variability to the SIA typical consumption profiles.;``False``
 *sd_stochasticity*;``[sd_consumption, sd_timeshift]`` used when ``include_stochasticity`` is enabled.;``[0.1, 1]``

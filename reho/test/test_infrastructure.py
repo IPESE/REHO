@@ -1,6 +1,16 @@
+import os
+import re
+
 import numpy as np
 import pytest
-from reho.model.infrastructure import Infrastructure, initialize_grids, initialize_units
+from reho.model.infrastructure import (
+    PERFORMANCE_MAP_FILES,
+    Infrastructure,
+    initialize_grids,
+    initialize_units,
+    read_performance_map,
+)
+from reho.paths import path_to_units
 
 
 @pytest.fixture(scope="module")
@@ -83,3 +93,24 @@ def test_excluding_a_heating_unit_removes_it(grids):
     from reho.model.infrastructure import initialize_units
     units = initialize_units({"exclude_units": ["NG_Boiler"]}, grids)
     assert "NG_Boiler" not in {unit["Unit"] for unit in units["building_units"]}
+
+
+@pytest.mark.parametrize("unit_type, model_file", [("HeatPump", "heatpump.mod"), ("AirConditioner", "air_conditioner.mod")])
+def test_performance_maps_fill_sets_of_the_model(unit_type, model_file):
+    """The index columns of a performance map are named after sets of the model of the unit."""
+    with open(os.path.join(path_to_units, model_file)) as model:
+        declarations = model.read()
+    performance = read_performance_map(unit_type)
+    assert len(performance.index.names) == 2
+    for temperatures in performance.index.names:
+        assert re.search(rf"\bset {temperatures}\b", declarations), f"{temperatures} is not a set of {model_file}"
+
+
+def test_performance_maps_cover_the_unit_types():
+    assert set(PERFORMANCE_MAP_FILES) == {"HeatPump", "AirConditioner"}
+
+
+def test_temperature_sets_come_from_the_performance_maps(infrastructure):
+    heat_pumps = read_performance_map("HeatPump")
+    assert list(infrastructure.Set["HP_Tsink"]) == list(heat_pumps.index.get_level_values("HP_Tsink").unique())
+    assert list(infrastructure.Set["HP_Tsource"]) == list(heat_pumps.index.get_level_values("HP_Tsource").unique())

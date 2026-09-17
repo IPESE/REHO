@@ -1,4 +1,4 @@
-;;HP_Eta_nominal;HP_Pmax_nominal
+HP_Tsink;HP_Tsource;HP_Eta_nominal;HP_Pmax_nominal
 35;-20;0.464;0.60
 35;-15;0.464;0.62
 35;-10;0.458;0.65

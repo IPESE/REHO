@@ -144,8 +144,8 @@ class TestOtherDataFiles:
         [
             os.path.join(path_to_infrastructure, "U_values.csv"),
             os.path.join(path_to_infrastructure, "renovation.csv"),
-            os.path.join(path_to_infrastructure, "HP_parameters.txt"),
-            os.path.join(path_to_infrastructure, "AC_parameters.txt"),
+            os.path.join(path_to_infrastructure, "HP_parameters.csv"),
+            os.path.join(path_to_infrastructure, "AC_parameters.csv"),
             os.path.join(path_to_mobility, "dailyprofiles.csv"),
             os.path.join(path_to_mobility, "dailyprofiles_metadata.csv"),
             os.path.join(path_to_sia, "sia2024_rooms_sia380_1.csv"),

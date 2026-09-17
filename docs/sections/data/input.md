@@ -108,16 +108,17 @@ Same schema, not loaded by default. Holds formulations that are being validated
 (pit thermal energy storage, latent heat storage) and whose `.mod` files live in
 `ampl_model/units/development/`. Not part of the supported model.
 
-### `HP_parameters.txt`, `AC_parameters.txt` — part-load performance
+### `HP_parameters.csv`, `AC_parameters.csv` — part-load performance
 
 Performance maps of heat pumps and air conditioners, read by
-{class}`~reho.model.infrastructure.Infrastructure`. Semicolon-separated, indexed by
-sink and source temperature.
+{func}`~reho.model.infrastructure.read_performance_map`. Semicolon-separated, indexed by
+sink and source temperature: the two index columns are named after the AMPL sets they
+fill.
 
 | Column | Unit | Meaning |
 |---|---|---|
-| (index 1) | °C | Sink temperature — what the unit delivers |
-| (index 2) | °C | Source temperature — what the unit draws from |
+| `HP_Tsink` / `AC_Tsink` | °C | Sink temperature — what the unit delivers |
+| `HP_Tsource` / `AC_Tsource` | °C | Source temperature — what the unit draws from |
 | `HP_Eta_nominal` / `AC_Eta_nominal` | – | Second-law efficiency, i.e. the fraction of the Carnot COP achieved |
 | `HP_Pmax_nominal` / `AC_Pmax_nominal` | – | Maximum power as a fraction of the nominal size |
 

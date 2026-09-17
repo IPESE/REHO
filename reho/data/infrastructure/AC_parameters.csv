@@ -1,4 +1,4 @@
-;;AC_Eta_nominal;AC_Pmax_nominal
+AC_Tsink;AC_Tsource;AC_Eta_nominal;AC_Pmax_nominal
 13;20;0.103;0.709
 13;25;0.159;0.782
 13;30;0.198;0.855

@@ -36,7 +36,7 @@ param HP_Tsource_low{u in UnitsOfType['HeatPump'], p in Period, t in Time[p]} :=
     if min{Tc in HP_Tsource} Tc >= T_source[u,p,t] then min{Tc in HP_Tsource} Tc
     else max{Tc in HP_Tsource: Tc < T_source[u,p,t]} Tc;
 
-# Default nominal efficiency for heat pumps (values get updated from HP_parameters.txt file)
+# Default nominal efficiency for heat pumps (values get updated from HP_parameters.csv file)
 param HP_Eta_nominal{u in UnitsOfType['HeatPump'], Th in HP_Tsink, Tc in HP_Tsource} default 0.3;
 
 param HP_Eta_low{u in UnitsOfType['HeatPump'],p in Period,t in Time[p],T in HP_Tsupply} :=
@@ -62,7 +62,7 @@ param HP_Eta{u in UnitsOfType['HeatPump'],p in Period,t in Time[p],T in HP_Tsupp
       HP_Eta_low[u,p,t,T] +
       (T - HP_Tsink_low[p,t,T]) * (HP_Eta_high[u,p,t,T] - HP_Eta_low[u,p,t,T]) / (HP_Tsink_high[p,t,T] - HP_Tsink_low[p,t,T]);
 
- # Power consumption ratio (values get updated from HP_parameters.txt file)
+ # Power consumption ratio (values get updated from HP_parameters.csv file)
 param HP_Pmax_nominal{u in UnitsOfType['HeatPump'],Th in HP_Tsink,Tc in HP_Tsource} default 1.00;
 
 param HP_Pmax_low{u in UnitsOfType['HeatPump'],p in Period,t in Time[p],T in HP_Tsupply} :=

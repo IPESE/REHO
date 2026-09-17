@@ -81,6 +81,15 @@ everything else is `snake_case`.
 A suffix `_t` marks a time-resolved quantity, `_SP` a sub-problem one, `_MP` a
 master-problem one.
 
+### File formats
+
+AMPL code lives in `.mod` files only, and the data REHO ships are `.csv` files,
+semicolon-separated, read by the Python layer and sent to AMPL as parameters — the
+SIA 2024 norms, `sia2024_data.xlsx`, are the one exception. There are no AMPL `.dat`
+or `.run` files: a value that the model derives from the data, such as the
+temperature of a stream following the heating load, is a parameter defined in a
+`.mod` file (see {data}`~reho.model.sub_problem.MODEL_STREAMS_TEMPERATURE`).
+
 ### Configuration is data
 
 The three option dictionaries (`method`, `scenario`, `DW_params`) have their

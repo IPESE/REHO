@@ -94,7 +94,7 @@ namespaces = false
 # Non-Python files (AMPL model, reference data) shipped inside the package.
 # The key is the package name, which is `reho` in lower case - `REHO` matches nothing.
 [tool.setuptools.package-data]
-"reho" = ["*.csv", "*.xlsx", "*.dat", "*.txt", "*.mod", "*.ini", "*.run"]
+"reho" = ["*.csv", "*.xlsx", "*.mod", "*.ini"]
 
 [tool.setuptools_scm]
 version_scheme = "post-release"

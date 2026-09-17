@@ -18,16 +18,36 @@ ALWAYS_AVAILABLE_UNIT_TYPES = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "
 
 #: Units removed from every scenario by default (not yet validated, or superseded).
 DEFAULT_UNITS_TO_EXCLUDE = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district']
-_unit_parameter_file_cache = {}
+
+#: Part-load performance of the heat pumps and air conditioners, per ``UnitOfType``: file of
+#: ``reho/data/infrastructure/``, indexed by the sink and source temperatures.
+PERFORMANCE_MAP_FILES = {'HeatPump': 'HP_parameters.csv', 'AirConditioner': 'AC_parameters.csv'}
+
+#: Performance maps already read, per file, see :func:`read_performance_map`.
+_performance_maps = {}
 
 
-def _read_unit_parameter_file(file):
-    """HP/AC parameter tables are static package data — read each file once per process."""
-    df = _unit_parameter_file_cache.get(file)
-    if df is None:
-        df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
-        _unit_parameter_file_cache[file] = df
-    return df
+def read_performance_map(unit_type):
+    """Read the part-load performance of a type of heat pump or air conditioner.
+
+    The files are static package data: each of them is read once per process.
+
+    Parameters
+    ----------
+    unit_type : str
+        ``UnitOfType`` of the unit, a key of :data:`PERFORMANCE_MAP_FILES`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Nominal efficiency and maximum power, e.g. ``HP_Eta_nominal`` and ``HP_Pmax_nominal``, indexed by
+        the sink and source temperatures, whose levels are named after the AMPL sets they fill, e.g.
+        ``HP_Tsink`` and ``HP_Tsource``. The DataFrame is shared by every caller: do not modify it in place.
+    """
+    file = os.path.join(path_to_infrastructure, PERFORMANCE_MAP_FILES[unit_type])
+    if file not in _performance_maps:
+        _performance_maps[file] = pd.read_csv(file, sep=';', index_col=[0, 1])
+    return _performance_maps[file]
 
 
 class Infrastructure:
@@ -224,8 +244,8 @@ class Infrastructure:
           unit, see :meth:`add_unit_parameters`.
         - ``Grids_Parameters``: tariffs, emission factors and connection parameters of each layer.
         - ``HP_parameters``: nominal efficiency and maximum power of the heat pumps and air conditioners
-          for each pair of sink and source temperatures, read from ``HP_parameters.txt`` and
-          ``AC_parameters.txt``. The temperature sets are added to ``Set``.
+          for each pair of sink and source temperatures, read from ``HP_parameters.csv`` and
+          ``AC_parameters.csv``, see :func:`read_performance_map`. The temperature sets are added to ``Set``.
         - ``Streams_H``: whether each stream is hot (``Streams_Hin`` = 1) or cold (``Streams_Hout`` = 1).
         - ``Streams``: all the streams of the district.
 
@@ -307,19 +327,12 @@ class Infrastructure:
         for h in self.House:
 
             for u in self.houses[h]['units']:
-                if u['UnitOfType'] == 'AirConditioner' or u['UnitOfType'] == 'HeatPump':
+                if u['UnitOfType'] in PERFORMANCE_MAP_FILES:
                     complete_name = u['Unit'] + '_' + h
-                    if u['UnitOfType'] == 'AirConditioner':
-                        file = os.path.join(path_to_infrastructure, 'AC_parameters.txt')
-                    elif u['UnitOfType'] == 'HeatPump':
-                        file = os.path.join(path_to_infrastructure, 'HP_parameters.txt')
-
-                    df = _read_unit_parameter_file(file)
-                    df = pd.concat([df], keys=[complete_name])
-                    # get index sets of source and sink of HP
-                    name, rest = df.columns[0].split('_', 1)
-                    self.TemperatureSets[name + '_Tsink'] = np.array(df.index.get_level_values(1).unique())
-                    self.TemperatureSets[name + '_Tsource'] = np.array(df.index.get_level_values(2).unique())
+                    df = pd.concat([read_performance_map(u['UnitOfType'])], keys=[complete_name])
+                    # the sink and source temperatures fill the sets named after the index, e.g. HP_Tsink and HP_Tsource
+                    for temperatures in df.index.names[1:]:
+                        self.TemperatureSets[temperatures] = np.array(df.index.get_level_values(temperatures).unique())
 
                     if u['UnitOfType'] in self.HP_parameters:
                         self.HP_parameters[u['UnitOfType']] = pd.concat([self.HP_parameters[u['UnitOfType']], df])

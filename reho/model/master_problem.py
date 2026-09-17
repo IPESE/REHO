@@ -11,6 +11,7 @@ reho.model.sub_problem.SubProblem : building-scale problem, generates the column
 reho.model.reho.REHO : user-facing entry point.
 """
 
+import contextlib
 import copy
 import multiprocessing as mp
 import os
@@ -269,6 +270,7 @@ class MasterProblem:
         self.DW_params = initialise_DW_params(self.DW_params, self.cluster, self.buildings_data,
                                               building_scale=self.method['building-scale'])
         self.cpu_use = mp.cpu_count()
+        self.pool = None  # open only while sub-problems are being solved, see worker_pool
 
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
         self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound',
@@ -306,10 +308,11 @@ class MasterProblem:
         - ``number_SP_solutions`` and ``number_MP_solutions``: records of the solutions of each round.
         - ``solver_attributes_SP`` and ``solver_attributes_MP``: solver statistics of each solve.
         - ``stopping_criteria`` and ``reduced_costs``: convergence indicators of each iteration.
-        - ``pool``: pool of processes, when the sub-problems are solved in parallel.
+
+        The pool of worker processes is left untouched: it belongs to the ``with`` block that opened it,
+        see :meth:`worker_pool`.
         """
         # internal IT parameter
-        self.pool = None
         self.iter = 0  # keeps track of iterations, takes value of last iteration circle
         self.feasible_solutions = 0  # keeps track how many sets of SP solutions are proposed to the MP eg '2' means two per building
         list_obj = ["TOTEX", "CAPEX", "OPEX", "GWP"]
@@ -337,6 +340,7 @@ class MasterProblem:
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+        self.pool = None  # a pool of processes is not pickled
 
     def select_SP_obj_decomposition(self, scenario):
         """
@@ -440,24 +444,62 @@ class MasterProblem:
 
         return
 
-    def ensure_pool(self):
+    @contextlib.contextmanager
+    def worker_pool(self):
         """
-        Returns the shared worker pool, creating it on first use.
+        Keep a pool of worker processes open, for the sub-problems solved within a ``with`` block.
 
-        The pool is kept alive across successive optimizations (workers are daemonic and
-        die with the main process), so repeated ``single_optimization`` calls do not pay
-        the process-spawn and package-import cost again.
+        The block that opens the pool closes it, and waits for its workers to exit; the blocks nested
+        in it reuse the same pool. Each decomposition runs in such a block, and so do the successive
+        decompositions of a Pareto curve, of the actors samples and of a sensitivity analysis: their
+        sub-problems share one pool. On an exception, the workers are terminated rather than awaited.
+
+        No pool is opened with the compact formulation, or when ``method['parallel_computation']``
+        is disabled: the sub-problems are then solved in the main process.
+
+        Starting the workers takes a few seconds, as each of them imports REHO. A script that runs
+        several decompositions in a row can share one pool between them, by wrapping them in a block:
+
+        >>> with reho.worker_pool():
+        ...     for objective in ["TOTEX", "OPEX"]:
+        ...         reho.scenario["Objective"] = objective
+        ...         reho.single_optimization()
+
+        Yields
+        ------
+        multiprocessing.pool.Pool or None
+            The pool of ``cpu_use`` worker processes, or None when the sub-problems are solved in the
+            main process.
+
+        Notes
+        -----
+        A pool left open until the interpreter exits is destroyed after the modules it relies on, which
+        prints an ``Exception ignored in: <function Pool.__del__>`` traceback: the pool is therefore
+        never kept beyond the block.
         """
-        if getattr(self, 'pool', None) is None:
-            self.pool = mp.Pool(self.cpu_use)
-        return self.pool
+        decomposition = self.method['district-scale'] or self.method['building-scale']
+        if self.pool is not None or not (decomposition and self.method['parallel_computation']):
+            yield self.pool
+            return
+
+        pool = self.pool = mp.Pool(self.cpu_use)
+        try:
+            yield pool
+        except BaseException:
+            pool.terminate()
+            raise
+        else:
+            pool.close()
+        finally:
+            pool.join()
+            self.pool = None
 
     def launch_SP_multiprocessing(self, scenario, Scn_ID, Pareto_ID, epsilon_init, beta, initiation=True, renovation_options=None):
         """
         Solve the sub-problem of every building once, and store the configurations they propose.
 
         The sub-problems are prepared in the main process by :meth:`prepare_SP_task`, then solved by
-        :func:`_solve_SP_task`: in parallel in the pool of :meth:`ensure_pool` with
+        :func:`_solve_SP_task`: in parallel in the pool of :meth:`worker_pool` with
         ``method['parallel_computation']``, otherwise one after the other. The results are stored by
         :meth:`add_df_Results_SP`, and ``feasible_solutions`` is incremented.
 
@@ -484,12 +526,13 @@ class MasterProblem:
                                          initiation=initiation, renovation_options=renovation_options)
                  for h in self.infrastructure.houses}
 
-        if self.method['parallel_computation']:
-            pending = {h: self.pool.apply_async(_solve_SP_task, args=(task,)) for h, task in tasks.items()}
-            # the results are stored in the main process, once every sub-problem is solved
-            collected = {h: result.get() for h, result in pending.items()}
-        else:
-            collected = {h: _solve_SP_task(task) for h, task in tasks.items()}
+        with self.worker_pool() as pool:
+            if pool is None:
+                collected = {h: _solve_SP_task(task) for h, task in tasks.items()}
+            else:
+                pending = {h: pool.apply_async(_solve_SP_task, args=(task,)) for h, task in tasks.items()}
+                # the results are stored in the main process, once every sub-problem is solved
+                collected = {h: result.get() for h, result in pending.items()}
 
         for h, (df_Results, attr) in collected.items():
             self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)

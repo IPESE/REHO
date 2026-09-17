@@ -47,3 +47,39 @@ class TestObjectiveWeights:
     def test_several_constrained_objectives_raise(self, master):
         with pytest.raises(ValueError):
             master.get_beta_values({"Objective": "TOTEX", "EMOO": {"EMOO_GWP": 5.0, "EMOO_CAPEX": 1.0}}, beta=1.0)
+
+
+class TestWorkerPool:
+    @staticmethod
+    def _master(**method):
+        mp = MasterProblem.__new__(MasterProblem)
+        mp.method = {"district-scale": True, "building-scale": False, "parallel_computation": True, **method}
+        mp.pool = None
+        mp.cpu_use = 1
+        return mp
+
+    def test_no_pool_without_parallel_computation(self):
+        with self._master(parallel_computation=False).worker_pool() as pool:
+            assert pool is None
+
+    def test_no_pool_for_the_compact_formulation(self):
+        with self._master(**{"district-scale": False}).worker_pool() as pool:
+            assert pool is None
+
+    def test_the_block_that_opens_the_pool_closes_it(self):
+        master = self._master()
+        with master.worker_pool() as pool:
+            with master.worker_pool() as nested:
+                assert nested is pool
+            assert master.pool is pool  # the nested block left it open
+            assert pool.apply_async(abs, (-3,)).get(timeout=120) == 3
+        assert master.pool is None
+        with pytest.raises(ValueError):  # "Pool not running"
+            pool.apply_async(abs, (-3,))
+
+    def test_an_exception_terminates_the_pool(self):
+        master = self._master()
+        with pytest.raises(KeyError):
+            with master.worker_pool():
+                raise KeyError("stop")
+        assert master.pool is None

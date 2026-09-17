@@ -234,7 +234,9 @@ MP objectives is below 0.01% within a few dozen iterations.
 :::
 
 The SP solves are **independent across buildings** and can be parallelized across CPU cores,
-significantly reducing wall-clock time for large districts.
+significantly reducing wall-clock time for large districts. With
+`method['parallel_computation']`, REHO solves them in a pool of worker processes, kept open
+for the whole run, see {meth}`~reho.model.master_problem.MasterProblem.worker_pool`.
 
 ---
 

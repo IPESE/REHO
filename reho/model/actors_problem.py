@@ -117,16 +117,20 @@ class ActorsModel(REHO):
     def actor_decomposition_optimization(self):
         """
         Run the single_optimization with DWD for each sampled actor epsilon.
+
+        The optimizations share one pool of worker processes, see
+        :meth:`~reho.model.master_problem.MasterProblem.worker_pool`.
         """
-        for ids in self.samples.index:
-            self.iter = 0
-            sample_param = self.samples.iloc[ids]
-            for param in sample_param.index:
-                self.parameters[param] = sample_param[param]
-            self.single_optimization(Pareto_ID=ids)
-            for param, value in sample_param.items():
-                self.results[self.scenario['name']][ids]['Samples'][param] = value
-            self.add_dual_Results(Scn_ID=self.scenario['name'], Pareto_ID=ids)
+        with self.worker_pool():
+            for ids in self.samples.index:
+                self.iter = 0
+                sample_param = self.samples.iloc[ids]
+                for param in sample_param.index:
+                    self.parameters[param] = sample_param[param]
+                self.single_optimization(Pareto_ID=ids)
+                for param, value in sample_param.items():
+                    self.results[self.scenario['name']][ids]['Samples'][param] = value
+                self.add_dual_Results(Scn_ID=self.scenario['name'], Pareto_ID=ids)
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
         """

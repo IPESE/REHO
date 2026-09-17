@@ -232,8 +232,8 @@ class REHO(MasterProblem):
         3. Finalization: a last master problem, with binary variables, selects exactly one
            configuration per building.
 
-        The sub-problems are solved in a pool of ``cpu_use`` processes, kept open across optimizations,
-        see :meth:`~reho.model.master_problem.MasterProblem.ensure_pool`.
+        The sub-problems are solved in parallel in a pool of ``cpu_use`` worker processes, open for
+        the whole decomposition, see :meth:`~reho.model.master_problem.MasterProblem.worker_pool`.
 
         Parameters
         ----------
@@ -255,32 +255,33 @@ class REHO(MasterProblem):
             the results are stored in ``results_SP`` and ``results_MP``.
         """
 
-        # Initiation
-        self.ensure_pool()
-        self.iter = 0  # new scenario has to start at iter = 0
-        scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
+        # Every round of sub-problems uses the same pool of worker processes
+        with self.worker_pool():
+            # Initiation
+            self.iter = 0  # new scenario has to start at iter = 0
+            scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
-        self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
-        self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
-
-        # Iteration
-        while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
-            self.iter += 1
-            self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-            self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
-            self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+            self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+            self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
+            self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
             self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
-            if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
-                break
+            # Iteration
+            while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
+                self.iter += 1
+                self.logger.info('SUB PROBLEM ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+                self.SP_iteration(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID)
+                self.logger.info('MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+                self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
-        # Finalization
-        self.logger.info(self.stopping_criteria)
-        self.iter += 1
-        self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
-        self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
+                if self.check_Termination_criteria(SP_scenario, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID) and (self.iter > 3):
+                    break
+
+            # Finalization
+            self.logger.info(self.stopping_criteria)
+            self.iter += 1
+            self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
+            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
         return None, None
 
@@ -300,9 +301,14 @@ class REHO(MasterProblem):
         Every point keeps the constraint ``EMOO_grid``, the specific constraints and the units enforced
         or excluded by the scenario. The results and their KPIs are stored in
         ``results[scenario['name']]``, and the values of the epsilon constraints in
-        ``epsilon_constraints``.
+        ``epsilon_constraints``. With the decomposition, the points share one pool of worker processes,
+        see :meth:`~reho.model.master_problem.MasterProblem.worker_pool`.
         """
+        with self.worker_pool():
+            self._compute_pareto_points()
 
+    def _compute_pareto_points(self):
+        """Compute and sort the points of the Pareto front, see :meth:`generate_pareto_curve`."""
         Scn_ID = self.scenario['name']
 
         def get_objectives_values(ampl, objectives, Pareto_ID):
@@ -533,16 +539,17 @@ class REHO(MasterProblem):
         charges each building for its own connection. ``DHN_pipes`` is removed
         from the district units, since it is now accounted for building by building.
         """
-        self.ensure_pool()
         self.iter = 0  # new scenario has to start at iter = 0
         method = self.method['building-scale']
         self.method['building-scale'] = True
         scenario = self.scenario.copy()
         scenario["specific"] = scenario["specific"] + ["enforce_DHN"]
-        scenario_MP, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
-        self.initiate_decomposition(SP_scenario_init, Scn_ID=0, Pareto_ID=0)
-        self.MP_iteration(scenario_MP, Scn_ID=0, binary=False, Pareto_ID=0, read_DHN=True)
+        with self.worker_pool():
+            scenario_MP, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
+
+            self.initiate_decomposition(SP_scenario_init, Scn_ID=0, Pareto_ID=0)
+            self.MP_iteration(scenario_MP, Scn_ID=0, binary=False, Pareto_ID=0, read_DHN=True)
 
         if self.method["DHN_CO2"]:
             delta_enthalpy = DELTA_H_CO2  # latent heat of the CO2 carrier

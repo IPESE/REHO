@@ -203,6 +203,11 @@ class SensitivityAnalysis:
             Creates a .txt file and write the time for each optimization
         intermediate_start :int
             Starts the SA from a specific sampling point
+
+        Notes
+        -----
+        The optimizations share one pool of worker processes, see
+        :meth:`~reho.model.master_problem.MasterProblem.worker_pool`.
         """
 
         path_to_SA_results = 'results/'
@@ -220,72 +225,73 @@ class SensitivityAnalysis:
         qbuildings_data = {'buildings_data': self.reho.buildings_data}
         n_houses = len(self.reho.buildings_data)
 
-        # Modify the attributes of the model and run SA
-        for j in range(intermediate_start, len(self.sampling)):
-            logger.info('Optimization number %s/%s', j + 1, len(self.sampling))
+        # Modify the attributes of the model and run SA; the optimizations share one pool of worker processes
+        with self.reho.worker_pool():
+            for j in range(intermediate_start, len(self.sampling)):
+                logger.info('Optimization number %s/%s', j + 1, len(self.sampling))
 
-            sample = self.sampling[j]
-            pareto_name = []
-            for s, value in enumerate(sample):
-                param_type, parameter = list(self.parameter.keys())[s].split("+-+")
-                pareto_name += [f"{parameter}_{value:.2g}"]
-                if param_type == "grids":
-                    if parameter == 'Elec_retail':
-                        grids["Electricity"]["Cost_supply_cst"] = value
-                    elif parameter == 'Elec_feedin':
-                        grids["Electricity"]["Cost_demand_cst"] = value
-                    elif parameter == 'NG_retail':
-                        grids["NaturalGas"]["Cost_supply_cst"] = value
-                    elif parameter == 'Wood_retail':
-                        grids["Wood"]["Cost_supply_cst"] = value
-                    elif parameter == 'Oil_retail':
-                        grids["Oil"]["Cost_supply_cst"] = value
+                sample = self.sampling[j]
+                pareto_name = []
+                for s, value in enumerate(sample):
+                    param_type, parameter = list(self.parameter.keys())[s].split("+-+")
+                    pareto_name += [f"{parameter}_{value:.2g}"]
+                    if param_type == "grids":
+                        if parameter == 'Elec_retail':
+                            grids["Electricity"]["Cost_supply_cst"] = value
+                        elif parameter == 'Elec_feedin':
+                            grids["Electricity"]["Cost_demand_cst"] = value
+                        elif parameter == 'NG_retail':
+                            grids["NaturalGas"]["Cost_supply_cst"] = value
+                        elif parameter == 'Wood_retail':
+                            grids["Wood"]["Cost_supply_cst"] = value
+                        elif parameter == 'Oil_retail':
+                            grids["Oil"]["Cost_supply_cst"] = value
 
-                elif param_type == "units":
-                    for unit_id in range(len(units['building_units'])):
-                        if units['building_units'][unit_id]['Unit'] == parameter.split("___")[0]:
-                            units['building_units'][unit_id][parameter.split("___")[1]] = value
+                    elif param_type == "units":
+                        for unit_id in range(len(units['building_units'])):
+                            if units['building_units'][unit_id]['Unit'] == parameter.split("___")[0]:
+                                units['building_units'][unit_id][parameter.split("___")[1]] = value
 
-                elif param_type == "buildings":
-                    for id_building in qbuildings_data['buildings_data'].keys():
-                        if parameter not in qbuildings_data['buildings_data'][id_building].keys():
-                            raise KeyError(parameter, "not in buildings keys.\n Possible values are: ", qbuildings_data['buildings_data'][id_building].keys())
-                        qbuildings_data['buildings_data'][id_building][parameter] = value 
-                        # if parameter == 'U_h':
-                        #     self.reho.method['renovation'] = ["window/facade/roof/footprint", "window/facade", "roof"]
+                    elif param_type == "buildings":
+                        for id_building in qbuildings_data['buildings_data'].keys():
+                            if parameter not in qbuildings_data['buildings_data'][id_building].keys():
+                                raise KeyError(parameter, "not in buildings keys.\n Possible values are: ", qbuildings_data['buildings_data'][id_building].keys())
+                            qbuildings_data['buildings_data'][id_building][parameter] = value 
+                            # if parameter == 'U_h':
+                            #     self.reho.method['renovation'] = ["window/facade/roof/footprint", "window/facade", "roof"]
 
-                else:
-                    if parameter in self.reho.lists_MP["list_parameters_MP"]:
-                        self.reho.parameters[parameter] = np.array([value])
                     else:
-                        self.reho.parameters[parameter] = np.array([value] * n_houses)
+                        if parameter in self.reho.lists_MP["list_parameters_MP"]:
+                            self.reho.parameters[parameter] = np.array([value])
+                        else:
+                            self.reho.parameters[parameter] = np.array([value] * n_houses)
 
-            self.reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
+                self.reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
 
-            try:
-                tic = time.perf_counter()
-                pareto_id = "-".join(pareto_name)
-                self.reho.single_optimization(Pareto_ID=pareto_id)  # Optimize the modified model
-                toc = time.perf_counter()
-                time_spent = toc - tic
-                self.extract_results(self.reho, j, Pareto_ID=pareto_id)
+                try:
+                    tic = time.perf_counter()
+                    pareto_id = "-".join(pareto_name)
+                    self.reho.single_optimization(Pareto_ID=pareto_id)  # Optimize the modified model
+                    toc = time.perf_counter()
+                    time_spent = toc - tic
+                    self.extract_results(self.reho, j, Pareto_ID=pareto_id)
 
-                self.reho.initialize_optimization_tracking_attributes()
+                    self.reho.initialize_optimization_tracking_attributes()
 
-                if save_time_opt:
-                    file_name = os.path.join(folder, str(self.SA_type) + '_time.txt')
-                    function = 'w' if not os.path.exists(folder) else 'a+'
-                    with open(file_name, function) as f:
-                        f.write(str(round(time_spent)) + "\n")
+                    if save_time_opt:
+                        file_name = os.path.join(folder, str(self.SA_type) + '_time.txt')
+                        function = 'w' if not os.path.exists(folder) else 'a+'
+                        with open(file_name, function) as f:
+                            f.write(str(round(time_spent)) + "\n")
 
-                if save_inter:  # Intermediary save
-                    if np.mod(j, save_inter_nb_iter) == 0 or j == (len(self.sampling) - 1):
-                        self.save()
-                        if platform.system() == 'Windows':
-                            os.system('cmd /c "ampl_lic restart"')  # restart ampl license to avoid crashes (used with parallel computing)
+                    if save_inter:  # Intermediary save
+                        if np.mod(j, save_inter_nb_iter) == 0 or j == (len(self.sampling) - 1):
+                            self.save()
+                            if platform.system() == 'Windows':
+                                os.system('cmd /c "ampl_lic restart"')  # restart ampl license to avoid crashes (used with parallel computing)
 
-            except KeyboardInterrupt:
-                return
+                except KeyboardInterrupt:
+                    return
 
     def calculate_SA(self):
         """

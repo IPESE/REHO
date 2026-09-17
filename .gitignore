@@ -315,6 +315,13 @@ docs/sections/_autosummary
 reho/test/data/*
 reho/test/figures/*
 reho/test/results/*
+.pytest_cache/
+
+# Run outputs. REHO writes these next to whatever directory the script is run from,
+# including the repository root when the tests are run from there.
+/data/
+/results/
+/figures/
 
 # Scripts
 scripts/*

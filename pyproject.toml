@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "setuptools-scm", "wheel"]
+requires = ["setuptools>=68", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -42,7 +42,6 @@ dependencies = [
     "pyclustering",
     "pyproj",
     "python-dotenv",
-    "pytest",
     "qmcpy",
     "requests",
     "SALib",
@@ -54,21 +53,74 @@ dependencies = [
     "urllib3<2"
 ]
 
+# Optional dependency groups. Install with, e.g., `pip install "REHO[dev]"`.
+[project.optional-dependencies]
+test = [
+    "pytest>=7",
+    "pytest-cov",
+]
+docs = [
+    "sphinx",
+    "pydata-sphinx-theme",
+    "sphinx-design",
+    "sphinx-copybutton",
+    "sphinxcontrib-bibtex",
+    "myst-parser",
+]
+dev = [
+    "REHO[test,docs]",
+    "pyflakes",
+    "ruff",
+]
+
 [project.urls]
 "Documentation" = "https://reho.readthedocs.io/"
 "Repository" = "https://github.com/IPESE/REHO"
 "Download" = "https://pypi.org/project/REHO"
-
-[tool.setuptools]
-packages = ["reho"]
-
-[tool.setuptools.package-data]
-"REHO" = ["*.csv", "*.xlsx", "*.dat", "*.txt", "*.mod", "*.ini"]
-
-[tool.setuptools_scm]
-version_scheme = "post-release"
+"Changelog" = "https://github.com/IPESE/REHO/blob/main/CHANGELOG.md"
+"Issues" = "https://github.com/IPESE/REHO/issues"
 
 [project.scripts]
 reho-test-import = "reho.test.test_import:test_import_reho_modules"
 reho-test-run = "reho.test.test_run:test_run"
 reho-download-examples = "reho.test.test_examples:test_download_examples"
+
+# `reho` and every sub-package must be listed, otherwise only the top-level
+# package reaches the wheel.
+[tool.setuptools.packages.find]
+include = ["reho*"]
+namespaces = false
+
+# Non-Python files (AMPL model, reference data) shipped inside the package.
+# The key is the package name, which is `reho` in lower case - `REHO` matches nothing.
+[tool.setuptools.package-data]
+"reho" = ["*.csv", "*.xlsx", "*.dat", "*.txt", "*.mod", "*.ini", "*.run"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+
+[tool.pytest.ini_options]
+testpaths = ["reho/test"]
+# Tests that need an AMPL license, a solver or network access are marked; the
+# default run stays offline and fast.
+markers = [
+    "slow: solves an optimization problem; takes minutes",
+    "needs_ampl: requires a working AMPL license and solver",
+    "needs_network: requires internet access (QBuildings, PVGIS, ELCOM)",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 160
+target-version = "py311"
+
+[tool.ruff.lint]
+# E501 (line length) is handled by line-length above; the scientific code uses
+# short names (h, u, l, dT) that N806-style rules would flag on every line.
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E741", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"reho/test/*" = ["B011"]

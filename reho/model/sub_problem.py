@@ -80,7 +80,7 @@ _EPSILON_CONSTRAINTS = [
 #: Optional constraints dropped by default, and restored only when scenario['specific'] asks for them.
 _SPECIFIC_CONSTRAINTS = [
     "disallow_exchanges_1", "disallow_exchanges_2", "no_ElectricalHeater_without_HP",
-    "no_NG_boiler_with_HP", "forced_H2_annual_export", "forced_H2_fixed_daily_export",
+    "no_NG_boiler_with_HP", "forced_H2_annual_export", "forced_H2_fixed_daily_export", "only_1_long_term_storage",
 ]
 
 

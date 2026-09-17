@@ -16,14 +16,18 @@ DEFAULT_GRIDS = {'Electricity': {}, 'NaturalGas': {}}
 #: about the *heating system* choice; these are always installable on top of it.
 ALWAYS_AVAILABLE_UNIT_TYPES = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "ThermalSolar"]
 
-#: Units removed from every scenario by default (not yet validated, or superseded).
-DEFAULT_UNITS_TO_EXCLUDE = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district']
+#: Units removed from every scenario by default (not yet validated, or superseded), unless the scenario enforces them.
+DEFAULT_UNITS_TO_EXCLUDE = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district', 'HeatPump_Waste_heat']
 
 #: Part-load performance of the heat pumps and air conditioners, per ``UnitOfType``: file of
 #: ``reho/data/infrastructure/``, indexed by the sink and source temperatures.
-PERFORMANCE_MAP_FILES = {'HeatPump': 'HP_parameters.csv', 'AirConditioner': 'AC_parameters.csv'}
+PERFORMANCE_MAP_FILES = {'HeatPump': 'HP_parameters.csv', 'AirConditioner': 'AC_parameters.csv', 'HeatPump_WH': 'HP_parameters.csv'}
 
-#: Performance maps already read, per file, see :func:`read_performance_map`.
+#: Suffix of the AMPL names filled by a performance map, per ``UnitOfType``: the waste-heat heat pumps share the
+#: map of the heat pumps, under names of their own (``HP_Eta_nominal_WH``, ``HP_Tsink_WH``, ...).
+PERFORMANCE_MAP_SUFFIXES = {'HeatPump_WH': '_WH'}
+
+#: Performance maps already read, per file and suffix, see :func:`read_performance_map`.
 _performance_maps = {}
 
 
@@ -42,12 +46,16 @@ def read_performance_map(unit_type):
     pandas.DataFrame
         Nominal efficiency and maximum power, e.g. ``HP_Eta_nominal`` and ``HP_Pmax_nominal``, indexed by
         the sink and source temperatures, whose levels are named after the AMPL sets they fill, e.g.
-        ``HP_Tsink`` and ``HP_Tsource``. The DataFrame is shared by every caller: do not modify it in place.
+        ``HP_Tsink`` and ``HP_Tsource``. These names carry the suffix of :data:`PERFORMANCE_MAP_SUFFIXES`.
+        The DataFrame is shared by every caller: do not modify it in place.
     """
     file = os.path.join(path_to_infrastructure, PERFORMANCE_MAP_FILES[unit_type])
-    if file not in _performance_maps:
-        _performance_maps[file] = pd.read_csv(file, sep=';', index_col=[0, 1])
-    return _performance_maps[file]
+    suffix = PERFORMANCE_MAP_SUFFIXES.get(unit_type, '')
+    if (file, suffix) not in _performance_maps:
+        performance = pd.read_csv(file, sep=';', index_col=[0, 1]).add_suffix(suffix)
+        performance.index.names = [name + suffix for name in performance.index.names]
+        _performance_maps[file, suffix] = performance
+    return _performance_maps[file, suffix]
 
 
 class Infrastructure:
@@ -490,6 +498,52 @@ def prepare_units_df(file, exclude_units=None, grids=None):
     return valid_units
 
 
+def _interperiod_unit_files(interperiod_data):
+    """Files of the inter-period storage units to read, see ``interperiod_data`` in :func:`initialize_units`.
+
+    Returns
+    -------
+    tuple of str or None
+        The file of the building units and the file of the district units, None when not to read.
+
+    Raises
+    ------
+    TypeError
+        If ``interperiod_data``, or one of its values, has an unsupported type.
+    KeyError
+        If a dict holds a key other than ``'building'`` and ``'district'``, or their former names
+        ``'building_units_IP'`` and ``'district_units_IP'``.
+    """
+    defaults = {"building": os.path.join(path_to_infrastructure, "building_units_IP.csv"),
+                "district": os.path.join(path_to_infrastructure, "district_units_IP.csv")}
+    former_keys = {"building_units_IP": "building", "district_units_IP": "district"}
+    if interperiod_data is None or interperiod_data is False:
+        return None, None
+    if interperiod_data is True:
+        return defaults["building"], defaults["district"]
+    if isinstance(interperiod_data, str) and interperiod_data in defaults:
+        return tuple(defaults[scale] if scale == interperiod_data else None for scale in ("building", "district"))
+    if not isinstance(interperiod_data, dict):
+        raise TypeError(f"interperiod_data must be None, True, 'building', 'district' or a dict, got {interperiod_data!r}.")
+
+    unknown = set(interperiod_data) - set(defaults) - set(former_keys)
+    if unknown:
+        raise KeyError(f"interperiod_data accepts the keys 'building' and 'district', got {sorted(unknown)}.")
+    interperiod_data = {former_keys.get(key, key): value for key, value in interperiod_data.items()}
+    files = []
+    for scale in ("building", "district"):
+        value = interperiod_data.get(scale)
+        if value is None or value is False:
+            files.append(None)
+        elif value is True:
+            files.append(defaults[scale])
+        elif isinstance(value, (str, os.PathLike)):
+            files.append(value)
+        else:
+            raise TypeError(f"interperiod_data[{scale!r}] must be True or the path of a file, got {value!r}.")
+    return tuple(files)
+
+
 def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"), district_data=None, interperiod_data=None):
     """
     Initializes the available units for the energy system.
@@ -505,9 +559,11 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     district_data : str or bool or None, optional
         Path to the CSV file containing district unit data. If True, district units are initialized with 'district_units.csv'.
         If None, district units will not be considered. Default is None.
-    interperiod_data : dict or bool or str, None, optional TODO A. Waeber
-        Paths to the CSV file(s) containing inter-period storage units data. If True, units are initialized with 'building_units_IP.csv' and 'district_units_IP.csv'.
-        If None, storage units won't be considered. Default is None.
+    interperiod_data : bool or str or dict, optional
+        Inter-period storage units. True reads ``building_units_IP.csv`` and, with district units,
+        ``district_units_IP.csv``; ``'building'`` or ``'district'`` reads only one of them. A dict chooses
+        per scale, under the keys ``'building'`` and ``'district'``: True for the default file, or the path of
+        a custom one. Default is None, which considers no inter-period storage.
 
     Returns
     -------
@@ -522,6 +578,7 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     -----
     - The default files are located in ``reho/data/infrastructure/``.
     - The custom files can be given as absolute or relative path.
+    - The units of :data:`DEFAULT_UNITS_TO_EXCLUDE` are excluded, unless ``scenario['enforce_units']`` lists them.
 
     Examples
     --------
@@ -530,7 +587,8 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     """
 
     scenario = scenario or {}
-    exclude_units = list(scenario.get("exclude_units", [])) + DEFAULT_UNITS_TO_EXCLUDE
+    enforced = set(scenario.get("enforce_units", []))
+    exclude_units = list(scenario.get("exclude_units", [])) + [unit for unit in DEFAULT_UNITS_TO_EXCLUDE if unit not in enforced]
 
     building_units = prepare_units_df(building_data, exclude_units, grids)
 
@@ -538,17 +596,13 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         building_units['UnitOfService'] = building_units['UnitOfService'].apply(
             lambda services: [s for s in services if s != 'rSOC_heat'])
 
-    building_units= np.array(building_units.to_dict(orient="records"))
+    building_units = np.array(building_units.to_dict(orient="records"))
 
-    if interperiod_data != 'district' and interperiod_data is not None:
-        building_units_IP = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "building_units_IP.csv"), exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
-    elif isinstance(interperiod_data, dict) and 'building_units_IP' in interperiod_data:
-        building_units_IP = np.array(prepare_units_df(interperiod_data["building_units_IP"], exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
-    else:
-        building_units_IP = []
-
-    if len(building_units_IP) > 0:
-        building_units = np.concatenate([building_units, building_units_IP])
+    building_IP_file, district_IP_file = _interperiod_unit_files(interperiod_data)
+    if building_IP_file is not None:
+        building_units_IP = np.array(prepare_units_df(building_IP_file, exclude_units, grids).to_dict(orient="records"))
+        if len(building_units_IP) > 0:
+            building_units = np.concatenate([building_units, building_units_IP])
 
     if district_data is True:
         district_units = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "district_units.csv"), exclude_units, grids=grids).to_dict(orient="records"))
@@ -557,16 +611,10 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     else:
         district_units = []
 
-    if district_data is not None:
-        if interperiod_data != 'building' and interperiod_data is not None:
-            district_units_IP = np.array(prepare_units_df(os.path.join(path_to_infrastructure, "district_units_IP.csv"), exclude_units=exclude_units,grids=grids).to_dict(orient="records"))
-        elif isinstance(interperiod_data, dict) and 'district_units_IP' in interperiod_data:
-            district_units_IP = np.array(prepare_units_df(interperiod_data["district_units_IP"], exclude_units=exclude_units, grids=grids).to_dict(orient="records"))
-        else:
-            district_units_IP = []
-
+    if district_data and district_IP_file is not None:
+        district_units_IP = np.array(prepare_units_df(district_IP_file, exclude_units, grids).to_dict(orient="records"))
         if len(district_units_IP) > 0:
-            district_units = np.concatenate([district_units,district_units_IP])
+            district_units = np.concatenate([district_units, district_units_IP])
 
     units = {"building_units": building_units, "district_units": district_units}
 

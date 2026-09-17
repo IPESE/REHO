@@ -6,11 +6,12 @@ import pytest
 from reho.model.infrastructure import (
     PERFORMANCE_MAP_FILES,
     Infrastructure,
+    _interperiod_unit_files,
     initialize_grids,
     initialize_units,
     read_performance_map,
 )
-from reho.paths import path_to_units
+from reho.paths import path_to_infrastructure, path_to_units
 
 
 @pytest.fixture(scope="module")
@@ -95,7 +96,8 @@ def test_excluding_a_heating_unit_removes_it(grids):
     assert "NG_Boiler" not in {unit["Unit"] for unit in units["building_units"]}
 
 
-@pytest.mark.parametrize("unit_type, model_file", [("HeatPump", "heatpump.mod"), ("AirConditioner", "air_conditioner.mod")])
+@pytest.mark.parametrize("unit_type, model_file", [("HeatPump", "heatpump.mod"), ("AirConditioner", "air_conditioner.mod"),
+                                                     ("HeatPump_WH", "heatpump_waste_heat.mod")])
 def test_performance_maps_fill_sets_of_the_model(unit_type, model_file):
     """The index columns of a performance map are named after sets of the model of the unit."""
     with open(os.path.join(path_to_units, model_file)) as model:
@@ -107,7 +109,50 @@ def test_performance_maps_fill_sets_of_the_model(unit_type, model_file):
 
 
 def test_performance_maps_cover_the_unit_types():
-    assert set(PERFORMANCE_MAP_FILES) == {"HeatPump", "AirConditioner"}
+    assert set(PERFORMANCE_MAP_FILES) == {"HeatPump", "AirConditioner", "HeatPump_WH"}
+
+
+def test_waste_heat_heat_pumps_share_the_map_of_the_heat_pumps():
+    heat_pumps, waste_heat = read_performance_map("HeatPump"), read_performance_map("HeatPump_WH")
+    assert list(waste_heat.columns) == [column + "_WH" for column in heat_pumps.columns]
+    assert list(waste_heat.index.names) == [name + "_WH" for name in heat_pumps.index.names]
+    assert (waste_heat.to_numpy() == heat_pumps.to_numpy()).all()
+
+
+def test_a_unit_excluded_by_default_is_available_when_enforced(grids):
+    def units(scenario):
+        return {unit["Unit"] for unit in initialize_units(scenario, grids)["building_units"]}
+
+    assert "HeatPump_Waste_heat" not in units({"exclude_units": [], "enforce_units": []})
+    assert "HeatPump_Waste_heat" in units({"exclude_units": [], "enforce_units": ["HeatPump_Waste_heat"]})
+
+
+_BUILDING_IP = os.path.join(path_to_infrastructure, "building_units_IP.csv")
+_DISTRICT_IP = os.path.join(path_to_infrastructure, "district_units_IP.csv")
+
+
+@pytest.mark.parametrize("interperiod_data, expected", [
+    (None, (None, None)),
+    (True, (_BUILDING_IP, _DISTRICT_IP)),
+    ("building", (_BUILDING_IP, None)),
+    ("district", (None, _DISTRICT_IP)),
+    ({"building": True}, (_BUILDING_IP, None)),
+    ({"district": "my_district_units_IP.csv"}, (None, "my_district_units_IP.csv")),
+    ({"building": "my_units_IP.csv", "district": True}, ("my_units_IP.csv", _DISTRICT_IP)),
+    ({"district_units_IP": "my_district_units_IP.csv"}, (None, "my_district_units_IP.csv")),
+])
+def test_interperiod_unit_files(interperiod_data, expected):
+    assert _interperiod_unit_files(interperiod_data) == expected
+
+
+@pytest.mark.parametrize("interperiod_data, error", [
+    ("both", TypeError),
+    ({"buildings": True}, KeyError),
+    ({"building": 1}, TypeError),
+])
+def test_invalid_interperiod_data_is_rejected(interperiod_data, error):
+    with pytest.raises(error):
+        _interperiod_unit_files(interperiod_data)
 
 
 def test_temperature_sets_come_from_the_performance_maps(infrastructure):

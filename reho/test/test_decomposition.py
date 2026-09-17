@@ -1,8 +1,12 @@
 """Tests for the Dantzig-Wolfe decomposition logic that does not need a solver."""
 
+from types import SimpleNamespace
+
+import pandas as pd
 import pytest
 
-from reho.model.master_problem import MasterProblem
+from reho.model.master_problem import MasterProblem, fix_unit_sizes
+from reho.model.reho import REHO
 
 
 @pytest.fixture
@@ -83,3 +87,70 @@ class TestWorkerPool:
             with master.worker_pool():
                 raise KeyError("stop")
         assert master.pool is None
+
+
+class _FixingAMPL:
+    """Stand-in for an AMPL session that records the values its variables are fixed to."""
+
+    def __init__(self):
+        self.fixed = {}
+
+    def getVariable(self, variable):
+        fixed = self.fixed
+
+        class Instances:
+            def get(self, unit):
+                class Instance:
+                    def fix(self, value):
+                        fixed[variable, unit] = value
+                return Instance()
+        return Instances()
+
+
+class TestFixUnitSizes:
+    df_fix_Units = pd.DataFrame({"Units_Mult": [10.0, 4.0, 2.0], "Units_Use": [1, 1, 1]},
+                                index=["PV_Building1", "rSOC_Building1", "PV_Building10"])
+
+    def test_the_units_of_the_problem_that_are_sized_are_fixed(self):
+        ampl = _FixingAMPL()
+        fix_unit_sizes(ampl, self.df_fix_Units, ["PV_Building1", "rSOC_Building1", "Battery_Building1"])
+        assert ampl.fixed == {("Units_Mult", "PV_Building1"): 10.0 * (1 - 1e-9), ("Units_Use", "PV_Building1"): 1.0,
+                              ("Units_Mult", "rSOC_Building1"): 4.0, ("Units_Use", "rSOC_Building1"): 1.0}
+
+    def test_the_listed_technologies_not_sized_are_not_installed(self):
+        ampl = _FixingAMPL()
+        fix_unit_sizes(ampl, self.df_fix_Units, ["PV_Building1", "rSOC_Building1", "MTR_Building1"],
+                       targets=["rSOC_Building1", "MTR_Building1", "ETZ_Building1"])
+        assert ampl.fixed == {("Units_Mult", "rSOC_Building1"): 4.0, ("Units_Use", "rSOC_Building1"): 1.0,
+                              ("Units_Mult", "MTR_Building1"): 0, ("Units_Use", "MTR_Building1"): 0}
+
+
+class TestFixUnitSizesOfTheCompactFormulation:
+    """``REHO.fix_unit_sizes`` fixes the units of the buildings and, in the compact formulation, those of the district."""
+
+    @staticmethod
+    def reho(fix_units_list=()):
+        infrastructure = SimpleNamespace(
+            houses={"Building1": {}, "Building2": {}},
+            UnitsOfHouse={"Building1": ["PV_Building1", "rSOC_Building1"], "Building2": ["PV_Building2"]},
+            UnitsOfDistrict=["rSOC_district"])
+        df_fix_Units = pd.DataFrame({"Units_Mult": [10.0, 4.0, 6.0, 50.0], "Units_Use": [1, 1, 1, 1]},
+                                    index=["PV_Building1", "rSOC_Building1", "PV_Building2", "rSOC_district"])
+        return SimpleNamespace(infrastructure=infrastructure, df_fix_Units=df_fix_Units, fix_units_list=list(fix_units_list))
+
+    def test_every_unit_sized_is_fixed(self):
+        ampl = _FixingAMPL()
+        REHO.fix_unit_sizes(self.reho(), ampl)
+        assert {unit for _, unit in ampl.fixed} == {"PV_Building1", "rSOC_Building1", "PV_Building2", "rSOC_district"}
+        assert ampl.fixed["Units_Mult", "rSOC_district"] == 50.0
+
+    def test_a_building_is_fixed_alone(self):
+        ampl = _FixingAMPL()
+        REHO.fix_unit_sizes(self.reho(), ampl, house="Building2")
+        assert ampl.fixed == {("Units_Mult", "PV_Building2"): 6.0 * (1 - 1e-9), ("Units_Use", "PV_Building2"): 1.0}
+
+    def test_the_listed_technologies_are_fixed_in_the_buildings_and_the_district(self):
+        ampl = _FixingAMPL()
+        REHO.fix_unit_sizes(self.reho(fix_units_list=["rSOC", "rSOC_district"]), ampl)
+        assert ampl.fixed == {("Units_Mult", "rSOC_Building1"): 4.0, ("Units_Use", "rSOC_Building1"): 1.0,
+                              ("Units_Mult", "rSOC_district"): 50.0, ("Units_Use", "rSOC_district"): 1.0}

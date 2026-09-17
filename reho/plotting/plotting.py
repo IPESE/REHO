@@ -55,7 +55,7 @@ _TRANSLATIONS = {
 
 
 def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long', add_annotation=True, per_m2=False, additional_costs=None, additional_gwp=None,
-                     scc=0.177, title=None, filename=None, export_format='html', scaling_factor=1, return_df=False):
+                     scc=0.177, title=None, filename=None, export_format='html', scaling_factor=1, return_df=False, fontsize_annotations = 10):
     """
     Plots performance based on REHO results.
 
@@ -209,22 +209,21 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
     if add_annotation:
         for i in range(len(indexes)):
             fig.add_annotation(x=x2[i], y=-text_placeholder,
-                               text=text_resources[i], font=dict(size=10),
+                               text=text_resources[i], font=dict(size=fontsize_annotations),
                                textangle=0, align='center', valign='top',
                                showarrow=False)
             fig.add_annotation(x=x1[i], y=-text_placeholder,
-                               text=text_capacities[i], font=dict(size=10),
+                               text=text_capacities[i], font=dict(size=fontsize_annotations),
                                textangle=0, align='center', valign='top',
-                               showarrow=False
-                               )
+                               showarrow=False)
             fig.add_annotation(x=xtick[i], y=max(combined_capacities[i], pos_resources[i],
                                                  combined_capacities[i] + combined_resources[i]) + text_placeholder,
                                text="<b>Total</b><br>" + str(custom_round((combined_capacities[i] + combined_resources[i]), decimal)) + change_data.loc[
                                    'unites', lang],
-                               font=dict(size=10, color=layout.loc['TOTEX', "ColorPastel"]),
+                               font=dict(size=fontsize_annotations, color=layout.loc['TOTEX', "ColorPastel"]),
                                textangle=0, align='center', valign='top',
-                               showarrow=False
-                               )
+                               showarrow=False)
+
     for line, tech in data_capacities.iterrows():
         if tech.loc[indexes].sum() > 0:
             fig.add_trace(
@@ -1742,12 +1741,16 @@ def plot_pareto_by_objectives(results, objectives=None, style='plotly', annotati
         fig = go.Figure()
 
         for scenario in df_performance_dict.keys():
+            if annotation is not None:
+                text_ann = df_performance_dict[scenario][annotation].round(2)
+            else:
+                text_ann = None
             fig.add_trace(go.Scatter(
                 x=df_performance_dict[scenario][objectives[0]].round(2),
                 y=df_performance_dict[scenario][objectives[1]].round(2),
                 mode="lines+markers+text",
                 name=scenario,
-                text=df_performance_dict[scenario][annotation].round(2),
+                text=text_ann,
                 textposition="top right"
             ))
 
@@ -1914,7 +1917,9 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
             mol = "CH4_storage_IP"
         elif mol == "CO2":
             mol = "CO2_storage_IP"
-            storage_SOC_tot[stor_var] = storage_SOC_tot[stor_var] * 16 / 1000 * 50 / 3.6  #transform from mol to kWh CH4-eq
+            storage_SOC_tot[stor_var] = storage_SOC_tot[stor_var] * 16 / 1000 * 50 / 3.6  # transform from mol to kWh CH4-eq
+        elif mol == "PTES":
+            mol = "PTES_storage_IP"
 
         time_index = np.arange(0, 8760)
 
@@ -2093,6 +2098,7 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
                 col=1
             )
 
+
         elif unit == "Building":
             buildings = pd.unique(df_Results["df_Buildings_t"].index.get_level_values(0))
             building_demand = df_Results["df_Buildings_t"].loc["Building1"]
@@ -2111,6 +2117,49 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
                 row=1,
                 col=1
             )
+        elif unit == "PV":
+
+            units = pd.unique(df_Results["df_Unit_t"].loc["Electricity"]
+                              .index.get_level_values(0)).tolist()
+            units = [u for u in units if unit in u]
+
+            # Sum all PV units
+            net_supply = df_Results["df_Unit_t"].loc["Electricity"].loc[units[0]]
+            for bd in units[1:]:
+                net_supply += df_Results["df_Unit_t"].loc["Electricity"].loc[bd]
+
+            merged_df = pd.merge(TD_time, net_supply, on=['Period', 'Time'], how='left')
+
+            # Usable PV (after curtailment)
+            used_pv = merged_df["Units_supply"] - merged_df["Units_curtailment"]
+
+            if (merged_df["Units_supply"].any() > 0) or (merged_df["Units_demand"].any() > 0):
+                # 1. Line: usable PV
+                fig.add_trace(
+                    go.Scatter(
+                        x=TD_time.index,
+                        y=used_pv,
+                        mode="lines",
+                        name=layout.loc[unit, label],
+                        line=dict(color=layout.loc[unit, color], width=2),
+                    ),
+                    row=1, col=1
+                )
+
+                # 2. Filled: curtailment as shaded area on top of the line
+                fig.add_trace(
+                    go.Scatter(
+                        x=TD_time.index,
+                        y=merged_df["Units_supply"],  # upper boundary
+                        mode="lines",
+                        fill="tonexty",  # fill between this and previous trace
+                        name="Curtailment",
+                        line=dict(color=layout.loc[unit, color]),  # invisible border
+                        fillcolor="rgba(255, 217, 128, 0.6)",  # shaded yello
+                    ),
+                    row=1, col=1
+                )
+
         else:
 
             units = pd.unique(df_Results["df_Unit_t"].loc["Electricity"].index.get_level_values(0)).tolist()

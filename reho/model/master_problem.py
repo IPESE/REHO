@@ -48,7 +48,7 @@ from reho.paths import (
     path_to_units,
 )
 
-__all__ = ["MasterProblem"]
+__all__ = ["MasterProblem", "fix_unit_sizes"]
 
 logger = get_logger(__name__)
 
@@ -122,6 +122,42 @@ def _sp_solver_attributes(Scn_ID, Pareto_ID, ampl):
     return df
 
 
+def fix_unit_sizes(ampl, df_fix_Units, units, targets=None):
+    """Fix the size and the use of units to the values of ``df_fix_Units``.
+
+    Used by ``method['fix_units']`` to evaluate the operation of a design decided elsewhere, for
+    instance the optimum of a previous scenario.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        A built, not yet solved session.
+    df_fix_Units : pandas.DataFrame
+        Columns ``Units_Mult`` and ``Units_Use``, indexed by unit, e.g. ``PV_Building1`` or ``rSOC_district``.
+    units : iterable of str
+        Units of the problem held by ``ampl``.
+    targets : iterable of str, optional
+        Units to fix, e.g. those of the technologies of ``fix_units_list``: the ones that ``df_fix_Units``
+        does not size are fixed to zero, i.e. not installed. By default, the units of the problem that
+        ``df_fix_Units`` sizes.
+
+    Notes
+    -----
+    PV capacities are relaxed by 1e-9 because the AMPL model bounds the panel area by the available
+    roof area; fixing the two to the exact same value makes the problem infeasible on rounding alone.
+    """
+    units = set(units)
+    targets = df_fix_Units.index if targets is None else targets
+    for unit in [unit for unit in targets if unit in units]:
+        if unit in df_fix_Units.index:
+            size = df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9 if unit.startswith("PV_") else 1)
+            use = float(df_fix_Units.Units_Use.loc[unit])
+        else:
+            size, use = 0, 0
+        ampl.getVariable('Units_Mult').get(unit).fix(size)
+        ampl.getVariable('Units_Use').get(unit).fix(use)
+
+
 def _solve_SP_task(task):
     """Build, solve and extract the sub-problem of one building.
 
@@ -152,15 +188,9 @@ def _solve_SP_task(task):
                     task['scenario'], task['method'], task['solver'], task.get('qbuildings_data'))
     ampl = sp.build_model_without_solving()
 
-    df_fix_Units = task.get('df_fix_Units')
-    if task['method']['fix_units'] and df_fix_Units is not None and not df_fix_Units.empty:
-        for unit in df_fix_Units.index[df_fix_Units.index.str.contains(str(h))]:
-            if unit == 'PV_' + str(h):
-                ampl.getVariable('Units_Mult').get(unit).fix(df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
-                ampl.getVariable('Units_Use').get(unit).fix(float(df_fix_Units.Units_Use.loc[unit]))
-            else:
-                ampl.getVariable('Units_Mult').get(unit).fix(df_fix_Units.Units_Mult.loc[unit])
-                ampl.getVariable('Units_Use').get(unit).fix(float(df_fix_Units.Units_Use.loc[unit]))
+    if task['method']['fix_units']:
+        targets = [f"{technology}_{h}" for technology in task['fix_units_list']] if task['fix_units_list'] else None
+        fix_unit_sizes(ampl, task['df_fix_Units'], task['infrastructure_SP'].Units, targets)
 
     ampl.solve()
     exitcode = exitcode_from_ampl(ampl)
@@ -281,7 +311,7 @@ class MasterProblem:
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', "beta_GWP_MP",
                                                 "max_share", "min_share", "max_share_modes", "min_share_modes", "n_ICEperhab",
                                                 "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Ext_district",
-                                                "Network_lifetime", "data_EUD_avg"],
+                                                "Network_lifetime", "HydrogenAnnualExport_district","data_EUD_avg", "SOEC_conv_eff","SOFC_elec_eff_CH4"],
                          "list_constraints_MP": [],
                          "list_set_indexed_MP": ["Districts", "Distances"]
                          }
@@ -290,10 +320,14 @@ class MasterProblem:
             self.lists_MP["list_constraints_MP"] += ['unidirectional_service', 'unidirectional_service2', "EV_chargingprofile1", "EV_chargingprofile2",
                                                      'ExternalEV_Costs_positive']
 
+        if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
+            self.lists_MP["list_constraints_MP"] += ['forced_H2_annual_export_district']
+
         if self.method['actors_problem']:
             self.lists_MP["list_constraints_MP"] += ['Owner_Link_Subsidy_to_renovation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub', 'Rent_fix_increase','Rent_fix_absolute']
 
         self.df_fix_Units = pd.DataFrame()
+        self.fix_units_list = []
 
     def initialize_optimization_tracking_attributes(self):
         """
@@ -382,19 +416,18 @@ class MasterProblem:
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
         profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
         max_DEL = profile_building_x.max(axis=1).sum()
-        if not self.method['interperiod_storage']:
-            SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
-            SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
-            # This cap limits each building's grid exchange during initiation, relative to its peak domestic
-            # electricity. Below 1 the domestic demand alone saturates it, leaving nothing for heating: the
-            # sub-problems then turn out infeasible at the coldest hour rather than at the network balance.
-            if capacity < max_DEL:
-                self.logger.warning(
-                    f"Electricity Network_ext ({float(capacity):.0f} kW) is below the district peak domestic demand "
-                    f"({float(max_DEL):.0f} kW) over {nb_buildings} buildings, so the decomposition initiation caps "
-                    f"grid use at {float(capacity) * 0.999 / max_DEL:.2f} of that peak. Sub-problems are likely to be "
-                    f"infeasible; raise Network_ext to size the network for the district."
-                )
+        SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
+        SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
+        # This cap limits each building's grid exchange during initiation, relative to its peak domestic
+        # electricity. Below 1 the domestic demand alone saturates it, leaving nothing for heating: the
+        # sub-problems then turn out infeasible at the coldest hour rather than at the network balance.
+        if capacity < max_DEL:
+            self.logger.warning(
+                f"Electricity Network_ext ({float(capacity):.0f} kW) is below the district peak domestic demand "
+                f"({float(max_DEL):.0f} kW) over {nb_buildings} buildings, so the decomposition initiation caps "
+                f"grid use at {float(capacity) * 0.999 / max_DEL:.2f} of that peak. Sub-problems are likely to be "
+                f"infeasible; raise Network_ext to size the network for the district."
+            )
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -574,7 +607,7 @@ class MasterProblem:
             The building ``h``, ``Scn_ID``, ``Pareto_ID``, and the arguments of
             :class:`~reho.model.sub_problem.SubProblem`: ``infrastructure_SP``, ``buildings_data_SP``,
             ``parameters_SP``, ``set_indexed_SP``, ``local_data``, ``cluster``, ``scenario``, ``method``,
-            ``solver``, ``df_fix_Units`` and, with ``use_facades`` or ``use_pv_orientation``,
+            ``solver``, ``df_fix_Units``, ``fix_units_list`` and, with ``use_facades`` or ``use_pv_orientation``,
             ``qbuildings_data``.
 
         Raises
@@ -657,7 +690,8 @@ class MasterProblem:
                 'scenario': scenario,
                 'method': self.method,
                 'solver': self.solver,
-                'df_fix_Units': self.df_fix_Units if self.method['fix_units'] else None}
+                'df_fix_Units': self.df_fix_Units if self.method['fix_units'] else None,
+                'fix_units_list': list(self.fix_units_list)}
         if self.method['use_facades'] or self.method['use_pv_orientation']:
             task['qbuildings_data'] = self.qbuildings_data
         return task
@@ -960,6 +994,10 @@ class MasterProblem:
                 df = pd.DataFrame(MP_parameters[i])
                 ampl_MP.setData(df)
 
+            elif isinstance(MP_parameters[i], dict):
+                Para = ampl_MP.getParameter(i)
+                Para.setValues(MP_parameters[i])
+
             elif isinstance(MP_parameters[i], list):
                 Para = ampl_MP.getParameter(i)
                 Para.setValues(np.array(MP_parameters[i]))
@@ -976,6 +1014,9 @@ class MasterProblem:
 
         if not binary:
             ampl_MP.getConstraint('convexity_binary').drop()
+
+        if self.method['fix_units']:
+            fix_unit_sizes(ampl_MP, self.df_fix_Units, self.infrastructure.UnitsOfDistrict, self.fix_units_list or None)
 
         # Solve ampl_MP
         ampl_MP.solve()

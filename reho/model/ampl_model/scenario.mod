@@ -209,3 +209,18 @@ var HydrogenDailyExport >= 0;  # set as a variable for an optimal daily H2 expor
 
 subject to forced_H2_fixed_daily_export{p in PeriodStandard}:
 HydrogenDailyExport = sum{t in Time[p]} Network_demand['Hydrogen',p,t]*dt[p];
+
+#--------------------------------------------------------------------------------------------------------------------#
+# Low T waste heat from rSOC and/or methanator
+#--------------------------------------------------------------------------------------------------------------------#
+
+var waste_heat_available{p in Period, t in Time[p]} >= 0;
+
+#subject to no_H2_import_subproblem:
+#        Network_capacity['Hydrogen'] <= 0;
+
+subject to only_1_long_term_storage:
+    Units_Use['CH4_storage_IP_Building1'] + Units_Use['PTES_storage_IP_Building1'] <= 1;
+
+
+

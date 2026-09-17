@@ -79,7 +79,7 @@ METHOD_DESCRIPTIONS = {
     "solver_threads_SP": "Maximum number of solver threads per sub-problem (Gurobi only). With ``parallel_computation``, a few threads avoid oversubscribing the CPU, but change the search path of the solver: the objective may move within its tolerances.",
     "switch_off_second_objective": "Build the Pareto curve by minimizing only the first objective and constraining the second.",
     "skip_initiation": "Skip the sub-problem initiation round of the decomposition.",
-    "fix_units": "Fix unit sizes to the values of ``REHO.df_fix_Units`` instead of optimizing them.",
+    "fix_units": "Fix unit sizes to the values of ``REHO.df_fix_Units`` instead of optimizing them. ``REHO.fix_units_list`` restricts it to the listed technologies, whose units absent from ``df_fix_Units`` are then not installed.",
     "include_all_solutions": "Let the master problem reuse the sub-problem solutions found for other Pareto points.",
     "include_stochasticity": "Add variability to the SIA typical consumption profiles.",
     "sd_stochasticity": "``[sd_consumption, sd_timeshift]`` used when ``include_stochasticity`` is enabled.",

@@ -1,6 +1,4 @@
 Unit;ref_unit;Units_Fmin;Units_Fmax;Cost_inv1;Cost_inv2;GWP_unit1;GWP_unit2;lifetime;UnitOfType;UnitOfLayer;UnitOfService;StreamsOfUnit;Units_flowrate_in;Units_flowrate_out;stream_Tin;stream_Tout
-PTES_S_IP;kWh;0.1;100000;0;17;0;0;20;PTES_storage;;;;;;0;0
-PTES_C_IP;kW;0.1;100000;0;574;0;0;20;PTES_conversion;Electricity/ HeatCascade;SH/ DHW;h_ht;;;70;50
 HC;kW;0.1;100000;0;0.001;0;0;25;HeatCurtailment;HeatCascade;SH/ DHW;c_lt;;;20;50
 HS_IP;m3;0.1;100000;0;2000;0;0;20;WaterTankSH_interperiod;HeatCascade;SH;h_lt/ c_lt;;;0/ 0;0/ 0
 LHS;kWh;0.1;100000;0;52.8;0;0;7.5;SolidLiquidLHS;HeatCascade;SH;h_ht/ c_ht;;;50/ 30;30/ 50

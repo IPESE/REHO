@@ -54,7 +54,9 @@ AMPL_LICENSE_HELP = (
 # Each registry maps the key REHO uses to detect that a technology is part of
 # the problem, to the AMPL file modelling it. Keeping them as data (rather than
 # as if/elif chains) means a new technology is registered in a single place and
-# can be listed, tested and documented programmatically.
+# can be listed, tested and documented programmatically. A technology made of
+# several units is registered under the tuple of their keys: its file is read
+# only when all of them are present.
 
 #: ``UnitOfType`` -> model file(s), read from ``ampl_model/units/`` for each building.
 #: Insertion order is the order in which AMPL reads the files, so keep it stable.
@@ -64,6 +66,7 @@ BUILDING_UNIT_MODELS = {
     "OIL_Boiler": "oil_boiler.mod",
     "WOOD_Stove": "wood_stove.mod",
     "HeatPump": "heatpump.mod",
+    "HeatPump_WH": "heatpump_waste_heat.mod",
     "AirConditioner": "air_conditioner.mod",
     "ThermalSolar": "thermal_solar.mod",
     "DataHeat": "data_heat.mod",
@@ -86,6 +89,7 @@ INTERPERIOD_BUILDING_UNIT_MODELS = {
     "H2storage": "H2storage_IP.mod",
     "CH4storage": "CH4storage_IP.mod",
     "CO2storage": "CO2storage_IP.mod",
+    ("PTES_storage", "PTES_conversion"): "ptes_IP.mod",
 }
 
 #: District unit name -> model file, read from ``ampl_model/units/district_units/``.
@@ -110,6 +114,7 @@ INTERPERIOD_DISTRICT_UNIT_MODELS = {
     "CH4_storage_IP_district": "CH4storage_IP.mod",
     "H2_storage_IP_district": "H2storage_IP.mod",
     "CO2_storage_IP_district": "CO2storage_IP.mod",
+    ("PTES_conv_IP_district", "PTES_storage_IP_district"): "ptes_IP.mod",
 }
 
 #: Directory holding each registry, used by :func:`read_unit_models`.
@@ -129,7 +134,8 @@ def read_unit_models(ampl, registry, selected, directory=None, overrides=None):
     ampl : amplpy.AMPL
         Session to read the model files into.
     registry : dict
-        One of the ``*_UNIT_MODELS`` mappings: key -> file name or list of file names.
+        One of the ``*_UNIT_MODELS`` mappings: key -> file name or list of file names. A key
+        may be a tuple of keys, all of which must be selected.
     selected : iterable of str
         Technology keys actually present in the problem (``UnitTypes``,
         ``UnitsOfDistrict``, ...). Keys absent from ``registry`` are ignored,
@@ -153,7 +159,7 @@ def read_unit_models(ampl, registry, selected, directory=None, overrides=None):
 
     read = []
     for key, files in registry.items():
-        if key not in selected:
+        if not all(required in selected for required in (key if isinstance(key, tuple) else (key,))):
             continue
         files = overrides.get(key, files)
         for file_name in [files] if isinstance(files, str) else files:

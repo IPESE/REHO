@@ -33,7 +33,7 @@ import pandas as pd
 
 import reho.model.infrastructure as infrastructure
 import reho.model.postprocessing.write_results as write_results
-from reho.model.master_problem import CP_WATER, DELTA_H_CO2, DEFAULT_DHN_DELTA_T, MasterProblem
+from reho.model.master_problem import CP_WATER, DELTA_H_CO2, DEFAULT_DHN_DELTA_T, MasterProblem, fix_unit_sizes
 from reho.model.options import initialize_default_scenario
 from reho.model.postprocessing.KPIs import calculate_KPIs
 from reho.model.preprocessing.QBuildings import QBuildingsReader
@@ -150,30 +150,28 @@ class REHO(MasterProblem):
         """Fix the installed capacities to the values of ``self.df_fix_Units``.
 
         Used by ``method['fix_units']`` to evaluate the operation of a design that
-        was decided elsewhere, for instance the optimum of a previous scenario.
+        was decided elsewhere, for instance the optimum of a previous scenario. With
+        ``self.fix_units_list``, only the units of those technologies are fixed, and
+        the ones ``df_fix_Units`` does not size are not installed, see
+        :func:`~reho.model.master_problem.fix_unit_sizes`. A technology of the buildings
+        is listed by its type, e.g. ``'rSOC'``, and a district unit by its name, e.g.
+        ``'rSOC_district'``.
 
         Parameters
         ----------
         ampl : amplpy.AMPL
             A built, not yet solved session.
         house : str, optional
-            Restrict the fixing to the units of that building. Default is all units.
-
-        Notes
-        -----
-        PV capacities are relaxed by 1e-9 because the AMPL model bounds the panel
-        area by the available roof area; fixing the two to the exact same value
-        makes the problem infeasible on rounding alone.
+            Restrict the fixing to the units of that building. Default is all units, those
+            of the district included.
         """
-        units = self.df_fix_Units.index
-        if house is not None:
-            units = units[units.str.contains(str(house))]
-
-        for unit in units:
-            is_pv = ('PV' in unit) if house is None else (unit == 'PV_' + str(house))
-            multiplier = self.df_fix_Units.Units_Mult.loc[unit]
-            ampl.getVariable('Units_Mult').get(unit).fix(multiplier * (1 - 1e-9) if is_pv else multiplier)
-            ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
+        houses = self.infrastructure.houses if house is None else [house]
+        units = [unit for h in houses for unit in self.infrastructure.UnitsOfHouse[h]]
+        targets = [f"{technology}_{h}" for technology in self.fix_units_list for h in houses]
+        if house is None:
+            units += list(self.infrastructure.UnitsOfDistrict)
+            targets += self.fix_units_list
+        fix_unit_sizes(ampl, self.df_fix_Units, units, targets if self.fix_units_list else None)
 
     def single_optimization(self, Pareto_ID=0):
         """Run one optimization and store its results under ``self.results``.

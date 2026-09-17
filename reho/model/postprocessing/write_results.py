@@ -821,8 +821,8 @@ def set_df_Interperiod(ampl):
     """
     Extract the state of charge of the inter-period storage technologies over the year.
 
-    The variables read are ``BAT_E_stored_IP``, ``H2_stor_stored``, ``CH4_stor_stored`` and
-    ``CO2_stor_stored``; those absent from the model are skipped.
+    The variables read are ``BAT_E_stored_IP``, ``H2_stor_stored``, ``CH4_stor_stored``, ``CO2_stor_stored``
+    and ``PTES_E_Stored``; those absent from the model are skipped.
 
     Parameters
     ----------
@@ -833,8 +833,11 @@ def set_df_Interperiod(ampl):
     -------
     pandas.DataFrame
         One column per storage variable that is not zero everywhere, indexed by
-        ``(Building, HourOfYear)``, where ``Building`` is the last part of the unit name. Empty when
-        the model has no inter-period storage.
+        ``(Building, HourOfYear)``, where ``Building`` is the last part of the unit name. Three more rows,
+        indexed by ``('storage info', 'Volume')``, ``('storage info', 'Pressure')`` and
+        ``('storage info', 'Compressibility factor')``, give the volume of the first tank of each gas storage
+        (hydrogen, methane, CO2) [m3], its pressure [bar] and the compressibility factor of the gas at that
+        pressure; 0 for the other storages. Empty when the model has no inter-period storage.
     """
     IP_stor_list = []
 
@@ -855,32 +858,46 @@ def set_df_Interperiod(ampl):
         return IP_stor_list
 
     # Add here other long term storage variables (from the .mod files) if needed
-    #IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "BAT_E_stored")
-    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "BAT_E_stored_IP")
-    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "H2_stor_stored")
-    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CH4_stor_stored")
-    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CO2_stor_stored")
-    if IP_stor_list:
-        df_IP_storage = pd.concat(IP_stor_list, axis=1)
-        if df_IP_storage.index.nlevels == 1:
-            new_level = list(range(len(df_IP_storage)))
-            # Convert the existing index to a list (or use .get_level_values() for specific levels)
-            original_index = df_IP_storage.index.tolist()
+    for var in ["BAT_E_stored_IP", "H2_stor_stored", "CH4_stor_stored", "CO2_stor_stored", "PTES_E_Stored"]:
+        IP_stor_list = add_stor_to_list(IP_stor_list, ampl, var)
+    if not IP_stor_list:
+        return pd.DataFrame()
 
-            # Check that 'new_level' matches the length of 'original_index'
-            assert len(original_index) == len(
-                new_level), "Length of new_level must match length of the existing index."
+    df_IP_storage = pd.concat(IP_stor_list, axis=1)
+    df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
+    if df_IP_storage.index.nlevels == 1:
+        new_level = list(range(len(df_IP_storage)))
+        # Convert the existing index to a list (or use .get_level_values() for specific levels)
+        original_index = df_IP_storage.index.tolist()
 
-            # Create a new MultiIndex with the converted index and new level
-            df_IP_storage.index = pd.MultiIndex.from_arrays([original_index, new_level],
-                                                            names=["original_index", "new_level"])
+        # Check that 'new_level' matches the length of 'original_index'
+        assert len(original_index) == len(
+            new_level), "Length of new_level must match length of the existing index."
 
-        df_IP_storage.index.names = ['Building', 'HourOfYear']
-        df_IP_storage = df_IP_storage.fillna(0)
-        df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
-        df_IP_storage = df_IP_storage.sort_index()
-    else:
-        df_IP_storage = pd.DataFrame()
+        # Create a new MultiIndex with the converted index and new level
+        df_IP_storage.index = pd.MultiIndex.from_arrays([original_index, new_level],
+                                                        names=["original_index", "new_level"])
+    df_IP_storage.index.names = ['Building', 'HourOfYear']
+
+    # Characteristics of the gas storages: volume, pressure and compressibility factor of the gas
+    storage_info = pd.DataFrame(np.nan, columns=df_IP_storage.columns, index=pd.MultiIndex.from_tuples(
+        [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
+        names=['Building', 'HourOfYear']))
+    for column in df_IP_storage.columns:
+        gas = column.split("_")[0]
+        if gas not in ("H2", "CH4", "CO2"):
+            continue
+        try:
+            storage_info[column] = [round(get_ampl_data(ampl, f"{gas}_stor_volume").iloc[0, 0], 3),
+                                    round(get_ampl_data(ampl, f"{gas}_stor_pressure").iloc[0, 0], 1),
+                                    round(get_ampl_data(ampl, f"Z_{gas}_max").iloc[0, 0], 3)]
+        except Exception as exc:
+            logger.debug('The characteristics of the %s storage could not be read (%s).', gas, exc)
+
+    df_IP_storage = pd.concat([storage_info, df_IP_storage])
+    df_IP_storage = df_IP_storage.fillna(0)
+    df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
+    df_IP_storage = df_IP_storage.sort_index()
 
     return df_IP_storage
 

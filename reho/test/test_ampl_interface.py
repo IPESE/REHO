@@ -18,6 +18,7 @@ from reho.model.ampl_interface import (
     INTERPERIOD_BUILDING_UNIT_MODELS,
     INTERPERIOD_DISTRICT_UNIT_MODELS,
     _REGISTRY_DIRECTORIES,
+    read_unit_models,
 )
 from reho.model.sub_problem import MODEL_STREAMS_TEMPERATURE, _building_timesteps
 from reho.paths import file_reader, path_to_ampl_model, path_to_infrastructure, path_to_units
@@ -57,33 +58,68 @@ def test_pv_variants_exist():
         assert os.path.isfile(os.path.join(path_to_units, file_name))
 
 
+def _keys(*registries):
+    """Keys of registries, the tuple keys of the technologies made of several units unpacked."""
+    return {part for registry in registries for key in registry for part in (key if isinstance(key, tuple) else (key,))}
+
+
 def test_every_building_unit_type_has_a_model():
-    """Each ``UnitOfType`` of building_units.csv must be modelled by a ``.mod`` file."""
-    units = file_reader(os.path.join(path_to_infrastructure, "building_units.csv"))
-    known = set(BUILDING_UNIT_MODELS) | set(INTERPERIOD_BUILDING_UNIT_MODELS)
-    # DHN_pipes is declared as a unit but modelled together with DHN_hex.
-    known |= {"DHN_pipes"}
-    missing = sorted(set(units["UnitOfType"]) - known)
+    """Each ``UnitOfType`` of building_units.csv and building_units_IP.csv must be modelled by a ``.mod`` file."""
+    types = set()
+    for file_name in ["building_units.csv", "building_units_IP.csv"]:
+        types |= set(file_reader(os.path.join(path_to_infrastructure, file_name))["UnitOfType"])
+    known = _keys(BUILDING_UNIT_MODELS, INTERPERIOD_BUILDING_UNIT_MODELS)
+    # DHN_pipes is declared as a unit but modelled together with DHN_hex, and the storage
+    # compressors are modelled by the files of the storages they serve.
+    known |= {"DHN_pipes", "Compressor"}
+    missing = sorted(types - known)
     assert not missing, f"These building unit types have no registered AMPL model: {missing}"
 
 
 def test_every_district_unit_has_a_model():
     """Each district unit must be modelled, or reuse a building-scale model."""
-    units = file_reader(os.path.join(path_to_infrastructure, "district_units.csv"))
-    known = set(DISTRICT_UNIT_MODELS) | set(INTERPERIOD_DISTRICT_UNIT_MODELS)
+    names = set()
+    for file_name in ["district_units.csv", "district_units_IP.csv"]:
+        names |= set(file_reader(os.path.join(path_to_infrastructure, file_name))["Unit"])
+    known = _keys(DISTRICT_UNIT_MODELS, INTERPERIOD_DISTRICT_UNIT_MODELS)
     # Handled outside the registries: the district battery reuses battery.mod, the EV
-    # charger and the mobility modes are declared by mobility.mod / evehicle.mod, and
-    # DHN pipes by dhn.mod when the network is enabled.
-    known |= {"Battery_district", "EV_charger_district", "DHN_pipes_district"}
-    missing = sorted(set(units["Unit"]) - known)
+    # charger and the mobility modes are declared by mobility.mod / evehicle.mod, DHN
+    # pipes by dhn.mod when the network is enabled, and the storage compressor by the
+    # files of the storages it serves.
+    known |= {"Battery_district", "EV_charger_district", "DHN_pipes_district", "Compressor_IP_district"}
+    missing = sorted(names - known)
     assert not missing, f"These district units have no registered AMPL model: {missing}"
 
 
 def test_registry_keys_are_unique_across_scales():
     """A key must not mean two different things in two registries."""
-    building = set(BUILDING_UNIT_MODELS) | set(INTERPERIOD_BUILDING_UNIT_MODELS)
-    district = set(DISTRICT_UNIT_MODELS) | set(INTERPERIOD_DISTRICT_UNIT_MODELS)
+    building = _keys(BUILDING_UNIT_MODELS, INTERPERIOD_BUILDING_UNIT_MODELS)
+    district = _keys(DISTRICT_UNIT_MODELS, INTERPERIOD_DISTRICT_UNIT_MODELS)
     assert not building & district
+
+
+class _RecordingAMPL:
+    """Stand-in for an AMPL session that records the model files read."""
+
+    def __init__(self):
+        self.read_files = []
+
+    def cd(self, directory):
+        pass
+
+    def read(self, file_name):
+        self.read_files.append(file_name)
+
+
+@pytest.mark.parametrize("selected, expected", [
+    (["PTES_storage"], []),
+    (["PTES_conversion"], []),
+    (["PTES_conversion", "PTES_storage"], ["ptes_IP.mod"]),
+])
+def test_a_technology_of_several_units_needs_all_of_them(selected, expected):
+    ampl = _RecordingAMPL()
+    read_unit_models(ampl, INTERPERIOD_BUILDING_UNIT_MODELS, selected)
+    assert ampl.read_files == expected
 
 
 def test_model_stream_temperatures_are_parameters_of_the_model():

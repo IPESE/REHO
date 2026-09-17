@@ -11,7 +11,7 @@ param CH4_stor_limit_max{u in UnitsOfType['CH4storage']} default 1;			#-	[2]
 param CH4_stor_limit_min{u in UnitsOfType['CH4storage']} default 0;			#-	[1]
 
 param C_rate_CH4{u in UnitsOfType['CH4storage']} default 1;					#-
-param CH4_stor_self_discharge{u in UnitsOfType['CH4storage']} default 1;	#-	[1]
+param CH4_stor_self_discharge_eff{u in UnitsOfType['CH4storage']} default 1;	#-	[1]
 
 var CH4_stor_charging{u in UnitsOfType['CH4storage'], p in Period,t in Time[p]} >= 0;
 var CH4_stor_discharging{u in UnitsOfType['CH4storage'], p in Period,t in Time[p]} >= 0;
@@ -30,7 +30,7 @@ subject to CH4_stor_discharging_process{u in UnitsOfType['CH4storage'], p in Per
 
 #--Hourly Energy balance (valid for inter-period storage)
 subject to CH4_stor_energy_balance{u in UnitsOfType['CH4storage'], hy in Year}:
-	CH4_stor_stored[u,next(hy,Year)] = CH4_stor_self_discharge[u]*CH4_stor_stored[u,hy] +
+	CH4_stor_stored[u,next(hy,Year)] = CH4_stor_self_discharge_eff[u]*CH4_stor_stored[u,hy] +
 	(CH4_stor_charging[u,PeriodOfYear[hy],TimeOfYear[hy]] - CH4_stor_discharging[u,PeriodOfYear[hy],TimeOfYear[hy]])*dt[PeriodOfYear[hy]];
 
 # never charge and discharge storage simultaneously:
@@ -92,8 +92,8 @@ subject to CH4_stor_c4{u in UnitsOfType['CH4storage'], hy in Year}:
 	CH4_stor_volume[u] <= Units_Mult[u] * (3.6 * Z_CH4_max * R_const_CH4 * T_compr_in_CH4)/((LHV_CH4/1000) * M_CH4 * CH4_stor_pressure * 10^5);
 
 #-- Power constraints
-#subject to CH4_stor_c3{u in UnitsOfType['CH4storage'], p in PeriodStandard,t in Time[p]}:
+#subject to CH4_stor_c5{u in UnitsOfType['CH4storage'], p in PeriodStandard,t in Time[p]}:
 #	Units_demand['Biomethane',u,p,t]*dt[p] <= (CH4_stor_limit_max[u]-CH4_stor_limit_min[u])*Units_Mult[u]*C_rate_CH4[u];
 
-#subject to CH4_stor_c4{u in UnitsOfType['CH4storage'], p in PeriodStandard,t in Time[p]}:
+#subject to CH4_stor_c6{u in UnitsOfType['CH4storage'], p in PeriodStandard,t in Time[p]}:
 #	Units_supply['Biomethane',u,p,t]*dt[p] <= (CH4_stor_limit_max[u]-CH4_stor_limit_min[u])*Units_Mult[u]*C_rate_CH4[u];

@@ -233,9 +233,9 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
     # Semi-automatically handled devices
     semi_auto_device = [
         'NG_Boiler', 'OIL_Boiler', 'WOOD_Stove', 'ThermalSolar', 'ElectricalHeater_DHW', 'ElectricalHeater_SH', 'ElectricalHeater_other',
-        'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
+        'DataHeat_DHW', 'DataHeat_SH', 'HeatPump_Air','HeatPump_Waste_heat', 'HeatPump_Geothermal', 'HeatPump_Lake', 'HeatPump_DHN',
         'AirConditioner', 'NG_Boiler_district', 'NG_Cogeneration_district', 'HeatPump_Geothermal_district',
-        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district','Datacenter_district', 'ORC_DC_district'
+        'DHN_hex', 'rSOC', 'MTR', 'ETZ', 'FC', 'rSOC_district', 'MTR_district', 'ElectricalHeater_other_district','Datacenter_district', 'ORC_DC_district', 'ICE_district'
     ]
 
     # Services that can be provided by the devices: ['SH', 'DHW', 'Cooling', 'rSOC_heat']
@@ -281,7 +281,17 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 fact=factor
             )
 
-    electrical_storage_devices = ['Battery', 'Battery_IP', 'Battery_district', 'Battery_IP_district', 'EV_district']  # example list
+    # Manually merge the heatpump_waste_heat as a heatpump_air to avoid duplication in the plots
+    #df_label, df_stv, _ = add_flow('Electrical_consumption', 'HeatPump_Air', 'Electricity', 'HeatPump_Waste_heat',
+    #                               'Demand_MWh', df_annuals, df_label, df_stv)
+
+    #df_label, df_stv, _ = add_flow('HeatPump_Air', 'SH', 'SH', 'HeatPump_Waste_heat',
+    #                               'Supply_MWh', df_annuals, df_label, df_stv)
+
+    #df_label, df_stv, _ = add_flow('HeatPump_Air', 'DHW', 'DHW', 'HeatPump_Waste_heat',
+    #                               'Supply_MWh', df_annuals, df_label, df_stv)
+
+    electrical_storage_devices = ['Battery', 'Battery_IP', 'Battery_district', 'Battery_IP_district', 'EV_district', "PTES_conv_IP"]  # example list
     # Flow templates for electrical storage
     storage_flow_templates = [
         # Charging flow: electricity used to charge the battery
@@ -360,7 +370,7 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
             'flows': [
                 # Network imports/exports
                 ('Biomethane_import', 'rSOC', 'Network', 'Supply_MWh', False, None, 0, 1),
-                ('rSOC', 'Biomethane_export', 'Network', 'Demand_MWh', False, None, 0, 1),
+                ('MTR', 'Biomethane_export', 'Network', 'Demand_MWh', False, None, 0, 1),
 
                 # internal flows
                 ('CH4_storage_IP', 'rSOC', 'CH4_storage_IP', 'Supply_MWh', False, None, 0, 1),
@@ -385,6 +395,11 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 # Only include if the device exists (done in logic block below)
                 ('Total_EV_fleet', 'Mobility', 'EV_district', 'Supply_MWh', False, None, 0, 1 / 9.37),
                 ('Total_EV_fleet', 'Mobility', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1 / 9.37),
+                ("ICE_district", "Mobility", "ICE_district", "Supply_MWh", False, None, 0, 1/ 9.37),
+                ("Mobility_import", "Mobility", "Network", "Supply_MWh", False, None, 0, 1 / 9.37),
+                ("Bike_district", "Mobility", "Bike_district", "Supply_MWh", False, None, 0, 1 / 9.37),
+                ("ElectricBike_district", "Mobility", "ElectricBike_district", "Supply_MWh", False, None, 0, 1 / 9.37),
+
             ],
             'electricity_consumption': [
                 ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_district', 'Demand_MWh', False, None, 0, 1),
@@ -392,7 +407,6 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
                 ('Electrical_consumption', 'Total_EV_fleet', 'Electricity', 'EV_charger_district', 'Demand_MWh', False, None, 0, 1),
                 ('Total_EV_fleet', 'Electrical_consumption', 'Electricity', 'EV_charger_district', 'Supply_MWh', False, None, 0, 1)
             ]
-
         }
     }
 

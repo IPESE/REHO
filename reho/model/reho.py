@@ -217,6 +217,41 @@ class REHO(MasterProblem):
             )
 
     def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None, read_DHN=False):
+        """Solve a scenario with the Dantzig-Wolfe decomposition.
+
+        1. Initiation: the sub-problem of each building is solved
+           (:meth:`~reho.model.master_problem.MasterProblem.initiate_decomposition`), and a first
+           master problem combines the configurations they propose.
+        2. Iterations: the sub-problems are solved with the dual values of the master problem
+           (:meth:`~reho.model.master_problem.MasterProblem.SP_iteration`), then the master
+           problem again (:meth:`~reho.model.master_problem.MasterProblem.MP_iteration`), until
+           :meth:`~reho.model.master_problem.MasterProblem.check_Termination_criteria` is met,
+           from the fourth iteration on, or the iteration counter reaches
+           ``DW_params['max_iter'] - 1``.
+        3. Finalization: a last master problem, with binary variables, selects exactly one
+           configuration per building.
+
+        The sub-problems are solved in a pool of ``cpu_use`` processes.
+
+        Parameters
+        ----------
+        scenario : dict
+            Scenario of the optimization.
+        Scn_ID : str
+            Name of the scenario, under which the results are stored.
+        Pareto_ID : int, optional
+            Index of the Pareto point. Default is 0.
+        epsilon_init : pandas.Series, optional
+            Epsilon constraint of each building, for the initiation at the building scale.
+        read_DHN : bool, optional
+            Include the district heating network in the master problem. Default is False.
+
+        Returns
+        -------
+        tuple
+            ``(None, None)``, in place of the AMPL session and exit code of the compact formulation:
+            the results are stored in ``results_SP`` and ``results_MP``.
+        """
 
         # Initiation
         self.pool = mp.Pool(self.cpu_use)
@@ -249,6 +284,23 @@ class REHO(MasterProblem):
         return None, None
 
     def generate_pareto_curve(self):
+        """Compute the Pareto front between the two objectives of the scenario.
+
+        ``scenario['Objective']`` is a pair of objectives among ``'TOTEX'``, ``'CAPEX'``, ``'OPEX'`` and
+        ``'GWP'``, and ``scenario['nPareto']`` the number of intermediate points on each side of the front.
+
+        1. The two ends of the front minimize each objective alone.
+        2. ``nPareto`` points minimize the second objective, with an epsilon constraint on the first
+           one, evenly spread between its values at the two ends.
+        3. Unless ``method['switch_off_second_objective']`` is set, ``nPareto`` more points minimize the
+           first objective, with an epsilon constraint on the second one.
+        4. The points are renumbered from 1, by decreasing OPEX of the district.
+
+        Every point keeps the constraint ``EMOO_grid``, the specific constraints and the units enforced
+        or excluded by the scenario. The results and their KPIs are stored in
+        ``results[scenario['name']]``, and the values of the epsilon constraints in
+        ``epsilon_constraints``.
+        """
 
         Scn_ID = self.scenario['name']
 
@@ -523,6 +575,23 @@ class REHO(MasterProblem):
         self.infrastructure = infrastructure.Infrastructure(buildings, units, self.infrastructure.grids)
 
     def add_df_Results(self, ampl, Scn_ID, Pareto_ID, scenario):
+        """Extract the results of an optimization, and store them in ``results[Scn_ID][Pareto_ID]``.
+
+        With the decomposition, the results are assembled from the master problem and the selected
+        sub-problems (:meth:`get_df_Results_from_MP_and_SPs`); with the compact formulation, they are
+        read from the AMPL session. The metadata of the run are added as ``df_Metadata``.
+
+        Parameters
+        ----------
+        ampl : amplpy.AMPL or None
+            Solved session of the compact formulation; unused with the decomposition.
+        Scn_ID : str
+            Name of the scenario.
+        Pareto_ID : int
+            Index of the Pareto point.
+        scenario : dict
+            Scenario of the optimization.
+        """
         if self.method['building-scale'] or self.method['district-scale']:
             df_Results = self.get_df_Results_from_MP_and_SPs(Scn_ID, Pareto_ID)
         else:
@@ -541,6 +610,25 @@ class REHO(MasterProblem):
             data_date=self.qbuildings_data.get('data_date'))
 
     def get_df_Results_from_MP_and_SPs(self, Scn_ID, Pareto_ID):
+        """Assemble the results of the decomposition, from the last master problem and the selected sub-problems.
+
+        The configurations selected by the last master problem (``lambda`` = 1) give the results of
+        each building. The master problem gives those of the district: its costs and emissions in
+        ``df_Performance``, its exchanges with the external grids (hub ``Network`` of ``df_Grid``,
+        ``df_Grid_t`` and ``df_Annuals``), and the operation of the district units.
+
+        Parameters
+        ----------
+        Scn_ID : str
+            Name of the scenario.
+        Pareto_ID : int
+            Index of the Pareto point.
+
+        Returns
+        -------
+        dict
+            Result DataFrames, described in :doc:`/sections/results`.
+        """
 
         df_Results = dict()
 
@@ -735,6 +823,21 @@ class REHO(MasterProblem):
         return df_Results
 
     def get_final_SPs_results(self, MP_selection, df_name):
+        """Gather one result DataFrame over the sub-problem solutions selected by the master problem.
+
+        Parameters
+        ----------
+        MP_selection : pandas.Index
+            Selected solutions, as ``(FeasibleSolution, house)`` pairs.
+        df_name : str
+            Name of the DataFrame to gather, e.g. ``'df_Unit_t'``.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The DataFrames of the selected solutions, indexed as by
+            :meth:`~reho.model.master_problem.MasterProblem.return_combined_SP_results`.
+        """
         data = self.return_combined_SP_results(self.results_SP, df_name)
         df = pd.DataFrame()
         for idx in MP_selection.values:
@@ -743,6 +846,17 @@ class REHO(MasterProblem):
         return df
 
     def get_KPIs(self, Scn_ID=0, Pareto_ID=0):
+        """Compute the indicators of an optimization, with :func:`~reho.model.postprocessing.KPIs.calculate_KPIs`.
+
+        They are stored in ``results[Scn_ID][Pareto_ID]``, as ``df_KPIs`` and ``df_Economics``.
+
+        Parameters
+        ----------
+        Scn_ID : str, optional
+            Name of the scenario.
+        Pareto_ID : int, optional
+            Index of the Pareto point. Default is 0.
+        """
         df_KPI, df_Economics = calculate_KPIs(self.results[Scn_ID][Pareto_ID], self.infrastructure, self.buildings_data)
         self.results[Scn_ID][Pareto_ID]["df_KPIs"] = df_KPI
         self.results[Scn_ID][Pareto_ID]["df_Economics"] = df_Economics

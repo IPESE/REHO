@@ -17,6 +17,43 @@ Extracts the results from the AMPL model and converts it to Python dictionary an
 
 
 def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, tolerance_filtering=1e-4):
+    """
+    Extract the results of a solved sub-problem, or of the compact formulation, into DataFrames.
+
+    The DataFrames always produced are ``df_Performance``, ``df_Annuals``, ``df_Unit``, ``df_Grid``,
+    ``df_Grid_t``, ``df_Time``, ``df_Buildings``, ``df_Buildings_t`` and ``df_Unit_t``. The method
+    options add or restrict some of them:
+
+    - ``save_data_input``: adds ``df_Weather`` and ``df_Index``.
+    - ``save_timeseries`` disabled: ``df_Buildings_t`` keeps only the heating, indoor temperature
+      and DHW columns, and ``df_Unit_t`` only the PV, batteries and cogeneration units.
+    - ``save_streams``: adds ``df_Streams_t``.
+    - ``use_pv_orientation`` or ``use_facades``: adds ``df_PV_Surface`` and ``df_PV_orientation``.
+    - ``interperiod_storage``: adds ``df_Interperiod``.
+
+    The DataFrames are described in :doc:`/sections/results`.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        Solved session.
+    scenario : dict
+        Scenario of the optimization; its ``Objective`` is read.
+    method : dict
+        Method options.
+    buildings_data : dict
+        Characteristics of the buildings, copied into ``df_Buildings``.
+    filter : bool, optional
+        Meant to drop the rows that are all zeros; currently has no effect. Default is True.
+    tolerance_filtering : float, optional
+        Absolute value below which the numeric results are set to 0, see
+        :func:`filter_numerical_instabilities`. Default is 1e-4.
+
+    Returns
+    -------
+    dict
+        Name -> result DataFrame.
+    """
     def set_df_performance(ampl, scenario):
         df1 = get_ampl_data(ampl, 'Costs_House_op')  # without the comfort penalty costs
         df1 = df1.rename(columns={'Costs_House_op': 'Costs_op'})
@@ -441,6 +478,52 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
 
 
 def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario=None, tolerance_filtering=1e-4):
+    """
+    Extract the results of a solved master problem into DataFrames.
+
+    The DataFrames always produced are:
+
+    - ``df_DW``: weight ``lambda`` of each configuration (``FeasibleSolution``) of each building.
+    - ``df_Grid``: capacity and reinforcement of the networks.
+    - ``df_District``: costs and emissions of each building and of the district (``Network``).
+    - ``df_beta``: dual values of the epsilon constraints on the objectives, zeros without them.
+    - ``df_District_t``: exchanges of the district with the networks at every timestep; with
+      ``binary``, also their tariffs, emission factors and the domestic demand.
+    - ``df_Dual`` and ``df_Dual_t``: dual values of the convexity and linking constraints.
+    - ``df_Unit``: use, size, costs, emissions and lifetime of the district units.
+    - ``df_Interperiod``: inter-period storage, empty unless ``method['interperiod_storage']``.
+
+    The grid exchanges (``df_Buildings_t``) and costs (``df_Buildings``) of every configuration are
+    added with ``method['save_data_input']`` or ``binary``; ``df_Unit_t`` when there are district
+    units; the renovation decisions ``is_ins`` in ``df_District`` when renovation is modeled; and
+    the actor results (``df_Actors``, ``df_Actors_expense``, ``df_Actors_tariff``,
+    ``df_Actors_tariff_f``, ``df_Actors_dual``, ``Samples``) with ``method['actors_problem']``.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        Solved session of the master problem.
+    binary : bool, optional
+        Whether the configurations were selected with binary variables, i.e. the last iteration.
+        Default is False.
+    method : dict
+        Method options.
+    district : Infrastructure
+        Infrastructure of the district, whose district units are read.
+    read_DHN : bool, optional
+        Whether the model includes the district heating network, whose pipes and flows are then
+        added. Default is False.
+    scenario : dict
+        Scenario of the master problem; ``EMOO`` and ``Objective`` are read.
+    tolerance_filtering : float, optional
+        Absolute value below which the numeric results are set to 0, see
+        :func:`filter_numerical_instabilities`. Default is 1e-4.
+
+    Returns
+    -------
+    dict
+        Name -> result DataFrame.
+    """
     scenario = {} if scenario is None else scenario
     df_Results = dict()
 
@@ -734,6 +817,24 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
 
 def set_df_Interperiod(ampl):
+    """
+    Extract the state of charge of the inter-period storage technologies over the year.
+
+    The variables read are ``BAT_E_stored_IP``, ``H2_stor_stored``, ``CH4_stor_stored`` and
+    ``CO2_stor_stored``; those absent from the model are skipped.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        Solved session.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One column per storage variable that is not zero everywhere, indexed by
+        ``(Building, HourOfYear)``, where ``Building`` is the last part of the unit name. Empty when
+        the model has no inter-period storage.
+    """
     IP_stor_list = []
 
     def add_stor_to_list(IP_stor_list, ampl, var):
@@ -784,6 +885,23 @@ def set_df_Interperiod(ampl):
 
 
 def get_ampl_data(ampl, ampl_name, multi_index=False):
+    """
+    Read an AMPL variable, parameter or expression into a DataFrame.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        Session holding the data.
+    ampl_name : str
+        Name of the entity, e.g. ``'Units_Mult'``.
+    multi_index : bool, optional
+        Turn the tuples indexing entities of several dimensions into a MultiIndex. Default is False.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Values of the entity, in a column named after it.
+    """
     # AMPl data in AMPLPY Dataframe
     df = ampl.getData(ampl_name)
     # transform to Pandas Dataframe
@@ -796,6 +914,23 @@ def get_ampl_data(ampl, ampl_name, multi_index=False):
 
 
 def get_ampl_dual_values_in_pandas(ampl, ampl_name, multi_index):
+    """
+    Read the dual values of an AMPL constraint into a DataFrame.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        Solved session.
+    ampl_name : str
+        Name of the constraint, e.g. ``'convexity_1'``.
+    multi_index : bool
+        Turn the tuples indexing constraints of several dimensions into a MultiIndex.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Dual value of each instance of the constraint.
+    """
     # AMPl data in AMPLPY Dataframe
     df = ampl.getConstraint(ampl_name).getValues().toPandas()
     # Change index from tuple to multi index
@@ -883,6 +1018,18 @@ def set_df_metadata(scenario, method, cluster, parameters, data_source=None, dat
 
 
 def auto_adjust_columns(writer, df, sheet_name):
+    """
+    Size the columns of an Excel sheet to the length of their header.
+
+    Parameters
+    ----------
+    writer : pandas.ExcelWriter
+        Writer of the workbook, using the openpyxl engine.
+    df : pandas.DataFrame
+        DataFrame written to the sheet.
+    sheet_name : str
+        Name of the sheet.
+    """
     worksheet = writer.sheets[sheet_name]
     for idx, col in enumerate(df.columns, 1):
         # column header length + extra padding

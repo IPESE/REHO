@@ -7,6 +7,22 @@ Collects data from the `SIA Swiss norms <https://www.sia.ch/fr/services/sia-norm
 
 
 def read_sia2024_rooms_sia380_1(digit, df_SIA_380):
+    """
+    Room mix of a SIA 380/1 building category.
+
+    Parameters
+    ----------
+    digit : str
+        SIA 380/1 category, as a Roman numeral from ``'I'`` (collective housing) to ``'XIII'`` (other).
+    df_SIA_380 : pandas.DataFrame
+        Content of ``sia2024_rooms_sia380_1.csv``: one row per SIA 2024 room type, one column per
+        SIA 380/1 category named in words (``'collective housing'``, ...).
+
+    Returns
+    -------
+    pandas.Series
+        Area share of each SIA 2024 room type in the category, NaN for the room types it does not contain.
+    """
     dict_affiliation2digit = {'collective housing': 'I',
                               'individual housing': 'II',
                               'administrative': 'III',
@@ -27,6 +43,41 @@ def read_sia2024_rooms_sia380_1(digit, df_SIA_380):
 
 
 def read_sia_2024_profiles(status, df):
+    """
+    Daily profiles of every SIA 2024 room type, for a given energy standard.
+
+    Each profile has one row per room type and one column per hour of the day. The appliance
+    profiles are normalized by their peak, then scaled to the installed power of the chosen standard.
+
+    Parameters
+    ----------
+    status : str
+        Energy standard, which sets the power of the appliances: ``'existing'`` (high),
+        ``'standard'`` (medium), ``'aim'`` or ``'target'`` (low).
+    df : dict of pandas.DataFrame
+        Sheets of ``sia2024_data.xlsx``; ``calculs`` (hourly profiles) and ``data`` (installed
+        powers) are used.
+
+    Returns
+    -------
+    df_el_add : pandas.DataFrame
+        Additional lighting, e.g. of showrooms [W/m2].
+    df_el_light : pandas.DataFrame
+        Lighting [W/m2].
+    df_el_appliance : pandas.DataFrame
+        Electrical appliances [W/m2].
+    df_dhw : pandas.DataFrame
+        Useful domestic hot water [l/m2].
+    df_occupancy : pandas.DataFrame
+        Utilization rate [-].
+    df_heat_gain : pandas.DataFrame
+        Heat gains from people [W/m2].
+
+    Raises
+    ------
+    ValueError
+        If ``status`` is not one of the values above.
+    """
     df_el_appliance = df["calculs"].iloc[:, 1:25]
     df_el_ap_norm = df_el_appliance.div(df_el_appliance.max(axis=1), axis=0)  # normalize profile
     df_el_ap_norm = df_el_ap_norm.fillna(0)

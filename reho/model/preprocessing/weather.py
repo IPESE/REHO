@@ -323,6 +323,23 @@ def get_cluster_file_ID(cluster):
 
 
 def plot_cluster_KPI_separate(df, save_fig=False):
+    """
+    Plot the quality indicators of the clustering against the number of clusters.
+
+    Three figures compare the ambient temperature (solid lines) and the global irradiation (dashed
+    lines): RMSD and LDC error, MAE, and MAPE.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Indicators of each clustering solution, i.e. :attr:`Clustering.kpis_clu
+        <reho.model.preprocessing.clustering.Clustering>` after
+        :meth:`~reho.model.preprocessing.clustering.Clustering.run_clustering`, with attributes
+        ``Text`` and ``Irr``.
+    save_fig : bool, optional
+        Save the figures as ``Cluster_KPIs.pdf``, ``MAE_KPIs.pdf`` and ``MAPE_KPIs.pdf`` in the
+        working directory instead of showing them. Default is False.
+    """
     # Transpose the DataFrame
     df = df.transpose()
 
@@ -386,6 +403,22 @@ def plot_cluster_KPI_separate(df, save_fig=False):
 
 
 def plot_LDC(cl, save_fig=False):
+    """
+    Plot the typical periods selected by a clustering against the original year.
+
+    The first figure shows the hourly temperature and irradiation of the year, with the values of
+    the typical periods colored by period. The second compares their load duration curves.
+
+    Parameters
+    ----------
+    cl : Clustering
+        Clustering of ``Text`` and ``Irr``, after
+        :meth:`~reho.model.preprocessing.clustering.Clustering.run_clustering`. The selected
+        number of clusters, ``cl.nbr_opt``, is plotted.
+    save_fig : bool, optional
+        Save the figures as ``Year_Cluster.pdf`` and ``LDC.pdf`` in the working directory instead
+        of showing them. Default is False.
+    """
     nbr_plot = cl.nbr_opt
     logger.info('Plotting for %s typical days.', nbr_plot)
 

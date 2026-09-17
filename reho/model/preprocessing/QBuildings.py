@@ -41,7 +41,7 @@ class QBuildingsReader:
         Whether the roofs data should be added.
     """
 
-    # Filter layer -> column of the `buildings` table on which it is applied
+    #: Filter layer -> column of the ``buildings`` table on which it is applied
     LAYER_COLUMNS = {
         'transformers': 'transformer',
         'transformer': 'transformer',
@@ -53,7 +53,7 @@ class QBuildingsReader:
         'id_building': 'id_building',
     }
 
-    # Filter layer -> table holding the corresponding district boundaries
+    #: Filter layer -> table holding the corresponding district boundaries
     DISTRICT_TABLES = {
         'transformers': 'transformers',
         'transformer': 'transformers',
@@ -63,7 +63,7 @@ class QBuildingsReader:
         'neighborhood': 'neighborhoods',
     }
 
-    # source_heating keyword -> unit(s) implementing it. Several sources can be listed (e.g. "Oil/Electricity").
+    #: source_heating keyword -> unit(s) implementing it. Several sources can be listed (e.g. "Oil/Electricity").
     HEATING_SOURCE_TO_UNITS = {
         'oil':           ['OIL_Boiler'],
         'gas':           ['NG_Boiler'],
@@ -72,7 +72,7 @@ class QBuildingsReader:
         'district heat': ['DHN_hex'],
     }
 
-    # source_hotwater keyword -> unit(s) implementing it. 'wood' is absent: WOOD_Stove only serves SH.
+    #: source_hotwater keyword -> unit(s) implementing it. 'wood' is absent: WOOD_Stove only serves SH.
     HOTWATER_SOURCE_TO_UNITS = {
         'oil':           ['OIL_Boiler'],
         'gas':           ['NG_Boiler'],
@@ -81,18 +81,18 @@ class QBuildingsReader:
         'solar':         ['ThermalSolar'],
     }
 
-    # Units that can be a primary heating/DHW system, i.e. that compete with each other.
+    #: Units that can be a primary heating/DHW system, i.e. that compete with each other.
     PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
     }
 
-    # Units whose UnitOfService contains 'DHW'. WOOD_Stove and ElectricalHeater_SH serve SH only.
+    #: Units whose UnitOfService contains 'DHW'. WOOD_Stove and ElectricalHeater_SH serve SH only.
     DHW_CAPABLE_UNITS = {
         'OIL_Boiler', 'NG_Boiler', 'ElectricalHeater_DHW', 'DHN_hex',
         'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
     }
 
-    # Date of the databases predating the [DATE] tag in their table descriptions
+    #: Date of the databases predating the [DATE] tag in their table descriptions
     DEFAULT_DB_DATE = '2023'
 
     def __init__(self, load_facades=False, load_roofs=False, correct_Uh=False):
@@ -564,6 +564,25 @@ class QBuildingsReader:
         return column.in_(values)
 
     def select_buildings_data(self, nb_buildings, filter_class=True):
+        """
+        Select the buildings to optimize, and name them ``Building1``, ``Building2``, ...
+
+        The first ``nb_buildings`` buildings of ``data['buildings']`` are kept, and ``data['buildings']``
+        is reduced to them. When the data come from a file rather than the database, their geometries
+        are parsed.
+
+        Parameters
+        ----------
+        nb_buildings : int
+            Number of buildings to select.
+        filter_class : bool, optional
+            Skip the buildings whose ``id_class`` contains the SIA category XIII (other). Default is True.
+
+        Returns
+        -------
+        dict
+            ``'Building<i>'`` -> characteristics of the building.
+        """
 
         nb_select = 0
         selected_buildings = []
@@ -585,6 +604,19 @@ class QBuildingsReader:
         return self.data['buildings'].to_dict('index')
 
     def select_roofs_or_facades_data(self, roof):
+        """
+        Index of the roofs, or of the facades, of the selected buildings.
+
+        Parameters
+        ----------
+        roof : bool
+            Select in ``data['roofs']`` if True, in ``data['facades']`` otherwise.
+
+        Returns
+        -------
+        list
+            Index labels of the rows whose ``id_building`` is one of the buildings of ``data['buildings']``.
+        """
         selected_data = []
         for i, building in self.data['buildings'].iterrows():
             if roof:
@@ -633,6 +665,27 @@ def to_shapely(geometry, crs=CRS_QBUILDINGS):
 
 
 def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
+    """
+    Rename the columns of a buildings table from QBuildings to the names REHO uses.
+
+    For instance, ``area_era_m2`` becomes ``ERA``, ``thermal_transmittance_signature_kW_m2_K``
+    becomes ``U_h`` and ``temperature_interior_C`` becomes ``T_comfort_min_0``. The columns absent
+    from the table are skipped, and the columns REHO does not use are dropped. When the geometries
+    are WKT strings, they are parsed, and the buildings with an invalid geometry are dropped.
+
+    Parameters
+    ----------
+    df_buildings : pandas.DataFrame
+        Buildings table, from the QBuildings database or from a file.
+    district_boundary : str, optional
+        Column identifying the district of each building, renamed ``transformer``.
+        Default is ``'transformers'``.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        The buildings, with the column names of REHO.
+    """
     dict_QBuildings_REHO = {
 
         #################################################
@@ -801,6 +854,25 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
 
 
 def translate_facades_to_REHO(df_facades, df_buildings):
+    """
+    Rename the columns of a facades table from QBuildings to the names REHO uses, and locate the facades.
+
+    ``id_facade`` becomes ``Facades_ID``, ``area_facade_solar_m2`` becomes ``AREA`` and ``azimuth``
+    becomes ``AZIMUTH``. The coordinates of the centroid of each facade are added (``CX``, ``CY``),
+    with the altitude of its building (``coord_Z0``).
+
+    Parameters
+    ----------
+    df_facades : pandas.DataFrame
+        Facades table, from the QBuildings database or from a file.
+    df_buildings : pandas.DataFrame
+        Buildings translated by :func:`translate_buildings_to_REHO`, whose column ``z`` gives the altitude.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        The facades, with the column names of REHO.
+    """
     dict_facades = {'azimuth': 'AZIMUTH',
                     'id_facade': 'Facades_ID',
                     'area_facade_solar_m2': 'AREA',
@@ -840,6 +912,23 @@ def translate_facades_to_REHO(df_facades, df_buildings):
 
 
 def translate_roofs_to_REHO(df_roofs):
+    """
+    Rename the columns of a roofs table from QBuildings to the names REHO uses.
+
+    ``id_roof`` becomes ``ROOF_ID``, ``area_roof_solar_m2`` becomes ``AREA``, ``tilt`` becomes
+    ``TILT`` and ``azimuth`` becomes ``AZIMUTH``. When the geometries are WKT strings, they are
+    parsed, and the roofs with an invalid geometry are dropped.
+
+    Parameters
+    ----------
+    df_roofs : pandas.DataFrame
+        Roofs table, from the QBuildings database or from a file.
+
+    Returns
+    -------
+    geopandas.GeoDataFrame
+        The roofs, with the column names of REHO.
+    """
     dict_roofs = {'tilt': 'TILT',
                   'azimuth': 'AZIMUTH',
                   'id_roof': 'ROOF_ID',
@@ -870,6 +959,24 @@ def translate_roofs_to_REHO(df_roofs):
 
 
 def get_roofs(self, buildings):
+    """
+    Keep only the roofs of the given buildings in ``self.data['roofs']``.
+
+    A module-level function taking the reader as first argument. The reader itself uses
+    :meth:`QBuildingsReader.select_roofs_or_facades_data`.
+
+    Parameters
+    ----------
+    self : QBuildingsReader
+        Reader holding the roofs table in ``data['roofs']``.
+    buildings : pandas.DataFrame
+        Buildings whose roofs are kept, with a column ``id_building``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The roofs kept.
+    """
     selected_roofs = []
     for i, building in buildings.iterrows():
         selected_roofs += \
@@ -880,6 +987,24 @@ def get_roofs(self, buildings):
 
 
 def get_facades(self, buildings):
+    """
+    Keep only the facades of the given buildings in ``self.data['facades']``.
+
+    A module-level function taking the reader as first argument. The reader itself uses
+    :meth:`QBuildingsReader.select_roofs_or_facades_data`.
+
+    Parameters
+    ----------
+    self : QBuildingsReader
+        Reader holding the facades table in ``data['facades']``.
+    buildings : pandas.DataFrame
+        Buildings whose facades are kept, with a column ``id_building``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The facades kept.
+    """
     selected_facades = []
     for i, building in buildings.iterrows():
         selected_facades += \
@@ -890,6 +1015,27 @@ def get_facades(self, buildings):
 
 
 def calculate_id_building_shadows(df_angles, id_building):
+    """
+    Limiting angle of each azimuth of the skydome, from the angles of :func:`neighbourhood_angles`.
+
+    The rows whose ``to_id_building`` is ``id_building`` are selected. For each azimuth of the sky
+    patches, the rows within 90 degrees of it are projected on it (``tanb`` times the cosine of the
+    difference of azimuths), and the largest projection gives the limiting angle.
+
+    Parameters
+    ----------
+    df_angles : pandas.DataFrame
+        Angles between the facades and the buildings of the district, see :func:`neighbourhood_angles`.
+    id_building : int
+        Value of ``to_id_building`` to select.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per azimuth of the skydome: the largest projected tangent ``tanb``, its angle ``beta``
+        [degrees], the ``azimuth``, and the ``id_building`` of the row it comes from; zeros when no
+        row lies in that direction.
+    """
     df_angles['to_id_building'] = pd.to_numeric(df_angles['to_id_building'])
     df_angles = df_angles.set_index('to_id_building')
     df_angles = df_angles.xs(id_building)
@@ -920,6 +1066,28 @@ def calculate_id_building_shadows(df_angles, id_building):
 
 
 def neighbourhood_angles(buildings, facades):
+    """
+    Position of the other buildings of the district, as seen from each facade of each building.
+
+    For each facade and each other building: the horizontal distance ``dxy`` from the centroid of
+    the facade, the difference ``dz`` between the top of the other building and the base of the
+    facade, the elevation angle ``beta`` [degrees] and its tangent ``tanb``, and the ``azimuth``
+    [degrees] of the other building. A building without ``height_m`` is assigned the height of its
+    floors, estimated from its ERA and footprint area, at 2.5 m per floor.
+
+    Parameters
+    ----------
+    buildings : dict
+        Buildings data, i.e. ``qbuildings_data['buildings_data']``, with ``x``, ``y``, ``z`` and ``height_m``.
+    facades : pandas.DataFrame
+        Facades translated by :func:`translate_facades_to_REHO`, with ``CX``, ``CY`` and ``coord_Z0``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per facade (``UID``) and other building (``to_id_building``), with the
+        ``id_building`` that owns the facade. The facades without ``coord_Z0`` are skipped.
+    """
     df_angles = pd.DataFrame()
 
     for b in buildings:
@@ -964,6 +1132,25 @@ def neighbourhood_angles(buildings, facades):
 
 
 def return_shadows_district(buildings, facades):
+    """
+    Limiting angles of the skydome for every building of the district.
+
+    Combines :func:`neighbourhood_angles` and :func:`calculate_id_building_shadows`. A building for
+    which no angle can be computed gets a row of NaN, and a warning is logged.
+
+    Parameters
+    ----------
+    buildings : dict
+        Buildings data, i.e. ``qbuildings_data['buildings_data']``.
+    facades : pandas.DataFrame
+        Facades translated by :func:`translate_facades_to_REHO`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The rows of :func:`calculate_id_building_shadows` for each building, indexed by
+        ``id_building``. Stored as ``qbuildings_data['shadows_data']``.
+    """
     df_shadows = pd.DataFrame()
     df_angles = neighbourhood_angles(buildings, facades)
 
@@ -984,6 +1171,22 @@ def return_shadows_district(buildings, facades):
 
 
 def return_shadows_id_building(id_building, df):
+    """
+    Limiting angle of each sky patch, for the facades of a building.
+
+    Parameters
+    ----------
+    id_building : int or str
+        Building to select.
+    df : pandas.DataFrame
+        Limiting angles of the district, see :func:`return_shadows_district`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Column ``Limiting_angle_shadow`` [degrees], one row per patch of the skydome, in the order
+        of ``skydome.csv``.
+    """
     id_building = int(id_building)
     df = df.xs(id_building)
 

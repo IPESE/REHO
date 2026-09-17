@@ -43,6 +43,20 @@ class Clustering:
         self.cluster = cluster
 
     def run_clustering(self):
+        """
+        Cluster the periods for each number of clusters, and select the number of clusters.
+
+        The data is normalized and cut into periods, clustered with the K-medoids algorithm for each
+        number of clusters in ``nb_clusters``, and each solution is compared with the original data.
+        The results are stored in the object:
+
+        - ``results['idx']``: for each number of clusters (column), the medoid that represents each
+          period, as the 0-based index of the medoid period.
+        - ``kpis_clu``: LDC, MAE, RMSD and MAPE of each solution, per attribute.
+        - ``attr_clu``: the normalized data rebuilt from the medoids, for each solution.
+        - ``nbr_opt``: the selected number of clusters, the first one whose successor improves the MAPE
+          of neither ``Text`` nor ``Irr`` by more than 0.01.
+        """
         self.__do_normalization()
         self.__execute_clustering()
         self.__compute_kpis()

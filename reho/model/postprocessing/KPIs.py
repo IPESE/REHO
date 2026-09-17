@@ -8,6 +8,41 @@ Calculates the KPIs resulting from the optimization.
 
 
 def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network, df_profiles, df_Weather, df_Time):
+    """
+    First-law (energy) and second-law (exergy) efficiencies of each building and of the district.
+
+    - ``eta_I``: domestic electricity, space-heating and DHW demand, over the net energy supply
+      (electricity imported minus exported, other resources, PV production).
+    - ``eta_II``: the same ratio in exergy. The heat demands are weighted by their Carnot factor
+      with respect to the ambient temperature, and the other resources are counted as natural gas.
+    - ``eta_Ipv`` and ``eta_IIpv``: the same ratios, counting the solar irradiation received by the
+      PV panels instead of their production. The panel area is the installed capacity divided by a
+      reference efficiency of 0.14.
+
+    Not called by :func:`calculate_KPIs` at the moment.
+
+    Parameters
+    ----------
+    df_unit : pandas.DataFrame
+        ``df_Unit`` of the results.
+    buildings_data : dict
+        Characteristics of the buildings.
+    df_annual : pandas.DataFrame
+        Annual flows of each building [MWh], see :func:`build_df_annual`.
+    df_annual_network : pandas.DataFrame
+        Annual flows of the district [MWh], see :func:`build_df_annual`.
+    df_profiles : pandas.DataFrame
+        Hourly profiles of each building, see :func:`build_df_profiles_house`.
+    df_Weather : pandas.DataFrame
+        ``df_Weather`` of the results.
+    df_Time : pandas.DataFrame
+        ``df_Time`` of the results.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``eta_I``, ``eta_II``, ``eta_Ipv`` and ``eta_IIpv``, one row per building plus ``Network``.
+    """
     # --------------------------------------------------------------------
     # energy
     # --------------------------------------------------------------------
@@ -117,6 +152,29 @@ def postcompute_efficiency(df_unit, buildings_data, df_annual, df_annual_network
 
 
 def postcompute_security_indicators(df_annual, df_annual_network):
+    """
+    Self-consumption and self-sufficiency of each building and of the district.
+
+    - ``SC``: self-consumption, the share of the electricity produced on site that is consumed on
+      site; 1 for the buildings that produce none.
+    - ``SS``: self-sufficiency, the share of the electricity consumption covered by the on-site
+      production.
+
+    For the district, the electricity exported by a building and consumed by another counts as
+    self-consumed: only the exports of the district are deducted.
+
+    Parameters
+    ----------
+    df_annual : pandas.DataFrame
+        Annual flows of each building [MWh], see :func:`build_df_annual`.
+    df_annual_network : pandas.DataFrame
+        Annual flows of the district [MWh], see :func:`build_df_annual`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``SC`` and ``SS``, one row per building plus ``Network``.
+    """
     df_SC = df_annual['MWh_SC'].copy()
     df_SC_net = df_annual['MWh_onsite_el'].sum() - df_annual_network['MWh_el_exp']
     df_gen = df_annual['MWh_onsite_el'].copy()
@@ -152,6 +210,26 @@ def postcompute_security_indicators(df_annual, df_annual_network):
 
 
 def postcompute_pv_penetration_curtail(df_annual, df_annual_network):
+    """
+    PV penetration and PV curtailment of each building and of the district.
+
+    - ``PVP``: PV production over the electricity consumption (on-site production plus imports
+      minus exports).
+    - ``PVC``: curtailed PV electricity over the PV production it could have had (production plus
+      curtailment).
+
+    Parameters
+    ----------
+    df_annual : pandas.DataFrame
+        Annual flows of each building [MWh], see :func:`build_df_annual`.
+    df_annual_network : pandas.DataFrame
+        Annual flows of the district [MWh], see :func:`build_df_annual`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``PVP`` and ``PVC``, one row per building plus ``Network``.
+    """
     PV_gen = df_annual['MWh_PV']
     PV_gen_net = df_annual['MWh_PV'].sum()
 
@@ -179,6 +257,27 @@ def postcompute_pv_penetration_curtail(df_annual, df_annual_network):
 
 
 def postcompute_annual_revenues(df_profiles, df_profiles_net, df_Time):
+    """
+    Annual value of the electricity produced on site, for each building and for the district.
+
+    The revenues of the exports, at the feed-in tariff (``Cost_demand``), are added to the
+    purchases avoided by self-consumption, at the retail tariff (``Cost_supply``). For the district,
+    the electricity exchanged between buildings counts as self-consumed.
+
+    Parameters
+    ----------
+    df_profiles : pandas.DataFrame
+        Hourly profiles of each building, see :func:`build_df_profiles_house`.
+    df_profiles_net : pandas.DataFrame
+        Hourly exchanges of the district with the networks, i.e. hub ``Network`` of ``df_Grid_t``.
+    df_Time : pandas.DataFrame
+        ``df_Time`` of the results, with the frequency ``dp`` of each period.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Column ``AR`` [CHF/y], one row per building plus ``Network``.
+    """
     RE_SC = df_profiles['Cost_supply'] * df_profiles['SC']
     RE_feedin = df_profiles['Cost_demand'] * df_profiles['Grid_demand']
 
@@ -205,6 +304,35 @@ def postcompute_annual_revenues(df_profiles, df_profiles_net, df_Time):
 
 
 def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_Time, infrastructure):
+    """
+    Levelized costs of electricity of each building and of the district.
+
+    Both add the annualized investment costs of the PV panels and batteries to a balance of the
+    annual electricity exchanges, then divide by an amount of electricity:
+
+    - ``LCoE1``: minus the revenues of the exports and the purchases avoided by self-consumption,
+      over the PV production; NaN without PV production.
+    - ``LCoE2``: minus the cost of the imports, plus the revenues of the exports, over the domestic
+      electricity demand.
+
+    Parameters
+    ----------
+    df_unit : pandas.DataFrame
+        ``df_Unit`` of the results, with annualized investment costs.
+    df_annual : pandas.DataFrame
+        Annual flows of each building [MWh], see :func:`build_df_annual`.
+    df_profiles : pandas.DataFrame
+        Hourly profiles of each building, see :func:`build_df_profiles_house`.
+    df_Time : pandas.DataFrame
+        ``df_Time`` of the results, with the frequency ``dp`` of each period.
+    infrastructure : Infrastructure
+        Infrastructure of the district, giving the PV panels and batteries of each building.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``LCoE1`` and ``LCoE2`` [CHF/kWh], one row per building plus ``Network``.
+    """
     df_LCoE = pd.DataFrame()
 
     C_PV_net = 0
@@ -268,6 +396,38 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
 
 
 def postcompute_average_emission(local_data, df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, ):
+    """
+    Emissions of the electricity exchanged, and renewable share of the energy consumed.
+
+    - ``gwp_elec_av`` and ``gwp_elec_dy``: emissions of the electricity imported minus those avoided
+      by the exports, with the average and with the hourly emission factors of the grid.
+    - ``RES_av`` and ``RES_dy``: share of the energy consumed that is renewable. Self-consumed
+      electricity is renewable, imported electricity is renewable in the proportion of the Swiss
+      electricity mix (annual average or hourly), and the other resources are not.
+
+    Not called by :func:`calculate_KPIs` at the moment.
+
+    Parameters
+    ----------
+    local_data : dict
+        Location data, used to read the hourly renewable share of the Swiss electricity mix.
+    df_annual : pandas.DataFrame
+        Annual flows of each building [MWh], see :func:`build_df_annual`.
+    df_annual_net : pandas.DataFrame
+        Annual flows of the district [MWh], see :func:`build_df_annual`.
+    df_profiles : pandas.DataFrame
+        Hourly profiles of each building, see :func:`build_df_profiles_house`.
+    df_profiles_net : pandas.DataFrame
+        Hourly exchanges of the district with the networks, i.e. hub ``Network`` of ``df_Grid_t``.
+    df_Time : pandas.DataFrame
+        ``df_Time`` of the results, with the frequency ``dp`` of each period.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``gwp_elec_av``, ``gwp_elec_dy``, ``RES_dy`` and ``RES_av``, one row per building
+        plus ``Network``.
+    """
 
     # Emissions
     em_supply_dy = df_profiles_net.GWP_supply.xs('Electricity')
@@ -348,6 +508,24 @@ def postcompute_average_emission(local_data, df_annual, df_annual_net, df_profil
 
 
 def postcompute_Grid_param(df_Grid):
+    """
+    Grid multiples and grid usage of each hub, for electricity.
+
+    - ``GMs`` and ``GMd``: the largest ratio, over the periods, of the peak to the average import
+      (``Grid_supply``) and export (``Grid_demand``) within a period.
+    - ``GUs`` and ``GUd``: the peak import and export over the typical periods, relative to the peak
+      of the uncontrollable load summed over the buildings.
+
+    Parameters
+    ----------
+    df_Grid : pandas.DataFrame
+        ``df_Grid_t`` of the results.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``GMd``, ``GMs``, ``GUs`` and ``GUd``, one row per hub, rounded to two decimals.
+    """
     df = df_Grid.xs('Electricity', level=0)[['Grid_demand', 'Grid_supply']]
     df_max = df.groupby(level=['Hub', 'Period']).max()
     df_mean = df.groupby(level=['Hub', 'Period']).mean().replace(0,
@@ -369,6 +547,26 @@ def postcompute_Grid_param(df_Grid):
 
 
 def postcompute_annual_COP(df_annuals, infrastructure):
+    """
+    Annual coefficient of performance of the heat pumps.
+
+    The COP of a heat pump is the heat it supplies over the electricity it consumes during the year.
+    The COP of a building is that of the first of its heat pumps listed in the infrastructure, and
+    the COP of the district that of all the heat pumps together.
+
+    Parameters
+    ----------
+    df_annuals : pandas.DataFrame
+        ``df_Annuals`` of the results.
+    infrastructure : Infrastructure
+        Infrastructure of the district, giving the heat pumps of each building.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Column ``COP``, one row per building with a heat pump plus ``Network``; NaN when the heat
+        pumps consume no electricity.
+    """
     df = pd.DataFrame(index=['Network'])
     total_heat_network = 0
     total_HP_el = 0
@@ -399,6 +597,25 @@ def postcompute_annual_COP(df_annuals, infrastructure):
     return df
 
 def postcompute_actors_KPI(df_Performance, Samples):
+    """
+    Indicators of the actors formulation.
+
+    - ``PIR``: profit-to-investment ratio of the owners, i.e. their profit plus subsidies, over
+      their investments plus the yearly cost of the building.
+    - ``Rent_Budget_Ratio``: expense of the renters over their maximum expense (``Renter_Epsilon``).
+
+    Parameters
+    ----------
+    df_Performance : pandas.DataFrame
+        ``df_Performance`` of the results, with the columns of the actors.
+    Samples : pandas.DataFrame
+        ``Samples`` of the results, with ``Renter_Epsilon``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns ``PIR`` and ``Rent_Budget_Ratio``, one row per hub.
+    """
     owner_profit = df_Performance['owner_profit']
     owner_subsidies = df_Performance['owner_subsidies']
     owner_expense = df_Performance['Costs_inv'] + df_Performance['Costs_House_yearly']
@@ -505,6 +722,41 @@ def build_df_annual(df_Results, df_profiles_house, infrastructure, df_Time):
 
 
 def calculate_KPIs(df_Results, infrastructure, buildings_data):
+    """
+    Compute the key performance indicators of an optimization, and the breakdown of its costs.
+
+    The indicators, one row per building plus ``Network``, are:
+
+    - costs: ``opex_m2``, ``capex_m2``, ``cost_rep_m2``, ``cost_ft_m2`` and the annual revenues ``AR``
+      (:func:`postcompute_annual_revenues`), per unit of energy reference area; ``LCoE1`` and
+      ``LCoE2`` (:func:`postcompute_levelized_cost_electricity`);
+    - electricity: ``SC`` and ``SS`` (:func:`postcompute_security_indicators`), ``PVP`` and ``PVC``
+      (:func:`postcompute_pv_penetration_curtail`), ``GMs``, ``GMd``, ``GUs`` and ``GUd``
+      (:func:`postcompute_Grid_param`);
+    - emissions: ``gwp_op_m2``, ``gwp_constr_m2`` and ``gwp_tot_m2``, per unit of energy reference area;
+    - ``PIR`` and ``Rent_Budget_Ratio`` (:func:`postcompute_actors_KPI`) for the actors formulation;
+    - ``COP`` (:func:`postcompute_annual_COP`) when the district has heat pumps.
+
+    Parameters
+    ----------
+    df_Results : dict
+        Results of one optimization, i.e. ``reho.results[Scn_ID][Pareto_ID]``.
+    infrastructure : Infrastructure
+        Infrastructure of the district.
+    buildings_data : dict
+        Characteristics of the buildings, whose ``ERA`` normalizes the indicators.
+
+    Returns
+    -------
+    df_KPI : pandas.DataFrame
+        Indicators, described in :doc:`/sections/results`.
+    df_Economics : pandas.DataFrame
+        Costs and emissions by item, see :func:`build_df_Economics`.
+
+    Notes
+    -----
+    The frequency ``dp`` of the two extreme periods is set to 0 in ``df_Results['df_Time']`` itself.
+    """
     df_profiles = build_df_profiles_house(df_Results, infrastructure)
     df_profiles_network = df_Results["df_Grid_t"].xs('Network', level='Hub').copy()
 
@@ -592,6 +844,24 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data):
 
 
 def split_units_to_buildings(infrastructure, df, aim):
+    """
+    Sum a quantity of the units per building.
+
+    Parameters
+    ----------
+    infrastructure : Infrastructure
+        Infrastructure of the district, giving the buildings.
+    df : pandas.DataFrame
+        Values indexed by unit name, e.g. ``'NG_Boiler_Building1'``.
+    aim : str
+        Column to sum.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Column ``aim``, one row per building: the sum over the units whose name contains the name
+        of the building between underscores.
+    """
     df_h = pd.DataFrame(index=infrastructure.House, columns=[aim])
     for h in infrastructure.House:
         value = np.array([])
@@ -604,6 +874,24 @@ def split_units_to_buildings(infrastructure, df, aim):
 
 
 def units_power_profiles_per_building(df_Results, infrastructure, unittype):
+    """
+    Electricity profiles of the units of a given type, summed per building.
+
+    Parameters
+    ----------
+    df_Results : dict
+        Results of one optimization.
+    infrastructure : Infrastructure
+        Infrastructure of the district, giving the units of each building.
+    unittype : str
+        Type of unit, e.g. ``'PV'``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns of ``df_Unit_t`` on the electricity layer, summed over the units of that type of
+        each building, indexed by ``(Hub, Period, Time)``.
+    """
     df = pd.DataFrame()
     for house in infrastructure.House:
         for unit in infrastructure.UnitsOfType[unittype]:
@@ -669,6 +957,32 @@ def remove_building_from_index(df):
 
 
 def build_df_Economics(df_Results, df_profiles):
+    """
+    Break down the costs and emissions of each building and of the district, by item.
+
+    Operation (``Category`` = ``'operation'``):
+
+    - ``avoided_<item>``: costs and emissions avoided by the local electricity (``PV``, ``PVC``,
+      ``BA_out``, ``onsite_el``, ``PV_SC``, ``SC``), valued at the feed-in tariff and emission factor.
+    - ``revenues_<layer>``, ``costs_<layer>`` and ``curtailment_<layer>``: exports, imports and
+      curtailment of each layer, valued at their tariffs and emission factors.
+
+    Investment (``Category`` = ``'investment'``): annualized investment and replacement costs, and
+    embodied emissions, of each unit (building suffix removed).
+
+    Parameters
+    ----------
+    df_Results : dict
+        Results of one optimization.
+    df_profiles : pandas.DataFrame
+        Hourly profiles of each building, see :func:`build_df_profiles_house`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Indexed by ``Perf_type`` (``'costs'`` or ``'impact'``) and ``Hub``, with columns indexed by
+        ``Category`` and item.
+    """
     period_duration = df_Results["df_Time"].dp
     df_unit_t = remove_building_from_index(df_Results["df_Unit_t"])
     df_unit = remove_building_from_index(df_Results["df_Unit"])

@@ -186,6 +186,20 @@ class MasterProblem:
         self.df_fix_Units = pd.DataFrame()
 
     def initialize_optimization_tracking_attributes(self):
+        """
+        Reset the attributes that track the decomposition, before a new optimization.
+
+        - ``iter``: current iteration of the master problem.
+        - ``feasible_solutions``: number of rounds of sub-problems solved, i.e. of configurations
+          proposed by each building.
+        - ``flags``: whether the sub-problems were already initiated for each objective
+          (TOTEX, CAPEX, OPEX, GWP).
+        - ``results_SP`` and ``results_MP``: results of every sub-problem and master problem solved.
+        - ``number_SP_solutions`` and ``number_MP_solutions``: records of the solutions of each round.
+        - ``solver_attributes_SP`` and ``solver_attributes_MP``: solver statistics of each solve.
+        - ``stopping_criteria`` and ``reduced_costs``: convergence indicators of each iteration.
+        - ``pool``: pool of processes, when the sub-problems are solved in parallel.
+        """
         # internal IT parameter
         self.pool = None
         self.iter = 0  # keeps track of iterations, takes value of last iteration circle
@@ -319,6 +333,31 @@ class MasterProblem:
         return
 
     def launch_SP_multiprocessing(self, scenario, Scn_ID, Pareto_ID, epsilon_init, beta, initiation=True, renovation_options=None):
+        """
+        Solve the sub-problem of every building once, and store the configurations they propose.
+
+        With ``method['parallel_computation']``, the buildings are solved in parallel in the process
+        pool ``pool``; otherwise one after the other. The results are stored by
+        :meth:`add_df_Results_SP`, and ``feasible_solutions`` is incremented.
+
+        Parameters
+        ----------
+        scenario : dict
+            Scenario of the optimization.
+        Scn_ID : str
+            Name of the scenario.
+        Pareto_ID : int
+            Index of the Pareto point.
+        epsilon_init : pd.Series or None
+            Epsilon constraint of each building, for the initiation at the building scale.
+        beta : float or None
+            Weight of the secondary objective, for the initiation, see :meth:`get_beta_values`.
+        initiation : bool, optional
+            Solve the sub-problems of the initiation (:meth:`SP_initiation_execution`) rather than those
+            of an iteration (:meth:`SP_execution`). Default is True.
+        renovation_options : str, optional
+            Elements of the envelope to renovate, e.g. ``'window/facade'``.
+        """
 
         if self.method['parallel_computation']:
             # to run multiprocesses, a copy of the model is performed with pickles -> make sure there are no ampl libraries
@@ -1034,6 +1073,26 @@ class MasterProblem:
         return annual_grid_costs
 
     def select_MP_objective(self, ampl, scenario):
+        """
+        Set the objective function and the constraints of the master problem.
+
+        The epsilon constraints and the optional constraints of the master problem are dropped, then
+        restored as the scenario requires: the epsilon constraints of ``scenario['EMOO']`` with their
+        values, and the constraints of ``scenario['specific']`` that belong to the master problem. The
+        objective ``scenario['Objective']`` is the only one kept.
+
+        Parameters
+        ----------
+        ampl : amplpy.AMPL
+            Session holding the master problem.
+        scenario : dict
+            Scenario of the optimization.
+
+        Returns
+        -------
+        amplpy.AMPL
+            The same session.
+        """
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
 
         for cst in list_constraints:
@@ -1062,6 +1121,38 @@ class MasterProblem:
         return ampl
 
     def get_beta_values(self, scenario, beta=None):
+        """
+        Weights of the objectives in the objective function of the sub-problems.
+
+        In the decomposition, a sub-problem minimizes ``SP_obj_fct``, a weighted sum of its OPEX, CAPEX
+        and GWP. The objective of the scenario gets a weight of 1 (OPEX and CAPEX both, for TOTEX), the
+        others a negligible weight of 1e-6. A number ``beta`` is the weight of a secondary objective,
+        which diversifies the configurations proposed during the initiation: the objective constrained
+        by the epsilon constraint of the scenario if there is one, OPEX otherwise. Finally, the epsilon
+        constraints on the objectives are removed from the scenario (see :meth:`remove_emoo_constraints`).
+
+        Parameters
+        ----------
+        scenario : dict
+            Scenario of the optimization.
+        beta : float or int or pd.Series or None, optional
+            Weight of the secondary objective (ignored at the building scale), or directly the weight of
+            each objective as a Series indexed by objective, where zeros are replaced by 1e-6.
+
+        Returns
+        -------
+        scenario : dict
+            Scenario of the sub-problem, with the objective ``SP_obj_fct``.
+        beta_list : pd.Series
+            Weight of each objective, sent to AMPL as ``beta_duals``.
+
+        Raises
+        ------
+        TypeError
+            If ``beta`` is of another type.
+        ValueError
+            If the scenario has epsilon constraints on more than one objective.
+        """
         scenario = scenario.copy()
         if isinstance(beta, (float, int, type(None))):
             index = list(self.flags.keys())  # list of objective function
@@ -1103,6 +1194,22 @@ class MasterProblem:
 
     @staticmethod
     def remove_emoo_constraints(scenario):
+        """
+        Remove the epsilon constraints on the objectives from a scenario.
+
+        These are ``EMOO_CAPEX``, ``EMOO_OPEX``, ``EMOO_GWP``, ``EMOO_TOTEX``, ``EMOO_elec_export`` and
+        ``EMOO_EV``; the other epsilon constraints, such as ``EMOO_grid``, are kept.
+
+        Parameters
+        ----------
+        scenario : dict
+            Scenario, modified in place.
+
+        Returns
+        -------
+        dict
+            The same scenario.
+        """
 
         EMOOs = list(scenario['EMOO'].keys())
         keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', "EMOO_elec_export", "EMOO_EV"]
@@ -1190,6 +1297,22 @@ class MasterProblem:
         return df
 
     def sort_decomp_result(self, Scn_ID, idxvalues):
+        """
+        Renumber the Pareto points of the decomposition results, in a given order.
+
+        Used by :meth:`~reho.model.reho.REHO.generate_pareto_curve` to order the points of a Pareto
+        front: point ``idxvalues[i]`` becomes point ``i + 1`` in ``results_SP`` and ``results_MP``. The
+        records ``number_SP_solutions``, ``number_MP_solutions``, ``solver_attributes_SP``,
+        ``solver_attributes_MP`` and ``reduced_costs`` are sorted by ``Pareto_ID``, whose values are left
+        unchanged.
+
+        Parameters
+        ----------
+        Scn_ID : str
+            Name of the scenario.
+        idxvalues : array-like
+            Current IDs of the Pareto points, in the new order.
+        """
 
         new_order_SPresults = {}
         new_order_MPresults = {}
@@ -1207,6 +1330,29 @@ class MasterProblem:
             self.reduced_costs = self.reduced_costs.sort_values(['Pareto_ID', 'Iter'])
 
     def add_df_Results_SP(self, Scn_ID, Pareto_ID, iter, house, df_Results, attr):
+        """
+        Store the results of a sub-problem, and record the solution.
+
+        The results are stored in ``results_SP[Scn_ID][Pareto_ID][iter][feasible_solutions][house]``,
+        the solver statistics are appended to ``solver_attributes_SP``, and the solution to
+        ``number_SP_solutions``.
+
+        Parameters
+        ----------
+        Scn_ID : str
+            Name of the scenario.
+        Pareto_ID : int
+            Index of the Pareto point.
+        iter : int
+            Iteration of the master problem.
+        house : str
+            Building of the sub-problem.
+        df_Results : dict
+            Result DataFrames of the sub-problem, see
+            :func:`~reho.model.postprocessing.write_results.get_df_Results_from_SP`.
+        attr : pd.DataFrame
+            Solver statistics, see :meth:`get_solver_attributes`.
+        """
         if Scn_ID not in self.results_SP:
             self.results_SP[Scn_ID] = {}
         if Pareto_ID not in self.results_SP[Scn_ID]:
@@ -1231,6 +1377,27 @@ class MasterProblem:
         self.number_SP_solutions.iloc[-1, self.number_SP_solutions.columns.get_loc('MP_solution')] = number_iter_global
 
     def add_df_Results_MP(self, Scn_ID, Pareto_ID, iter, df_Results, attr):
+        """
+        Store the results of the master problem, and update the record of the solutions.
+
+        The results are stored in ``results_MP[Scn_ID][Pareto_ID][iter]``, the solver statistics are
+        appended to ``solver_attributes_MP``, and ``number_MP_solutions`` is recomputed from
+        ``number_SP_solutions``.
+
+        Parameters
+        ----------
+        Scn_ID : str
+            Name of the scenario.
+        Pareto_ID : int
+            Index of the Pareto point.
+        iter : int
+            Iteration of the master problem.
+        df_Results : dict
+            Result DataFrames of the master problem, see
+            :func:`~reho.model.postprocessing.write_results.get_df_Results_from_MP`.
+        attr : pd.DataFrame
+            Solver statistics, see :meth:`get_solver_attributes`.
+        """
 
         if Scn_ID not in self.results_MP:
             self.results_MP[Scn_ID] = {}
@@ -1308,6 +1475,14 @@ class MasterProblem:
         return buildings_data_SP, parameters_SP, set_indexed_SP
 
     def build_infrastructure_SP(self):
+        """
+        Build the infrastructure of the sub-problem of each building.
+
+        Each building gets its own :class:`~reho.model.infrastructure.Infrastructure`, restricted to
+        the building units, stored in ``infrastructure_SP[building]``. The maximum size (``Units_Fmax``)
+        and specific investment cost (``Cost_inv2``) of its units are copied from the infrastructure of
+        the district, which holds the values specific to each building.
+        """
         for h in self.buildings_data:
             single_building_data = {"buildings_data": {h: self.buildings_data[h]}}
             building_units = {"building_units": self.infrastructure.units}
@@ -1321,6 +1496,23 @@ class MasterProblem:
 
     @staticmethod
     def return_combined_SP_results(df_Results, df_name):
+        """
+        Concatenate one result DataFrame over every sub-problem solved.
+
+        Parameters
+        ----------
+        df_Results : dict
+            Results of the sub-problems, nested as
+            ``df_Results[Scn_ID][Pareto_ID][Iter][FeasibleSolution][house]``, i.e. ``results_SP``.
+        df_name : str
+            Name of the DataFrame to gather, e.g. ``'df_Unit'``.
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrames stacked, with the index levels ``Scn_ID``, ``Pareto_ID``, ``Iter``,
+            ``FeasibleSolution`` and ``house`` prepended, sorted by index.
+        """
 
         t = {(i, j, k, l, m): df_Results[i][j][k][l][m][df_name]
              for i in df_Results.keys()

@@ -67,6 +67,12 @@ class SensitivityAnalysis:
         self.sensitivity = []
 
     def save(self):
+        """
+        Pickle the sensitivity analysis to ``results/<ID>.pickle``.
+
+        ``ID`` combines the name of the scenario, the type of analysis and the time the analysis was
+        created. The ``results`` directory must exist, which :meth:`run_SA` ensures.
+        """
         path_to_SA_results = 'results/'
         file_path = os.path.join(path_to_SA_results, self.ID + '.pickle')
         f = open(file_path, 'wb')
@@ -74,6 +80,16 @@ class SensitivityAnalysis:
         f.close()
 
     def get_lists(self):
+        """
+        Units and objectives tracked in the results of the analysis.
+
+        Returns
+        -------
+        unit_list : list of str
+            Types of units of the infrastructure, without those excluded by the scenario.
+        KPI_list : list of str
+            ``['OPEX', 'CAPEX', 'TOTEX', 'GWP']``.
+        """
         unit_list = self.reho.infrastructure.UnitTypes.tolist()
         try:
             for excluded_unit in self.reho.scenario['exclude_units']:
@@ -284,6 +300,19 @@ class SensitivityAnalysis:
         self.sensitivity = sensitivity
 
     def plot_Morris(self, save=False):
+        """
+        Plot the result of a Morris analysis: the standard deviation ``sigma`` of the elementary effects
+        of each parameter against their mean absolute value ``mu_star``.
+
+        The five parameters with the largest ``mu_star`` are annotated. The dotted line marks
+        ``sigma = mu_star``: above it, the effect of a parameter is mostly non-linear or due to
+        interactions with other parameters. Call :meth:`calculate_SA` first.
+
+        Parameters
+        ----------
+        save : bool, optional
+            Also save the figure as ``results/Morris_<scenario name>.png``. Default is False.
+        """
         fig, ax = plt.subplots(figsize=(8, 8))
         df_ = pd.DataFrame(self.sensitivity).sort_values('mu_star', ascending=False).copy()
         df_.reset_index(inplace=True, drop=True)
@@ -306,6 +335,28 @@ class SensitivityAnalysis:
         plt.show()
 
     def extract_results(self, reho, j):
+        """
+        Record the main results of one optimization of the analysis.
+
+        The results stored in ``reho.results[SA_type][0]`` are appended to:
+
+        - ``SA_results['num_optimizations']``: the number of the optimization;
+        - ``SA_results['dict_df_results']``: the annual and hourly exchanges of electricity and natural
+          gas with the networks, the size of the units and the performance of the district;
+        - ``SA_results['dict_res_ES']``: the energy flows per layer, per unit and per period;
+        - ``objective_values``: the TOTEX of the district, i.e. its investment, operation and
+          replacement costs.
+
+        :meth:`run_SA` does not call it: it is meant to be called after each optimization whose results
+        are stored under the name of the type of analysis.
+
+        Parameters
+        ----------
+        reho : REHO
+            Model holding the results of the optimization.
+        j : int
+            Number of the optimization.
+        """
         unit_list, KPI_list = self.get_lists()
 
         dict_res = {

@@ -60,19 +60,24 @@ class ActorsModel(REHO):
 
     def sample_actors_epsilon(self, bounds=None, n_samples=1, ins_target = [0]):
         """
-        Generate N samples of actor epsilon parameters and store them in `self.samples`.
+        Generate N samples of actor epsilon parameters and store them in ``self.samples``.
+
         Produces a pandas DataFrame with columns:
-            - 'utility_profit_min': sampled values for the Utility (ECM) actor's minimum profit (absolute value, usually set to 0).
-            - 'owner_PIR_min'     : sampled values for the Owner (Landlord) actor's profit-investment ratio (percentage).
+
+        - ``utility_profit_min``: sampled values for the Utility (ECM) actor's minimum profit (absolute value, usually set to 0).
+        - ``owner_PIR_min``: sampled values for the Owner (Landlord) actor's profit-investment ratio (percentage).
+
         Sampling strategies:
-            - Sobol sequence: low-discrepancy quasi-random samples (default).
+
+        - Sobol sequence: low-discrepancy quasi-random samples (default).
 
         Parameters
         ----------
         bounds : dict
             Dictionary specifying the lower and upper bounds for landlord's and ECM's (utility's) epsilon constraints:
-                - 'Owners' : [lower_bound, upper_bound] for owner_PIR_min.
-                - 'Utility': [lower_bound, upper_bound] for utility_profit_min.
+
+            - ``'Owners'``: [lower_bound, upper_bound] for owner_PIR_min.
+            - ``'Utility'``: [lower_bound, upper_bound] for utility_profit_min.
         n_samples : int, optional
             Number of samples to generate (default=1) for each ins_target value.
         ins_target : list, optional
@@ -124,6 +129,21 @@ class ActorsModel(REHO):
             self.add_dual_Results(Scn_ID=self.scenario['name'], Pareto_ID=ids)
 
     def add_dual_Results(self, Scn_ID, Pareto_ID):
+        """
+        Gather the dual values of every master-problem iteration in the results of a run.
+
+        The results of each iteration of the master problem hold three DataFrames of dual values:
+        ``df_Dual``, ``df_Dual_t`` and ``df_Actors_dual``. They are stored in
+        ``results[Scn_ID][Pareto_ID]['df_Dual']``, a dictionary with these three keys, each mapping
+        ``'Iter.<i>'`` to the DataFrame of iteration ``i``.
+
+        Parameters
+        ----------
+        Scn_ID : str
+            Name of the scenario.
+        Pareto_ID : int
+            Index of the run, i.e. of the actor sample in :meth:`actor_decomposition_optimization`.
+        """
         self.results[Scn_ID][Pareto_ID]['df_Dual'] = {}
         results = self.results[Scn_ID][Pareto_ID]['df_Dual']
         results.update({
@@ -139,6 +159,18 @@ class ActorsModel(REHO):
         self.results[Scn_ID][Pareto_ID]['df_Dual'] = results
 
     def get_profit_ratio(self):
+        """
+        Profit-to-investment ratio of the owners.
+
+        Uses the results of the scenario ``'Owners'``, as produced by :meth:`get_max_profit_actor`: the
+        profit of the owners is divided by the investment in units (``Costs_inv``) plus the upfront
+        cost of the building (``Costs_House_upfront``), for each row of ``df_Performance``.
+
+        Returns
+        -------
+        float
+            Mean of the ratio over the rows of ``df_Performance``, i.e. the buildings and the network.
+        """
         Costs_inv = self.results['Owners'][0]['df_Performance']['Costs_inv']
         Costs_House_upfront = self.results['Owners'][0]['df_Performance']['Costs_House_upfront']
         owner_profit = self.results['Owners'][0]['df_Performance']['owner_profit']

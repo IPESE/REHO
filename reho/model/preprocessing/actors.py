@@ -26,16 +26,18 @@ def generate_renter_expense_max(method='absolute', **kwargs):
     method : str, optional
         Calculation method: 'absolute' or 'increase'. Default is 'absolute'.
     **kwargs : dict
-        Method-specific parameters:
+        Method-specific parameters.
 
-        For method='absolute':
-            - qbuildings_data (dict, required): Buildings data from QBuildingsReader
-            - income (float, required): Annual income value
-            - rent_income_ratio (array-like, optional): Custom rent-to-income ratio
-            - types (list of str, optional): Rent types to consider. Default ["rent"]
+        For ``method='absolute'``:
 
-        For method='increase':
-            - reho_model (ActorsModel, required): REHO model instance
+        - ``qbuildings_data`` (dict, required): Buildings data from QBuildingsReader
+        - ``income`` (float, required): Annual income value
+        - ``rent_income_ratio`` (array-like, optional): Custom rent-to-income ratio
+        - ``types`` (list of str, optional): Rent types to consider. Default ``["rent"]``
+
+        For ``method='increase'``:
+
+        - ``reho_model`` (ActorsModel, required): REHO model instance
 
     Returns
     -------
@@ -44,14 +46,15 @@ def generate_renter_expense_max(method='absolute', **kwargs):
 
     Examples
     --------
-    - Absolute method (income-based):
+    Absolute method (income-based):
+
     >>> reho.parameters['renter_expense_max'] = generate_renter_expense_max('absolute', qbuildings_data=qbuildings, income=70000)
     >>> # or with positional qbuildings_data (backward compatible)
     >>> reho.parameters['renter_expense_max'] = generate_renter_expense_max(qbuildings_data=qbuildings, income=70000)
 
+    Increase method (baseline-based):
 
-    - Increase method (baseline-based):
-    >>> reho.parameters['renter_expense_max']= generate_renter_expense_max(method='increase', reho_model=reho)
+    >>> reho.parameters['renter_expense_max'] = generate_renter_expense_max(method='increase', reho_model=reho)
 
     See Also
     --------
@@ -208,12 +211,75 @@ def generate_renter_expense_max_increase(reho_model):
 
 # define dagum function to model income distribution
 def dagum_cdf(x, lambda_, delta, beta):
+    r"""
+    Cumulative distribution function of the Dagum distribution, used to model income distributions.
+
+    .. math:: F(x) = \left(1 + \left(\frac{x}{\lambda}\right)^{-\delta}\right)^{-\beta}
+
+    Parameters
+    ----------
+    x : float or array-like
+        Income.
+    lambda_ : float
+        Scale parameter :math:`\lambda`.
+    delta : float
+        Shape parameter :math:`\delta`.
+    beta : float
+        Shape parameter :math:`\beta`.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Probability that the income does not exceed ``x``.
+    """
     return (1 + (x / lambda_)**-delta)**(-beta)
 
 def dagum_inverse_cdf(u, lambda_, delta, beta):
+    r"""
+    Inverse of :func:`dagum_cdf`, to draw incomes from uniformly distributed numbers.
+
+    .. math:: x = \lambda \left(u^{-1/\beta} - 1\right)^{-1/\delta}
+
+    Parameters
+    ----------
+    u : float or array-like
+        Cumulative probability, strictly between 0 and 1.
+    lambda_ : float
+        Scale parameter, see :func:`dagum_cdf`.
+    delta : float
+        Shape parameter, see :func:`dagum_cdf`.
+    beta : float
+        Shape parameter, see :func:`dagum_cdf`.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Income whose cumulative probability is ``u``.
+    """
     return lambda_ * ((1 / (u**(-1 / beta) - 1)))**(1 / delta)
 
 def dagum_pdf(y, lambda_, delta, beta):
+    """
+    Probability density function of the Dagum distribution.
+
+    The density is the derivative of :func:`dagum_cdf`, computed symbolically with SymPy.
+
+    Parameters
+    ----------
+    y : float or array-like
+        Income at which the density is evaluated.
+    lambda_ : float
+        Scale parameter, see :func:`dagum_cdf`.
+    delta : float
+        Shape parameter, see :func:`dagum_cdf`.
+    beta : float
+        Shape parameter, see :func:`dagum_cdf`.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Probability density at ``y``.
+    """
     x = sp.symbols('x')
     function = dagum_cdf(x, lambda_, delta, beta)
     derivative = sp.diff(function, x)
@@ -221,6 +287,26 @@ def dagum_pdf(y, lambda_, delta, beta):
     return f_derivative(y)
 
 def power_law(x, a, b):
+    """
+    Power law :math:`a x^b`.
+
+    :func:`generate_renter_expense_max_absolute` fits it to the rent-to-income ratio as a function
+    of the annual income.
+
+    Parameters
+    ----------
+    x : float or array-like
+        Variable.
+    a : float
+        Coefficient.
+    b : float
+        Exponent.
+
+    Returns
+    -------
+    float or numpy.ndarray
+        ``a * x ** b``.
+    """
     return (a * x ** b)
 
 def get_actor_parameters(scenario, set_indexed, result, Scn_ID, Pareto_ID, iter = 0, h = str):

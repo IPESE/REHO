@@ -1876,6 +1876,33 @@ def plot_composite_curve(df_Results, cluster, periods=None, filename=None, expor
 
 
 def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
+    """
+    Plots the state of charge of the inter-period storage technologies throughout the year.
+
+    Each storage has its own subplot, showing its state of charge summed over the buildings and
+    smoothed by a moving average. CO2 storage is converted to kWh of CH4 equivalent.
+
+    Parameters
+    ----------
+    df_Results: dict
+        Coming from REHO results (already extracted from the desired *Scn_ID* and *Pareto_ID*),
+        with inter-period storage, i.e. containing ``df_Interperiod``.
+    resolution: str
+        Window of the moving average: 'daily' (default, 24 hours), 'weekly' (168 hours) or
+        'monthly' (730 hours). Any other value, e.g. 'hourly', plots the hourly values.
+    storage_ID: str or list
+        Storage variables to plot, among the columns of ``df_Interperiod`` (e.g. 'BAT_E_stored_IP',
+        'H2_stor_stored'). 'all' (default) plots every one of them.
+
+    Returns
+    -------
+    plotly.graph_objs.Figure
+        The generated plotly figure.
+
+    Examples
+    --------
+    >>> plot_storage_profile(reho.results['totex'][0], resolution='weekly').show()
+    """
     def plot_storage_sep(storage_SOC_tot, counter, fig, stor_var, items_average):
 
         mol = stor_var.split("_")[0]
@@ -1965,6 +1992,37 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
 
 
 def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, time_range='week', label='EN_long'):
+    """
+    Plots the electricity flows of the district and the state of charge of its storage over a few days.
+
+    The upper subplot shows the net flow of each technology (supply minus demand, summed over the
+    buildings), the domestic electricity demand as a negative flow, and the net import from the
+    grid. The lower subplot shows the state of charge of the inter-period storage technologies and of
+    the batteries, in percent of their maximum over the year.
+
+    Parameters
+    ----------
+    df_Results: dict
+        Coming from REHO results (already extracted from the desired *Scn_ID* and *Pareto_ID*).
+    color: str
+        Indicate the color set to use for the plot. 'ColorPastel' is default.
+    day_of_the_year: int
+        First day displayed, from 1 (default) to 365.
+    time_range: str
+        Duration displayed: 'week' (default), '2 weeks', 'month' (30 days) or '3 days'.
+        Any other value displays a single day.
+    label: str
+        Indicate the language to use for the plot. Choose among 'FR_long', 'FR_short', 'EN_long', 'EN_short'.
+
+    Returns
+    -------
+    plotly.graph_objs.Figure
+        The generated plotly figure.
+
+    Examples
+    --------
+    >>> plot_electricity_flows(reho.results['totex'][0], day_of_the_year=40, time_range='2 weeks').show()
+    """
     if time_range == 'week':
         period = 7
     elif time_range == 'month':

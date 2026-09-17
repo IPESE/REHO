@@ -114,6 +114,21 @@ class Infrastructure:
         self.generate_parameter()
 
     def generate_structure(self):
+        """
+        Build the sets describing the district: units, layers, services and heat-cascade streams.
+
+        Each building unit is instantiated once per building as ``<Unit>_<Building>``, and registered in
+        ``Units``, ``UnitsOfType``, ``UnitsOfLayer``, ``UnitsOfHouse`` and ``UnitsOfService``. District
+        units keep their name and are also listed in ``UnitsOfDistrict``. Each building is listed in
+        ``HousesOfLayer`` for the layers it is connected to.
+
+        The streams of a unit are named after the unit, e.g. ``NG_Boiler_Building1_h_ht``. Every building
+        has three streams of its own: ``<Building>_c_lt`` and ``<Building>_c_mt`` for space heating, and
+        ``<Building>_h_lt`` for cooling.
+
+        All the sets are finally gathered in the dictionary ``Set``, which is passed to AMPL. Called by
+        the constructor.
+        """
 
         # The indexes h_ht, h_mt, h_lt, c_ht state for the discretization of the streams. They are connected to the heat cascade.
         # h_ht: hotstream_hightemperature. h_mt: hotstream_mediumtemperature. h_lt: hotstream_lowtemperature. c_ht: coldstream_hightemperature
@@ -188,6 +203,29 @@ class Infrastructure:
             self.Set['ReinforcementOfLine'] = self.ReinforcementOfLine
 
     def generate_parameter(self):
+        """
+        Build the parameters of the units, grids and heat-cascade streams.
+
+        The following attributes are filled:
+
+        - ``Units_flowrate``: upper bound of the flow each unit draws from (``Units_flowrate_in``) and
+          delivers to (``Units_flowrate_out``) each layer, indexed by ``(Layer, Unit)``.
+        - ``Units_Parameters``: size bounds, investment costs, lifetime and embodied emissions of each
+          unit, see :meth:`add_unit_parameters`.
+        - ``Grids_Parameters``: tariffs, emission factors and connection parameters of each layer.
+        - ``HP_parameters``: nominal efficiency and maximum power of the heat pumps and air conditioners
+          for each pair of sink and source temperatures, read from ``HP_parameters.txt`` and
+          ``AC_parameters.txt``. The temperature sets are added to ``Set``.
+        - ``Streams_H``: whether each stream is hot (``Streams_Hin`` = 1) or cold (``Streams_Hout`` = 1).
+        - ``Streams``: all the streams of the district.
+
+        Called by the constructor, after :meth:`generate_structure`.
+
+        Raises
+        ------
+        ValueError
+            If the name of a stream contains neither ``_h_`` (hot) nor ``_c_`` (cold).
+        """
         # Units Flows -----------------------------------------------------------
 
         all_units_flowrate = []
@@ -311,6 +349,17 @@ class Infrastructure:
         self.Streams = Streams_set
 
     def add_unit_parameters(self, complete_name, unit_param):
+        """
+        Append the size bounds, costs, lifetime and embodied emissions of a unit to ``Units_Parameters``.
+
+        Parameters
+        ----------
+        complete_name : str
+            Name of the unit instance, e.g. ``'PV_Building1'``.
+        unit_param : dict
+            Characteristics of the unit, with the keys ``Units_Fmin``, ``Units_Fmax``, ``Cost_inv1``,
+            ``Cost_inv2``, ``lifetime``, ``GWP_unit1`` and ``GWP_unit2``.
+        """
         keys = ['Units_Fmin', 'Units_Fmax', 'Cost_inv1', 'Cost_inv2', 'lifetime', 'GWP_unit1', 'GWP_unit2']
         df = pd.DataFrame([[unit_param[key] for key in keys]], columns=keys, index=[complete_name])
         self.Units_Parameters = pd.concat([self.Units_Parameters, df])

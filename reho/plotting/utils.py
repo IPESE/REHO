@@ -25,6 +25,21 @@ layout = pd.read_csv(os.path.join(path_to_plotting, 'layout.csv'), index_col='Na
 
 
 def hex_to_rgb(value, transparency=0.5):
+    """
+    Convert a hexadecimal color into a Plotly ``rgba`` color string.
+
+    Parameters
+    ----------
+    value : str
+        Color in six-digit hexadecimal notation, with or without the leading ``#`` (e.g. ``'#007480'``).
+    transparency : float, optional
+        Alpha channel, from 0 (transparent) to 1 (opaque). Default is 0.5.
+
+    Returns
+    -------
+    str
+        The color as ``'rgba(r, g, b, transparency)'``.
+    """
     value = value.lstrip('#')
     lv = len(value)
     rgb = tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
@@ -32,6 +47,22 @@ def hex_to_rgb(value, transparency=0.5):
 
 
 def dict_to_df(results, df):
+    """
+    Gather one result DataFrame across every scenario and Pareto point.
+
+    Parameters
+    ----------
+    results : dict
+        REHO results nested as ``results[Scn_ID][Pareto_ID]``, i.e. ``reho.results``.
+    df : str
+        Name of the DataFrame to gather, e.g. ``'df_Performance'``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        The DataFrames stacked on top of each other, with the index levels ``Scn_ID`` and
+        ``Pareto_ID`` prepended to their own index.
+    """
     t = {(Scn_ID, Pareto_ID): results[Scn_ID][Pareto_ID][df]
          for Scn_ID in results.keys()
          for Pareto_ID in results[Scn_ID].keys()}
@@ -42,15 +73,63 @@ def dict_to_df(results, df):
 
 
 def moving_average(data, n):
+    """
+    Smooth a profile with a simple moving average.
+
+    Parameters
+    ----------
+    data : array-like
+        One-dimensional values to smooth.
+    n : int
+        Window length, in number of values.
+
+    Returns
+    -------
+    numpy.ndarray
+        The average over each complete window, hence ``n - 1`` values shorter than ``data``.
+    """
     return np.convolve(data, np.ones(n), 'valid') / n
 
 
 def handle_zero_rows(df):
+    """
+    Drop the rows of a DataFrame whose values are all zero.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Data to filter.
+
+    Returns
+    -------
+    pandas.DataFrame
+        ``df`` without its all-zero rows.
+    """
     is_zero_row = (df == 0).all(axis=1)
     return df.loc[~is_zero_row]
 
 
 def custom_round(value, decimal):
+    """
+    Round a value for display in a plot label.
+
+    Parameters
+    ----------
+    value : float
+        Value to round.
+    decimal : int
+        Number of decimals to keep: 0 or 1.
+
+    Returns
+    -------
+    int or float
+        ``value`` as an integer when ``decimal`` is 0, rounded to one decimal otherwise.
+
+    Raises
+    ------
+    ValueError
+        If ``decimal`` is neither 0 nor 1.
+    """
     if decimal == 0:
         rounded_value = int(round(value))
     elif decimal == 1:
@@ -61,6 +140,25 @@ def custom_round(value, decimal):
 
 
 def merge_handles_labels(ax):
+    """
+    Gather the legend entries of several matplotlib axes, to draw a single legend.
+
+    Parameters
+    ----------
+    ax : iterable of matplotlib.axes.Axes
+        Axes whose legend handles and labels are collected.
+
+    Returns
+    -------
+    dict
+        Label -> handle, in the reverse order of appearance. A label shared by several axes is
+        kept once, with the handle of the first axes that uses it.
+
+    Examples
+    --------
+    >>> by_label = merge_handles_labels([ax_left, ax_right])
+    >>> fig.legend(by_label.values(), by_label.keys())
+    """
     handles = []
     labels = []
     for axis in ax:
@@ -75,6 +173,29 @@ def merge_handles_labels(ax):
 
 
 def monthly_average(results, df_to_extract):
+    """
+    Compute the monthly averages of a profile defined on the typical periods.
+
+    Each day of the year is mapped to its typical period through ``results['df_Index']``, the
+    values of that period are appended to the current month, and the month is averaged once
+    its last hour is reached.
+
+    Parameters
+    ----------
+    results : dict
+        Results of one optimization, i.e. ``reho.results[Scn_ID][Pareto_ID]``.
+    df_to_extract : pandas.Series
+        Hourly values indexed by ``(Period, Time)``, without the extreme periods.
+
+    Returns
+    -------
+    numpy.ndarray
+        Twelve values, the average hourly value of each month.
+
+    Notes
+    -----
+    Assumes a 365-day year and typical periods of 24 hours, see :func:`divide_hours_into_months`.
+    """
     np_to_extract = np.array([])
     np_month = np.array([])
     ranges = divide_hours_into_months()
@@ -92,6 +213,15 @@ def monthly_average(results, df_to_extract):
 
 
 def divide_hours_into_months():
+    """
+    Split the hours of a non-leap year into months.
+
+    Returns
+    -------
+    list of tuple of int
+        Twelve ``(first_hour, last_hour)`` pairs, inclusive and counted from 1:
+        ``[(1, 744), (745, 1416), ...]``.
+    """
     num_months = 12
 
     month_ranges = []

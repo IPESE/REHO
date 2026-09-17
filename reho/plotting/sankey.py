@@ -125,6 +125,32 @@ def add_flow(source, dest, layer, hub, dem_sup, df_annuals, df_label, df_stv, ch
 
 
 def add_base_flows(df_annuals, df_label, df_stv):
+    """
+    Add the flows that every Sankey diagram shows.
+
+    These are the electricity imports and exports, the consumption of the electrical appliances,
+    the PV production, and the space heating, routed through the space-heating water tank
+    (``WaterTankSH``) and its losses when there is one.
+
+    Parameters
+    ----------
+    df_annuals: pd.DataFrame
+        Annual energy flows, i.e. ``df_Annuals`` with ``Layer`` and ``Hub`` as columns, and the
+        buildings merged into a single ``Building`` hub (see :func:`df_sankey`).
+    df_label: pd.DataFrame
+        Nodes of the diagram, with their position in column ``pos``.
+    df_stv: pd.DataFrame
+        Links of the diagram, one column per flow, with rows ``source``, ``target`` and ``value``.
+
+    Returns
+    -------
+    df_label: pd.DataFrame
+        Nodes, including those of the base flows.
+    df_stv: pd.DataFrame
+        Links, including the base flows.
+    watertank_sh: bool
+        Whether ``df_annuals`` contains a space-heating water tank.
+    """
     # Check if WaterTankSH is used
     watertank_sh = len(df_annuals[(df_annuals['Layer'] == 'SH') & (df_annuals['Hub'] == 'WaterTankSH')]) != 0
 
@@ -388,6 +414,34 @@ def df_sankey(df_Results, label='EN_long', color='ColorPastel', precision=2, uni
 
 
 def apply_non_default_layers(df_annuals, df_label, df_stv, molecule_flows):
+    """
+    Add the flows of the optional energy layers (heat, hydrogen, biomethane, CO2, mobility).
+
+    Parameters
+    ----------
+    df_annuals: pd.DataFrame
+        Annual energy flows, as in :func:`add_base_flows`.
+    df_label: pd.DataFrame
+        Nodes of the diagram, with their position in column ``pos``.
+    df_stv: pd.DataFrame
+        Links of the diagram, one column per flow, with rows ``source``, ``target`` and ``value``.
+    molecule_flows: dict
+        Layer name -> ``{'flows': [...], 'electricity_consumption': [...]}``, both lists optional.
+
+        - A ``flows`` entry, read on the layer itself, is the tuple
+          ``(source, dest, hub, dem_sup, check_dest_2, dest_2, adjustment, fact)``.
+        - An ``electricity_consumption`` entry names the layer to read as third element:
+          ``(source, dest, layer, hub, dem_sup, check_dest_2, dest_2, adjustment, fact)``.
+
+        The fields are those of :func:`add_flow`.
+
+    Returns
+    -------
+    df_label: pd.DataFrame
+        Nodes, including those of the added flows.
+    df_stv: pd.DataFrame
+        Links, including the added flows.
+    """
     for layer, data in molecule_flows.items():
         # Add basic flows
         for src, dst, hub, column, check_dest_2, dest_2, offset, factor in data.get('flows', []):

@@ -6,9 +6,11 @@ Two families of paths coexist in REHO and must not be confused:
 the installed ``reho`` package. They are constants, resolved once at import.
 
 **Working-directory paths** (``path_to_clustering``, ``path_to_configurations``)
-point inside the *user's* project, next to the script being run. They are
-resolved on every access so that they follow :func:`os.chdir`, which run scripts
-and the test-suite rely on.
+point inside the *user's* project, next to the script being run. Read as
+attributes of this module, they are resolved against the current working
+directory on every access. REHO's own modules import them by name, though,
+which fixes them when ``reho`` is imported: a script that needs another location
+changes its working directory before importing REHO, not after.
 
 Importing this module has no side effect: it does not read ``.env`` files, does
 not change pandas' global display options, and does not print. Applications that
@@ -97,9 +99,9 @@ _CWD_RELATIVE_PATHS = {
 def __getattr__(name):
     """Resolve working-directory-dependent paths at access time.
 
-    Computing them at import time would freeze whatever directory the
-    interpreter happened to start in, which silently sends clustering files to
-    the wrong place as soon as a script calls :func:`os.chdir`.
+    ``reho.paths.path_to_clustering`` therefore always reflects the current
+    working directory, whereas a name bound by ``from reho.paths import ...`` is,
+    as usual, fixed when that import runs.
     """
     try:
         parts = _CWD_RELATIVE_PATHS[name]

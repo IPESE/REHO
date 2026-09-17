@@ -128,6 +128,20 @@ class SubProblem:
         self.parameters_to_ampl = dict()
 
     def build_model_without_solving(self):
+        """Build the complete AMPL sub-problem, ready to be solved.
+
+        The steps are, in order: :meth:`initialize_parameters_for_ampl_and_python`,
+        :meth:`init_ampl_model`, :meth:`set_weather_data`, :meth:`set_ampl_sets`,
+        :meth:`set_emissions_profiles`, :meth:`set_temperature_and_EVs_profiles`,
+        :meth:`set_HP_parameters`, :meth:`set_streams_temperature`, :meth:`set_skydome_parameters`
+        (only with ``method['use_pv_orientation']``), :meth:`send_parameters_and_sets_to_ampl` and
+        :meth:`set_scenario`.
+
+        Returns
+        -------
+        amplpy.AMPL
+            Session holding the model, its data and the scenario.
+        """
         self.initialize_parameters_for_ampl_and_python()
         ampl = self.init_ampl_model()
         ampl = self.set_weather_data(ampl)
@@ -191,6 +205,24 @@ class SubProblem:
         return ampl
 
     def set_weather_data(self, ampl):
+        """Read the typical periods of the location into AMPL.
+
+        ``frequency.csv`` (the periods, their frequency ``dp`` and number of timesteps ``TimeEnd``) and
+        ``index.csv`` (the typical period and timestep of each hour of the year) are read from the
+        clustering directory of the location. The ambient temperature ``T_ext`` and the global
+        irradiance ``Irr`` of the typical periods are added to the parameters sent by
+        :meth:`send_parameters_and_sets_to_ampl`.
+
+        Parameters
+        ----------
+        ampl : amplpy.AMPL
+            Session holding the sub-problem model.
+
+        Returns
+        -------
+        amplpy.AMPL
+            The same session.
+        """
         # -----------------------------------------------------------------------------------------------------#
         # -Setting DATA
         # -----------------------------------------------------------------------------------------------------#
@@ -209,6 +241,32 @@ class SubProblem:
         return ampl
 
     def set_ampl_sets(self, ampl):
+        """Send the sets of the infrastructure to AMPL, and apply the units excluded or enforced by the scenario.
+
+        The sets of the :class:`~reho.model.infrastructure.Infrastructure` are written at once. Its
+        parameters (unit flow rates and characteristics, grid parameters, stream types, heat-pump maps)
+        are added to those sent by :meth:`send_parameters_and_sets_to_ampl`.
+
+        The use of the units named in ``scenario['exclude_units']`` is then fixed to 0, and of those
+        named in ``scenario['enforce_units']`` to 1. A name designates a building unit either exactly
+        or as the prefix of its instances (``'PV'`` designates ``'PV_Building1'``), and a district unit
+        exactly. Enforcing a unit forces its installation, not a size above its minimum size.
+
+        Parameters
+        ----------
+        ampl : amplpy.AMPL
+            Session holding the sub-problem model.
+
+        Returns
+        -------
+        amplpy.AMPL
+            The same session.
+
+        Raises
+        ------
+        ValueError
+            If a set of the infrastructure is neither an array nor a dictionary of arrays.
+        """
         # -----------------------------------------------------------------------------------------------------#
         # Design Structure: Building Cluster, Units and Layers
         # -----------------------------------------------------------------------------------------------------#
@@ -250,6 +308,12 @@ class SubProblem:
         return ampl
 
     def set_emissions_profiles(self):
+        """Use hourly emission factors for electricity, when ``method['use_dynamic_emission_profiles']`` is set.
+
+        The global warming potential of the electricity imported (``GWP_supply``) and exported
+        (``GWP_demand``) then follows the profile ``local_data['df_Emissions_GWP100a']`` on the typical
+        periods, while the other layers keep their constant emission factors (``Gas_emission``).
+        """
 
         if self.method_sp['use_dynamic_emission_profiles']:
             self.parameters_to_ampl['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
@@ -257,6 +321,11 @@ class SubProblem:
             self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity')[["GWP_demand_cst", "GWP_supply_cst"]]
 
     def set_temperature_and_EVs_profiles(self):
+        """Build the lower comfort temperature ``T_comfort_min`` of each building at every timestep.
+
+        The constant reference ``T_comfort_min_0`` of each building is repeated over the typical
+        periods, see :func:`~reho.model.preprocessing.buildings_profiles.reference_temperature_profile`.
+        """
 
         # Reference temperature
         self.parameters_to_ampl['T_comfort_min'] = buildings_profiles.reference_temperature_profile(self.parameters_to_ampl, self.cluster_sp)
@@ -364,6 +433,19 @@ class SubProblem:
             self.parameters_sp.pop(custom_key, None)
 
     def set_streams_temperature(self, ampl):
+        """Build the inlet and outlet temperatures of the heat-cascade streams, at every timestep.
+
+        The streams of the units take the constant ``stream_Tin`` and ``stream_Tout`` of the unit data.
+        The space-heating and cooling streams of the buildings get placeholder values (50 and 40 degC),
+        replaced by their supply and return temperatures when :meth:`send_parameters_and_sets_to_ampl`
+        reads ``data_stream.dat``. The result, ``streams_T``, is added to the parameters sent to AMPL.
+
+        Parameters
+        ----------
+        ampl : amplpy.AMPL
+            Session holding the sub-problem model, with the number of timesteps of each period
+            (``TimeEnd``) already read.
+        """
 
         df_end = ampl.getParameter('TimeEnd').getValues().toPandas()
         timesteps = int(df_end['TimeEnd'].sum())
@@ -392,6 +474,23 @@ class SubProblem:
         self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
 
     def set_skydome_parameters(self):
+        """Build the data of the PV orientation model: sky patches, surfaces and panel configurations.
+
+        The irradiation of the sky patches (``Irr_patches``) and their position are read from the
+        skydome data. Each roof of each building becomes a surface, with its area
+        (``HouseSurfaceArea``) and the panel configurations (azimuth, tilt) it allows:
+
+        - on a tilted roof, the panels follow the orientation of the roof;
+        - on a flat roof (tilt 0 or 1), the solver chooses among azimuths from 160 to 200 degrees by
+          steps of 10, and tilts of 5, 10, 20, 30 and 40 degrees, or panels lying flat (180, 0).
+
+        With ``method['use_facades']``, the facades are surfaces too, with their azimuth and a tilt of
+        0, and the limiting angles of the shadows cast by the surrounding buildings
+        (``Limiting_angle_shadow``).
+
+        Requires the ``roofs_data`` of ``qbuildings_data``, plus ``facades_data`` and ``shadows_data``
+        for the facades.
+        """
         # --------------- PV Panels ---------------------------------------------------------------------------#
 
         df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))

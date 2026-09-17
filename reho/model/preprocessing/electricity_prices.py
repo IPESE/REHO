@@ -55,6 +55,26 @@ GEODATA_TYPES = {"https://www.opengis.net/ont/geosparql#wktLiteral", "https://ww
 def requests_retry_session(
         retries=3, backoff_factor=0.3, status_forcelist=(500, 502, 504), session=None
 ):
+    """
+    HTTP session that retries failed requests.
+
+    Parameters
+    ----------
+    retries : int, optional
+        Maximum number of retries after a connection error, a read error or one of the status codes
+        of ``status_forcelist``. Default is 3.
+    backoff_factor : float, optional
+        Factor of the exponential delay between two retries, in seconds. Default is 0.3.
+    status_forcelist : tuple of int, optional
+        HTTP status codes that trigger a retry. Default is (500, 502, 504).
+    session : requests.Session, optional
+        Session to configure. A new one is created by default.
+
+    Returns
+    -------
+    requests.Session
+        The session, with the retry policy mounted on ``https://`` URLs.
+    """
     session = session or rq.Session()
     retry = urllib3.util.Retry(
         total=retries,
@@ -71,6 +91,26 @@ def requests_retry_session(
 
 
 class SparqlClient:
+    """Client of a SPARQL endpoint, such as the linked-data services of the Swiss administration.
+
+    Queries are sent at most once per second, and retried on server errors
+    (see :func:`requests_retry_session`).
+
+    Parameters
+    ----------
+    base_url : str
+        URL of the SPARQL endpoint, e.g. ``'https://lindas.admin.ch/query'``.
+    timeout : int, optional
+        Default timeout of a query, in seconds. Default is 15; None waits indefinitely.
+    output : str, optional
+        Format of the query results: ``'pandas'`` (default) for a table, or ``'dict'`` for the
+        JSON response as is.
+    user : str, optional
+        User name, for endpoints that require authentication.
+    password : str, optional
+        Password, for endpoints that require authentication.
+    """
+
     def __init__(
             self,
             base_url: str = None,
@@ -94,12 +134,17 @@ class SparqlClient:
             self.session.auth = (user, password)
 
     def _normalize_prefixes(self, prefixes: Dict) -> str:
-        """Transfrom prefixes map to SPARQL-readable format
-        Args:
-            prefixes: 		prefixes to be normalized
+        """Transform a prefixes map into a SPARQL-readable format.
+
+        Parameters
+        ----------
+        prefixes : dict
+            Prefixes to be normalized.
 
         Returns
-            str             SPARQL-readable prefix definition
+        -------
+        str
+            SPARQL-readable prefix definition.
         """
 
         normalized_prefixes = "\n".join(
@@ -110,36 +155,42 @@ class SparqlClient:
         return normalized_prefixes
 
     def add_prefixes(self, prefixes: Dict) -> None:
-        """Define prefixes to be added to every query
-        Args:
-            prefixes: prefixes to be added to every query
+        """Define prefixes to be added to every query.
 
-        Returns
-            None
+        Parameters
+        ----------
+        prefixes : dict
+            Prefixes to be added to every query.
         """
 
         self.prefixes = {**self.prefixes, **prefixes}
 
     def remove_prefixes(self, prefixes: Dict) -> None:
-        """Remove prefixes from the prefixes are added to every query
-        Args:
-            prefixes: prefixes to be removed from self.prefixes
+        """Remove prefixes from those added to every query.
 
-        Returns
-            None
+        Parameters
+        ----------
+        prefixes : dict or list
+            Prefixes to be removed from ``self.prefixes``.
         """
 
         for prefix in prefixes:
             self.prefixes.pop(prefix, None)
 
     def _format_query(self, query: str) -> str:
-        """Format SPARQL query to include in-memory prefixes.
-        Prefixes already defined in the query have precedence, and are not overwritten.
-            Args:
-                query: user-defined SPARQL query
+        """Format a SPARQL query to include the in-memory prefixes.
 
-            Returns
-                str: SPARQL query with predefined prefixes
+        Prefixes already defined in the query have precedence, and are not overwritten.
+
+        Parameters
+        ----------
+        query : str
+            User-defined SPARQL query.
+
+        Returns
+        -------
+        str
+            SPARQL query with the predefined prefixes.
         """
 
         prefixes_in_query = dict(
@@ -155,13 +206,31 @@ class SparqlClient:
         return self._normalize_prefixes(prefixes_to_add) + query
 
     def send_query(self, query: str, timeout: Optional[int] = 0) -> pd.DataFrame:
-        """Send SPARQL query. Transform results to pd.DataFrame.
-        Args:
-            query: 				full SPARQL query
-            timeout:            timeout (in seconds) for this query. If not defined, the self.timeout will be used.
+        """Send a SPARQL query and return its results as a DataFrame.
+
+        Parameters
+        ----------
+        query : str
+            Full SPARQL query.
+        timeout : int, optional
+            Timeout of this query, in seconds. When 0 (default), ``self.timeout`` is used.
 
         Returns
-            pd.DataFrame	    query results
+        -------
+        pandas.DataFrame or geopandas.GeoDataFrame or dict
+            Query results: a table, geo-referenced when the results contain geometries, or the
+            JSON response as is when the client output is ``'dict'``.
+
+        Raises
+        ------
+        requests.HTTPError
+            If the endpoint answers with an HTTP error.
+        ExecutionError
+            If the endpoint fails to execute the query.
+        NotFoundError
+            If the query returns no result.
+        TypeError
+            If the output format of the client is neither ``'pandas'`` nor ``'dict'``.
         """
 
         request = {"query": self._format_query(query)}
@@ -244,15 +313,15 @@ class SparqlClient:
 
 
 class GraphlyError(Exception):
-    pass
+    """Base class of the errors raised when querying a SPARQL endpoint or the pvtarif.ch API."""
 
 
 class NotFoundError(GraphlyError):
-    pass
+    """Raised when a SPARQL query returns no result."""
 
 
 class ExecutionError(GraphlyError):
-    pass
+    """Raised when a SPARQL endpoint fails to execute a query, or the pvtarif.ch API answers with an HTTP error."""
 
 
 cantons = {'id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
@@ -755,6 +824,17 @@ def get_prices_from_elcom_by_city(year=2024, city=None, category=None, tva=None,
 
 
 def get_vese_key():
+    """
+    Fetch the key of the pvtarif.ch API published for REHO on the IPESE server.
+
+    :func:`get_injection_prices` uses it when ``API_VESE_KEY`` is not set in the environment.
+
+    Returns
+    -------
+    str or bool
+        The key; ``'Error: <status code>'`` if the server answers with an HTTP error; False if the
+        server cannot be reached within one second.
+    """
     try:
         response = rq.get("https://ipese-lectures.epfl.ch/static/reho.json", timeout=1)
         if response.status_code == 200:

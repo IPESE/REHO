@@ -11,6 +11,26 @@ Characterizes the CO2 emissions related to electricity generated from the grid.
 
 
 def find_average_value(country, metric):
+    """
+    Annual average of an hourly indicator of a country's electricity mix.
+
+    The hourly values come from the 2019 electricity matrix shipped with REHO
+    (``electricity_matrix_2019_reduced.csv``).
+
+    Parameters
+    ----------
+    country : str
+        Country of the electricity mix: ``'CH'``, ``'DE'``, ``'FR'`` or ``'PL'``.
+    metric : str
+        Indicator: ``'GWP100a'`` or ``'GWP20a'`` (global warming potential), ``'method 1'`` or
+        ``'method 2'`` (renewable share), or ``'total'`` (ecological footprint and ecological scarcity).
+
+    Returns
+    -------
+    pandas.Series
+        Average of the 8760 hourly values, indexed by indicator family (e.g. ``'RE share'``).
+        Global warming potentials are converted from g to kg CO2-eq/kWh.
+    """
 
     emissions_matrix = pd.read_csv(path_to_emissions, index_col=[0, 1, 2])
 
@@ -26,6 +46,28 @@ def find_average_value(country, metric):
 
 
 def return_typical_emission_profiles(local_data, metric, df_time):
+    """
+    Hourly profile of an electricity-mix indicator on the typical periods, for Switzerland.
+
+    The profile is cached as ``<metric>.csv`` in the clustering directory of the location
+    (``data/clustering/<File_ID>/``), and built by :func:`annual_to_typical_emissions` when that
+    file does not exist yet.
+
+    Parameters
+    ----------
+    local_data : dict
+        Location data returned by :func:`~reho.model.preprocessing.local_data.return_local_data`;
+        ``File_ID`` and ``Cluster`` are used.
+    metric : str
+        Indicator, see :func:`find_average_value`.
+    df_time : pandas.DataFrame
+        Date of each typical period, i.e. ``local_data['df_Timestamp']``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Indicator values in column ``GWP_supply``, indexed by ``('Electricity', Period, Time)``.
+    """
     country = 'CH'
 
     clustering_directory = os.path.join(path_to_clustering, local_data['File_ID'])
@@ -41,6 +83,35 @@ def return_typical_emission_profiles(local_data, metric, df_time):
 
 
 def annual_to_typical_emissions(cluster, country, metric, df_time):
+    """
+    Extract the hourly values of an electricity-mix indicator for each typical period.
+
+    Each typical period takes the values of the hours of the year it was selected from.
+
+    Parameters
+    ----------
+    cluster : dict or pandas.DataFrame
+        Clustering options with ``Periods`` and ``PeriodDuration``, the two extreme periods lasting
+        one hour each; or directly the duration of each period, in a column ``TimeEnd`` indexed from 1.
+    country : str
+        Country of the electricity mix, see :func:`find_average_value`.
+    metric : str
+        Indicator, see :func:`find_average_value`.
+    df_time : pandas.DataFrame
+        Date of each period in a column ``Date``, one row per period in order,
+        i.e. ``local_data['df_Timestamp']``.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Indicator values in column ``GWP_supply`` (whatever the metric), indexed by
+        ``('Electricity', Period, Time)`` with periods and times counted from 1.
+        Global warming potentials are converted from g to kg CO2-eq/kWh.
+
+    Notes
+    -----
+    Hours are counted from 1 January 2005, so the dates of ``df_time`` are expected in 2005.
+    """
 
     emissions_matrix = pd.read_csv(path_to_emissions, index_col=[0, 1, 2])
 

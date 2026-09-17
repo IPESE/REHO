@@ -772,7 +772,7 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
     return df_buildings
 
 
-def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
+def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None, sample=None):
     """
     Parameters
     ----------
@@ -783,6 +783,13 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
         Default values are based on SIA 2024 and Energy Performance Gap bei Instandsetzungen, Literaturstudie Schlussbericht, 17. Januar 2022
     df_facades : geodataframe
         Geoataframe of the facades in the case study
+    sample : pandas.Series, optional
+        Values drawn by a sensitivity analysis, which replace the typical ones: the U-values ``Uf``
+        (facade), ``Uw`` (window), ``Us`` (footprint) and ``Ur`` (roof) [W/(m2.K)], the outdoor air
+        flow ``vent`` per m2 of ERA [m3/(h.m2)], 0.7 in SIA 380/1, the reduction factor ``b`` of the
+        heat losses through the footprint, and
+        the g-value of the windows ``g`` and its factor with the sunblinds down ``g_shade``, stored as
+        ``g_glass`` and ``g_glass_shade`` for :func:`~reho.model.preprocessing.buildings_profiles.solar_gains_profile`.
 
     Returns
     -------
@@ -810,20 +817,20 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
         if df_facades is not None:
             facades = df_facades[df_facades["id_building"] == df_h["id_building"]]
             perimeter = np.sum([line.length for line in facades["geometry"]])
-            # df_h["area_facade_m2"] = perimeter * df_h["height_m"]
             footprint_factor = df_h["area_footprint_m2"] / perimeter
         else:
             footprint_factor = df_h["area_footprint_m2"] / df_h['geometry'].length
+            perimeter = df_h['geometry'].length
+        df_h["area_facade_m2"] = perimeter * 2.5 * df_h["ERA"] / (0.93 * df_h["area_footprint_m2"])
 
         b_value_floor = pd.read_csv(os.path.join(path_to_sia, 'b_value_floor.csv'), sep=";").set_index("U_footprint")
         b_value = b_value_floor[min(b_value_floor.columns, key=lambda x: abs(float(x) - footprint_factor))]
 
-        if df_h["ERA"] < 0.7 * (0.93 * df_h["area_footprint_m2"] * df_h['count_floor']):
+        if df_h["ERA"] < 0.93 * df_h["area_footprint_m2"] * df_h['count_floor']:
             # When we have case where the ERA is particularly lower than the footprint (because some spaces do not need to be heated),
             # issues arise from gains and losses
-
-            df_h["area_facade_m2"] = df_h["ERA"] / footprint_factor * df_h['height_m']
             downscaling = df_h["ERA"] / (0.93 * df_h["area_footprint_m2"] * df_h['count_floor'])
+            df_h["area_facade_m2"] = df_h["area_facade_m2"] * downscaling
             df_h["SolarRoofArea"] = df_h["SolarRoofArea"] * downscaling
             df_h["area_footprint_m2"] = df_h["area_footprint_m2"] * downscaling
 
@@ -842,6 +849,16 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
             b_roof = 1
             if df_h['SolarRoofArea'] > df_h["area_footprint_m2"]*1.1:  # non heated space under roof
                 b_roof = 0.9
+
+            if isinstance(sample, pd.Series):
+                uh_period["U_facade"] = sample["Uf"] / 1000
+                uh_period["U_window"] = sample["Uw"] / 1000
+                uh_period["U_footprint"] = sample["Us"] / 1000
+                uh_period["U_roof"] = sample["Ur"] / 1000
+                ventilation = ventilation / 0.7 * sample["vent"]
+                b = sample["b"]
+                df_buildings[i]["g_glass"] = sample["g"]
+                df_buildings[i]["g_glass_shade"] = sample["g_shade"]
 
             U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_period["U_facade"] +
                              df_h["area_footprint_m2"] * uh_period["U_footprint"]*b +

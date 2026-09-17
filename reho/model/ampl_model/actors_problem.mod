@@ -39,9 +39,16 @@ var renter_expense{h in House};
 var C_rent_fix{h in House} >= 0;
 var C_op_renters_to_utility{h in House} >= 0;
 var C_op_renters_to_owners{h in House} >= 0;
+var C_op_renters_mobility{h in House} >=0;
+
+subject to Costs_opex_renter0{h in House}:
+C_op_renters_mobility[h] = Cost_travel * sum{d in Distances} DailyDist[d] / EV_eff_travel / EV_eff_ch / ff_EV["EV_district"] * Population * 365 * ERA[h] / sum{i in House}(ERA[i]) * sum{t in Distances} (max_share_modes["cars", t]-max_share_modes["PT", t]-max_share_modes["MD", t]);                                             
 
 subject to Costs_opex_renter1{h in House}:
-C_op_renters_to_utility[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_supply_district[l,f,h] * Grid_supply[l,f,h,p,t]  * dp[p] * dt[p] )+ Cost_travel * sum{d in Distances} DailyDist[d];                                             
+C_op_renters_to_utility[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_supply_district[l,f,h] * Grid_supply[l,f,h,p,t]  * dp[p] * dt[p] )+ C_op_renters_mobility[h];                                             
+
+subject to Costs_charging{h in House}:
+Cost_travel <= Cost_supply_cst["Electricity"] + 0.1;                                             
 
 subject to Costs_opex_renter2{h in House}:
 C_op_renters_to_owners[h] = sum{f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_self_consumption[f,h] * PV_self_consummed[f,h,p,t] * dp[p] * dt[p] );
@@ -71,15 +78,19 @@ objective_functions["Renters"] = sum{h in House}(renter_expense[h]);
 param utility_profit_min default -1e-6;
 var utility_profit;
 var C_op_utility_to_owners{h in House};
+var Costs_op_ECM;
+
+subject to Costs_opex_ecm:
+Costs_op_ECM = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]}(Cost_supply_cst[l]*Network_supply[l,p,t] - Cost_demand_cst[l]*Network_demand[l,p,t]);
 
 subject to Utility1{h in House}: 
 C_op_utility_to_owners[h] = sum{l in ResourceBalances, f in FeasibleSolutions, p in PeriodStandard, t in Time[p]} (Cost_demand_district[l,f,h] * Grid_demand[l,f,h,p,t] * dp[p] * dt[p]);
 
 subject to Utility2:
-utility_profit = sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op - tau * sum{u in Units diff {"EV_district"}} Costs_Unit_inv[u] - Costs_rep- sum{h in House} DHN_inv_house[h];
+utility_profit = sum{h in House} (C_op_renters_to_utility[h] - C_op_utility_to_owners[h]) - Costs_op_ECM;# - tau * sum{u in Units diff {"EV_district"}} Costs_Unit_inv[u] - Costs_rep- sum{h in House} DHN_inv_house[h];
 
 subject to Utility_epsilon: # nu_utility
-utility_profit >= utility_profit_min;
+utility_profit >= utility_profit_min * sum{h in House} ERA[h];
 
 subject to obj_fct2:
 objective_functions["Utility"] = - utility_profit;

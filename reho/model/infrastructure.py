@@ -18,6 +18,16 @@ ALWAYS_AVAILABLE_UNIT_TYPES = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "
 
 #: Units removed from every scenario by default (not yet validated, or superseded).
 DEFAULT_UNITS_TO_EXCLUDE = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district']
+_unit_parameter_file_cache = {}
+
+
+def _read_unit_parameter_file(file):
+    """HP/AC parameter tables are static package data — read each file once per process."""
+    df = _unit_parameter_file_cache.get(file)
+    if df is None:
+        df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
+        _unit_parameter_file_cache[file] = df
+    return df
 
 
 class Infrastructure:
@@ -304,7 +314,7 @@ class Infrastructure:
                     elif u['UnitOfType'] == 'HeatPump':
                         file = os.path.join(path_to_infrastructure, 'HP_parameters.txt')
 
-                    df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
+                    df = _read_unit_parameter_file(file)
                     df = pd.concat([df], keys=[complete_name])
                     # get index sets of source and sink of HP
                     name, rest = df.columns[0].split('_', 1)

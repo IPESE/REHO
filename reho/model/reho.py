@@ -23,8 +23,6 @@ reho.model.master_problem.MasterProblem : decomposition machinery this class inh
 reho.model.options : the ``method``, ``scenario`` and ``DW_params`` dictionaries.
 """
 
-import gc
-import multiprocessing as mp
 import os
 import pickle
 import warnings
@@ -211,7 +209,6 @@ class REHO(MasterProblem):
         self.add_df_Results(ampl, Scn_ID, Pareto_ID, self.scenario)
         self.get_KPIs(Scn_ID, Pareto_ID=Pareto_ID)
 
-        gc.collect()  # free memory
         del ampl
         if exitcode == 'infeasible':
             raise RuntimeError(
@@ -235,7 +232,8 @@ class REHO(MasterProblem):
         3. Finalization: a last master problem, with binary variables, selects exactly one
            configuration per building.
 
-        The sub-problems are solved in a pool of ``cpu_use`` processes.
+        The sub-problems are solved in a pool of ``cpu_use`` processes, kept open across optimizations,
+        see :meth:`~reho.model.master_problem.MasterProblem.ensure_pool`.
 
         Parameters
         ----------
@@ -258,7 +256,7 @@ class REHO(MasterProblem):
         """
 
         # Initiation
-        self.pool = mp.Pool(self.cpu_use)
+        self.ensure_pool()
         self.iter = 0  # new scenario has to start at iter = 0
         scenario, SP_scenario, SP_scenario_init = self.select_SP_obj_decomposition(scenario)
 
@@ -283,8 +281,7 @@ class REHO(MasterProblem):
         self.iter += 1
         self.logger.info('LAST MASTER ITERATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
         self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=True, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
-        self.pool.close()
-        self.pool.join()
+
         return None, None
 
     def generate_pareto_curve(self):
@@ -393,7 +390,6 @@ class REHO(MasterProblem):
 
             obj_values = get_objectives_values(ampl, self.scenario["Objective"], Pareto_ID=1)
 
-            gc.collect()  # free memory
             self.logger.info('The lower bound of the ' + str(objective1) + 'value is: ' + str(obj_values["district_obj1"]))
             return obj_values
 
@@ -419,7 +415,6 @@ class REHO(MasterProblem):
 
             obj_values = get_objectives_values(ampl, self.scenario["Objective"], Pareto_ID=Pareto_ID)
 
-            gc.collect()  # free memory
             self.logger.info('The upper bound of the ' + str(self.scenario["Objective"][0]) + 'value is: ' + str(obj_values["district_obj1"]))
             return obj_values
 
@@ -491,7 +486,6 @@ class REHO(MasterProblem):
             self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
 
             del ampl
-            gc.collect()  # free memory
 
         if not self.method['switch_off_second_objective']:
 
@@ -525,7 +519,6 @@ class REHO(MasterProblem):
                 self.get_KPIs(Scn_ID, Pareto_ID=nParetoIT)
 
                 del ampl
-                gc.collect()  # free memory
 
         sort_pareto_points()
 
@@ -540,7 +533,7 @@ class REHO(MasterProblem):
         charges each building for its own connection. ``DHN_pipes`` is removed
         from the district units, since it is now accounted for building by building.
         """
-        self.pool = mp.Pool(self.cpu_use)
+        self.ensure_pool()
         self.iter = 0  # new scenario has to start at iter = 0
         method = self.method['building-scale']
         self.method['building-scale'] = True
@@ -568,7 +561,6 @@ class REHO(MasterProblem):
         for bui in self.infrastructure.houses.keys():
             self.infrastructure.Units_Parameters.loc["DHN_pipes_" + bui, ["Units_Fmax", "Cost_inv2"]] = [heat_flow[bui] * 1.001, dhn_invh]
 
-        self.pool.close()
         self.method['building-scale'] = method
         self.initialize_optimization_tracking_attributes()
 

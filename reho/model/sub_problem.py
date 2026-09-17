@@ -183,7 +183,8 @@ class SubProblem:
         --------
         reho.model.ampl_interface.BUILDING_UNIT_MODELS : registry of technology model files.
         """
-        ampl = create_ampl_session(self.solver, print_logs=self.method_sp["print_logs"])
+        ampl = create_ampl_session(self.solver, print_logs=self.method_sp["print_logs"],
+                                   solver_threads=self.method_sp["solver_threads_SP"])
 
         ampl.read("sub_problem.mod")
         ampl.read("scenario.mod")

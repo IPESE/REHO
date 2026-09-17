@@ -4,7 +4,7 @@
 #--------------------------------------------------------------------------------------------------------------------#
 ######################################################################################################################
 
-param BOI_efficiency_max{u in UnitsOfType['NG_Boiler']} default 0.95;
+param BOI_efficiency_max{u in UnitsOfType['NG_Boiler']} default 0.9;
 param BOI_partload_max{u in UnitsOfType['NG_Boiler']} default 1;
 
 subject to BOI_energy_balance{h in House, l in LayersOfType['ResourceBalance'], u in UnitsOfType['NG_Boiler'] inter UnitsOfHouse[h] inter UnitsOfLayer[l],p in Period,t in Time[p]}:

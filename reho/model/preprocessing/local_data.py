@@ -140,5 +140,5 @@ def _sun_azimuth(df_timestamp, qbuildings_data, period_duration):
     # The two extreme periods are single timesteps: evaluate them at midday.
     timestamps += [day + timedelta(hours=EXTREME_PERIOD_HOUR) for day in df_timestamp["Date"][-2:]]
 
-    positions = pd.concat([pvlib.solarposition.get_solarposition(ts, latitude, longitude) for ts in timestamps])
+    positions = pvlib.solarposition.get_solarposition(pd.DatetimeIndex(timestamps), latitude, longitude)
     return positions["azimuth"] - 90

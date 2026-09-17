@@ -177,7 +177,7 @@ _COMMON_OPTIONS = {
 }
 
 
-def create_ampl_session(solver, print_logs=True, options=None, evals=(), fallback_to_modules=True):
+def create_ampl_session(solver, print_logs=True, options=None, evals=(), fallback_to_modules=True, solver_threads=None):
     """Create and configure an AMPL session.
 
     The license is resolved in this order:
@@ -200,6 +200,9 @@ def create_ampl_session(solver, print_logs=True, options=None, evals=(), fallbac
     fallback_to_modules : bool, optional
         Whether to fall back on the ``amplpy`` modules when ``AMPL_PATH`` is set
         but unusable. Default is True.
+    solver_threads : int, optional
+        Maximum number of threads of the solver, applied to Gurobi only. Default
+        is None, which lets the solver decide.
 
     Returns
     -------
@@ -224,7 +227,11 @@ def create_ampl_session(solver, print_logs=True, options=None, evals=(), fallbac
 
     ampl.setOption("solver", solver)
     if solver == "gurobi":
-        ampl.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
+        # One string literal: AMPL joins adjacent literals without a space.
+        gurobi_options = "NodeFileStart=0.5 IntFeasTol=1e-6"
+        if solver_threads:
+            gurobi_options += f" threads={int(solver_threads)}"
+        ampl.eval(f"option gurobi_options '{gurobi_options}';")
 
     for statement in evals:
         ampl.eval(statement)

@@ -61,9 +61,9 @@ def U_h_renovation(buildings_data, df_U_values):
     U_h_ins_data = buildings_data["dummy"]["U_h"]
 
     if U_h_ins_data + MIN_UH_IMPROVEMENT >= U_h_data:
-        # For some construction periods the reference U_required_* values are no
-        # better than the existing ones (see docs/sections/data.md), which would let
-        # the model buy a renovation that degrades the envelope.
+        # A building may already be better insulated than the reference values of its
+        # construction period, e.g. after an earlier renovation: without this floor, the
+        # model could buy a renovation that degrades its envelope.
         logger.debug(
             "Renovation does not improve U_h (%.5f -> %.5f); capping it at a %.0e improvement.",
             U_h_data, U_h_ins_data, MIN_UH_IMPROVEMENT,

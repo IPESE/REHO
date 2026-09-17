@@ -64,7 +64,7 @@ class ActorsModel(REHO):
 
         Produces a pandas DataFrame with columns:
 
-        - ``utility_profit_min``: sampled values for the Utility (ECM) actor's minimum profit (absolute value, usually set to 0).
+        - ``utility_profit_min``: sampled values for the Utility (ECM) actor's minimum profit, per m2 of ERA of the district (usually set to 0).
         - ``owner_PIR_min``: sampled values for the Owner (Landlord) actor's profit-investment ratio (percentage).
 
         Sampling strategies:

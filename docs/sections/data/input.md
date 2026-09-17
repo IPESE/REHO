@@ -137,21 +137,6 @@ follows the network temperature. Any other source must be declared through
 | `U_facade`, `U_footprint`, `U_roof`, `U_window` | kW/(m²·K) | U-value of the existing envelope |
 | `U_required_facade`, ... | kW/(m²·K) | U-value reached after renovating that element |
 
-:::{admonition} Known data issue
-:class: warning
-
-For several construction periods the post-renovation value is *higher* (worse)
-than the existing one — the facade for every period up to 2000, and the roof for
-1981–2000. Renovating those elements would degrade the envelope.
-{func}`~reho.model.preprocessing.renovation.U_h_renovation` currently masks this
-by forcing a {data}`~reho.model.preprocessing.renovation.MIN_UH_IMPROVEMENT`
-improvement, so a renovation scenario over an affected building stock produces an
-improvement that the data does not actually support. The test
-`test_data.py::test_renovation_targets_improve_on_the_existing_envelope` documents
-the inconsistency as an expected failure; it should be resolved by revising the
-reference values.
-:::
-
 ### `renovation.csv` — renovation costs and embodied emissions
 
 Comma-separated (unlike the other infrastructure files). Indexed by

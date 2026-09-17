@@ -163,13 +163,6 @@ class TestOtherDataFiles:
         numeric = u_values.drop(columns="period")
         assert (numeric > 0).all().all(), "U_values.csv holds a non-positive U-value"
 
-    @pytest.mark.xfail(
-        reason="Known data issue: for several construction periods the renovated U-value "
-               "(U_required_*) is higher than the existing one (U_*), so renovating that element "
-               "degrades the envelope. renovation.U_h_renovation currently masks it by forcing a "
-               "1e-5 improvement. See docs/sections/data.md.",
-        strict=False,
-    )
     def test_renovation_targets_improve_on_the_existing_envelope(self):
         u_values = file_reader(os.path.join(path_to_infrastructure, "U_values.csv")).set_index("period")
         offenders = []

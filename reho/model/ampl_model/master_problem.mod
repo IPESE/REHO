@@ -236,18 +236,11 @@ Network_capacity[l]>=Network_ext[l];
 subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}}:
 Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
+# The n-th replacement of a unit takes place at the end of its n-th lifetime, and is charged for the share of its own
+# lifetime within the horizon: a unit lasting as long as the horizon, or longer, is never replaced.
 subject to Costs_Unit_replacement{u in Units diff {"DHN_pipes_district"}}:
-
-Costs_Unit_rep[u] =
-
-    sum{n_rep in 1..floor(n_years/lifetime[u]) - 1}
-    ((1/(1+i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u])
-    +
-    ((n_years - floor(n_years/lifetime[u])*lifetime[u])/ lifetime[u])
-    *
-    (1/(1+i_rate))^(floor(n_years/lifetime[u])*lifetime[u])
-    *
-    Costs_Unit_inv[u];
+Costs_Unit_rep[u] = sum{n_rep in 1..floor(n_years/lifetime[u])}
+	min(1, n_years/lifetime[u] - n_rep) * (1/(1 + i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u];
 
 subject to Costs_replacement:
 Costs_rep =  sum{u in Units diff {"DHN_pipes_district"}} Costs_Unit_rep[u];

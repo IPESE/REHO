@@ -235,13 +235,17 @@ Investment and replacement costs are annualized using the capital recovery facto
 ```{math}
 :label: eq_rep
 \boldsymbol{C}^{\text{rep}}_b
-= \sum_{u \in \mathbb{U}} \sum_{r \in \mathbb{R}}
+= \sum_{u \in \mathbb{U}} \sum_{r=1}^{\lfloor n / n_u \rfloor}
+  \min\!\left(1, \frac{n}{n_u} - r\right)
   \frac{1}{(1+i)^{r \cdot n_u}}
   \bigl(c_u^1\, \boldsymbol{y}_{b,u} + c_u^2\, \boldsymbol{f}_{b,u}\bigr)
 ```
 
-Here $n$ is the project horizon, $i$ the interest rate, $n_u$ the technical lifetime of
-unit $u$, and $r \in \mathbb{R}$ indexes replacement events within the horizon. Multiple
+Here $n$ is the project horizon, $i$ the interest rate and $n_u$ the technical lifetime of
+unit $u$. The $r$-th replacement takes place at the end of the $r$-th lifetime, in year
+$r \cdot n_u$, and is charged for the share of its own lifetime within the horizon: a unit
+lasting as long as the horizon, or longer, is never replaced, and a unit lasting 20 years
+over a 25-year horizon is charged a quarter of a replacement in year 20. Multiple
 pairs $(c_u^1, c_u^2)$ can be defined for the same unit type, each valid over a different
 capacity interval $[F_u^{\min}, F_u^{\max}]$, enabling piecewise-linear cost approximations.
 

@@ -165,6 +165,9 @@ Add a row to `reho/data/infrastructure/building_units.csv` (or
 - `UnitOfLayer`: every layer the unit touches, including `HeatCascade` for thermal
   units. A unit whose layers are not all initialized is silently dropped.
 - `StreamsOfUnit` with `stream_Tin` / `stream_Tout`: the heat-cascade streams, if any.
+  A stream whose temperatures vary, with the heating load for instance, is listed in
+  {data}`~reho.model.sub_problem.MODEL_STREAMS_TEMPERATURE` with the model parameters
+  that hold them.
 
 #### 2. Write the AMPL model
 

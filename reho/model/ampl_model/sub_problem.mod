@@ -457,6 +457,8 @@ param Tc_supply{h in House,p in Period,t in Time[p]} 	:= -Qc[h,p,t]/Mcp_0c[h] + 
 #-Non-standard requirements																					
 param House_Q_heating_max_d{h in House,p in Period,t in Time[p]} := Qh[h,p,t]+0.25*Qh_0[h]+epsilon;
 param House_Q_cooling_max_d{h in House,p in Period,t in Time[p]} := Qc[h,p,t]+0.25*Qc_0[h]+epsilon;
+param Th_return_max{h in House,p in Period,t in Time[p]} 	:= T_comfort_min_0[h] + House_Q_heating_max_d[h,p,t]*alpha_h[h];	#deg C	: return temperature at the maximum heating load
+param Th_supply_max{h in House,p in Period,t in Time[p]} 	:= House_Q_heating_max_d[h,p,t]/Mcp_0h[h] + Th_return_max[h,p,t];	#deg C	: supply temperature at the maximum heating load
 
 #-heating
 subject to House_streams_heating_c1{h in House,p in Period,t in Time[p]}:

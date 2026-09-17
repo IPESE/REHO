@@ -57,6 +57,19 @@ AC_SINK_KEYWORDS = ("DHN", "Air")
 #: Fallback mean district-heating-network temperature when none is given [degC].
 DEFAULT_DHN_TEMPERATURE = 16.0
 
+#: Streams whose temperatures the model computes, instead of taking the constant ``stream_Tin`` and
+#: ``stream_Tout`` of the units data: name of the stream, where ``{h}`` stands for the building ->
+#: parameters of ``sub_problem.mod`` or ``heatstorage.mod`` holding its inlet and outlet temperatures
+#: [degC]. See :meth:`SubProblem.set_model_streams_temperature`.
+MODEL_STREAMS_TEMPERATURE = {
+    "{h}_c_lt": ("Th_return", "Th_supply"),  # space heating, following the heating curve
+    "{h}_c_mt": ("Th_return_max", "Th_supply_max"),  # space heating, at the maximum load
+    "{h}_h_lt": ("Tc_return", "Tc_supply"),  # cooling
+    "WaterTankSH_{h}_c_lt": ("TES_T_ret", "TES_T_max"),  # charging of the space-heating water tank
+    "WaterTankSH_{h}_h_lt": ("TES_T_max", "TES_T_ret"),  # discharging of the space-heating water tank
+    "DHN_hex_{h}_h_ht": ("T_DHN_supply", "T_DHN_return"),  # heat exchanger with the district heating network
+}
+
 #: Epsilon constraints dropped by default, and restored only when the scenario asks for them.
 _EPSILON_CONSTRAINTS = [
     "EMOO_CAPEX_constraint", "EMOO_OPEX_constraint", "EMOO_TOTEX_constraint", "EMOO_GWP_constraint",
@@ -134,8 +147,8 @@ class SubProblem:
         :meth:`init_ampl_model`, :meth:`set_weather_data`, :meth:`set_ampl_sets`,
         :meth:`set_temperature_and_EVs_profiles`, :meth:`set_HP_parameters`,
         :meth:`set_streams_temperature`, :meth:`set_skydome_parameters` (only with
-        ``method['use_pv_orientation']``), :meth:`send_parameters_and_sets_to_ampl` and
-        :meth:`set_scenario`.
+        ``method['use_pv_orientation']``), :meth:`send_parameters_and_sets_to_ampl`, which ends with
+        :meth:`set_model_streams_temperature`, and :meth:`set_scenario`.
 
         Returns
         -------
@@ -419,13 +432,32 @@ class SubProblem:
             # now that it has been expanded into a per-timestep profile.
             self.parameters_sp.pop(custom_key, None)
 
-    def set_streams_temperature(self, ampl):
-        """Build the inlet and outlet temperatures of the heat-cascade streams, at every timestep.
+    @staticmethod
+    def _period_time_index(ampl):
+        """Every (Period, Time) of the typical periods, as read from ``TimeEnd``.
 
-        The streams of the units take the constant ``stream_Tin`` and ``stream_Tout`` of the unit data.
-        The space-heating and cooling streams of the buildings get placeholder values (50 and 40 degC),
-        replaced by their supply and return temperatures when :meth:`send_parameters_and_sets_to_ampl`
-        reads ``data_stream.dat``. The result, ``streams_T``, is added to the parameters sent to AMPL.
+        Parameters
+        ----------
+        ampl : amplpy.AMPL
+            Session holding the sub-problem model, with the number of timesteps of each period
+            (``TimeEnd``) already read.
+
+        Returns
+        -------
+        pandas.MultiIndex
+            Levels ``Period`` and ``Time``, the timesteps of each period numbered from 1.
+        """
+        df_end = ampl.getParameter('TimeEnd').getValues().toPandas()
+        index = [(period, time + 1) for period in df_end.index for time in range(int(df_end["TimeEnd"][period]))]
+        return pd.MultiIndex.from_tuples(index, names=["Period", "Time"])
+
+    def set_streams_temperature(self, ampl):
+        """Build the constant inlet and outlet temperatures of the heat-cascade streams, at every timestep.
+
+        The streams of the units take the ``stream_Tin`` and ``stream_Tout`` of the unit data. The streams
+        of :data:`MODEL_STREAMS_TEMPERATURE` are left out: the model computes their temperatures, which
+        :meth:`set_model_streams_temperature` sets once the data are sent. The result, ``streams_T``, is
+        added to the parameters sent to AMPL.
 
         Parameters
         ----------
@@ -433,32 +465,59 @@ class SubProblem:
             Session holding the sub-problem model, with the number of timesteps of each period
             (``TimeEnd``) already read.
         """
-
-        df_end = ampl.getParameter('TimeEnd').getValues().toPandas()
-        timesteps = int(df_end['TimeEnd'].sum())
-        index = [[(i, j + 1) for j in list(range(int(df_end["TimeEnd"][i])))] for i in df_end.index]
-        index = [j for i in index for j in i]
-        index = pd.MultiIndex.from_tuples(index, names=["Period", "Time"])
+        index = self._period_time_index(ampl)
+        timesteps = len(index)
 
         streams_frames = []
         for bui in self.infrastructure_sp.houses:
+            model_streams = {stream.format(h=bui) for stream in MODEL_STREAMS_TEMPERATURE}
             for unit_data in self.infrastructure_sp.houses[bui]["units"]:
                 for i, T_level in enumerate(unit_data["StreamsOfUnit"]):
                     stream = unit_data["Unit"] + '_' + bui + '_' + T_level
+                    if stream in model_streams:
+                        continue
                     df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
                     df["Streams_Tout"] = unit_data["stream_Tout"][i]
                     df["Streams_Tin"] = unit_data["stream_Tin"][i]
                     df.set_index("Streams", append=True, inplace=True)
                     streams_frames.append(df)
-            for stream in self.infrastructure_sp.StreamsOfBuilding[bui]:
-                df = pd.DataFrame(np.repeat(stream, timesteps), index=index, columns=["Streams"])
-                df["Streams_Tout"] = 40  # default value that is changed in data_stream.dat
-                df["Streams_Tin"] = 50  # default value that is changed in data_stream.dat
-                df.set_index("Streams", append=True, inplace=True)
-                streams_frames.append(df)
 
-        df_Streams_T = pd.concat(streams_frames)
-        self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
+        if streams_frames:
+            df_Streams_T = pd.concat(streams_frames)
+            self.parameters_to_ampl['streams_T'] = df_Streams_T.reorder_levels([2, 0, 1])
+
+    def set_model_streams_temperature(self, ampl):
+        """Set the temperatures of the streams of :data:`MODEL_STREAMS_TEMPERATURE`, computed by the model.
+
+        The space-heating and cooling streams of a building follow its heating and cooling loads, the
+        space-heating water tank follows the supply temperature of the heating, and the heat exchanger of
+        the district heating network follows the temperatures of the network. The model computes these
+        temperatures from the data: they are read from the AMPL session once the data are sent, and written
+        into ``Streams_Tin`` and ``Streams_Tout``.
+
+        Parameters
+        ----------
+        ampl : amplpy.AMPL
+            Session holding the sub-problem model and all its data.
+        """
+        streams = set(ampl.getSet('Streams').getValues().toList())
+        index = self._period_time_index(ampl)
+        values = {}
+        frames = []
+        for bui in self.infrastructure_sp.houses:
+            for stream, parameters in MODEL_STREAMS_TEMPERATURE.items():
+                stream = stream.format(h=bui)
+                if stream not in streams:
+                    continue
+                temperatures = {}
+                for column, parameter in zip(("Streams_Tin", "Streams_Tout"), parameters):
+                    if parameter not in values:
+                        values[parameter] = _parameter_values(ampl, parameter)
+                    temperatures[column] = _building_timesteps(values[parameter], bui, index)
+                frames.append(pd.concat([pd.DataFrame(temperatures, index=index)], keys=[stream], names=["Streams"]))
+
+        if frames:
+            ampl.setData(pd.concat(frames))
 
     def set_skydome_parameters(self):
         """Build the data of the PV orientation model: sky patches, surfaces and panel configurations.
@@ -636,7 +695,7 @@ class SubProblem:
             else:
                 raise ValueError('Type Error setting AMPLPY Parameter', i)
 
-        ampl.readData('data_stream.dat')  # TODO remove data_stream.dat
+        self.set_model_streams_temperature(ampl)
 
         return ampl
 
@@ -739,3 +798,67 @@ class SubProblem:
 
         return ampl, exitcode_from_ampl(ampl)
 
+
+def _parameter_values(ampl, name):
+    """Values of an indexed AMPL parameter, including those given by its default.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        Session holding the parameter and its data.
+    name : str
+        Name of the parameter.
+
+    Returns
+    -------
+    pandas.Series
+        The values, indexed by the sets of the parameter: the levels are named after them, e.g.
+        ``House``, ``Period`` and ``Time`` for ``Th_supply{h in House, p in Period, t in Time[p]}``.
+    """
+    dummies, sets = [], []
+    for position, declaration in enumerate(ampl.getParameter(name).getIndexingSets()):
+        dummy, _, indexing_set = declaration.rpartition(" in ")
+        dummies.append(dummy.strip() or f"i{position}")
+        sets.append(indexing_set.strip())
+    # Querying the parameter over its indexing sets also returns the values given by its default,
+    # which Parameter.getValues() leaves out, e.g. T_DHN_supply when only T_DHN_supply_cst is set.
+    query = "{" + ", ".join(f"{dummy} in {indexing_set}" for dummy, indexing_set in zip(dummies, sets)) + "} " \
+            + f"{name}[{', '.join(dummies)}]"
+    values = ampl.getData(query).toPandas().iloc[:, 0].rename(name)
+    values.index.names = [indexing_set.split("[")[0] for indexing_set in sets]
+    return values
+
+
+def _building_timesteps(values, building, index):
+    """Values of an AMPL parameter for one building, at every timestep of ``index``.
+
+    Parameters
+    ----------
+    values : pandas.Series
+        Values of the parameter, see :func:`_parameter_values`, indexed by ``Period`` and optionally by
+        ``House`` and ``Time``: a parameter without ``House`` applies to every building, and a parameter
+        without ``Time`` to every timestep of a period.
+    building : str
+        Building, e.g. ``'Building1'``.
+    index : pandas.MultiIndex
+        Timesteps, with levels ``Period`` and ``Time``.
+
+    Returns
+    -------
+    numpy.ndarray
+        One value per timestep of ``index``.
+
+    Raises
+    ------
+    ValueError
+        If the parameter has no value for a timestep of ``index``.
+    """
+    if "House" in values.index.names:
+        values = values.xs(building, level="House")
+    if "Time" in values.index.names:
+        profile = values.reindex(index)
+    else:
+        profile = values.reindex(index.get_level_values("Period"))
+    if profile.isna().any():
+        raise ValueError(f"The parameter {values.name!r} has no value for some timesteps of {building}.")
+    return profile.to_numpy()

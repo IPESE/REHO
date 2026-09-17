@@ -107,8 +107,6 @@ containing all AMPL files:
 - ``units/`` contains one model file per technology. Two sub-folders group them:
   ``district_units/`` for the technologies shared by a district, and
   ``interperiod/`` for storage chained across typical periods.
-- ``data_stream.dat`` contains the operating temperatures of streams and energy
-  conversion units.
 
 Which of these files are read depends on the units present in the problem. The
 mapping is data, not code: see :data:`reho.model.ampl_interface.BUILDING_UNIT_MODELS`

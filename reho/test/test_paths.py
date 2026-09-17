@@ -14,7 +14,7 @@ class TestPackagePaths:
         [
             "path_to_data", "path_to_model", "path_to_plotting", "path_to_ampl_model",
             "path_to_units", "path_to_district_units", "path_to_units_interperiod",
-            "path_to_elcom", "path_to_emissions", "path_to_infrastructure",
+            "path_to_elcom", "path_to_infrastructure",
             "path_to_qbuildings", "path_to_mobility", "path_to_sia",
             "path_to_sia_equivalence", "path_to_sia_norms", "path_to_skydome", "path_to_actor",
         ],

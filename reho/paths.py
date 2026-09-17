@@ -40,7 +40,6 @@ __all__ = [
     "path_to_district_units",
     "path_to_units_interperiod",
     "path_to_elcom",
-    "path_to_emissions",
     "path_to_infrastructure",
     "path_to_qbuildings",
     "path_to_mobility",
@@ -74,7 +73,6 @@ path_to_units_interperiod = os.path.join(path_to_units, "interperiod")
 
 # Data
 path_to_elcom = os.path.join(path_to_data, "elcom")
-path_to_emissions = os.path.join(path_to_data, "emissions", "electricity_matrix_2019_reduced.csv")
 path_to_infrastructure = os.path.join(path_to_data, "infrastructure")
 path_to_qbuildings = os.path.join(path_to_data, "QBuildings")
 path_to_mobility = os.path.join(path_to_data, "mobility")

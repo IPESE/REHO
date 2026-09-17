@@ -23,8 +23,6 @@ def test_clustering(weather_data):
         attributes.append('Irr')
     if 'W' in cluster['Attributes']:
         attributes.append('Weekday')
-    if 'E' in cluster['Attributes']:
-        attributes.append('Emissions')
 
     cl = Clustering(data=weather_data[attributes], nb_clusters=cluster['Periods'], period_duration=cluster['PeriodDuration'],
                     cluster=cluster, options={"year-to-day": True, "extreme": []})

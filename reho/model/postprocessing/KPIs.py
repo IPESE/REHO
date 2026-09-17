@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import reho.model.preprocessing.emissions_parser as emissions
 
 __doc__ = """
 Calculates the KPIs resulting from the optimization.
@@ -395,118 +394,6 @@ def postcompute_levelized_cost_electricity(df_unit, df_annual, df_profiles, df_T
     return df_LCoE
 
 
-def postcompute_average_emission(local_data, df_annual, df_annual_net, df_profiles, df_profiles_net, df_Time, ):
-    """
-    Emissions of the electricity exchanged, and renewable share of the energy consumed.
-
-    - ``gwp_elec_av`` and ``gwp_elec_dy``: emissions of the electricity imported minus those avoided
-      by the exports, with the average and with the hourly emission factors of the grid.
-    - ``RES_av`` and ``RES_dy``: share of the energy consumed that is renewable. Self-consumed
-      electricity is renewable, imported electricity is renewable in the proportion of the Swiss
-      electricity mix (annual average or hourly), and the other resources are not.
-
-    Not called by :func:`calculate_KPIs` at the moment.
-
-    Parameters
-    ----------
-    local_data : dict
-        Location data, used to read the hourly renewable share of the Swiss electricity mix.
-    df_annual : pandas.DataFrame
-        Annual flows of each building [MWh], see :func:`build_df_annual`.
-    df_annual_net : pandas.DataFrame
-        Annual flows of the district [MWh], see :func:`build_df_annual`.
-    df_profiles : pandas.DataFrame
-        Hourly profiles of each building, see :func:`build_df_profiles_house`.
-    df_profiles_net : pandas.DataFrame
-        Hourly exchanges of the district with the networks, i.e. hub ``Network`` of ``df_Grid_t``.
-    df_Time : pandas.DataFrame
-        ``df_Time`` of the results, with the frequency ``dp`` of each period.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Columns ``gwp_elec_av``, ``gwp_elec_dy``, ``RES_dy`` and ``RES_av``, one row per building
-        plus ``Network``.
-    """
-
-    # Emissions
-    em_supply_dy = df_profiles_net.GWP_supply.xs('Electricity')
-    em_demand_dy = df_profiles_net.GWP_demand.xs('Electricity')
-
-    # Buildings
-    em_el_av_bui = em_supply_dy.mean() * df_profiles.Grid_supply - em_demand_dy.mean() * df_profiles.Grid_demand
-    em_el_av_bui = em_el_av_bui.mul(df_Time.dp.reindex(em_el_av_bui.index, level='Period'), axis=0).groupby(level='Hub').sum()
-
-    em_el_dy_bui = pd.Series(dtype='float')
-    for h in df_annual.index.get_level_values(level='Hub'):
-        em_el_dy_bui_h = em_supply_dy * df_profiles.Grid_supply.xs(h,
-                                                                   level='Hub') - em_demand_dy * df_profiles.Grid_demand.xs(
-            h, level='Hub')
-        em_el_dy_bui_h = em_el_dy_bui_h.mul(df_Time.dp.reindex(em_el_dy_bui_h.index, level='Period'), axis=0).sum()
-        em_el_dy_bui_h = pd.DataFrame([em_el_dy_bui_h], index=[h])
-        em_el_dy_bui = pd.concat([em_el_dy_bui, em_el_dy_bui_h])
-
-    # Network
-    em_el_av_net = em_supply_dy.mean() * df_profiles_net.Grid_supply.xs(
-        'Electricity') - em_demand_dy.mean() * df_profiles_net.Grid_demand.xs('Electricity')
-    em_el_av_net = em_el_av_net.mul(df_Time.dp.reindex(em_el_av_net.index, level='Period'), axis=0).sum()
-    em_el_av_net = pd.DataFrame([em_el_av_net], index=['Network'])
-
-    em_el_dy_net = em_supply_dy * df_profiles_net.Grid_supply.xs(
-        'Electricity') - em_demand_dy * df_profiles_net.Grid_demand.xs('Electricity')
-    em_el_dy_net = em_el_dy_net.mul(df_Time.dp.reindex(em_el_dy_net.index, level='Period'), axis=0).sum()
-    em_el_dy_net = pd.DataFrame([em_el_dy_net], index=['Network'])
-
-    em_el_dy = pd.concat([em_el_dy_bui, em_el_dy_net])
-    em_el_av = pd.concat([em_el_av_bui, em_el_av_net])
-
-    # --------------------------------------------------------------------
-    # Renewable energy share
-    # --------------------------------------------------------------------
-    df_el_net = df_profiles_net.xs('Electricity', level=0)
-
-    res_profile = emissions.return_typical_emission_profiles(local_data, 'method 1', df_Time)
-    res_av = emissions.find_average_value('CH', 'method 1')
-    s_RES_dy = pd.Series(dtype='float')
-    s_RES_av = pd.Series(dtype='float')
-
-    for h in df_annual.index.get_level_values(level='Hub'):
-        res_e = res_profile['GWP_supply'].values * df_profiles.Grid_supply.xs(h, level='Hub', drop_level=False)
-        res_e = res_e.groupby(level=['Hub', 'Period']).sum()
-        res_e = res_e.mul(df_Time.dp, axis=0).groupby(
-            level='Hub').sum() / 1000  # annual emissions from elec with dy profiles ton/year
-        res_av.index = res_e.index
-
-        df_h = df_annual.loc[h]
-        RES_dy = (df_h['MWh_SC'] + res_e) / (df_h['MWh_SC'] + df_h['MWh_resources'] + df_h['MWh_imp_el'])
-        RES_av = (df_h['MWh_SC'] + res_av * df_h['MWh_imp_el']) / (
-                df_h['MWh_SC'] + df_h['MWh_resources'] + df_h['MWh_imp_el'])
-
-        RES_dy = RES_dy
-        RES_av = RES_av
-        s_RES_dy = pd.concat([s_RES_dy, RES_dy])
-        s_RES_av = pd.concat([s_RES_av, RES_av])
-
-    # Network
-    res_e = res_profile['GWP_supply'].values * df_el_net.Grid_supply
-    res_e = res_e.groupby(level=['Period']).sum()
-    res_e = res_e.mul(df_Time.dp, axis=0).sum() / 1000
-    RES_dy = (df_annual['MWh_SC'].sum() + res_e) / (
-            df_annual['MWh_SC'].sum() + df_annual_net['MWh_resources'] + df_annual_net['MWh_el_imp'])
-    RES_av = (df_annual['MWh_SC'].sum() + res_av.values[0] * df_annual_net['MWh_el_imp']) / (
-            df_annual['MWh_SC'].sum() + df_annual_net['MWh_resources'] + df_annual_net['MWh_el_imp'])
-
-    RES_dy = RES_dy
-    RES_av = pd.DataFrame(RES_av)
-    s_RES_dy = pd.concat([s_RES_dy, RES_dy])
-    s_RES_av = pd.concat([s_RES_av, RES_av])
-
-    df = pd.concat([em_el_av, em_el_dy, s_RES_dy, s_RES_av], axis=1)
-    df.columns = ['gwp_elec_av', 'gwp_elec_dy', 'RES_dy', 'RES_av']
-
-    return df
-
-
 def postcompute_Grid_param(df_Grid):
     """
     Grid multiples and grid usage of each hub, for electricity.
@@ -817,9 +704,6 @@ def calculate_KPIs(df_Results, infrastructure, buildings_data):
     df_KPI['gwp_constr_m2'] = df_Results["df_Performance"]['GWP_constr'].div(df_hsA.ERA)
     df_KPI['gwp_tot_m2'] = df_KPI['gwp_op_m2'] + df_KPI['gwp_constr_m2']  # [kgCO2-eq/m2/yr]
 
-    # df_G_RES = postcompute_average_emission(local_data, df_annual, df_annual_network, df_profiles, df_profiles_network, df_Time)  # TODO: fix
-    # df_G_RES = df_G_RES[['gwp_elec_av', 'gwp_elec_dy']].div(df_hsA.ERA, axis=0)
-    # df_G_RES.rename(columns={'gwp_elec_av': 'gwp_elec_av_m2', 'gwp_elec_dy': 'gwp_elec_dy_m2'})
 
     # ------------------------------------------------------------------------------------------------------
     # Actor KPIs

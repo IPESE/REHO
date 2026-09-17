@@ -53,7 +53,6 @@ DEFAULT_METHODS = {
     # -- Demand profiles ----------------------------------------------------
     "include_stochasticity": False,
     "sd_stochasticity": [0.1, 1],
-    "use_dynamic_emission_profiles": False,
     "use_custom_profiles": False,
     # -- Saving options -----------------------------------------------------
     "save_data_input": True,
@@ -82,7 +81,6 @@ METHOD_DESCRIPTIONS = {
     "include_all_solutions": "Let the master problem reuse the sub-problem solutions found for other Pareto points.",
     "include_stochasticity": "Add variability to the SIA typical consumption profiles.",
     "sd_stochasticity": "``[sd_consumption, sd_timeshift]`` used when ``include_stochasticity`` is enabled.",
-    "use_dynamic_emission_profiles": "Use hourly electricity emission factors instead of a yearly constant.",
     "use_custom_profiles": "Replace the SIA profiles by custom files, as ``{'electricity'|'dhw'|'occupancy': path}``.",
     "save_data_input": "Store the optimization inputs (``df_Buildings``, ``df_Weather``, ``df_Index``) in the results.",
     "save_timeseries": "Store the time-resolved results (``df_Buildings_t``, ``df_Unit_t``).",

@@ -128,6 +128,17 @@ class TestTypicalPeriods:
         assert dates == [2, 5, 2, 7]
 
 
+class TestClusterFileID:
+    def test_attributes_are_ordered(self):
+        cluster = {"Location": "Geneva", "Attributes": ["W", "T", "I"], "Periods": 10, "PeriodDuration": 24}
+        assert weather.get_cluster_file_ID(cluster) == "Geneva_10_24_T_I_W"
+
+    def test_unknown_attribute_raises(self):
+        cluster = {"Location": "Geneva", "Attributes": ["T", "I", "E"], "Periods": 10, "PeriodDuration": 24}
+        with pytest.raises(ValueError, match="'E'"):
+            weather.get_cluster_file_ID(cluster)
+
+
 class TestSIAProfiles:
     @pytest.fixture(scope="class")
     def sia_2024(self):

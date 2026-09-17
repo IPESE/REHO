@@ -132,9 +132,9 @@ class SubProblem:
 
         The steps are, in order: :meth:`initialize_parameters_for_ampl_and_python`,
         :meth:`init_ampl_model`, :meth:`set_weather_data`, :meth:`set_ampl_sets`,
-        :meth:`set_emissions_profiles`, :meth:`set_temperature_and_EVs_profiles`,
-        :meth:`set_HP_parameters`, :meth:`set_streams_temperature`, :meth:`set_skydome_parameters`
-        (only with ``method['use_pv_orientation']``), :meth:`send_parameters_and_sets_to_ampl` and
+        :meth:`set_temperature_and_EVs_profiles`, :meth:`set_HP_parameters`,
+        :meth:`set_streams_temperature`, :meth:`set_skydome_parameters` (only with
+        ``method['use_pv_orientation']``), :meth:`send_parameters_and_sets_to_ampl` and
         :meth:`set_scenario`.
 
         Returns
@@ -146,7 +146,6 @@ class SubProblem:
         ampl = self.init_ampl_model()
         ampl = self.set_weather_data(ampl)
         ampl = self.set_ampl_sets(ampl)
-        self.set_emissions_profiles()
         self.set_temperature_and_EVs_profiles()
         self.set_HP_parameters(ampl)
         self.set_streams_temperature(ampl)
@@ -306,19 +305,6 @@ class SubProblem:
                     ampl.getVariable('Units_Use').get(str(u)).fix(1)
 
         return ampl
-
-    def set_emissions_profiles(self):
-        """Use hourly emission factors for electricity, when ``method['use_dynamic_emission_profiles']`` is set.
-
-        The global warming potential of the electricity imported (``GWP_supply``) and exported
-        (``GWP_demand``) then follows the profile ``local_data['df_Emissions_GWP100a']`` on the typical
-        periods, while the other layers keep their constant emission factors (``Gas_emission``).
-        """
-
-        if self.method_sp['use_dynamic_emission_profiles']:
-            self.parameters_to_ampl['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
-            self.parameters_to_ampl['GWP_demand'] = self.parameters_to_ampl['GWP_supply']
-            self.parameters_to_ampl['Gas_emission'] = self.infrastructure_sp.Grids_Parameters.drop('Electricity')[["GWP_demand_cst", "GWP_supply_cst"]]
 
     def set_temperature_and_EVs_profiles(self):
         """Build the lower comfort temperature ``T_comfort_min`` of each building at every timestep.

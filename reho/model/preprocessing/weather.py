@@ -94,7 +94,7 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
     Parameters
     ----------
     cluster : dict
-        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
+        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance) and 'W' (weekday)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
     qbuildings_data : dict
         Input data for the buildings.
     clustering_directory: str
@@ -127,8 +127,6 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
         attributes.append('Irr')
     if 'W' in cluster['Attributes']:
         attributes.append('Weekday')
-    if 'E' in cluster['Attributes']:
-        attributes.append('Emissions')
 
     # Execute clustering
     cl_data = weather_data[attributes].reset_index(drop=True)
@@ -216,7 +214,7 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     clustering_directory: str
         Path to the directory where clustering files will be saved.
     attributes : list
-        Contains the clustering attributes, among 'Text', 'Irr', 'Weekday', and 'Emissions'.
+        Contains the clustering attributes, among 'Text', 'Irr' and 'Weekday'.
     values_cluster : pd.DataFrame
         Produced by ``generate_weather_data``: the rows of every period, the typical periods first
         and the two extreme periods last. Each period starts at ``time.hh`` = 1, and ``time.dd`` is
@@ -318,7 +316,7 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
 
 
 #: Clustering attribute -> the suffix it contributes to the weather file ID.
-CLUSTER_ATTRIBUTE_SUFFIXES = {"T": "_T", "I": "_I", "W": "_W", "E": "_E"}
+CLUSTER_ATTRIBUTE_SUFFIXES = {"T": "_T", "I": "_I", "W": "_W"}
 
 
 def get_cluster_file_ID(cluster):
@@ -326,16 +324,15 @@ def get_cluster_file_ID(cluster):
     Get the weather file ID corresponding to a set of clustering options.
 
     The ID concatenates ``Location_Periods_PeriodDuration`` and the attributes, in
-    the canonical order T, I, W, E — not in the order the caller listed them, so
+    the canonical order T, I, W — not in the order the caller listed them, so
     that two equivalent option dictionaries map to the same cached files.
 
     Parameters
     ----------
     cluster : dict
         Contains a ``Location`` (str), some ``Attributes`` (list, among ``'T'``
-        for temperature, ``'I'`` for irradiance, ``'W'`` for weekday and ``'E'``
-        for emissions), a number of periods ``Periods`` (int) and a
-        ``PeriodDuration`` (int).
+        for temperature, ``'I'`` for irradiance and ``'W'`` for weekday), a number of
+        periods ``Periods`` (int) and a ``PeriodDuration`` (int).
 
     Returns
     -------
@@ -343,12 +340,23 @@ def get_cluster_file_ID(cluster):
         Identifier of the location and clustering attributes, e.g.
         ``'Geneva_10_24_T_I_W'``.
 
+    Raises
+    ------
+    ValueError
+        If an attribute is not one of the above.
+
     Examples
     --------
     >>> get_cluster_file_ID({'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'],
     ...                      'Periods': 10, 'PeriodDuration': 24})
     'Geneva_10_24_T_I_W'
     """
+    unknown = [attribute for attribute in cluster["Attributes"] if attribute not in CLUSTER_ATTRIBUTE_SUFFIXES]
+    if unknown:
+        raise ValueError(
+            f"Unknown clustering attribute(s) {', '.join(map(repr, unknown))}: "
+            f"choose among {', '.join(map(repr, CLUSTER_ATTRIBUTE_SUFFIXES))}."
+        )
     attributes = "".join(
         suffix for attribute, suffix in CLUSTER_ATTRIBUTE_SUFFIXES.items()
         if attribute in cluster["Attributes"]

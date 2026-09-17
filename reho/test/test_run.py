@@ -1,5 +1,7 @@
 import pytest
-from reho.model.reho import *
+from reho.model.infrastructure import initialize_grids, initialize_units
+from reho.model.preprocessing.QBuildings import QBuildingsReader
+from reho.model.reho import REHO
 from reho.plotting import plotting
 
 
@@ -27,8 +29,8 @@ def test_run(save_results=True):
         method = {'building-scale': True}
 
         # Initialize available units and grids
-        grids = infrastructure.initialize_grids()
-        units = infrastructure.initialize_units(scenario, grids)
+        grids = initialize_grids()
+        units = initialize_units(scenario, grids)
 
         # Run optimization
         reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")

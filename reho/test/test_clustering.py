@@ -1,5 +1,6 @@
 import pytest
-from reho.model.preprocessing.weather import *
+from reho.model.preprocessing.clustering import Clustering
+from reho.model.preprocessing.weather import generate_weather_data, get_weather_data, plot_cluster_KPI_separate, plot_LDC
 
 
 @pytest.fixture

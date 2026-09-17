@@ -1,25 +1,11 @@
-import pytest
 import numpy as np
+import pytest
 from reho.model.infrastructure import Infrastructure, initialize_grids, initialize_units
 
 
 @pytest.fixture(scope="module")
-def qbuildings_data():
-    return {'buildings_data': {
-        'Building1': {'ERA': 192, 'HeatCapacity': 119, 'SolarRoofArea': 140, 'T_comfort_min_0': 20, 'Tc_return_0': 17, 'Tc_supply_0': 12, 'Th_return_0': 50,
-                      'Th_supply_0': 65, 'U_h': 0.002, 'area_facade_m2': 144, 'class': 'Residential', 'count_floor': 2, 'egid': '1009515',
-                      'energy_cooling_signature_kWh_y': 0, 'energy_el_kWh_y': 4007, 'energy_heating_signature_kWh_y': 20400,
-                      'energy_hotwater_signature_kWh_y': 1692, 'facade_annual_irr_kWh_y': 67952, 'geometry': "", 'height_m': 6, 'id_building': '8320',
-                      'id_class': 'II', 'n_p': 10, 'period': '1961-1970', 'ratio': '1', 'roof_annual_irr_kWh_y': 154769, 'source_heating': 'Oil',
-                      'source_hotwater': 'Oil', 'status': "['existing', 'existing']", 'transformer': 71, 'x': 2496193, 'y': 1114279, 'z': 402},
-        'Building2': {'ERA': 117, 'HeatCapacity': 119, 'SolarRoofArea': 101, 'T_comfort_min_0': 20, 'Tc_return_0': 17, 'Tc_supply_0': 12, 'Th_return_0': 50,
-                      'Th_supply_0': 65, 'U_h': 0.002, 'area_facade_m2': 121, 'class': 'Residential', 'count_floor': 2, 'egid': '2036614',
-                      'energy_cooling_signature_kWh_y': 0, 'energy_el_kWh_y': 2451, 'energy_heating_signature_kWh_y': 12478,
-                      'energy_hotwater_signature_kWh_y': 1035, 'facade_annual_irr_kWh_y': 76152, 'geometry': "", 'height_m': 6, 'id_building': '8330',
-                      'id_class': 'II', 'n_p': 6, 'period': '1919-1945', 'ratio': '1', 'roof_annual_irr_kWh_y': 118639, 'source_heating': 'Oil',
-                      'source_hotwater': 'Electricity', 'status': "['existing', 'existing']", 'transformer': 71, 'x': 2496238, 'y': 1114527, 'z': 405},
-    }
-    }
+def qbuildings_data(sample_buildings_data):
+    return sample_buildings_data
 
 
 @pytest.fixture(scope="module")
@@ -68,3 +54,32 @@ def test_infrastructure_edge_cases(infrastructure):
 
     with pytest.raises(KeyError):
         infrastructure.grids['NonExistentGrid']
+
+
+def test_units_are_named_after_their_building(infrastructure):
+    for house in infrastructure.House:
+        for unit in infrastructure.UnitsOfHouse[house]:
+            assert unit.endswith("_" + house)
+
+
+def test_every_unit_belongs_to_a_type_and_a_layer(infrastructure):
+    all_of_type = {unit for units in infrastructure.UnitsOfType.values() for unit in units}
+    all_of_layer = {unit for units in infrastructure.UnitsOfLayer.values() for unit in units}
+    assert set(infrastructure.Units) == all_of_type
+    assert set(infrastructure.Units) <= all_of_layer
+
+
+def test_unit_parameters_cover_every_unit(infrastructure):
+    assert set(infrastructure.Units_Parameters.index) == set(infrastructure.Units)
+
+
+def test_streams_are_classified_as_hot_or_cold(infrastructure):
+    # Streams_Hin / Streams_Hout are complementary flags driving the heat cascade.
+    streams_h = infrastructure.Streams_H
+    assert ((streams_h["Streams_Hin"] + streams_h["Streams_Hout"]) == 1).all()
+
+
+def test_excluding_a_heating_unit_removes_it(grids):
+    from reho.model.infrastructure import initialize_units
+    units = initialize_units({"exclude_units": ["NG_Boiler"]}, grids)
+    assert "NG_Boiler" not in {unit["Unit"] for unit in units["building_units"]}

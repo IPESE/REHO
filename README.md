@@ -9,7 +9,7 @@
 [![DOI](https://joss.theoj.org/papers/10.21105/joss.06734/status.svg)](https://doi.org/10.21105/joss.06734)
 [![Documentation Status](https://readthedocs.org/projects/reho/badge/?version=main)](https://reho.readthedocs.io/)
 
-[![PyPI](https://img.shields.io/pypi/v/REHO.svg)](https://pypi.org/project/REHO/)[![Python Version](https://img.shields.io/badge/Python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue)](https://pypi.org/project/REHO/)
+[![PyPI](https://img.shields.io/pypi/v/REHO.svg)](https://pypi.org/project/REHO/)[![Python Version](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-blue)](https://pypi.org/project/REHO/)
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue)](https://www.apache.org/licenses/LICENSE-2.0)
 

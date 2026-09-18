@@ -205,6 +205,19 @@ State of charge of the seasonal storage units, indexed by unit and hour of the y
 (not by typical period: that is the point of inter-period storage). Produced when
 `method['interperiod_storage']` is enabled.
 
+One column per storage variable that is not zero everywhere: `BAT_E_stored_IP` for the
+batteries, `H2_stor_stored`, `CH4_stor_stored` and `CO2_stor_stored` for the gases, and
+`PTES_E_Stored` for the pumped thermal storage.
+
+Three more rows, indexed by `('storage info', ...)`, describe the gas storages and are
+zero for the other technologies:
+
+| Row | Unit | Meaning |
+|---|---|---|
+| `Volume` | m³ | Volume of the first storage unit of the gas |
+| `Pressure` | bar | Pressure of the gas in that unit |
+| `Compressibility factor` | - | Compressibility factor of the gas at that pressure |
+
 ---
 
 ## Key performance indicators

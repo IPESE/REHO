@@ -105,8 +105,9 @@ files replace them, is set by `interperiod_data` in
 {func}`~reho.model.infrastructure.initialize_units`.
 
 The pumped thermal energy storage is made of two units, a conversion unit
-(`PTES_conversion`) and a reservoir (`PTES_storage`): its model is read only when both
-are available.
+(`PTES_conv_IP`, of type `PTES_conversion`) and a reservoir (`PTES_storage_IP`, of type
+`PTES_storage`); `PTES_conv_IP_district` and `PTES_storage_IP_district` for the district.
+Its model is read only when both units are available.
 
 ### `development.csv` — technologies under development
 

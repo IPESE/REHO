@@ -114,9 +114,6 @@ EV_E_stored_plug_out[u,p,t] <= EV_capacity * n_vehicles[u];
 subject to EV_EB_upper_bound3{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 EV_E_stored_plug_in[u,p,t] <= EV_capacity * n_vehicles[u];
 
-# subject to EV_V2V_1{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
-# EV_V2V[u,p,t] >= EV_supply_travel[u,p,t] - EV_demand[u,p,t]; #question : pq ici il y avait pas le d[t] dans EV_displacement[] * Unit_use * dt ?
-
 subject to EV_chargingconstraint{u in UnitsOfType['EV'],p in Period,t in Time[p]}:
 sum {uc in UnitsOfType['EV_charger']}(C2V[uc,u,p,t]/EV_charger_Power[uc]) <= n_vehicles[u] * (1 - EV_plugged_out[u,p,t]);
 

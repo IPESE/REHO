@@ -151,6 +151,8 @@ def generate_renter_expense_max_increase(reho_model):
     Runs a baseline optimization with a boiler-only configuration to determine current
     rental expenses, which are then used as the maximum rent expenses for renters.
     This approach calculates rent increase limits based on existing building operations.
+    The expense of a building is the operating cost of its existing system, at the tariffs
+    of the utility, plus the yearly cost of the building and the investment of its units.
 
     Parameters
     ----------
@@ -191,12 +193,16 @@ def generate_renter_expense_max_increase(reho_model):
     # Run baseline optimization
     reho_model.actor_decomposition_optimization()
 
-    # Extract renter expenses from baseline scenario
-    renter_expense_max = (
-        reho_model.results["boiler"][0]["df_Performance"][["renter_expense"]]
-        .drop("Network")
-        .rename(columns={"renter_expense": "renter_expense_max"})
-    )
+    # What the renters pay today: the energy the existing system buys at the tariffs of the utility, plus
+    # the rent that covers the value of the building and the investment of its units. The rents and the
+    # tariffs of the baseline itself are not read: the master problem does not pin them down - any split
+    # of the costs between the actors is optimal for it - and it returned zero for every building of a
+    # district of five, which made the optimization that follows infeasible.
+    baseline = reho_model.results["boiler"][0]["df_Performance"].drop("Network")
+    renter_expense_max = (baseline["Costs_op"] + baseline["Costs_House_yearly"] + baseline["owner_inv"]).to_frame("renter_expense_max")
+    if (renter_expense_max["renter_expense_max"] <= 0).any():
+        raise ValueError(f"The baseline optimization leaves nothing for the renters to pay:\n{renter_expense_max}\n"
+                         "Check the tariffs of the grids and Costs_House_upfront_m2_MP.")
 
     # Restore original configuration
     reho_model.initialize_optimization_tracking_attributes()

@@ -23,7 +23,7 @@ will break in a future release, 🟢 no action needed.
 [documentation]: https://img.shields.io/badge/-Documentation-yellow
 [packaging]: https://img.shields.io/badge/-Packaging-lightblue
 
-## [Unreleased]
+## [v2.1.0]
 
 Architecture and documentation overhaul, the developments of the `develop_cedric` and `develop_arthur`
 branches, and the correction of three modelling errors that change the results: the typical periods

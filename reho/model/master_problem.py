@@ -806,7 +806,10 @@ class MasterProblem:
 
         Raises
         ------
-        ValueError: If the sets are not arrays or if the parameters are not arrays or floats or dataframes. Or if the MP optimization did not converge
+        ValueError
+            If the sets are not arrays, or the parameters not arrays, floats or DataFrames.
+        RuntimeError
+            If the master problem did not converge, with its ``solve_result`` and what to check.
         """
 
         ampl_MP = self._build_MP_model(read_DHN)
@@ -1030,7 +1033,12 @@ class MasterProblem:
 
         del ampl_MP
         if exitcode != 0:
-            raise Exception('Master problem did not converge')
+            message = (f"The master problem of iteration {self.iter} did not converge (solve_result: {exitcode!r}). "
+                       "Check the network capacities (Network_ext) and the epsilon constraints of the scenario")
+            if self.method['actors_problem']:
+                message += (", and the bounds of the actors: renter_expense_max, utility_profit_min and owner_PIR_min, "
+                            "which the last master problem has to satisfy with a single configuration per building")
+            raise RuntimeError(message + ".")
 
     def SP_iteration(self, scenario, Scn_ID=0, Pareto_ID=1):
         """

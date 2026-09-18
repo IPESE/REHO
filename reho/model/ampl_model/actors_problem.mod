@@ -109,8 +109,14 @@ param owner_PIR_max default 0.3;
 var owner_profit{h in House};
 var slack_owner_subsidies{h in House};
 
+# A building is subsidized only once it is renovated. The bound is a generous yearly subsidy per square
+# metre: written as 1e10, it wrecked the conditioning of the master problem, whose presolve then reported
+# feasible problems as infeasible.
+param owner_subsidies_max_m2 default 1e4;							# CHF/m2/yr
+param owner_subsidies_max{h in House} := owner_subsidies_max_m2 * ERA[h];
+
 subject to Owner_Link_Subsidy_to_renovation{h in House}: # dropped 
-owner_subsidies[h] <= 1e10 * is_ins[h] + slack_owner_subsidies[h];
+owner_subsidies[h] <= owner_subsidies_max[h] * is_ins[h] + slack_owner_subsidies[h];
 
 subject to Owner_profit{h in House}:
 owner_profit[h] = C_rent_fix[h] + C_op_renters_to_owners[h] + C_op_utility_to_owners[h] - Costs_House_inv[h] - Costs_House_yearly[h];

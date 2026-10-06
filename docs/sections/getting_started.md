@@ -486,7 +486,7 @@ This `scenario` dictionary can also be used to specify epsilon constraints (`EMO
 The key `EMOO` allows to add an epsilon constraint on some objective:
 
 ```python
-scenario['EMOO'] = {EMOO_opex: 16}     # select an epsilon constraint as defined in ampl_model/scenario.mod
+scenario['EMOO'] = {'EMOO_OPEX': 16}     # select an epsilon constraint as defined in ampl_model/scenario.mod
 ```
 
 This is used to limit another objective when performing multi-objective optimization.

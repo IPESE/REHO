@@ -327,7 +327,7 @@ class REHO(MasterProblem):
                     df = write_results.get_ampl_data(ampl, 'Costs_inv', multi_index=False)
                     df1 = write_results.get_ampl_data(ampl, 'Costs_rep', multi_index=False)
                     # annualized investment costs with replacements
-                    district = (df.sum()[0] + df1.sum()[0]) * tau[0] / surfaces.sum()[0]  # for compact formulation
+                    district = (df.Costs_inv.sum() + df1.Costs_rep.sum()) * tau[0] / surfaces.ERA.sum()  # for compact formulation
                     buildings = (df_h.Costs_House_inv.div(surfaces.ERA) + df1_h.Costs_House_rep.div(surfaces.ERA)) * tau[0]  # for decomposition formulation
                 return district, buildings
 
@@ -339,7 +339,7 @@ class REHO(MasterProblem):
                 else:
                     df_h = write_results.get_ampl_data(ampl, 'Costs_House_op', multi_index=False)
                     df = write_results.get_ampl_data(ampl, 'Costs_op', multi_index=False)
-                    district = df.sum()[0] / surfaces.sum()[0]  # normalized OPEX CHF/m2, for compact formulation
+                    district = df.Costs_op.sum() / surfaces.ERA.sum()  # normalized OPEX CHF/m2, for compact formulation
                     building = df_h.Costs_House_op.div(surfaces.ERA)
                 return district, building
 
@@ -353,7 +353,7 @@ class REHO(MasterProblem):
             def gwp_per_house():
                 df_perf = self.results[Scn_ID][Pareto_ID]["df_Performance"]
                 df_GWP = (df_perf["GWP_op"] + df_perf["GWP_constr"])
-                GWP_district = df_GWP["Network"] / surfaces.sum()[0]
+                GWP_district = df_GWP["Network"] / surfaces.ERA.sum()
                 GWP_house = df_GWP.drop("Network").div(surfaces.ERA)
                 return GWP_district, GWP_house
 

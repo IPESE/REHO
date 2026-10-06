@@ -67,8 +67,7 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'Bike_district', 'ICE_district', 'ElectricBike_district', 'DataHeat_SH']
     scenario['enforce_units'] = ['EV_district', 'DataHeat_DHW']
 
-    grids = initialize_grids({'Electricity': {}, 'Oil': {}, 'Gasoline': {}, 'Mobility': {},
-                                             'Data': {"Cost_demand_cst": 1, "GWP_demand_cst": 0}})
+    grids = initialize_grids({'Electricity': {}, 'Oil': {}, 'Gasoline': {}, 'Mobility': {}, 'Data': {}})
     units = initialize_units(scenario, grids, district_data=True)
 
     reho.scenario = scenario

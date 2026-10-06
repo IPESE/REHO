@@ -51,7 +51,7 @@ class ActorsModel(REHO):
         self.scenario["Objective"] = "TOTEX_actor"
         self.set_indexed["ActorObjective"] = np.array([actor])
         self.single_optimization(Pareto_ID=0)
-        obj = -self.results[actor][0]['df_Actors'].loc[actor][0]
+        obj = -self.results[actor][0]['df_Actors'].loc[actor, 'objective_functions']
 
         self.scenario = scenario
         self.set_indexed = set_indexed

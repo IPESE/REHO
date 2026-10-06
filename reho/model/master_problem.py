@@ -404,7 +404,7 @@ class MasterProblem:
         SP_scenario_init['specific'] = scenario['specific'].copy()
 
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
-        SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
+        SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999 if 'EMOO_grid' in SP_scenario_init['EMOO'] else 0
 
         if "Network_ext" in self.parameters:
             if isinstance(self.parameters["Network_ext"], pd.DataFrame):

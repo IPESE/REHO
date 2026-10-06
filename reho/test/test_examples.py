@@ -53,7 +53,6 @@ EXAMPLES = [
     "6b_Mobility_externaldistricts.py",
     "7a_rSOC_IP.py",
     "7b_rSOC_H2_export.py",
-    "7c_district_IP.py",
     "8a_Actors_problem.py",
     "8b_Actors_problem_rent_increase.py",
 ]

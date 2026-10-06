@@ -213,11 +213,6 @@ Investigate interperiod storage units in a building facing grid constraints (e.g
 :language: python
 ```
 
-### District-scale rSOC with IP storage
-
-```{literalinclude} ../../scripts/examples/7c_district_IP.py
-:language: python
-```
 
 ## 8. Actors model
 

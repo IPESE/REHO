@@ -125,8 +125,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         df_costs = df_Economics.xs('costs', level='Perf_type')
         if per_m2:
             df_costs = df_costs / era
-            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
-            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+            change_data.loc['y_axis', 'FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis', 'EN'] = "Costs [CHF/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=True, additional_data=additional_costs, scaling_factor=scaling_factor)
 
@@ -143,8 +143,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         df_impact = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
             df_impact = df_impact / era
-            change_data.loc['y_axis']['FR'] = "Émissions [kgCO2/m2/an]"
-            change_data.loc['y_axis']['EN'] = "Emissions [kgCO2/m2/y]"
+            change_data.loc['y_axis', 'FR'] = "Émissions [kgCO2/m2/an]"
+            change_data.loc['y_axis', 'EN'] = "Emissions [kgCO2/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_impact, indexed_on, neg=True, additional_data=additional_gwp, scaling_factor=scaling_factor)
 
@@ -164,8 +164,8 @@ def plot_performance(results, plot='costs', indexed_on='Scn_ID', label='EN_long'
         if per_m2:
             df_costs = df_costs / era
             df_impact = df_impact / era
-            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
-            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+            change_data.loc['y_axis', 'FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis', 'EN'] = "Costs [CHF/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=True,
                                                                additional_data=additional_costs,
@@ -401,8 +401,8 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', a
         df_costs = df_Economics.xs('costs', level='Perf_type')
         if per_m2:
             df_costs = df_costs / era
-            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
-            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+            change_data.loc['y_axis', 'FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis', 'EN'] = "Costs [CHF/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=False,
                                                                include_avoided=include_avoided, additional_data=additional_costs, scaling_factor=scaling_factor)
@@ -416,8 +416,8 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', a
         df_impact = df_Economics.xs('impact', level='Perf_type')
         if per_m2:
             df_impact = df_impact / era
-            change_data.loc['y_axis']['FR'] = "Émissions [kgCO2/m2/an]"
-            change_data.loc['y_axis']['EN'] = "Emissions [kgCO2/m2/y]"
+            change_data.loc['y_axis', 'FR'] = "Émissions [kgCO2/m2/an]"
+            change_data.loc['y_axis', 'EN'] = "Emissions [kgCO2/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_impact, indexed_on, neg=False,
                                                                include_avoided=include_avoided, additional_data=additional_gwp, scaling_factor=scaling_factor)
@@ -434,8 +434,8 @@ def plot_expenses(results, plot='costs', indexed_on='Scn_ID', label='EN_long', a
         if per_m2:
             df_costs = df_costs / era
             df_impact = df_impact / era
-            change_data.loc['y_axis']['FR'] = "Coûts [CHF/m2/an]"
-            change_data.loc['y_axis']['EN'] = "Costs [CHF/m2/y]"
+            change_data.loc['y_axis', 'FR'] = "Coûts [CHF/m2/an]"
+            change_data.loc['y_axis', 'EN'] = "Costs [CHF/m2/y]"
             decimal = 1
         indexes, data_capacities, data_resources = prepare_dfs(df_costs, indexed_on, neg=False,
                                                                additional_data=additional_costs,

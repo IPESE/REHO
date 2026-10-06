@@ -23,6 +23,12 @@ will break in a future release, 🟢 no action needed.
 [documentation]: https://img.shields.io/badge/-Documentation-yellow
 [packaging]: https://img.shields.io/badge/-Packaging-lightblue
 
+## [v2.1.1]
+
+| Type                  | Category                          | Title | Description                                                                                                                                                                                        | Breaking |
+|-----------------------|------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+| ![Added][added]       | ![Documentation][documentation]    | **Residual value** | The CAPEX section of the building model now states what the horizon does to a durable unit: the value it still has at the end is not credited back. Its investment is annualised over `n_years` whatever its lifetime, and `Costs_Unit_replacement` prorates the replacements downwards without ever refunding one, so over a 25-year horizon PV panels lasting 30 years cost exactly as much as panels lasting 25, and a horizon shorter than the lifetime of a unit overstates its cost. The behaviour itself is unchanged — only its boundary case was, in v2.1.0, see **Replacement costs** there. The renovation keeps its own recovery share, `renovation_value_share`. | 🟢 |
+
 ## [v2.1.0]
 
 Architecture and documentation overhaul, the developments of the `develop_cedric` and `develop_arthur`

@@ -245,8 +245,14 @@ Here $n$ is the project horizon, $i$ the interest rate and $n_u$ the technical l
 unit $u$. The $r$-th replacement takes place at the end of the $r$-th lifetime, in year
 $r \cdot n_u$, and is charged for the share of its own lifetime within the horizon: a unit
 lasting as long as the horizon, or longer, is never replaced, and a unit lasting 20 years
-over a 25-year horizon is charged a quarter of a replacement in year 20. Multiple
-pairs $(c_u^1, c_u^2)$ can be defined for the same unit type, each valid over a different
+over a 25-year horizon is charged a quarter of a replacement in year 20. The value a unit
+still has at the end of the horizon is not credited back: its investment is annualized over
+$n$ whatever its lifetime, so a unit outliving the horizon costs as much as one whose
+lifetime matches it, and a horizon shorter than the lifetime of a unit overstates its cost.
+The units have no equivalent of the share $\theta$ through which part of a renovation is
+recovered in {eq}`eq_ren_annuity`.
+
+Multiple pairs $(c_u^1, c_u^2)$ can be defined for the same unit type, each valid over a different
 capacity interval $[F_u^{\min}, F_u^{\max}]$, enabling piecewise-linear cost approximations.
 
 #### Total expenditures (TOTEX)

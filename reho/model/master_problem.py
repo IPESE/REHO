@@ -122,6 +122,40 @@ def _sp_solver_attributes(Scn_ID, Pareto_ID, ampl):
     return df
 
 
+#: Former names of parameters, with the names that replaced them: existing is spelled out, ext standing for external
+#: elsewhere (``T_ext``, ``Cost_supply_ext``). A DataFrame names its column after the parameter it sets.
+RENAMED_PARAMETERS = {'Units_Ext': 'Units_Existing', 'Units_Ext_district': 'Units_Existing_district',
+                      'Line_ext': 'Line_capacity_existing'}
+
+#: Keys setting the capacity of a network, which belong to its grid, not to the parameters.
+NETWORK_GRID_KEYS = ['Network_ext', 'Network_capacity_existing', 'Network_capacity_options', 'Network_capacity']
+
+
+def check_parameters(parameters):
+    """Reject the parameters that were renamed, and those that belong to the grids.
+
+    Parameters
+    ----------
+    parameters : dict or None
+        Parameters given to :class:`MasterProblem`.
+
+    Raises
+    ------
+    ValueError
+        If a key, or the column of a DataFrame, is one of :data:`RENAMED_PARAMETERS`, or if a key is one of
+        :data:`NETWORK_GRID_KEYS`.
+    """
+    for key, value in (parameters or {}).items():
+        if key in NETWORK_GRID_KEYS:
+            raise ValueError(f"The parameters set {key}, which belongs to the grids, "
+                             f"e.g. grids['Electricity']['Network_capacity_existing'] = 100. {infrastructure.CAPACITY_KEYS_HELP}")
+        names = [key] + (list(value.columns) if isinstance(value, pd.DataFrame) else [])
+        renamed = [name for name in names if name in RENAMED_PARAMETERS]
+        if renamed:
+            raise ValueError(f"The parameter {renamed[0]} is renamed {RENAMED_PARAMETERS[renamed[0]]}: existing is spelled out, "
+                             f"as ext stands for external elsewhere (T_ext, Cost_supply_ext).")
+
+
 def fix_unit_sizes(ampl, df_fix_Units, units, targets=None):
     """Fix the size and the use of units to the values of ``df_fix_Units``.
 
@@ -246,6 +280,8 @@ class MasterProblem:
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
                  cluster=None, method=None, solver=None, DW_params=None):
 
+        check_parameters(parameters)
+
         # ampl solver
         self.solver = solver
 
@@ -305,12 +341,12 @@ class MasterProblem:
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
         self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound',
                                                 'Costs_House_upfront_m2_MP', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
-                                                'Network_ext', "ff_EV", "ff_ICE", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
+                                                "ff_EV", "ff_ICE", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
                                                 "transport_Units", "DailyDist", "Mode_Speed", "Cost_demand_ext", "EV_supply_ext", "share_activity", "Cost_supply_ext",
                                                 'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', "beta_GWP_MP",
                                                 "max_share", "min_share", "max_share_modes", "min_share_modes", "n_ICEperhab",
-                                                "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Ext_district",
+                                                "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Existing_district",
                                                 "Network_lifetime", "HydrogenAnnualExport_district","data_EUD_avg", "SOEC_conv_eff","SOFC_elec_eff_CH4"],
                          "list_constraints_MP": [],
                          "list_set_indexed_MP": ["Districts", "Distances"]
@@ -406,13 +442,7 @@ class MasterProblem:
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
         SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999 if 'EMOO_grid' in SP_scenario_init['EMOO'] else 0
 
-        if "Network_ext" in self.parameters:
-            if isinstance(self.parameters["Network_ext"], pd.DataFrame):
-                capacity = self.parameters["Network_ext"].xs("Electricity")[0]
-            else:
-                capacity = self.parameters["Network_ext"][0]
-        else:
-            capacity = self.infrastructure.Grids_Parameters["Network_ext"].xs("Electricity")
+        capacity = self.infrastructure.Grids_Parameters.loc["Electricity", "Network_capacity_existing"]
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
         profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
         max_DEL = profile_building_x.max(axis=1).sum()
@@ -423,10 +453,10 @@ class MasterProblem:
         # sub-problems then turn out infeasible at the coldest hour rather than at the network balance.
         if capacity < max_DEL:
             self.logger.warning(
-                f"Electricity Network_ext ({float(capacity):.0f} kW) is below the district peak domestic demand "
+                f"Electricity Network_capacity_existing ({float(capacity):.0f} kW) is below the district peak domestic demand "
                 f"({float(max_DEL):.0f} kW) over {nb_buildings} buildings, so the decomposition initiation caps "
                 f"grid use at {float(capacity) * 0.999 / max_DEL:.2f} of that peak. Sub-problems are likely to be "
-                f"infeasible; raise Network_ext to size the network for the district."
+                f"infeasible; raise Network_capacity_existing to size the network for the district."
             )
 
         for scenario_cst in scenario['specific']:
@@ -872,8 +902,8 @@ class MasterProblem:
 
         for key in self.lists_MP['list_parameters_MP'] + ["Cost_supply_network", "Cost_demand_network"]:
             if key in self.parameters.keys():
-                if key == "Units_Ext_district":
-                    MP_parameters["Units_Ext"] = self.parameters[key]
+                if key == "Units_Existing_district":
+                    MP_parameters["Units_Existing"] = self.parameters[key]
                 else:
                     MP_parameters[key] = self.parameters[key]
 
@@ -881,11 +911,7 @@ class MasterProblem:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        additional = []
-        if 'ReinforcementOfNetwork' in self.infrastructure.Set.keys():
-            additional = additional + ["ReinforcementOfNetwork"]
-
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer'] + additional:
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Network_capacity_options']:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
@@ -1034,7 +1060,7 @@ class MasterProblem:
         del ampl_MP
         if exitcode != 0:
             message = (f"The master problem of iteration {self.iter} did not converge (solve_result: {exitcode!r}). "
-                       "Check the network capacities (Network_ext) and the epsilon constraints of the scenario")
+                       "Check the network capacities (Network_capacity_existing) and the epsilon constraints of the scenario")
             if self.method['actors_problem']:
                 message += (", and the bounds of the actors: renter_expense_max, utility_profit_min and owner_PIR_min, "
                             "which the last master problem has to satisfy with a single configuration per building")

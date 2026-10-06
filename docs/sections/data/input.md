@@ -46,11 +46,44 @@ carrier. Semicolon-separated.
 | `GWP_demand_cst` | kgCO₂/kWh | Emissions avoided by exporting |
 | `GWP_supply_cst` | kgCO₂/kWh | Emissions of imported energy |
 | `Cost_connection` | CHF/y | Fixed cost of being connected to the layer |
-| `Network_ext` | kW | Capacity of the connection to the external network |
-| `ReinforcementOfNetwork` | kW | Available reinforcement steps, `/`-separated and increasing |
+| `Network_capacity_existing` | kW | Existing capacity of the network connecting the district to the external grid (e.g. the transformer) |
+| `Network_capacity_options` | kW | Larger capacities the network can be reinforced to, `/`-separated; empty when it cannot be reinforced |
 | `Cost_network_inv1`, `Cost_network_inv2` | CHF, CHF/kW | Fixed and specific investment cost of a reinforcement |
 | `GWP_network_1`, `GWP_network_2` | kgCO₂, kgCO₂/kW | Fixed and specific embodied emissions of a reinforcement |
 | `Network_lifetime` | y | Lifetime used to annualize the reinforcement investment |
+
+(network-capacity)=
+:::{admonition} Setting the capacity of a network, and of the lines
+:class: note
+
+The capacity of a network is set per layer, in its grid: `Network_capacity_existing` is the
+capacity it has today, and `Network_capacity_options` the larger capacities it can be
+reinforced to. The optimization decides `Network_capacity`: it keeps the existing capacity,
+or pays for one of the reinforcements, see {eq}`eq_net_cap`. The master problem does in the
+decomposition (`district-scale` and `building-scale`), and the single sub-problem in the
+compact formulation. Both keys can be overridden when the grids are initialized, or afterwards:
+
+```python
+grids = initialize_grids({'Electricity': {'Network_capacity_existing': 100, 'Network_capacity_options': [150, 200, 250]},
+                          'NaturalGas': {}})
+grids['Electricity']['Network_capacity_options'] = []  # the network cannot be reinforced
+```
+
+The lines connecting the buildings to a network follow the same names, see {eq}`eq_line_cap`.
+Their options are set in the grid, and their existing capacity per building, in the parameters:
+
+```python
+grids['Electricity']['Line_capacity_options'] = [20, 40, 80]
+index = pd.MultiIndex.from_product([['Building1', 'Building2'], ['Electricity']])
+parameters = {'Line_capacity_existing': pd.DataFrame({'Line_capacity_existing': 10.0}, index=index)}
+```
+
+Options that do not exceed the existing capacity are ignored. The capacities before and after
+optimization, and the cost of the reinforcements, are reported in `df_Grid`, under the hub
+`Network` for the networks, and under each building for its lines. The reinforcement of a line
+costs `Cost_line_inv1` [CHF] plus `Cost_line_inv2` [CHF/kW/m] per kW and metre of line: these
+keys, absent from `layers.csv`, are then to be set on every grid.
+:::
 
 :::{admonition} Why `Cost_supply_cst` ≥ `Cost_demand_cst`
 :class: important

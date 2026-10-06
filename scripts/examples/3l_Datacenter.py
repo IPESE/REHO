@@ -1,5 +1,3 @@
-import numpy as np
-
 from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 from reho.plotting import plotting
 
@@ -31,7 +29,7 @@ if __name__ == '__main__':
     units = initialize_units(scenario, grids, district_data=True)
 
     # Set parameters
-    parameters = {'Network_ext': np.array([500, 500, 0]), 'data_EUD_avg': 50}  # existing capacities of networks in alphabetical order
+    parameters = {'data_EUD_avg': 50}
 
     DW_params = {'max_iter': 2}
 

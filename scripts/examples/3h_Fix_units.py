@@ -43,8 +43,8 @@ if __name__ == '__main__':
     # Run optimization with units already installed (PV), but the optimization can install more capacity
     # The index of the dataframe contains the units being fixed !
     reho.method["fix_units"] = False
-    reho.scenario["name"] = "units_ext"
-    reho.parameters["Units_Ext"] = pd.DataFrame([15, 15, 15, 15], index=["PV_Building" + str(i) for i in range(1, 5)], columns=["Units_Ext"])
+    reho.scenario["name"] = "units_existing"
+    reho.parameters["Units_Existing"] = pd.DataFrame([15, 15, 15, 15], index=["PV_Building" + str(i) for i in range(1, 5)], columns=["Units_Existing"])
     reho.single_optimization()
 
     # Save results

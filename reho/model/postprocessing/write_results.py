@@ -196,7 +196,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df4 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_rep')
         df5 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
         df6 = get_ampl_data(ampl, 'lifetime')
-        df7 = get_ampl_data(ampl, 'Units_Ext', multi_index=False)
+        df7 = get_ampl_data(ampl, 'Units_Existing', multi_index=False)
         df_Unit = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
@@ -231,13 +231,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         return df_Unit, df_Unit_t
 
     def set_df_grid_SP(ampl):
-        df1 = get_ampl_data(ampl, 'LineCapacity', multi_index=True)
-        df2 = get_ampl_data(ampl, 'Use_Line_capacity', multi_index=True)
+        df1 = get_ampl_data(ampl, 'Line_capacity', multi_index=True)
+        df2 = get_ampl_data(ampl, 'Line_reinforced', multi_index=True)
         df3 = get_ampl_data(ampl, 'Cost_line_inv1')
         df4 = get_ampl_data(ampl, 'Cost_line_inv2')
         df5 = get_ampl_data(ampl, 'GWP_line_1')
         df6 = get_ampl_data(ampl, 'GWP_line_2')
-        df7 = get_ampl_data(ampl, 'Line_ext', multi_index=True)
+        df7 = get_ampl_data(ampl, 'Line_capacity_existing', multi_index=True)
         df8 = get_ampl_data(ampl, 'Line_Length', multi_index=True)
 
         df3.index.names = ['Layer']
@@ -247,13 +247,14 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df7.index.names = ['Hub', 'Layer']
         df8.index.names = ['Hub', 'Layer']
         df_12 = pd.concat([df1, df2], axis=1, sort=True)
-        df_12.columns = ['Capacity', 'UseCapacity']
+        df_12.columns = ['Capacity', 'Reinforced']
         df_12.index.names = ['Layer', 'Hub']
         df_Grid = df_12.swaplevel().sort_index()
-        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_line_inv1'] + (df_Grid['Capacity'] - df7['Line_ext'] * (1 - df_Grid['UseCapacity'])) * \
+        df_Grid['ReinforcementCost'] = df_Grid['Reinforced'] * df3['Cost_line_inv1'] + (df_Grid['Capacity'] - df7['Line_capacity_existing'] * (1 - df_Grid['Reinforced'])) * \
                                        df4['Cost_line_inv2'] * df8['Line_Length']
-        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_line_1'] + (df_Grid['Capacity'] - df7['Line_ext'] * (1 - df_Grid['UseCapacity'])) * df6[
+        df_Grid['ReinforcementGWP'] = df_Grid['Reinforced'] * df5['GWP_line_1'] + (df_Grid['Capacity'] - df7['Line_capacity_existing'] * (1 - df_Grid['Reinforced'])) * df6[
             'GWP_line_2'] * df8['Line_Length']
+        df_Grid.insert(0, 'Capacity_existing', df7['Line_capacity_existing'].reindex(df_Grid.index).values)
         return df_Grid
 
     def set_df_grid(ampl, method):
@@ -436,6 +437,9 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     df_Results["df_Annuals"] = set_df_annuals(ampl)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
     df_Results["df_Grid"] = set_df_grid_SP(ampl)
+    if not method['district-scale']:
+        # In the compact formulation, the sub-problem is the whole district and reinforces the networks itself
+        df_Results["df_Grid"] = pd.concat([df_Results["df_Grid"], get_df_Grid_network(ampl)]).sort_index()
     df_Results["df_Grid_t"] = set_df_grid(ampl, method)
     df_Results["df_Time"], df_Weather, df_Index = set_dfs_other(ampl)
     df_Results["df_Buildings"] = set_df_buildings(buildings_data)
@@ -557,32 +561,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Buildings"] = df_Buildings.sort_index()
 
     # Grid
-    df1 = get_ampl_data(ampl, 'Network_capacity')
-    df2 = get_ampl_data(ampl, 'Use_Network_capacity')
-    df3 = get_ampl_data(ampl, 'Cost_network_inv1', multi_index=False)
-    df4 = get_ampl_data(ampl, 'Cost_network_inv2', multi_index=False)
-    df5 = get_ampl_data(ampl, 'GWP_network_1', multi_index=False)
-    df6 = get_ampl_data(ampl, 'GWP_network_2', multi_index=False)
-    df7 = get_ampl_data(ampl, 'Network_ext', multi_index=False)
-
-    df3.index.names = ['Layer']
-    df4.index.names = ['Layer']
-    df5.index.names = ['Layer']
-    df6.index.names = ['Layer']
-    df7.index.names = ['Layer']
-
-    df12 = pd.concat([df1, df2], axis=1)
-    df12.columns = ['Capacity', 'UseCapacity']
-    df12.index.names = ['Layer']
-    df12['Hub'] = 'Network'
-    df12.set_index('Hub', append=True, inplace=True)
-    df_Grid = df12.swaplevel().sort_index()
-    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_network_inv1'] + (
-                df_Grid['Capacity'] - df7['Network_ext'] * (1 - df_Grid['UseCapacity'])) * df4['Cost_network_inv2']
-    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_network_1'] + (df_Grid['Capacity'] - df7['Network_ext'] * (1 - df_Grid['UseCapacity'])) * \
-                                  df6['GWP_network_2']
-
-    df_Results['df_Grid'] = df_Grid
+    df_Results['df_Grid'] = get_df_Grid_network(ampl)
 
     # District
     df1 = get_ampl_data(ampl, 'Costs_House_op')
@@ -817,12 +796,59 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     return df_Results
 
 
+def get_df_Grid_network(ampl):
+    """Capacity and reinforcement of the networks connecting the district to the external grids.
+
+    Parameters
+    ----------
+    ampl : amplpy.AMPL
+        A solved master problem, or a solved sub-problem of the compact formulation.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row per layer, indexed by ``Hub`` (``'Network'``) and ``Layer``: the existing capacity
+        (``Capacity_existing``), the capacity after optimization (``Capacity``), whether the network was reinforced
+        (``Reinforced``), and the investment cost and embodied emissions of the reinforcement (``ReinforcementCost``,
+        ``ReinforcementGWP``).
+    """
+    df1 = get_ampl_data(ampl, 'Network_capacity')
+    df2 = get_ampl_data(ampl, 'Network_reinforced')
+    df3 = get_ampl_data(ampl, 'Cost_network_inv1', multi_index=False)
+    df4 = get_ampl_data(ampl, 'Cost_network_inv2', multi_index=False)
+    df5 = get_ampl_data(ampl, 'GWP_network_1', multi_index=False)
+    df6 = get_ampl_data(ampl, 'GWP_network_2', multi_index=False)
+    df7 = get_ampl_data(ampl, 'Network_capacity_existing', multi_index=False)
+
+    df3.index.names = ['Layer']
+    df4.index.names = ['Layer']
+    df5.index.names = ['Layer']
+    df6.index.names = ['Layer']
+    df7.index.names = ['Layer']
+
+    df12 = pd.concat([df1, df2], axis=1)
+    df12.columns = ['Capacity', 'Reinforced']
+    df12.index.names = ['Layer']
+    df12['Hub'] = 'Network'
+    df12.set_index('Hub', append=True, inplace=True)
+    df_Grid = df12.swaplevel().sort_index()
+    df_Grid['ReinforcementCost'] = df_Grid['Reinforced'] * df3['Cost_network_inv1'] + (
+                df_Grid['Capacity'] - df7['Network_capacity_existing'] * (1 - df_Grid['Reinforced'])) * df4['Cost_network_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['Reinforced'] * df5['GWP_network_1'] + (df_Grid['Capacity'] - df7['Network_capacity_existing'] * (1 - df_Grid['Reinforced'])) * \
+                                  df6['GWP_network_2']
+    df_Grid.insert(0, 'Capacity_existing', df7['Network_capacity_existing'].reindex(df_Grid.index.get_level_values('Layer')).values)
+    return df_Grid
+
+
+#: Variables holding the state of charge of the inter-period storage technologies, read by :func:`set_df_Interperiod`.
+INTERPERIOD_STORAGE_VARIABLES = ["BAT_E_stored_IP", "H2_stor_stored", "CH4_stor_stored", "CO2_stor_stored", "PTES_E_Stored"]
+
+
 def set_df_Interperiod(ampl):
     """
     Extract the state of charge of the inter-period storage technologies over the year.
 
-    The variables read are ``BAT_E_stored_IP``, ``H2_stor_stored``, ``CH4_stor_stored``, ``CO2_stor_stored``
-    and ``PTES_E_Stored``; those absent from the model are skipped.
+    The variables read are those of :data:`INTERPERIOD_STORAGE_VARIABLES`; those absent from the model are skipped.
 
     Parameters
     ----------
@@ -858,7 +884,7 @@ def set_df_Interperiod(ampl):
         return IP_stor_list
 
     # Add here other long term storage variables (from the .mod files) if needed
-    for var in ["BAT_E_stored_IP", "H2_stor_stored", "CH4_stor_stored", "CO2_stor_stored", "PTES_E_Stored"]:
+    for var in INTERPERIOD_STORAGE_VARIABLES:
         IP_stor_list = add_stor_to_list(IP_stor_list, ampl, var)
     if not IP_stor_list:
         return pd.DataFrame()

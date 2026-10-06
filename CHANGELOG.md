@@ -1,7 +1,8 @@
 # Changelog
 
 All notable changes to REHO are documented here.
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and REHO follows [Semantic Versioning](https://semver.org/).
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and REHO follows [Semantic Versioning](https://semver.org/),
+except that a minor release may break existing code: such changes are flagged in the **Breaking** column.
 
 Entries are grouped by type of change (Added, Changed, Fixed, ...) and tagged with the area of the
 codebase they affect, then sorted by those two columns. The **Breaking** column flags changes that
@@ -19,15 +20,32 @@ will break in a future release, 🟢 no action needed.
 [preprocessing]: https://img.shields.io/badge/-Preprocessing-green
 [postprocessing]: https://img.shields.io/badge/-Postprocessing-orange
 [plotting]: https://img.shields.io/badge/-Plotting-purple
-
+  
 [documentation]: https://img.shields.io/badge/-Documentation-yellow
 [packaging]: https://img.shields.io/badge/-Packaging-lightblue
 
-## [v2.1.1]
+## [v2.2.0]
+
+Capacities of the networks and of the lines set explicitly, under names telling what is given and what the
+optimization decides: `Network_capacity_existing`, `Network_capacity_options` and `Network_capacity`, the same
+for the lines, and `Units_Existing` for the existing units. Scripts using the former names must be updated:
+they raise an error giving the new ones. Two corrections change the results: the compact formulation charges
+the reinforcement of the networks, which it used to grant for free, and a network or a line is reported
+reinforced only when its capacity increases. The reinforcement of the lines, which could not be used, now works.
+Run before and after, the examples reach the same designs and objectives: only the reinforcements reported
+under a GWP objective can differ.
 
 | Type                  | Category                          | Title | Description                                                                                                                                                                                        | Breaking |
 |-----------------------|------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
 | ![Added][added]       | ![Documentation][documentation]    | **Residual value** | The CAPEX section of the building model now states what the horizon does to a durable unit: the value it still has at the end is not credited back. Its investment is annualised over `n_years` whatever its lifetime, and `Costs_Unit_replacement` prorates the replacements downwards without ever refunding one, so over a 25-year horizon PV panels lasting 30 years cost exactly as much as panels lasting 25, and a horizon shorter than the lifetime of a unit overstates its cost. The behaviour itself is unchanged — only its boundary case was, in v2.1.0, see **Replacement costs** there. The renovation keeps its own recovery share, `renovation_value_share`. | 🟢 |
+| ![Changed][changed]   | ![Model][model]                    | **Network capacity** | The capacity of a network is set in one place, its grid, under two explicit keys: `Network_capacity_existing`, the capacity it has today [kW], and `Network_capacity_options`, the larger capacities it can be reinforced to. They replace `parameters['Network_ext']`, an array whose values followed the alphabetical order of the layers, and `grids[layer]['ReinforcementOfNetwork']`, which had to repeat the existing capacity: when it did not, the master problem was forced to reinforce the network. Both keys can be passed to `initialize_grids`, e.g. `initialize_grids({'Electricity': {'Network_capacity_existing': 100, 'Network_capacity_options': [150, 200]}})`, and `layers.csv` holds them under the same names, with options above the existing capacity only. The optimization decides `Network_capacity`, and `Network_reinforced` says whether it reinforced the network. The former names, and `Network_capacity` set as an input, raise a `ValueError` that gives the keys to use. | 🔴 |
+| ![Changed][changed]   | ![Model][model]                    | **Line capacity** | The lines connecting the buildings to the networks follow the names and the structure of the networks: `Line_ext` becomes `Line_capacity_existing` (per building, in the parameters), `ReinforcementOfLine` becomes `Line_capacity_options` (per layer, in the grid), the capacity decided by the optimization `LineCapacity` becomes `Line_capacity`, and its binary `Use_Line_capacity` becomes `Line_reinforced`. As for the networks, the options no longer repeat the existing capacity: those not above it are ignored, building by building. The former names raise a `ValueError`. | 🔴 |
+| ![Changed][changed]   | ![Model][model]                    | **Existing units** | `Units_Ext`, `Units_Use_Ext` and `Units_Ext_district` are renamed `Units_Existing`, `Units_Use_Existing` and `Units_Existing_district`, and so is the `Units_Ext` column of `df_Unit`: *ext* also stands for *external* in REHO (`T_ext`, `Cost_supply_ext`), so *existing* is spelled out. A DataFrame setting the parameter names its column after it, e.g. `pd.DataFrame({'Units_Existing': [15]}, index=['PV_Building1'])`. The former names, as keys or as columns, raise a `ValueError`. | 🔴 |
+| ![Changed][changed]   | ![Postprocessing][postprocessing]  | **`df_Grid`** | The column `UseCapacity` is renamed `Reinforced`, and a column `Capacity_existing` gives the capacity before optimization, next to `Capacity`, for the networks and the lines alike. | 🔴 |
+| ![Fixed][fixed]       | ![Model][model]                    | **Network reinforcement in the compact formulation** | The compact formulation reinforced the networks for free: its sub-problem carried no cost of reinforcement, so a district whose exchanges exceeded `Network_capacity_existing` used the largest capacity of `Network_capacity_options` without paying for it, and without any trace in the results. The sub-problem now charges the reinforcement as the master problem does, investment cost and embodied emissions, except when it generates columns for the decomposition, whose master problem charges it already (`Network_reinforcement_charged`). `df_Grid` of a compact run now holds the `Network` rows. The results of a compact run change when its exchanges exceed the existing capacity of a network: for example 0 limited to 40 kW, the network is now reinforced to 100 kW for 16 000 CHF, +819 CHF/y. | 🟢 |
+| ![Fixed][fixed]       | ![Model][model]                    | **Phantom reinforcement** | The binary of the reinforcement (`Network_reinforced`, formerly `Use_Network_capacity`) could be 1 while the network kept its existing capacity, whenever the objective did not price it, e.g. GWP: the results then reported a reinforcement, and its cost, that never took place (19 000 CHF in example 3l). It is now 1 exactly when the capacity exceeds the existing one, and 0 for a network that cannot be reinforced; so is `Line_reinforced` for the lines. | 🟢 |
+| ![Fixed][fixed]       | ![Model][model]                    | **Line reinforcement** | The reinforcement of the lines could not be used: set on one grid, `ReinforcementOfLine` failed with a `KeyError` when the parameters of the grids were gathered, and set on every grid, AMPL rejected it with `TypeError: must be real number, not list`. The options of the lines are now a set of the model, which one grid may hold alone, and a reinforced line is charged to its building, `Cost_line_inv1` plus `Cost_line_inv2` per kW and metre. | 🟢 |
+| ![Fixed][fixed]       | ![Plotting][plotting]              | **Inter-period storage in `plot_electricity_flows`** | The plot crashed with `KeyError: 'PTES'` as soon as a solution stored energy in pumped thermal storage: the row of `layout.csv` giving the colour of each storage was guessed from the name of its variable, which missed PTES. Each variable of `set_df_Interperiod` now maps to its row explicitly (`INTERPERIOD_STORAGE_LAYOUT`), a test checks that the mapping covers them all, and the legend gives the name of the storage from `layout.csv`. | 🟢 |
 
 ## [v2.1.0]
 

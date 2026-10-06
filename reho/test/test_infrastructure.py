@@ -2,6 +2,7 @@ import os
 import re
 
 import numpy as np
+import pandas as pd
 import pytest
 from reho.model.infrastructure import (
     PERFORMANCE_MAP_FILES,
@@ -9,8 +10,11 @@ from reho.model.infrastructure import (
     _interperiod_unit_files,
     initialize_grids,
     initialize_units,
+    network_capacity_options,
+    parse_capacity_options,
     read_performance_map,
 )
+from reho.model.master_problem import MasterProblem, check_parameters
 from reho.paths import path_to_infrastructure, path_to_units
 
 
@@ -159,3 +163,91 @@ def test_temperature_sets_come_from_the_performance_maps(infrastructure):
     heat_pumps = read_performance_map("HeatPump")
     assert list(infrastructure.Set["HP_Tsink"]) == list(heat_pumps.index.get_level_values("HP_Tsink").unique())
     assert list(infrastructure.Set["HP_Tsource"]) == list(heat_pumps.index.get_level_values("HP_Tsource").unique())
+
+
+@pytest.mark.parametrize("value, expected", [
+    ("600/1000/2000", [600, 1000, 2000]),
+    ("600", [600]),
+    (600, [600]),
+    ([150, 200], [150, 200]),
+    (np.array([150.0]), [150]),
+    ("", []),
+    (None, []),
+    (np.nan, []),
+])
+def test_capacity_options_are_parsed(value, expected):
+    assert list(parse_capacity_options(value)) == expected
+
+
+def test_default_network_capacities(grids):
+    assert grids["Electricity"]["Network_capacity_existing"] == 400
+    assert list(grids["Electricity"]["Network_capacity_options"]) == [600, 1000, 2000]
+    assert grids["NaturalGas"]["Network_capacity_options"].size == 0
+
+
+def test_network_capacity_is_set_through_initialize_grids():
+    grids = initialize_grids({"Electricity": {"Network_capacity_existing": 100, "Network_capacity_options": [150, 200]}})
+    assert grids["Electricity"]["Network_capacity_existing"] == 100
+    assert list(grids["Electricity"]["Network_capacity_options"]) == [150, 200]
+
+
+def test_reinforcements_not_above_the_existing_capacity_are_ignored():
+    grid = {"Grid": "Electricity", "Network_capacity_existing": 100, "Network_capacity_options": [250, 100, 50, 150]}
+    assert list(network_capacity_options(grid)) == [150, 250]
+
+
+def test_reinforcements_need_an_existing_capacity():
+    with pytest.raises(ValueError, match="Network_capacity_existing"):
+        network_capacity_options({"Grid": "Electricity", "Network_capacity_options": [150]})
+
+
+def test_the_capacity_options_are_sets_of_the_model(infrastructure):
+    assert list(infrastructure.Set["Network_capacity_options"]["Electricity"]) == [600, 1000, 2000]
+    assert infrastructure.Set["Network_capacity_options"]["NaturalGas"].size == 0
+    assert infrastructure.Set["Line_capacity_options"]["Electricity"].size == 0
+    assert "Network_capacity_options" not in infrastructure.Grids_Parameters.columns
+    assert infrastructure.Grids_Parameters.loc["Electricity", "Network_capacity_existing"] == 400
+
+
+def test_line_capacity_options_are_set_on_one_grid(qbuildings_data, scenario):
+    # The options are a set of the model, not a parameter: one grid may hold them alone
+    grids = initialize_grids({"Electricity": {"Line_capacity_options": "40/20"}, "NaturalGas": {}})
+    infrastructure = Infrastructure(qbuildings_data, initialize_units(scenario, grids), grids)
+    assert list(infrastructure.Set["Line_capacity_options"]["Electricity"]) == [20, 40]
+    assert infrastructure.Set["Line_capacity_options"]["NaturalGas"].size == 0
+    assert "Line_capacity_options" not in infrastructure.Grids_Parameters.columns
+
+
+@pytest.mark.parametrize("old, new", [("Network_ext", "Network_capacity_existing"), ("ReinforcementOfNetwork", "Network_capacity_options"),
+                                      ("Network_capacity", "Network_capacity_existing"), ("ReinforcementOfLine", "Line_capacity_options")])
+def test_the_forbidden_grid_keys_are_rejected(qbuildings_data, scenario, old, new):
+    with pytest.raises(ValueError, match=new):
+        initialize_grids({"Electricity": {old: 100}})
+
+    grids = initialize_grids()
+    grids["Electricity"][old] = 100
+    with pytest.raises(ValueError, match=new):
+        Infrastructure(qbuildings_data, initialize_units(scenario, grids), grids)
+
+
+@pytest.mark.parametrize("key", ["Network_ext", "Network_capacity_existing", "Network_capacity_options", "Network_capacity"])
+def test_the_network_capacity_is_not_a_parameter(qbuildings_data, units, grids, key):
+    with pytest.raises(ValueError, match="grids\\['Electricity'\\]\\['Network_capacity_existing'\\]"):
+        MasterProblem(qbuildings_data, units, grids, parameters={key: np.array([100, 1000])})
+
+
+@pytest.mark.parametrize("parameters, new", [
+    ({"Units_Ext": pd.DataFrame({"Units_Ext": [15.0]}, index=["PV_Building1"])}, "Units_Existing"),
+    ({"Units_Existing": pd.DataFrame({"Units_Ext": [15.0]}, index=["PV_Building1"])}, "Units_Existing"),
+    ({"Units_Ext_district": pd.DataFrame({"Units_Existing": [15.0]}, index=["Battery_district"])}, "Units_Existing_district"),
+    ({"Line_ext": pd.DataFrame({"Line_ext": [10.0]}, index=pd.MultiIndex.from_tuples([("Building1", "Electricity")]))},
+     "Line_capacity_existing"),
+])
+def test_the_former_parameters_are_rejected(parameters, new):
+    with pytest.raises(ValueError, match=f"renamed {new}"):
+        check_parameters(parameters)
+
+
+def test_the_parameters_are_accepted():
+    check_parameters({"Units_Existing": pd.DataFrame({"Units_Existing": [15.0]}, index=["PV_Building1"])})
+    check_parameters(None)

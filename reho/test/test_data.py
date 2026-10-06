@@ -10,7 +10,7 @@ import os
 
 import pytest
 
-from reho.model.infrastructure import initialize_grids, initialize_units, prepare_units_df
+from reho.model.infrastructure import initialize_grids, initialize_units, parse_capacity_options, prepare_units_df
 from reho.paths import file_reader, path_to_infrastructure, path_to_mobility, path_to_sia, path_to_skydome
 
 #: Columns every units file must declare, and which :func:`prepare_units_df` reads.
@@ -35,7 +35,7 @@ def layers():
 class TestLayers:
     def test_required_columns(self, layers):
         required = {"Grid", "ref_unit", "Cost_demand_cst", "Cost_supply_cst",
-                    "GWP_demand_cst", "GWP_supply_cst", "Network_ext", "Network_lifetime"}
+                    "GWP_demand_cst", "GWP_supply_cst", "Network_capacity_existing", "Network_lifetime"}
         assert required <= set(layers.columns)
 
     def test_grid_names_are_unique(self, layers):
@@ -51,10 +51,13 @@ class TestLayers:
         cheaper = layers[layers["Cost_supply_cst"] < layers["Cost_demand_cst"]]["Grid"].tolist()
         assert not cheaper, f"These layers pay more for exports than they charge for imports: {cheaper}"
 
-    def test_reinforcement_steps_are_increasing(self, layers):
+    def test_reinforcements_exceed_the_existing_capacity(self, layers):
+        # The existing capacity is not repeated among the reinforcements, which list larger capacities only.
         for _, row in layers.iterrows():
-            steps = [float(v) for v in str(row["ReinforcementOfNetwork"]).split("/")]
-            assert steps == sorted(steps), f"ReinforcementOfNetwork of {row['Grid']} is not increasing: {steps}"
+            steps = parse_capacity_options(row["Network_capacity_options"])
+            assert list(steps) == sorted(steps), f"Network_capacity_options of {row['Grid']} is not increasing: {steps}"
+            assert (steps > row["Network_capacity_existing"]).all(), \
+                f"Network_capacity_options of {row['Grid']} does not exceed its Network_capacity_existing: {steps}"
 
 
 class TestUnits:

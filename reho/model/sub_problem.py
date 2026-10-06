@@ -287,6 +287,8 @@ class SubProblem:
         self.parameters_to_ampl['Units_flowrate'] = self.infrastructure_sp.Units_flowrate
         self.parameters_to_ampl['Grids_Parameters'] = self.infrastructure_sp.Grids_Parameters.drop(["Network_demand_connection", "Network_supply_connection"],
                                                                                                    axis=1)
+        # In the decomposition, the master problem charges the reinforcement of the networks
+        self.parameters_to_ampl['Network_reinforcement_charged'] = 0 if self.method_sp['district-scale'] else 1
         self.parameters_to_ampl['Units_Parameters'] = self.infrastructure_sp.Units_Parameters
         self.parameters_to_ampl['Streams_H'] = self.infrastructure_sp.Streams_H
 

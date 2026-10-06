@@ -33,7 +33,7 @@ import pandas as pd
 
 import reho.model.infrastructure as infrastructure
 import reho.model.postprocessing.write_results as write_results
-from reho.model.master_problem import CP_WATER, DELTA_H_CO2, DEFAULT_DHN_DELTA_T, MasterProblem, fix_unit_sizes
+from reho.model.master_problem import CP_WATER, DELTA_H_CO2, DEFAULT_DHN_DELTA_T, MasterProblem, check_parameters, fix_unit_sizes
 from reho.model.options import initialize_default_scenario
 from reho.model.postprocessing.KPIs import calculate_KPIs
 from reho.model.preprocessing.QBuildings import QBuildingsReader
@@ -190,6 +190,7 @@ class REHO(MasterProblem):
         RuntimeError
             If the problem is infeasible.
         """
+        check_parameters(self.parameters)  # they may have been changed since the initialization
         Scn_ID = self.scenario['name']
         if self.method['fix_units'] and self.df_fix_Units.empty:
             warnings.warn("fix_units=True but df_fix_Units is empty - no units will be fixed. "
@@ -212,7 +213,7 @@ class REHO(MasterProblem):
             raise RuntimeError(
                 f"Scenario {Scn_ID!r} (Pareto point {Pareto_ID}) is infeasible. "
                 "Check that the available units can supply every end-use demand, and that the "
-                "network capacities (Network_ext) and epsilon constraints leave a feasible region."
+                "network capacities (Network_capacity_existing) and epsilon constraints leave a feasible region."
             )
 
     def execute_dantzig_wolfe_decomposition(self, scenario, Scn_ID, Pareto_ID=0, epsilon_init=None, read_DHN=False):
@@ -307,6 +308,7 @@ class REHO(MasterProblem):
 
     def _compute_pareto_points(self):
         """Compute and sort the points of the Pareto front, see :meth:`generate_pareto_curve`."""
+        check_parameters(self.parameters)  # they may have been changed since the initialization
         Scn_ID = self.scenario['name']
 
         def get_objectives_values(ampl, objectives, Pareto_ID):

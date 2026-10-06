@@ -10,8 +10,9 @@ import pytest
 from reho.model import reho as reho_module
 from reho.model.postprocessing.KPIs import postcompute_annual_COP
 from reho.model.postprocessing.sensitivity_analysis import SensitivityAnalysis
-from reho.model.postprocessing.write_results import get_ampl_parameters
-from reho.plotting.utils import monthly_average
+from reho.model.postprocessing.write_results import INTERPERIOD_STORAGE_VARIABLES, get_ampl_parameters
+from reho.plotting.plotting import INTERPERIOD_STORAGE_LAYOUT
+from reho.plotting.utils import layout, monthly_average
 
 
 class TestAnnualCOP:
@@ -152,3 +153,9 @@ class TestSaveResults:
 
         assert pd.ExcelFile(tmp_path / "results" / "run_totex.xlsx").sheet_names == ["df_Small"]
         assert "df_Large" in model.logger.warning.call_args.args
+
+
+def test_every_interperiod_storage_has_a_plot_layout():
+    # plot_electricity_flows colours the state of charge of each inter-period storage after its row of layout.csv
+    assert set(INTERPERIOD_STORAGE_LAYOUT) == set(INTERPERIOD_STORAGE_VARIABLES)
+    assert set(INTERPERIOD_STORAGE_LAYOUT.values()) <= set(layout.index)

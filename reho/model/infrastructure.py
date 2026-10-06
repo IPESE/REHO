@@ -19,6 +19,16 @@ ALWAYS_AVAILABLE_UNIT_TYPES = ["PV", "WaterTankSH", "WaterTankDHW", "Battery", "
 #: Units removed from every scenario by default (not yet validated, or superseded), unless the scenario enforces them.
 DEFAULT_UNITS_TO_EXCLUDE = ['HeatPump_Lake', 'DataHeat_SH', 'ORC_DC_district', 'HeatPump_Waste_heat']
 
+#: Keys a grid may not hold, with the keys to use instead: their former names, and the capacity decided by the optimization.
+FORBIDDEN_GRID_KEYS = {'Network_ext': 'Network_capacity_existing', 'ReinforcementOfNetwork': 'Network_capacity_options',
+                       'Network_capacity': 'Network_capacity_existing', 'ReinforcementOfLine': 'Line_capacity_options'}
+
+#: Explains the keys setting the capacity of the networks and of the lines, in the errors raised on a misused key.
+CAPACITY_KEYS_HELP = ("The existing capacity of a network is Network_capacity_existing [kW], and the larger capacities it can be "
+                      "reinforced to Network_capacity_options, both set in its grid: the optimization decides Network_capacity. "
+                      "The lines connecting the buildings follow the same names: Line_capacity_options in the grid, and "
+                      "Line_capacity_existing, per building, in the parameters.")
+
 #: Part-load performance of the heat pumps and air conditioners, per ``UnitOfType``: file of
 #: ``reho/data/infrastructure/``, indexed by the sink and source temperatures.
 PERFORMANCE_MAP_FILES = {'HeatPump': 'HP_parameters.csv', 'AirConditioner': 'AC_parameters.csv', 'HeatPump_WH': 'HP_parameters.csv'}
@@ -58,6 +68,77 @@ def read_performance_map(unit_type):
     return _performance_maps[file, suffix]
 
 
+def check_grid_keys(keys, where):
+    """Reject the keys a grid may not hold, see :data:`FORBIDDEN_GRID_KEYS`.
+
+    Parameters
+    ----------
+    keys : iterable of str
+        Keys of a grid, or columns of a layers file.
+    where : str
+        What the keys belong to, to locate them in the error message.
+
+    Raises
+    ------
+    ValueError
+        If one of the keys of :data:`FORBIDDEN_GRID_KEYS` is used.
+    """
+    forbidden = [key for key in FORBIDDEN_GRID_KEYS if key in keys]
+    if forbidden:
+        raise ValueError(f"{where} sets {', '.join(forbidden)}: use "
+                         f"{', '.join(FORBIDDEN_GRID_KEYS[key] for key in forbidden)} instead. {CAPACITY_KEYS_HELP}")
+
+
+def parse_capacity_options(value):
+    """Read the capacities a network, or a line, can be reinforced to.
+
+    Parameters
+    ----------
+    value : str, float, array-like or None
+        A ``/``-separated string as in ``layers.csv`` (``'600/1000/2000'``), a number, a sequence of numbers,
+        or nothing (``None``, ``NaN`` or an empty string) when it cannot be reinforced.
+
+    Returns
+    -------
+    numpy.ndarray
+        The capacities [kW], as floats.
+    """
+    if value is None or isinstance(value, str) and not value.strip():
+        return np.array([])
+    if isinstance(value, str):
+        return np.array(value.split('/'), dtype=float)
+    value = np.atleast_1d(np.asarray(value, dtype=float))
+    return value[~np.isnan(value)]
+
+
+def network_capacity_options(grid):
+    """Capacities a network can be reinforced to, above its existing capacity.
+
+    Parameters
+    ----------
+    grid : dict
+        A grid, as returned by :func:`initialize_grids`.
+
+    Returns
+    -------
+    numpy.ndarray
+        The capacities of ``grid['Network_capacity_options']`` that exceed ``grid['Network_capacity_existing']``, sorted:
+        a reinforcement cannot lower the capacity, so the others are ignored.
+
+    Raises
+    ------
+    ValueError
+        If reinforcements are given without the existing capacity they reinforce.
+    """
+    options = parse_capacity_options(grid.get('Network_capacity_options'))
+    if options.size == 0:
+        return options
+    if 'Network_capacity_existing' not in grid:
+        raise ValueError(f"The grid {grid.get('Grid', '')} sets Network_capacity_options but not Network_capacity_existing, "
+                         f"the existing capacity of the network it reinforces.")
+    return np.unique(options[options > grid['Network_capacity_existing']])
+
+
 class Infrastructure:
     """
     Characterizes all the sets and parameters which are connected to buildings, units and grids.
@@ -73,6 +154,9 @@ class Infrastructure:
     """
 
     def __init__(self, qbuildings_data, units, grids):
+
+        for name, grid in grids.items():
+            check_grid_keys(grid, f"The grid {name}")
 
         self.units = units["building_units"]
         self.houses = {h: {'units': self.units, 'layers': grids} for h in qbuildings_data['buildings_data'].keys()}
@@ -122,18 +206,14 @@ class Infrastructure:
         self.HousesOfLayer = {}
         for l in self.Layers:
             self.HousesOfLayer[l] = np.array([])
-            self.ReinforcementOfNetwork = {}
-            self.ReinforcementOfLine = {}
-            for l in grids.keys():
-                if 'ReinforcementOfNetwork' in grids[l].keys():
-                    self.ReinforcementOfNetwork[l] = grids[l]['ReinforcementOfNetwork']
-                else:
-                    self.ReinforcementOfNetwork[l] = np.array([1e8])
 
-                if 'ReinforcementOfLine' in grids[l].keys():
-                    self.ReinforcementOfLine[l] = grids[l]['ReinforcementOfLine']
-                else:
-                    self.ReinforcementOfLine[l] = np.array([1e8])
+        self.Network_capacity_options = {}
+        self.Line_capacity_options = {}
+        for l in grids.keys():
+            self.Network_capacity_options[l] = network_capacity_options(grids[l])
+            # The existing capacity of the lines is set per building, in the parameters: the sub-problem ignores the
+            # options that do not exceed it
+            self.Line_capacity_options[l] = np.unique(parse_capacity_options(grids[l].get('Line_capacity_options')))
 
         self.StreamsOfBuilding = {}
         self.StreamsOfUnit = {}
@@ -234,11 +314,8 @@ class Infrastructure:
         self.Set['StreamsOfBuilding'] = self.StreamsOfBuilding
         self.Set['StreamsOfUnit'] = self.StreamsOfUnit
 
-        if 'ReinforcementOfNetwork' in self.__dict__.keys():
-            self.Set['ReinforcementOfNetwork'] = self.ReinforcementOfNetwork
-
-        if 'ReinforcementOfLine' in self.__dict__.keys():
-            self.Set['ReinforcementOfLine'] = self.ReinforcementOfLine
+        self.Set['Network_capacity_options'] = self.Network_capacity_options
+        self.Set['Line_capacity_options'] = self.Line_capacity_options
 
     def generate_parameter(self):
         """
@@ -325,7 +402,7 @@ class Infrastructure:
             self.add_unit_parameters(u['Unit'], u)
 
         # Grids
-        keys = [key for key in self.grids["Electricity"] if key not in ["ref_unit", 'Grid', "ReinforcementOfNetwork"]]
+        keys = [key for key in self.grids["Electricity"] if key not in ["ref_unit", 'Grid', "Network_capacity_options", "Line_capacity_options"]]
 
         for g in self.grids:
             df = pd.DataFrame([[self.grids[g][key] for key in keys]], index=[g], columns=keys)
@@ -630,7 +707,8 @@ def initialize_grids(available_grids=None, file=os.path.join(path_to_infrastruct
     available_grids : dict, optional
         A dictionary specifying the available grids and their parameters. The keys represent grid names,
         and the values are dictionaries containing optional parameters ['Cost_demand_cst',
-        'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst'].
+        'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection', 'Network_capacity_existing',
+        'Network_capacity_options'], which override the values of the file.
     file : str, optional
         Path to the CSV file containing grid data. Default is 'layers.csv' in the data/infrastructure/ folder.
 
@@ -652,12 +730,18 @@ def initialize_grids(available_grids=None, file=os.path.join(path_to_infrastruct
     --------
     >>> available_grids = {'Electricity': {'Cost_demand_cst': 0.1, 'GWP_supply_cst': 0.05}, 'NaturalGas': {'Cost_supply_cst': 0.15}}
     >>> grids = initialize_grids(available_grids, file="custom_layers.csv")
+
+    The existing capacity of a network [kW], and the larger capacities it can be reinforced to:
+
+    >>> grids = initialize_grids({'Electricity': {'Network_capacity_existing': 100, 'Network_capacity_options': [150, 200, 250]},
+    ...                           'NaturalGas': {}})
     """
 
     available_grids = DEFAULT_GRIDS.copy() if available_grids is None else available_grids
 
     grid_data = file_reader(file)
     grid_data = grid_data.set_index("Grid")
+    check_grid_keys(grid_data.columns, f"The file {file}")
 
     grids = dict()
     for idx, row in grid_data.iterrows():
@@ -666,18 +750,15 @@ def initialize_grids(available_grids=None, file=os.path.join(path_to_infrastruct
             grid_dict['Grid'] = idx
             grid_dict['Network_demand_connection'] = 1e6 * grid_dict['Network_demand_connection']
             grid_dict['Network_supply_connection'] = 1e6 * grid_dict['Network_supply_connection']
-            grid_dict["ReinforcementOfNetwork"] = np.array(grid_dict["ReinforcementOfNetwork"].split("/")).astype(float)
+            check_grid_keys(available_grids[idx], f"The grid {idx}")
 
-            if 'Cost_demand_cst' in available_grids[idx]:
-                grid_dict['Cost_demand_cst'] = available_grids[idx]['Cost_demand_cst']
-            if 'Cost_supply_cst' in available_grids[idx]:
-                grid_dict['Cost_supply_cst'] = available_grids[idx]['Cost_supply_cst']
-            if 'GWP_demand_cst' in available_grids[idx]:
-                grid_dict['GWP_demand_cst'] = available_grids[idx]['GWP_demand_cst']
-            if 'GWP_supply_cst' in available_grids[idx]:
-                grid_dict['GWP_supply_cst'] = available_grids[idx]['GWP_supply_cst']
-            if 'Cost_connection' in available_grids[idx]:
-                grid_dict['Cost_connection'] = available_grids[idx]['Cost_connection']
+            for key in ['Cost_demand_cst', 'Cost_supply_cst', 'GWP_demand_cst', 'GWP_supply_cst', 'Cost_connection',
+                        'Network_capacity_existing', 'Network_capacity_options', 'Line_capacity_options']:
+                if key in available_grids[idx]:
+                    grid_dict[key] = available_grids[idx][key]
+            grid_dict['Network_capacity_options'] = parse_capacity_options(grid_dict.get('Network_capacity_options'))
+            if 'Line_capacity_options' in grid_dict:
+                grid_dict['Line_capacity_options'] = parse_capacity_options(grid_dict['Line_capacity_options'])
             grids[idx] = grid_dict
 
     return grids

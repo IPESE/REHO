@@ -70,16 +70,18 @@ One row per unit, whether installed or not. Indexed by `Unit`
 | `Costs_Unit_rep` | CHF/y | Annualized replacement cost |
 | `GWP_Unit_constr` | kgCO₂/y | Annualized embodied emissions. Multiply by `lifetime` for the total |
 | `lifetime` | y | Technical lifetime |
-| `Units_Ext` | `ref_unit` | Pre-existing capacity that did not have to be bought |
+| `Units_Existing` | `ref_unit` | Pre-existing capacity that did not have to be bought |
 
 ### `df_Grid`
 
-Capacity and reinforcement of the connection lines, indexed by `Hub` and `Layer`.
+Capacity and reinforcement of the connection lines of the buildings, and of the networks
+connecting the district to the external grids (hub `Network`), indexed by `Hub` and `Layer`.
 
 | Column | Unit | Meaning |
 |---|---|---|
-| `Capacity` | kW | Line capacity after reinforcement |
-| `UseCapacity` | 0/1 | Whether the line was reinforced |
+| `Capacity_existing` | kW | Capacity before optimization |
+| `Capacity` | kW | Capacity after optimization |
+| `Reinforced` | 0/1 | Whether the line or the network was reinforced |
 | `ReinforcementCost` | CHF | Investment cost of the reinforcement |
 | `ReinforcementGWP` | kgCO₂ | Embodied emissions of the reinforcement |
 

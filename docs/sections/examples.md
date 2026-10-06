@@ -108,7 +108,7 @@ starting point to understand what each input dictionary does.
 The example shows the use of two methods:
 
 - enforcing the size of specific units (method fix_units)
-- considering existing units capacity in the optimization using the parameter Units_Ext
+- considering existing units capacity in the optimization using the parameter Units_Existing
 
 ```{literalinclude} ../../scripts/examples/3h_Fix_units.py
 :language: python

@@ -1996,6 +1996,12 @@ def plot_storage_profile(df_Results, resolution='daily', storage_ID="all"):
     return fig
 
 
+#: Row of ``layout.csv`` of each inter-period storage, keyed by the column of ``df_Interperiod`` holding its state of
+#: charge, see :func:`reho.model.postprocessing.write_results.set_df_Interperiod`.
+INTERPERIOD_STORAGE_LAYOUT = {"BAT_E_stored_IP": "Battery", "H2_stor_stored": "H2_storage_IP", "CH4_stor_stored": "CH4_storage_IP",
+                              "CO2_stor_stored": "CO2_storage_IP", "PTES_E_Stored": "PTES_storage_IP"}
+
+
 def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, time_range='week', label='EN_long'):
     """
     Plots the electricity flows of the district and the state of charge of its storage over a few days.
@@ -2187,24 +2193,19 @@ def plot_electricity_flows(df_Results, color='ColorPastel', day_of_the_year=1, t
             storage_SOC_tot = df_interperiod.groupby(level=1)[storage].sum()
             max_storage = df_Results["df_Interperiod"][storage].max()
 
-            mol = storage.split("_")[0]
-            if mol == "BAT":
-                mol = "Battery"
-            elif mol == "H2":
-                mol = "H2_storage_IP"
-            elif mol == "CH4":
-                mol = "CH4_storage_IP"
-            elif mol == "CO2":
-                mol = "CO2_storage_IP"
+            if storage not in INTERPERIOD_STORAGE_LAYOUT:
+                raise KeyError(f"The inter-period storage {storage} has no entry in INTERPERIOD_STORAGE_LAYOUT, "
+                               f"which gives its row of layout.csv.")
+            row = INTERPERIOD_STORAGE_LAYOUT[storage]
 
             fig.add_trace(go.Scatter(
                 x=list(TD_time.index),
                 y=storage_SOC_tot / max_storage * 100,
                 mode="lines",
-                name=mol + " storage",
-                line=dict(color=hex_to_rgb(layout.loc[mol, "ColorPastel"])),
+                name=layout.loc[row, label],
+                line=dict(color=hex_to_rgb(layout.loc[row, "ColorPastel"])),
                 fill='tozeroy',
-                fillcolor=hex_to_rgb(layout.loc[mol, "ColorPastel"])
+                fillcolor=hex_to_rgb(layout.loc[row, "ColorPastel"])
             ),
                 row=2,
                 col=1

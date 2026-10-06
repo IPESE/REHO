@@ -456,42 +456,62 @@ and individual **building-to-grid lines**.
 
 #### Network interface
 
-The network capacity $\boldsymbol{f}^{\text{net}}_l$ is chosen from a discrete catalogue
-$\mathbb{G}^{\text{net}}_l$ of standard transformer ratings, respecting the existing
-capacity $f^{\text{ex,net}}_l$:
+The network keeps its existing capacity $f^{\text{net,exist}}_l$ (`Network_capacity_existing`), or is
+reinforced to one of the larger capacities of a discrete catalogue $\mathbb{G}^{\text{net}}_l$
+of standard transformer ratings (`Network_capacity_options`), all larger than $f^{\text{net,exist}}_l$.
+Its capacity after optimization $\boldsymbol{f}^{\text{net}}_l$ (`Network_capacity`) bounds the
+exchanges with the external grid, and the binary $\boldsymbol{y}^{\text{net}}_l$
+(`Network_reinforced`) is 1 exactly when the network is reinforced:
 
 ```{math}
 :label: eq_net_cap
-\boldsymbol{f}^{\text{net}}_l \ge f^{\text{ex,net}}_l,
+\boldsymbol{f}^{\text{net}}_l \in \{f^{\text{net,exist}}_l\} \cup \mathbb{G}^{\text{net}}_l,
 \quad
-\boldsymbol{f}^{\text{net}}_l \in \mathbb{G}^{\text{net}}_l,
+\boldsymbol{y}^{\text{net}}_l \bigl(\min \mathbb{G}^{\text{net}}_l - f^{\text{net,exist}}_l\bigr)
+\le \boldsymbol{f}^{\text{net}}_l - f^{\text{net,exist}}_l
+\le \boldsymbol{y}^{\text{net}}_l \bigl(\max \mathbb{G}^{\text{net}}_l - f^{\text{net,exist}}_l\bigr),
 \quad
 \dot{\boldsymbol{E}}^{\text{net},\pm}_{l,p,t} \le \boldsymbol{f}^{\text{net}}_l
 ```
 
-Investment cost includes a fixed activation term and a proportional capacity term:
+with $\boldsymbol{y}^{\text{net}}_l = 0$ when $\mathbb{G}^{\text{net}}_l$ is empty. Investment cost
+includes a fixed activation term and a proportional capacity term. A reinforcement is charged
+on the whole capacity $\boldsymbol{f}^{\text{net}}_l$, not only on the increase, by the master
+problem in the decomposition, and by the single sub-problem in the compact formulation:
 
 ```{math}
 :label: eq_net_cost
 \boldsymbol{C}^{\text{inv,net}}_l
 = c^{\text{net,1}}_l\,\boldsymbol{y}^{\text{net}}_l
-  + c^{\text{net,2}}_l \bigl(\boldsymbol{f}^{\text{net}}_l - f^{\text{ex,net}}_l(1 - \boldsymbol{y}^{\text{net}}_l)\bigr)
+  + c^{\text{net,2}}_l \bigl(\boldsymbol{f}^{\text{net}}_l - f^{\text{net,exist}}_l(1 - \boldsymbol{y}^{\text{net}}_l)\bigr)
 ```
 
 #### Building-to-grid lines
 
-Each building-layer pair has its own line capacity, similarly selected from a discrete
-catalogue:
+The line connecting each building to each network follows the same structure. It keeps its
+existing capacity $f^{\text{gr,exist}}_{b,l}$ (`Line_capacity_existing`, given per building in the
+parameters), or is reinforced to one of the capacities of a catalogue $\mathbb{G}^{\text{gr}}_l$
+(`Line_capacity_options`, given per layer in the grid). Only the capacities exceeding the existing
+one are offered, $\mathbb{G}^{\text{gr}}_{b,l} = \{g \in \mathbb{G}^{\text{gr}}_l : g > f^{\text{gr,exist}}_{b,l}\}$.
+The capacity after optimization $\boldsymbol{f}^{\text{gr}}_{b,l}$ (`Line_capacity`) bounds the
+exchanges of the building, and the binary $\boldsymbol{y}^{\text{gr}}_{b,l}$ (`Line_reinforced`) is 1
+exactly when the line is reinforced:
 
 ```{math}
 :label: eq_line_cap
-\boldsymbol{f}^{\text{gr}}_{b,l} \ge f^{\text{ex,gr}}_{b,l},
+\boldsymbol{f}^{\text{gr}}_{b,l} \in \{f^{\text{gr,exist}}_{b,l}\} \cup \mathbb{G}^{\text{gr}}_{b,l},
 \quad
-\boldsymbol{f}^{\text{gr}}_{b,l} \in \mathbb{G}^{\text{gr}}_l,
+\boldsymbol{y}^{\text{gr}}_{b,l} \bigl(\min \mathbb{G}^{\text{gr}}_{b,l} - f^{\text{gr,exist}}_{b,l}\bigr)
+\le \boldsymbol{f}^{\text{gr}}_{b,l} - f^{\text{gr,exist}}_{b,l}
+\le \boldsymbol{y}^{\text{gr}}_{b,l} \bigl(\max \mathbb{G}^{\text{gr}}_{b,l} - f^{\text{gr,exist}}_{b,l}\bigr),
 \quad
 \dot{\boldsymbol{E}}^{\text{gr},\pm}_{b,l,p,t} \le \boldsymbol{f}^{\text{gr}}_{b,l}
 \qquad \forall\, b,l,p,t
 ```
+
+with $\boldsymbol{y}^{\text{gr}}_{b,l} = 0$ when $\mathbb{G}^{\text{gr}}_{b,l}$ is empty. A reinforcement is
+charged as in {eq}`eq_net_cost`, per metre of line, to the building it connects. By default a
+line has no existing limit and no catalogue, so it never constrains the building.
 
 ---
 

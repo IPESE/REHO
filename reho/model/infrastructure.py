@@ -693,6 +693,10 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
         if len(district_units_IP) > 0:
             district_units = np.concatenate([district_units, district_units_IP])
 
+    # EV chargers are only constrained in evehicle.mod: without any EV they would act as a free electricity source
+    if not any(u['UnitOfType'] == 'EV' for u in np.concatenate([building_units, district_units])):
+        district_units = np.array([u for u in district_units if u['UnitOfType'] != 'EV_charger'])
+
     units = {"building_units": building_units, "district_units": district_units}
 
     return units

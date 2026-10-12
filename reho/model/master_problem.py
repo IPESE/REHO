@@ -949,7 +949,7 @@ class MasterProblem:
             MP_set_indexed["House_ID"] = np.array([int(s.replace("Building", "")) for s in list(self.infrastructure.houses.keys())])
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
-            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]),
+            MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], self.infrastructure.UnitsOfType.get("EV_charger", [])),
                                                           ['PT_train', 'PT_bus'])
             MP_set_indexed['transport_Units_MD'], MP_set_indexed['transport_Units_cars'] = mobility.generate_transport_units_sets(self.infrastructure.UnitsOfType)
             MP_set_indexed['Distances'] = np.array(MP_parameters['DailyDist'].index)

@@ -153,6 +153,7 @@ batteries, and the hydrogen and biomethane technologies.
 | ![Fixed][fixed]       | ![Plotting][plotting]    | **Plot fixes** | Correction in `plot_eud` and `plot_pareto`and `plot_pareto_by_objectives`. | 🟢 |
 | ![Added][added]       | ![Preprocessing][preprocessing]    | **Reference scenario** | If the scenario name is `reference`, it activates a function where we build REHO with the units configuration (heating + dhw system and installed PVs) retrieved from QBuildings. | 🟢 |
 | ![Changed][changed]       | ![Preprocessing][preprocessing]    | **Solar gains** | Change of re-calibration of solar gains and Uh when ERA < Footprint. | 🟢 |
+| ![Fixed][fixed]       | ![Model][model]    | **EV charger without EV** | With the `Mobility` layer but no `EV` unit (e.g. `EV_district` excluded), `EV_charger_district` had no constraint and acted as a free electricity source. `initialize_units` now drops `EV_charger` units when no `EV` unit is kept, and the mobility preprocessing no longer requires an `EV_charger` unit. | 🟢 |
 | ![Changed][changed]       | ![Postprocessing][postprocessing]    | **Sensitivity analysis** | Add an option to do the sensitivity analysis in the buildings data as well as prices. | 🟠 |
 
 ### Migration notes

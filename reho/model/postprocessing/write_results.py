@@ -1,15 +1,6 @@
-import datetime
-import importlib.metadata
-import subprocess
-
-import numpy as np
-import openpyxl
 import pandas as pd
-
-from reho.logger import get_logger
-from reho.paths import path_to_reho
-
-logger = get_logger(__name__)
+import numpy as np
+import logging
 
 __doc__ = """
 Extracts the results from the AMPL model and converts it to Python dictionary and pandas dataframes.
@@ -17,44 +8,6 @@ Extracts the results from the AMPL model and converts it to Python dictionary an
 
 
 def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, tolerance_filtering=1e-4):
-    """
-    Extract the results of a solved sub-problem, or of the compact formulation, into DataFrames.
-
-    The DataFrames always produced are ``df_Performance``, ``df_Annuals``, ``df_Unit``, ``df_Grid``,
-    ``df_Grid_t``, ``df_Time``, ``df_Buildings``, ``df_Buildings_t`` and ``df_Unit_t``. The method
-    options add or restrict some of them:
-
-    - ``save_data_input``: adds ``df_Weather`` and ``df_Index``.
-    - ``save_timeseries`` disabled: ``df_Buildings_t`` keeps only the heating, indoor temperature
-      and DHW columns, and ``df_Unit_t`` only the PV, batteries and cogeneration units.
-    - ``save_streams``: adds ``df_Streams_t``.
-    - ``use_pv_orientation`` or ``use_facades``: adds ``df_PV_Surface`` and ``df_PV_orientation``.
-    - ``interperiod_storage``: adds ``df_Interperiod``.
-    - ``extract_parameters``: adds ``df_Parameters``, see :func:`get_ampl_parameters`.
-
-    The DataFrames are described in :doc:`/sections/data/output`.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        Solved session.
-    scenario : dict
-        Scenario of the optimization; its ``Objective`` is read.
-    method : dict
-        Method options.
-    buildings_data : dict
-        Characteristics of the buildings, copied into ``df_Buildings``.
-    filter : bool, optional
-        Meant to drop the rows that are all zeros; currently has no effect. Default is True.
-    tolerance_filtering : float, optional
-        Absolute value below which the numeric results are set to 0, see
-        :func:`filter_numerical_instabilities`. Default is 1e-4.
-
-    Returns
-    -------
-    dict
-        Name -> result DataFrame.
-    """
     def set_df_performance(ampl, scenario):
         df1 = get_ampl_data(ampl, 'Costs_House_op')  # without the comfort penalty costs
         df1 = df1.rename(columns={'Costs_House_op': 'Costs_op'})
@@ -104,8 +57,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df_PerformanceBuilding = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
         df_PerformanceNetwork = pd.concat([df_N1, df_N2, df_N3, df_N4, df_N5, df_N6], axis=1)
 
-        df8 = get_ampl_data(ampl, 'Costs_ins') * tau_ins[0]
-        if method['renovation'] is not None or df8.Costs_ins.sum() != 0:
+        if method['renovation'] is not None:
+            df8 = get_ampl_data(ampl, 'Costs_ins') * tau_ins[0]
             df_N8 = pd.DataFrame({'Costs_ins': [df8.sum()['Costs_ins']]})
             df_PerformanceBuilding = pd.concat([df_PerformanceBuilding, df8], axis=1)
             df_PerformanceNetwork = pd.concat([df_PerformanceNetwork, df_N8], axis=1)
@@ -122,7 +75,8 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
 
         df_Performance = pd.concat([df_Performance, df_Epsilon], axis=1)
         df_Performance.index.names = ['Hub']
-        logger.info("%s", df_Performance)
+        if method['print_logs']:
+            print(df_Performance)
 
         return df_Performance.sort_index()
 
@@ -196,11 +150,12 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df4 = tau[0] * get_ampl_data(ampl, 'Costs_Unit_rep')
         df5 = get_ampl_data(ampl, 'GWP_Unit_constr')  # per year! For total, multiply with lifetime
         df6 = get_ampl_data(ampl, 'lifetime')
-        df7 = get_ampl_data(ampl, 'Units_Existing', multi_index=False)
+        df7 = get_ampl_data(ampl, 'Units_Ext', multi_index=False)
         df_Unit = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
         df_Unit.index.names = ['Unit']
         df_Unit = df_Unit.sort_index()
-        logger.info("%s", df_Unit)
+        if method['print_logs']:
+            print(df_Unit)
 
         # Unit_t
         df1 = get_ampl_data(ampl, 'Units_demand', multi_index=True)
@@ -214,12 +169,7 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
             df6 = get_ampl_data(ampl, "EV_supply_travel", multi_index=True)
             df6 = pd.concat([df6], keys=['Electricity'], names=['Layer'])
             if len(ampl.getSet('Districts').getValues().toList()) > 0:
-                # Indexed by (activity, district, unit, period, time): one column per activity and
-                # district, as in the results of the master problem.
-                df7 = get_ampl_data(ampl, 'EV_demand_ext', multi_index=True)
-                df7 = df7[['EV_demand_ext']].unstack(level=[0, 1])
-                df7.columns = [f'{i}[{j},{k}]' if j != '' else f'{i}' for i, j, k in df7.columns]
-                df7 = pd.concat([df7], keys=['Electricity'], names=['Layer'])
+                df7 = get_ampl_data(df, 'EV_demand_ext', multi_index=True)
             else:
                 df7 = pd.DataFrame()
             df_Unit_t = pd.concat([df1, df2, df3, df4, df5, df6, df7], axis=1)
@@ -231,13 +181,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         return df_Unit, df_Unit_t
 
     def set_df_grid_SP(ampl):
-        df1 = get_ampl_data(ampl, 'Line_capacity', multi_index=True)
-        df2 = get_ampl_data(ampl, 'Line_reinforced', multi_index=True)
+        df1 = get_ampl_data(ampl, 'LineCapacity', multi_index=True)
+        df2 = get_ampl_data(ampl, 'Use_Line_capacity', multi_index=True)
         df3 = get_ampl_data(ampl, 'Cost_line_inv1')
         df4 = get_ampl_data(ampl, 'Cost_line_inv2')
         df5 = get_ampl_data(ampl, 'GWP_line_1')
         df6 = get_ampl_data(ampl, 'GWP_line_2')
-        df7 = get_ampl_data(ampl, 'Line_capacity_existing', multi_index=True)
+        df7 = get_ampl_data(ampl, 'Line_ext', multi_index=True)
         df8 = get_ampl_data(ampl, 'Line_Length', multi_index=True)
 
         df3.index.names = ['Layer']
@@ -247,14 +197,13 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df7.index.names = ['Hub', 'Layer']
         df8.index.names = ['Hub', 'Layer']
         df_12 = pd.concat([df1, df2], axis=1, sort=True)
-        df_12.columns = ['Capacity', 'Reinforced']
+        df_12.columns = ['Capacity', 'UseCapacity']
         df_12.index.names = ['Layer', 'Hub']
         df_Grid = df_12.swaplevel().sort_index()
-        df_Grid['ReinforcementCost'] = df_Grid['Reinforced'] * df3['Cost_line_inv1'] + (df_Grid['Capacity'] - df7['Line_capacity_existing'] * (1 - df_Grid['Reinforced'])) * \
+        df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_line_inv1'] + (df_Grid['Capacity'] - df7['Line_ext'] * (1 - df_Grid['UseCapacity'])) * \
                                        df4['Cost_line_inv2'] * df8['Line_Length']
-        df_Grid['ReinforcementGWP'] = df_Grid['Reinforced'] * df5['GWP_line_1'] + (df_Grid['Capacity'] - df7['Line_capacity_existing'] * (1 - df_Grid['Reinforced'])) * df6[
+        df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_line_1'] + (df_Grid['Capacity'] - df7['Line_ext'] * (1 - df_Grid['UseCapacity'])) * df6[
             'GWP_line_2'] * df8['Line_Length']
-        df_Grid.insert(0, 'Capacity_existing', df7['Line_capacity_existing'].reindex(df_Grid.index).values)
         return df_Grid
 
     def set_df_grid(ampl, method):
@@ -318,13 +267,11 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
         df33 = get_ampl_data(ampl, 'House_Q_cooling')
         df34 = get_ampl_data(ampl, 'Th_supply', multi_index=True)
         df35 = get_ampl_data(ampl, 'Th_return', multi_index=True)
-        df36 = get_ampl_data(ampl, 'Tc_supply', multi_index=True)
-        df37 = get_ampl_data(ampl, 'Tc_return', multi_index=True)
 
         df4 = get_ampl_data(ampl, 'HeatGains', multi_index=True)
         df5 = get_ampl_data(ampl, 'SolarGains', multi_index=True)
 
-        df_Buildings_t = pd.concat([df1, df2, df31, df32, df33, df34, df35, df36, df37, df4, df5], axis=1)
+        df_Buildings_t = pd.concat([df1, df2, df31, df32, df33, df34, df35, df4, df5], axis=1)
         df_Buildings_t.index.names = ['Hub', 'Period', 'Time']
 
         return df_Buildings_t.sort_index()
@@ -437,9 +384,6 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     df_Results["df_Annuals"] = set_df_annuals(ampl)
     df_Results["df_Unit"], df_Unit_t = set_df_unit(ampl)
     df_Results["df_Grid"] = set_df_grid_SP(ampl)
-    if not method['district-scale']:
-        # In the compact formulation, the sub-problem is the whole district and reinforces the networks itself
-        df_Results["df_Grid"] = pd.concat([df_Results["df_Grid"], get_df_Grid_network(ampl)]).sort_index()
     df_Results["df_Grid_t"] = set_df_grid(ampl, method)
     df_Results["df_Time"], df_Weather, df_Index = set_dfs_other(ampl)
     df_Results["df_Buildings"] = set_df_buildings(buildings_data)
@@ -464,6 +408,14 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     if method['use_pv_orientation'] or method['use_facades']:
         df_Results["df_PV_Surface"], df_Results["df_PV_orientation"] = set_dfs_pv(ampl)
 
+    if method["extract_parameters"]:
+        parameters_record = {}
+        for p, ampl_obj in ampl.getParameters():
+            try:
+                parameters_record[p] = ampl.getData(p).toPandas()
+            except:
+                logging.info(p)
+
     if method["interperiod_storage"]:
         df_Results["df_Interperiod"] = set_df_Interperiod(ampl)
 
@@ -475,61 +427,11 @@ def get_df_Results_from_SP(ampl, scenario, method, buildings_data, filter=True, 
     for key, df in df_Results.items():
         df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
 
-    if method["extract_parameters"]:
-        # Added after the filtering, which removes solver noise, not small input values
-        df_Results["df_Parameters"] = get_ampl_parameters(ampl)
 
     return df_Results
 
 
-def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario=None, tolerance_filtering=1e-4):
-    """
-    Extract the results of a solved master problem into DataFrames.
-
-    The DataFrames always produced are:
-
-    - ``df_DW``: weight ``lambda`` of each configuration (``FeasibleSolution``) of each building.
-    - ``df_Grid``: capacity and reinforcement of the networks.
-    - ``df_District``: costs and emissions of each building and of the district (``Network``).
-    - ``df_beta``: dual values of the epsilon constraints on the objectives, zeros without them.
-    - ``df_District_t``: exchanges of the district with the networks at every timestep; with
-      ``binary``, also their tariffs, emission factors and the domestic demand.
-    - ``df_Dual`` and ``df_Dual_t``: dual values of the convexity and linking constraints.
-    - ``df_Unit``: use, size, costs, emissions and lifetime of the district units.
-    - ``df_Interperiod``: inter-period storage, empty unless ``method['interperiod_storage']``.
-
-    The grid exchanges (``df_Buildings_t``) and costs (``df_Buildings``) of every configuration are
-    added with ``method['save_data_input']`` or ``binary``; ``df_Unit_t`` when there are district
-    units; the renovation decisions ``is_ins`` in ``df_District`` when renovation is modeled; and
-    the actor results (``df_Actors``, ``df_Actors_expense``, ``df_Actors_tariff``,
-    ``df_Actors_tariff_f``, ``df_Actors_dual``, ``Samples``) with ``method['actors_problem']``.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        Solved session of the master problem.
-    binary : bool, optional
-        Whether the configurations were selected with binary variables, i.e. the last iteration.
-        Default is False.
-    method : dict
-        Method options.
-    district : Infrastructure
-        Infrastructure of the district, whose district units are read.
-    read_DHN : bool, optional
-        Whether the model includes the district heating network, whose pipes and flows are then
-        added. Default is False.
-    scenario : dict
-        Scenario of the master problem; ``EMOO`` and ``Objective`` are read.
-    tolerance_filtering : float, optional
-        Absolute value below which the numeric results are set to 0, see
-        :func:`filter_numerical_instabilities`. Default is 1e-4.
-
-    Returns
-    -------
-    dict
-        Name -> result DataFrame.
-    """
-    scenario = {} if scenario is None else scenario
+def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_DHN=False, scenario={}, tolerance_filtering = 1e-4):
     df_Results = dict()
 
     # Dantzig Wolfe algorithm
@@ -561,7 +463,32 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Results["df_Buildings"] = df_Buildings.sort_index()
 
     # Grid
-    df_Results['df_Grid'] = get_df_Grid_network(ampl)
+    df1 = get_ampl_data(ampl, 'Network_capacity')
+    df2 = get_ampl_data(ampl, 'Use_Network_capacity')
+    df3 = get_ampl_data(ampl, 'Cost_network_inv1', multi_index=False)
+    df4 = get_ampl_data(ampl, 'Cost_network_inv2', multi_index=False)
+    df5 = get_ampl_data(ampl, 'GWP_network_1', multi_index=False)
+    df6 = get_ampl_data(ampl, 'GWP_network_2', multi_index=False)
+    df7 = get_ampl_data(ampl, 'Network_ext', multi_index=False)
+
+    df3.index.names = ['Layer']
+    df4.index.names = ['Layer']
+    df5.index.names = ['Layer']
+    df6.index.names = ['Layer']
+    df7.index.names = ['Layer']
+
+    df12 = pd.concat([df1, df2], axis=1)
+    df12.columns = ['Capacity', 'UseCapacity']
+    df12.index.names = ['Layer']
+    df12['Hub'] = 'Network'
+    df12.set_index('Hub', append=True, inplace=True)
+    df_Grid = df12.swaplevel().sort_index()
+    df_Grid['ReinforcementCost'] = df_Grid['UseCapacity'] * df3['Cost_network_inv1'] + (
+                df_Grid['Capacity'] - df7['Network_ext'] * (1 - df_Grid['UseCapacity'])) * df4['Cost_network_inv2']
+    df_Grid['ReinforcementGWP'] = df_Grid['UseCapacity'] * df5['GWP_network_1'] + (df_Grid['Capacity'] - df7['Network_ext'] * (1 - df_Grid['UseCapacity'])) * \
+                                  df6['GWP_network_2']
+
+    df_Results['df_Grid'] = df_Grid
 
     # District
     df1 = get_ampl_data(ampl, 'Costs_House_op')
@@ -588,7 +515,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     df6 = get_ampl_data(ampl, 'GWP_constr')
     df_District = pd.concat([df1, df2, df3, df4, df5, df6], axis=1)
     if read_DHN:
-        df7 = pd.DataFrame(np.sqrt((df_House[["diameter_max"]] ** 2).sum())).T
+        df7 = np.sqrt(np.sum(df_House[["diameter_max"]] ** 2)).to_frame().transpose()
         df8 = get_ampl_data(ampl, 'DHN_inv')
         df_District = pd.concat([df_District, df7, df8], axis=1)
 
@@ -674,7 +601,8 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
         df_Unit.at["DHN_pipes_district", ("Units_Use", "Units_Mult", "Costs_Unit_inv")] = [1, 1, get_ampl_data(ampl, 'DHN_inv')["DHN_inv"][0]]
     df_Results["df_Unit"] = df_Unit.sort_index()
 
-    logger.info("%s", df_Unit)
+    if method['print_logs']:
+        print(df_Unit)
 
     # Unit_t
     if len(district.UnitsOfDistrict) > 0:
@@ -714,8 +642,7 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     else:
         df_Results["df_Interperiod"] = pd.DataFrame()
 
-    df1 = get_ampl_data(ampl, 'is_ins')
-    if method["renovation"] is not None or df1.is_ins.sum() != 0:
+    if method["renovation"] is not None:
         df1 = get_ampl_data(ampl, 'is_ins')
         df_renovation = pd.concat([df1], axis=1)
         df_network = df_renovation.sum(axis=0).to_frame().T.set_index(pd.Index(["Network"]))
@@ -745,7 +672,6 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         # Total expenses and profits of each type of actor
         df_Results["df_Actors"] = get_ampl_data(ampl, 'objective_functions')
-        df_Results["df_Actors"].at["Cost_travel", "objective_functions"] = get_ampl_data(ampl, 'Cost_travel').values.item()
 
         df1 = get_ampl_data(ampl, 'C_op_renters_to_utility')
         df2 = get_ampl_data(ampl, 'C_op_renters_to_owners')
@@ -778,17 +704,13 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
 
         df_Results["df_Actors_dual"] = pd.concat([df1, df2, df3], axis=1)
 
-        # Actor epsilons of this run: the PIR bounds are scalars, broadcast over the houses
-        # against which Renter_Epsilon is defined (houses + Network total).
+        df_Results["Samples"] = dict()
+        df_Results["Samples"]["Owner_PIR_min"] = get_ampl_data(ampl, 'owner_PIR_min')
+        df_Results["Samples"][("Owner_PIR_max")] = get_ampl_data(ampl, 'owner_PIR_max')
+        df_Results["Samples"]["Renter_Epsilon"] = get_ampl_data(ampl, 'renter_expense_max')
         renter_series = get_ampl_data(ampl, 'renter_expense_max')['renter_expense_max']
         network_total = pd.Series({'Network': renter_series.sum()}, name='renter_expense_max')
-        renter_epsilon = pd.concat([renter_series, network_total])
-
-        df_Results["Samples"] = pd.DataFrame({
-            "Owner_PIR_min": get_ampl_data(ampl, 'owner_PIR_min').iloc[0, 0],
-            "Owner_PIR_max": get_ampl_data(ampl, 'owner_PIR_max').iloc[0, 0],
-            "Renter_Epsilon": renter_epsilon,
-        })
+        df_Results["Samples"]["Renter_Epsilon"] = pd.concat([renter_series, network_total])
 
     for key, df in df_Results.items():
         df_Results[key] = filter_numerical_instabilities(df, tolerance_filtering)
@@ -796,156 +718,99 @@ def get_df_Results_from_MP(ampl, binary=False, method=None, district=None, read_
     return df_Results
 
 
-def get_df_Grid_network(ampl):
-    """Capacity and reinforcement of the networks connecting the district to the external grids.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        A solved master problem, or a solved sub-problem of the compact formulation.
-
-    Returns
-    -------
-    pandas.DataFrame
-        One row per layer, indexed by ``Hub`` (``'Network'``) and ``Layer``: the existing capacity
-        (``Capacity_existing``), the capacity after optimization (``Capacity``), whether the network was reinforced
-        (``Reinforced``), and the investment cost and embodied emissions of the reinforcement (``ReinforcementCost``,
-        ``ReinforcementGWP``).
-    """
-    df1 = get_ampl_data(ampl, 'Network_capacity')
-    df2 = get_ampl_data(ampl, 'Network_reinforced')
-    df3 = get_ampl_data(ampl, 'Cost_network_inv1', multi_index=False)
-    df4 = get_ampl_data(ampl, 'Cost_network_inv2', multi_index=False)
-    df5 = get_ampl_data(ampl, 'GWP_network_1', multi_index=False)
-    df6 = get_ampl_data(ampl, 'GWP_network_2', multi_index=False)
-    df7 = get_ampl_data(ampl, 'Network_capacity_existing', multi_index=False)
-
-    df3.index.names = ['Layer']
-    df4.index.names = ['Layer']
-    df5.index.names = ['Layer']
-    df6.index.names = ['Layer']
-    df7.index.names = ['Layer']
-
-    df12 = pd.concat([df1, df2], axis=1)
-    df12.columns = ['Capacity', 'Reinforced']
-    df12.index.names = ['Layer']
-    df12['Hub'] = 'Network'
-    df12.set_index('Hub', append=True, inplace=True)
-    df_Grid = df12.swaplevel().sort_index()
-    df_Grid['ReinforcementCost'] = df_Grid['Reinforced'] * df3['Cost_network_inv1'] + (
-                df_Grid['Capacity'] - df7['Network_capacity_existing'] * (1 - df_Grid['Reinforced'])) * df4['Cost_network_inv2']
-    df_Grid['ReinforcementGWP'] = df_Grid['Reinforced'] * df5['GWP_network_1'] + (df_Grid['Capacity'] - df7['Network_capacity_existing'] * (1 - df_Grid['Reinforced'])) * \
-                                  df6['GWP_network_2']
-    df_Grid.insert(0, 'Capacity_existing', df7['Network_capacity_existing'].reindex(df_Grid.index.get_level_values('Layer')).values)
-    return df_Grid
-
-
-#: Variables holding the state of charge of the inter-period storage technologies, read by :func:`set_df_Interperiod`.
-INTERPERIOD_STORAGE_VARIABLES = ["BAT_E_stored_IP", "H2_stor_stored", "CH4_stor_stored", "CO2_stor_stored", "PTES_E_Stored"]
-
-
 def set_df_Interperiod(ampl):
-    """
-    Extract the state of charge of the inter-period storage technologies over the year.
-
-    The variables read are those of :data:`INTERPERIOD_STORAGE_VARIABLES`; those absent from the model are skipped.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        Solved session.
-
-    Returns
-    -------
-    pandas.DataFrame
-        One column per storage variable that is not zero everywhere, indexed by
-        ``(Building, HourOfYear)``, where ``Building`` is the last part of the unit name. Three more rows,
-        indexed by ``('storage info', 'Volume')``, ``('storage info', 'Pressure')`` and
-        ``('storage info', 'Compressibility factor')``, give the volume of the first tank of each gas storage
-        (hydrogen, methane, CO2) [m3], its pressure [bar] and the compressibility factor of the gas at that
-        pressure; 0 for the other storages. Empty when the model has no inter-period storage.
-    """
     IP_stor_list = []
 
     def add_stor_to_list(IP_stor_list, ampl, var):
-        """
-        Check whether the var is an ampl variable and (if not empty) add it to the list of IP_stor_list if it is the case.
-        Use reset_index for level 1 as we want to differentiate on the  Building and the HourOfYear, not on the type
-        """
         try:
             df1 = get_ampl_data(ampl, var, multi_index=True).reset_index(level=1, drop=True)
             df1.index = df1.index.str.split("_").str[-1]
             if not df1.empty:
                 IP_stor_list.append(df1)
-        except Exception as exc:
-            # The variable belongs to a storage technology absent from this problem.
-            logger.debug('Inter-period variable %s is not part of this problem (%s).', var, exc)
-
+        except:
+            df1 = None
         return IP_stor_list
 
-    # Add here other long term storage variables (from the .mod files) if needed
-    for var in INTERPERIOD_STORAGE_VARIABLES:
-        IP_stor_list = add_stor_to_list(IP_stor_list, ampl, var)
-    if not IP_stor_list:
-        return pd.DataFrame()
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "BAT_E_stored_IP")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "H2_stor_stored")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CH4_stor_stored")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "CO2_stor_stored")
+    IP_stor_list = add_stor_to_list(IP_stor_list, ampl, "PTES_E_Stored")
 
-    df_IP_storage = pd.concat(IP_stor_list, axis=1)
-    df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
-    if df_IP_storage.index.nlevels == 1:
-        new_level = list(range(len(df_IP_storage)))
-        # Convert the existing index to a list (or use .get_level_values() for specific levels)
-        original_index = df_IP_storage.index.tolist()
-
-        # Check that 'new_level' matches the length of 'original_index'
-        assert len(original_index) == len(
-            new_level), "Length of new_level must match length of the existing index."
-
-        # Create a new MultiIndex with the converted index and new level
-        df_IP_storage.index = pd.MultiIndex.from_arrays([original_index, new_level],
-                                                        names=["original_index", "new_level"])
-    df_IP_storage.index.names = ['Building', 'HourOfYear']
-
-    # Characteristics of the gas storages: volume, pressure and compressibility factor of the gas
-    storage_info = pd.DataFrame(np.nan, columns=df_IP_storage.columns, index=pd.MultiIndex.from_tuples(
-        [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
-        names=['Building', 'HourOfYear']))
-    for column in df_IP_storage.columns:
-        gas = column.split("_")[0]
-        if gas not in ("H2", "CH4", "CO2"):
-            continue
+    if IP_stor_list:
         try:
-            storage_info[column] = [round(get_ampl_data(ampl, f"{gas}_stor_volume").iloc[0, 0], 3),
-                                    round(get_ampl_data(ampl, f"{gas}_stor_pressure").iloc[0, 0], 1),
-                                    round(get_ampl_data(ampl, f"Z_{gas}_max").iloc[0, 0], 3)]
-        except Exception as exc:
-            logger.debug('The characteristics of the %s storage could not be read (%s).', gas, exc)
+            df_IP_storage = pd.concat(IP_stor_list, axis=1)
 
-    df_IP_storage = pd.concat([storage_info, df_IP_storage])
-    df_IP_storage = df_IP_storage.fillna(0)
-    df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
-    df_IP_storage = df_IP_storage.sort_index()
+            df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
+            vol_all = []
+            P_all = []
+            Z_all = []
+            for stor in list(df_IP_storage.columns):
+                mol = stor.split("_")[0]
+                if mol in ["PTES", "BAT"]:
+                    vol_all.append(np.nan)
+                    P_all.append(np.nan)
+                    Z_all.append(np.nan)
+                    continue
+
+                try:
+                    vol = round(get_ampl_data(ampl, mol + "_stor_volume", multi_index=False).iloc[0][0], 3)
+                    P = round(get_ampl_data(ampl, mol + "_stor_pressure", multi_index=False).iloc[0][0], 1)
+                    Z = round(get_ampl_data(ampl, "Z_" + mol + "_max", multi_index=False).iloc[0][0], 3)
+                except Exception:
+                    vol, P, Z = np.nan, np.nan, np.nan
+
+                vol_all.append(vol)
+                P_all.append(P)
+                Z_all.append(Z)
+
+            if len(vol_all) > 0:
+                # ⚠️ Inject general info rows before re-indexation
+                general_info = pd.DataFrame(
+                    [
+                        vol_all,
+                        P_all,
+                        Z_all
+                    ],
+                    index=pd.MultiIndex.from_tuples(
+                        [('storage info', 'Volume'), ('storage info', 'Pressure'), ('storage info', 'Compressibility factor')],
+                        names=['Building', 'HourOfYear']
+                    ),
+                    columns=df_IP_storage.columns
+                )
+            else:
+                general_info = pd.DataFrame()
+            # Convert df_IP_storage to MultiIndex if it's not already
+            if df_IP_storage.index.nlevels == 1:
+                new_level = list(range(len(df_IP_storage)))
+                original_index = df_IP_storage.index.tolist()
+                assert len(original_index) == len(new_level), "Length mismatch"
+                df_IP_storage.index = pd.MultiIndex.from_arrays(
+                    [original_index, new_level],
+                    names=["Building", "HourOfYear"]
+                )
+
+            # Overwrite with correct MultiIndex naming
+            df_IP_storage.index.names = ['Building', 'HourOfYear']
+
+            # 🔗 Concatenate the info rows and data rows
+            df_IP_storage = pd.concat([general_info, df_IP_storage])
+
+            # Final cleanup
+            df_IP_storage = df_IP_storage.fillna(0)
+            df_IP_storage = df_IP_storage.loc[:, (df_IP_storage != 0).any(axis=0)]
+            df_IP_storage = df_IP_storage.sort_index()
+        except:
+            print('No interperiod storage available.')
+            df_IP_storage = pd.DataFrame()
+    else:
+        df_IP_storage = pd.DataFrame()
 
     return df_IP_storage
 
 
+
 def get_ampl_data(ampl, ampl_name, multi_index=False):
-    """
-    Read an AMPL variable, parameter or expression into a DataFrame.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        Session holding the data.
-    ampl_name : str
-        Name of the entity, e.g. ``'Units_Mult'``.
-    multi_index : bool, optional
-        Turn the tuples indexing entities of several dimensions into a MultiIndex. Default is False.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Values of the entity, in a column named after it.
-    """
     # AMPl data in AMPLPY Dataframe
     df = ampl.getData(ampl_name)
     # transform to Pandas Dataframe
@@ -958,23 +823,6 @@ def get_ampl_data(ampl, ampl_name, multi_index=False):
 
 
 def get_ampl_dual_values_in_pandas(ampl, ampl_name, multi_index):
-    """
-    Read the dual values of an AMPL constraint into a DataFrame.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        Solved session.
-    ampl_name : str
-        Name of the constraint, e.g. ``'convexity_1'``.
-    multi_index : bool
-        Turn the tuples indexing constraints of several dimensions into a MultiIndex.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Dual value of each instance of the constraint.
-    """
     # AMPl data in AMPLPY Dataframe
     df = ampl.getConstraint(ampl_name).getValues().toPandas()
     # Change index from tuple to multi index
@@ -984,58 +832,10 @@ def get_ampl_dual_values_in_pandas(ampl, ampl_name, multi_index):
     return df
 
 
-def get_ampl_parameters(ampl):
-    """
-    Read every parameter of an AMPL model into a single table.
-
-    The parameters without any value, e.g. declared without data nor default, are skipped.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        Session holding the model and its data.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Column ``Value``, indexed by ``Parameter`` and ``Index``, the position of the value in the
-        parameter as comma-separated text (empty for a scalar parameter).
-    """
-    frames = []
-    for name, parameter in ampl.getParameters():
-        try:
-            values = ampl.getData(name).toPandas()[name]
-        except Exception as exc:
-            logger.debug('Parameter %s could not be extracted (%s).', name, exc)
-            continue
-        if parameter.indexarity() == 0:
-            index = [""] * len(values)
-        else:
-            index = [",".join(map(str, i)) if isinstance(i, tuple) else str(i) for i in values.index]
-        frames.append(pd.DataFrame({"Parameter": name, "Index": index, "Value": values.to_numpy()}))
-
-    if not frames:
-        return pd.DataFrame(columns=["Value"], index=pd.MultiIndex.from_arrays([[], []], names=["Parameter", "Index"]))
-    return pd.concat(frames, ignore_index=True).set_index(["Parameter", "Index"])
-
-
 def filter_numerical_instabilities(df, threshold=1e-4):
-    """Round to exact zero the numeric cells whose absolute value is below a threshold.
-
-    MILP solvers return values such as 1e-12 where the model means zero; keeping
-    them makes results files noisy and comparisons between runs unreliable.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Results frame to clean. It is not modified.
-    threshold : float, optional
-        Absolute value below which a cell is considered zero. Default is 1e-4.
-
-    Returns
-    -------
-    pandas.DataFrame
-        A copy of ``df`` with the small values zeroed.
+    """
+    Return a copy of df where any numeric cell with |value| < threshold
+    has been replaced by exact 0.
     """
     df_clean = df.copy()
 
@@ -1048,69 +848,3 @@ def filter_numerical_instabilities(df, threshold=1e-4):
         .where(df_clean[num_cols].abs() >= threshold, 0)
     )
     return df_clean
-
-
-def get_reho_version():
-    """
-    Returns the REHO version, suffixed with ' - modified' if the reho folder has uncommitted changes.
-
-    The version comes from the git checkout when there is one, else from the installed package.
-    """
-    try:
-        git = ['git', '-C', path_to_reho]
-        version = subprocess.check_output(git + ['describe', '--tags', '--abbrev=0'],
-                                          stderr=subprocess.DEVNULL, text=True).strip()
-        changes = subprocess.check_output(git + ['status', '--porcelain', '--', path_to_reho],
-                                          stderr=subprocess.DEVNULL, text=True).strip()
-        return version + ' - modified' if changes else version
-    except (subprocess.CalledProcessError, OSError):
-        pass
-
-    try:
-        return importlib.metadata.version('reho')
-    except importlib.metadata.PackageNotFoundError:
-        return 'unknown'
-
-
-def set_df_metadata(scenario, method, cluster, parameters, data_source=None, data_date=None):
-    """
-    Records what produced a result: the inputs of the run, the versions used and the run date.
-
-    Returns a DataFrame indexed on (category, key). The buildings themselves are reported in
-    ``df_Buildings``, where egid and id_building are enough to retrieve them.
-    """
-    run = {'reho_version': get_reho_version(),
-           'qbuildings': data_source,
-           'qbuildings_date': data_date,
-           'run_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-    metadata = {'run': run, 'scenario': scenario, 'method': method, 'cluster': cluster, 'parameters': parameters}
-
-    records = []
-    for category, entries in metadata.items():
-        for key, value in entries.items():
-            if isinstance(value, (pd.DataFrame, pd.Series, np.ndarray)):
-                value = "<%s shape=%s>" % (type(value).__name__, getattr(value, 'shape', None))
-            records.append({'category': category, 'key': key, 'value': str(value)})
-
-    return pd.DataFrame(records).set_index(['category', 'key'])
-
-
-def auto_adjust_columns(writer, df, sheet_name):
-    """
-    Size the columns of an Excel sheet to the length of their header.
-
-    Parameters
-    ----------
-    writer : pandas.ExcelWriter
-        Writer of the workbook, using the openpyxl engine.
-    df : pandas.DataFrame
-        DataFrame written to the sheet.
-    sheet_name : str
-        Name of the sheet.
-    """
-    worksheet = writer.sheets[sheet_name]
-    for idx, col in enumerate(df.columns, 1):
-        # column header length + extra padding
-        max_length = len(col) + 2
-        worksheet.column_dimensions[openpyxl.utils.get_column_letter(idx)].width = max_length

@@ -1,13 +1,28 @@
-# Runtime dependencies of REHO.
-#
-# The authoritative list lives in pyproject.toml; this file installs the package
-# itself so the two can never drift apart:
-#
-#     pip install --extra-index-url https://pypi.ampl.com -r requirements.txt
-#
-# For a development environment (tests, documentation, linter), use instead:
-#
-#     pip install --extra-index-url https://pypi.ampl.com -e ".[dev]"
-
+amplpy==0.15.2
 --extra-index-url https://pypi.ampl.com
--e .
+ampl_module_base
+ampl_module_highs
+coloredlogs
+geopandas<1.0.0
+kaleido
+matplotlib
+numpy<2.0.0
+openpyxl
+pandas<2.0.0
+plotly
+psycopg2<3.0.0 ; platform_system != "Windows"
+psycopg2-binary<3.0.0
+pvlib==0.13.0
+pyclustering
+pyproj
+python-dotenv
+pytest
+qmcpy
+requests
+SALib
+scipy
+setuptools
+shapely
+sqlalchemy<2.0.0
+sympy
+urllib3

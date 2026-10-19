@@ -1,13 +1,12 @@
-from pathlib import Path
+from reho.model.reho import *
 
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 
 if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 234, 'egid': ['1017073/1017074', '1017109', '1017079', '1030377/1030380']})
+    qbuildings_data = reader.read_db(district_id=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -23,7 +22,7 @@ if __name__ == '__main__':
     # You can add more resources layers besides electricity and natural gas, and adapt their prices
     # - directly within the script
     # - or through a custom csv file based on the default values from data/infrastructure/layers.csv
-    grids = initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": 0.30, "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              'Wood': {},
                                              'Oil': {},
@@ -35,7 +34,7 @@ if __name__ == '__main__':
     # Units specifications can also be adapted through a custom csv file based on the default values from data/infrastructure/building_units.csv
     # You can simply create a new file and specify the path to it in the initialize_units function
     path_to_custom_units = str(Path(__file__).parent / 'data' / 'custom_building_units.csv')
-    units = initialize_units(scenario, grids, building_data=path_to_custom_units)
+    units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

@@ -1,6 +1,5 @@
-from pathlib import Path
+from reho.model.reho import *
 
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 
 if __name__ == '__main__':
 
@@ -8,8 +7,9 @@ if __name__ == '__main__':
     # PV on facades can be considered
     reader = QBuildingsReader(load_facades=True, load_roofs=True)
 
+    # # Warning: to connect to QBuildings-Suisse (database including facades data), you need to be within EPFL intranet.
     # reader.establish_connection('Suisse')
-    # qbuildings_data = reader.read_db({'transformers': 3658}, nb_buildings=2)
+    # qbuildings_data = reader.read_db(district_id=3658, nb_buildings=2)
 
     # Alternatively, roof orientations and facades can be loaded from csv files
     buildings_filename = str(Path(__file__).parent / 'data' / 'buildings.csv')
@@ -32,8 +32,8 @@ if __name__ == '__main__':
     method = {'use_pv_orientation': True, 'use_facades': True, 'building-scale': True}
 
     # Initialize available units and grids
-    grids = initialize_grids()
-    units = initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

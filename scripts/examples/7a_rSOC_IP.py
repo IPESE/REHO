@@ -1,11 +1,11 @@
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.model.reho import *
 from reho.plotting import plotting
 
 if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 5, 'egid': ['2034144/2034143/2749579/2034146/2034145']})
+    qbuildings_data = reader.read_db(district_id=5, egid=['2034144/2034143/2749579/2034146/2034145'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -23,14 +23,16 @@ if __name__ == '__main__':
 
     # Initialize available units and grids
     # WARNING: necessary to define all 3 layers Hydrogen / Biomethane / CO2 to enable rSOC or Methanator unit
-    # The electricity network is limited to 5 kW, without reinforcement, and the hydrogen network keeps its 0 kW default (from layers.csv)
-    grids = initialize_grids({'Electricity': {'Network_capacity_existing': 5, 'Network_capacity_options': []},
+    grids = infrastructure.initialize_grids({'Electricity': {},
                                              'Hydrogen': {},
                                              'Biomethane': {},
                                              'CO2': {},
                                              })
 
-    units = initialize_units(scenario, grids, interperiod_data=True)  # enable interperiod storage
+    grids["Electricity"]["ReinforcementOfNetwork"] = np.array([5])  # limit the 2000 kW default value (from layers.csv) for export or import electricity
+    grids["Hydrogen"]["ReinforcementOfNetwork"] = np.array([0])  # keep the 0 kW default value (from layers.csv) for export or import hydrogen
+
+    units = infrastructure.initialize_units(scenario, grids, interperiod_data=True)  # enable interperiod storage
 
     # Set parameters
     parameters = {}

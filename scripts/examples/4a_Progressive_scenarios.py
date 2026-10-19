@@ -1,12 +1,13 @@
-from reho import Infrastructure, QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.model.reho import *
 from reho.plotting import plotting
+
 
 if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 234, 'egid': ['1017073/1017074', '1017109', '1017079', '1030377/1030380']})
+    qbuildings_data = reader.read_db(district_id=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -27,8 +28,8 @@ if __name__ == '__main__':
     scenario['name'] = 'Oil'
     scenario['exclude_units'] = ['ThermalSolar', 'HeatPump', 'ElectricalHeater', 'PV']
     scenario['enforce_units'] = []
-    grids = initialize_grids({'Electricity': {}, 'Oil': {}})
-    units = initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}})
+    units = infrastructure.initialize_units(scenario, grids)
 
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")
     reho.single_optimization()
@@ -37,11 +38,11 @@ if __name__ == '__main__':
     scenario['name'] = 'HP + PV'
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler']
     scenario['enforce_units'] = []
-    units = initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids)
 
     reho.scenario = scenario
     reho.units = units
-    reho.infrastructure = Infrastructure(qbuildings_data, units, grids)
+    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.build_infrastructure_SP()
     for b in qbuildings_data['buildings_data']:
         reho.buildings_data[b]['Th_supply_0'] = 45
@@ -53,12 +54,12 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'Bike_district', 'ICE_district', 'ElectricBike_district']
     scenario['enforce_units'] = ['EV_district']
 
-    grids = initialize_grids({'Electricity': {}, 'Oil': {}, 'Gasoline': {}, 'Mobility': {}})
-    units = initialize_units(scenario, grids, district_data=True)
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Gasoline': {}, 'Mobility': {}})
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     reho.scenario = scenario
     reho.units = units
-    reho.infrastructure = Infrastructure(qbuildings_data, units, grids)
+    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.build_infrastructure_SP()
     reho.single_optimization()
 
@@ -67,12 +68,13 @@ if __name__ == '__main__':
     scenario['exclude_units'] = ['ThermalSolar', 'OIL_Boiler', 'Bike_district', 'ICE_district', 'ElectricBike_district', 'DataHeat_SH']
     scenario['enforce_units'] = ['EV_district', 'DataHeat_DHW']
 
-    grids = initialize_grids({'Electricity': {}, 'Oil': {}, 'Gasoline': {}, 'Mobility': {}, 'Data': {}})
-    units = initialize_units(scenario, grids, district_data=True)
+    grids = infrastructure.initialize_grids({'Electricity': {}, 'Oil': {}, 'Gasoline': {}, 'Mobility': {},
+                                             'Data': {"Cost_demand_cst": 1, "GWP_demand_cst": 0}})
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     reho.scenario = scenario
     reho.units = units
-    reho.infrastructure = Infrastructure(qbuildings_data, units, grids)
+    reho.infrastructure = infrastructure.Infrastructure(qbuildings_data, units, grids)
     reho.build_infrastructure_SP()
     reho.single_optimization()
 

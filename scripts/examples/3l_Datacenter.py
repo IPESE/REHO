@@ -1,12 +1,13 @@
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.model.reho import *
 from reho.plotting import plotting
+
 
 if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 234}, nb_buildings=1)
+    qbuildings_data = reader.read_db(district_id=234, nb_buildings=1)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -22,14 +23,14 @@ if __name__ == '__main__':
     method = {'district-scale': True}
 
     # Initialize available units and grids
-    grids = initialize_grids({'Electricity': {},
+    grids = infrastructure.initialize_grids({'Electricity': {},
                                              'Data': {},
                                              'Heat': {}
                                              })
-    units = initialize_units(scenario, grids, district_data=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set parameters
-    parameters = {'data_EUD_avg': 50}
+    parameters = {'Network_ext': np.array([500, 500, 0]), 'data_EUD_avg': 50}  # existing capacities of networks in alphabetical order
 
     DW_params = {'max_iter': 2}
 

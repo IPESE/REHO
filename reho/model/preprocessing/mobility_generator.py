@@ -1,41 +1,9 @@
 import warnings
-import os
-
-from reho.logger import get_logger
-from reho.paths import path_to_clustering, path_to_infrastructure, path_to_mobility
-
-logger = get_logger(__name__)
-
-
-def _day_type(days_mapping, day):
-    """Map a weekday index to the day-type suffix used in the daily-profiles file.
-
-    Parameters
-    ----------
-    days_mapping : dict
-        Weekday index -> day-type suffix, e.g. ``{0: 'wd', 5: 'we'}``.
-    day : hashable
-        Weekday of the typical period being built.
-
-    Returns
-    -------
-    str
-        The day-type suffix.
-
-    Raises
-    ------
-    KeyError
-        If the weekday has no declared day type.
-    """
-    try:
-        return days_mapping[day]
-    except KeyError:
-        raise KeyError(
-            f"Day type {day!r} is not declared in the mobility day mapping (known: {sorted(days_mapping)})."
-        ) from None
+from reho.paths import *
 import reho.model.preprocessing.weather as weather
 import pandas as pd
 import numpy as np
+import copy
 
 __doc__ = """
 Processes data for parameters related to the Mobility Layer. 
@@ -107,10 +75,7 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
     profiles_input = pd.read_csv(os.path.join(path_to_mobility, "dailyprofiles.csv"), index_col=0)
     units = pd.read_csv(os.path.join(path_to_infrastructure, "district_units.csv"), sep=";")
 
-    if "EV_charger" in infrastructure.UnitsOfType:
-        transportunits = np.setdiff1d(np.append(infrastructure.UnitsOfLayer["Mobility"], ['PT_train', "PT_bus"]), infrastructure.UnitsOfType["EV_charger"])
-    else:
-        transportunits = np.append(infrastructure.UnitsOfLayer["Mobility"], ['PT_train', "PT_bus"])
+    transportunits = np.setdiff1d(np.append(infrastructure.UnitsOfLayer["Mobility"], ['PT_train', "PT_bus"]), infrastructure.UnitsOfType["EV_charger"])
     units = units[units.Unit.isin(transportunits)]
 
     # Check that modal_split is consistent with DailyDist
@@ -171,20 +136,15 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
 
     for dist in distances:
         for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-            daytype = _day_type(days_mapping, day)
             try:
-                profile = profiles_demand[[f"dem{daytype}_{dist}"]].copy()
-                profile.rename(columns={f"dem{daytype}_{dist}": "Domestic_energy_pkm"}, inplace=True)
-            except KeyError:
-                # No profile for that travel distance: fall back on the generic one.
+                profile = profiles_demand[[f"dem{days_mapping[day]}_{dist}"]].copy()
+                profile.rename(columns={f"dem{days_mapping[day]}_{dist}": "Domestic_energy_pkm"}, inplace=True)
+            except:
                 try:
-                    profile = profiles_demand[[f"dem{daytype}_def"]].copy()
-                    profile.rename(columns={f"dem{daytype}_def": "Domestic_energy_pkm"}, inplace=True)
-                except KeyError:
-                    raise KeyError(
-                        f"No mobility demand profile 'dem{daytype}_{dist}' nor default 'dem{daytype}_def' "
-                        f"for day type {day!r} in the daily-profiles file."
-                    ) from None
+                    profile = profiles_demand[[f"dem{days_mapping[day]}_def"]].copy()  # default profile
+                    profile.rename(columns={f"dem{days_mapping[day]}_def": "Domestic_energy_pkm"}, inplace=True)
+                except:
+                    raise (f"Demand profile error : no default demand profile for {day} daytype")
             profile.index.name = 't'
             profile.reset_index(inplace=True)
             profile['p'] = j + 1
@@ -194,8 +154,8 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
 
             demand_pkm = pd.concat([demand_pkm, profile])
 
-    extreme_hours = pd.concat([pd.DataFrame({"p": len(timestamp)-1, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index),
-                               pd.DataFrame({"p": len(timestamp), "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index)])
+    extreme_hours = pd.concat([pd.DataFrame({"p": 11, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index),
+                               pd.DataFrame({"p": 12, "t": 1, "Domestic_energy_pkm": 0}, index=DailyDist.index)])
 
     extreme_hours.index.name = 'dist'
     extreme_hours.reset_index(inplace=True)
@@ -235,7 +195,10 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
     daily_profile = pd.DataFrame(columns=['u', 'p', 't', 'Daily_Profile'])
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        dd = profiles_input[["dem" + _day_type(days_mapping, day) + "_def"]].copy()
+        try:
+            dd = profiles_input[["dem" + days_mapping[day] + "_def"]].copy()
+        except:
+            raise ("day type not possible")
         dd_filter = dd.astype('bool')
 
         profile = profiles_input.loc[:, profiles_input.columns.str.contains(f"prf{days_mapping[day]}")].copy()
@@ -252,8 +215,8 @@ def get_daily_profile(profiles_input, timestamp, days_mapping, transportunits):
         profile['p'] = j + 1
         daily_profile = pd.concat([daily_profile, profile])
 
-    pd.concat([daily_profile, pd.DataFrame({"p": len(timestamp)-1, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
-    pd.concat([daily_profile, pd.DataFrame({"p": len(timestamp), "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
+    pd.concat([daily_profile, pd.DataFrame({"p": 11, "t": 1, "Daily_Profile": 0}, index=["extremehour1"])])
+    pd.concat([daily_profile, pd.DataFrame({"p": 12, "t": 1, "Daily_Profile": 0}, index=["extremehour2"])])
     return daily_profile.set_index(['u', 'p', 't'])
 
 
@@ -283,9 +246,10 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
     EV_units = list(units[units.UnitOfType == "EV"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        daytype = _day_type(days_mapping, day)
-        EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_")
-                                            & profiles_input.columns.str.contains(daytype)].copy()
+        try:
+            EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_") & profiles_input.columns.str.contains(days_mapping[day])].copy()
+        except:
+            raise ("day type not possible")
 
         cpf = EV_profiles.loc[:, EV_profiles.columns.str.contains("cpf")].copy()
         cpf['default'] = cpf['EV_cpf' + days_mapping[day]]
@@ -301,10 +265,10 @@ def get_EV_charging(units, timestamp, profiles_input, days_mapping):
         cpf['p'] = j + 1
         EV_charging_profile = pd.concat([EV_charging_profile, cpf])
 
-    aaa = pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": len(timestamp)-1, "t": 1, "EV_charging_profile": 0},
+    aaa = pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 11, "t": 1, "EV_charging_profile": 0},
                        index=[f"{x}1" for x in EV_charging_profile.u.unique()])
     EV_charging_profile = pd.concat([EV_charging_profile, aaa])
-    EV_charging_profile = pd.concat([EV_charging_profile, pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": len(timestamp), "t": 1, "EV_charging_profile": 0},
+    EV_charging_profile = pd.concat([EV_charging_profile, pd.DataFrame({"u": EV_charging_profile.u.unique(), "p": 12, "t": 1, "EV_charging_profile": 0},
                                                                        index=[[f"{x}2" for x in EV_charging_profile.u.unique()]])])
     return EV_charging_profile.set_index(['u', 'p', 't'])
 
@@ -333,9 +297,10 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping):
     EV_units = list(units[units.UnitOfType == "EV"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        daytype = _day_type(days_mapping, day)
-        EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_")
-                                            & profiles_input.columns.str.contains(daytype)].copy()
+        try:
+            EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_") & profiles_input.columns.str.contains(days_mapping[day])].copy()
+        except:
+            raise ("day type not possible")
 
         out = EV_profiles.loc[:, EV_profiles.columns.str.contains("out")].copy()
         out['default'] = out['EV_out' + days_mapping[day]]
@@ -349,9 +314,9 @@ def get_EV_plugged_out(units, timestamp, profiles_input, days_mapping):
         out['p'] = j + 1
         EV_plugged_out = pd.concat([EV_plugged_out, out])
 
-    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": len(timestamp)-1, "t": 1, "EV_plugged_out": 0},
+    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 11, "t": 1, "EV_plugged_out": 0},
                                                              index=[[f"{x}1" for x in EV_plugged_out.u.unique()]])])
-    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": len(timestamp), "t": 1, "EV_plugged_out": 0},
+    EV_plugged_out = pd.concat([EV_plugged_out, pd.DataFrame({"u": EV_plugged_out.u.unique(), "p": 12, "t": 1, "EV_plugged_out": 0},
                                                              index=[[f"{x}2" for x in EV_plugged_out.u.unique()]])])
     return EV_plugged_out.set_index(['u', 'p', 't'])
 
@@ -381,9 +346,10 @@ def get_activity_profile(units, timestamp, profiles_input, days_mapping):
     EV_units = list(units[units.UnitOfType == "EV"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        daytype = _day_type(days_mapping, day)
-        EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_")
-                                            & profiles_input.columns.str.contains(daytype)].copy()
+        try:
+            EV_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EV_") & profiles_input.columns.str.contains(days_mapping[day])].copy()
+        except:
+            raise ("day type not possible")
 
         act = EV_profiles.loc[:, EV_profiles.columns.str.startswith("EV_a")].copy()
         act.columns = [x.split('_')[1][1:-3] for x in act.columns]
@@ -429,9 +395,11 @@ def get_Ebike_charging(units, timestamp, profiles_input, days_mapping):
     EBike_units = list(units[units.UnitOfType == "EBike"][['Unit', 'UnitOfType']].Unit)
 
     for j, day in enumerate(list(timestamp.Weekday)[:-2]):
-        daytype = _day_type(days_mapping, day)
-        EBike_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EBike_")
-                                               & profiles_input.columns.str.contains(daytype)].copy()
+        try:
+            EBike_profiles = profiles_input.loc[:, profiles_input.columns.str.startswith("EBike_") &
+                                                   profiles_input.columns.str.contains(days_mapping[day])].copy()
+        except:
+            raise ("day type not possible")
 
         cpf = EBike_profiles.loc[:, EBike_profiles.columns.str.contains("cpf")].copy()
         cpf['default'] = cpf['EBike_cpf' + days_mapping[day]]
@@ -471,7 +439,7 @@ def get_mode_speed(units, mode_speed_custom):
 
     mode_speed = units[['Unit', 'UnitOfType']].copy()
     mode_speed = mode_speed.merge(default_speed, how='left')
-    mode_speed['Unit'] = mode_speed['Unit'].fillna(mode_speed['UnitOfType'])
+    mode_speed['Unit'].fillna(mode_speed['UnitOfType'], axis=0, inplace=True)
     mode_speed = mode_speed.set_index(['Unit'])[['Mode_Speed']]
 
     mode_speed_custom = pd.DataFrame.from_dict(mode_speed_custom, orient='index', columns=["Mode_Speed"])
@@ -582,7 +550,7 @@ def generate_transport_units_sets(transportunits):
 
 # FUNCTIONS FOR CO-OPTIMIZATION =========================================================================================
 
-def rho_param(ext_districts, rho, activities=None):
+def rho_param(ext_districts, rho, activities=["work", "leisure", "travel"]):
     """
     This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
     
@@ -601,7 +569,6 @@ def rho_param(ext_districts, rho, activities=None):
     
 
     """
-    activities = ["work", "leisure", "travel"] if activities is None else activities
     share = pd.DataFrame(index=ext_districts, columns=activities).fillna(1 / len(ext_districts))
     for act in share.columns:
         if act in rho.columns:
@@ -609,6 +576,68 @@ def rho_param(ext_districts, rho, activities=None):
     share = share.stack().to_frame(name="share_activity").reorder_levels([1, 0])
     share.loc['travel'] = 0  # additionnal precaution
     return share
+
+
+def compute_iterative_parameters(reho_models, Scn_ID, iter, district_parameters, only_prices=False):
+    """"
+    This function is used in the iterative scenario to iteratively calculate multiple districts with EVs being able to charge at the different districts.
+    The load is expressed using the corrective parameter f.
+
+    Parameters
+    ----------
+    reho_models : dict of reho objects
+        Dictionary of reho object, one for each district
+    Scn_ID : str or int
+        label for the scenario
+    iter : int
+        iteration of the city scale optimization
+    district_parameters : dict of dict
+        Each key of the dict refers to a district d. Used to extract the scale parameter f : district_parameters[d]['f']
+    only_prices : bool
+        if False, only returns the parameters Cost_demand_ext and Cost_supply_ext
+        if True, additionally returns the parameter EV_supply_ext
+    Returns
+    -------
+    parameters : dict of dict
+        For each district d, returns a dict of the parameters to be inputted in the next optimisation. Parameters include Cost_demand_ext, Cost_supply_ext, EV_supply_ext. 
+
+    """
+    parameters = dict()
+    df_prices = pd.DataFrame()
+    for d in district_parameters.keys():
+        parameters[d] = {}
+        pi = reho_models[d].results_MP[Scn_ID][iter][0]["df_Dual_t"]["pi"].xs("Electricity")
+        parameters[d]["Cost_supply_ext"] = pi.rename("Cost_supply_ext").drop([11, 12], level="Period")
+
+        price = pi.to_frame().copy()
+        price['district'] = d
+        price = price.set_index('district', append=True).reorder_levels([2, 0, 1]).drop([11, 12], level="Period")
+        df_prices = pd.concat([df_prices, price])
+
+    for d in district_parameters.keys():
+        parameters[d]["Cost_demand_ext"] = df_prices.drop(d, level="district").rename(columns={'pi': 'Cost_demand_ext'})
+
+    if not only_prices:
+        # scale charging loads asked to external districts
+        df_load = pd.DataFrame()
+        for d in district_parameters.keys():
+            df_unit_t = reho_models[d].results[Scn_ID][iter]["df_Unit_t"]
+            EV_demand_ext = df_unit_t.loc[:, df_unit_t.columns.str.contains("EV_demand_ext")].xs("Electricity").xs("EV_district")
+            activities = [x.split('[')[1].split(",")[0] for x in EV_demand_ext.columns]
+            districts = [x.split('[')[1].split(",")[1].replace("]", "") for x in EV_demand_ext.columns]
+            EV_demand_ext.columns = pd.MultiIndex.from_arrays([activities, districts], names=['activity', 'district'])
+            EV_demand_ext = EV_demand_ext.stack(level=1).reorder_levels([2, 0, 1]) * district_parameters[d]['f']
+            EV_demand_ext = EV_demand_ext * district_parameters[d]['f']
+            df_load = pd.concat([df_load, EV_demand_ext])  # list of all external loads scaled to city level
+
+        df_load = df_load.groupby(["district", "Period", "Time"]).sum()
+        df_load = df_load.stack().unstack(level='district').reorder_levels([2, 0, 1])
+        df_load.columns = df_load.columns.astype(float).astype(int)  # load per district and activity at the city level
+
+        for d in district_parameters.keys():
+            parameters[d]["EV_supply_ext"] = df_load[[d]].rename(columns={d: "EV_supply_ext"}) / district_parameters[d]['f']
+
+    return parameters
 
 
 # FUNCTIONS PROCESSING OF WP1 DATA =======================================================================================
@@ -701,7 +730,7 @@ def mobility_demand_from_WP1data(pkm_demand, max_dist=70, nbins=1, modalwindow=0
     df_dist_inf.pkm = df_dist_inf.pkm / df_dist_inf.pkm.sum()
 
     df_dist_inf = df_dist_inf.join(df_modal_split)
-    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].bfill().ffill()
+    df_dist_inf[df_modal_split.columns] = df_dist_inf[df_modal_split.columns].fillna(method='bfill').fillna(method='ffill')
 
     lowerbound = 0
     step = max_dist / nbins

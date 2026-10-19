@@ -1,15 +1,12 @@
-import numpy as np
-import pandas as pd
-
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
-from reho.model.preprocessing.mobility_generator import rho_param
+from reho.model.reho import *
+from reho.model.preprocessing.mobility_generator import *
 from reho.plotting import plotting
 
 if __name__ == '__main__':
     # Set building parameters
     reader = QBuildingsReader()
-    reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 2}, nb_buildings=2)
+    reader.establish_connection('Suisse')
+    qbuildings_data = reader.read_db(district_id=13569, nb_buildings=2)
 
     # Select weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['I', 'T', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -23,12 +20,12 @@ if __name__ == '__main__':
     scenario['enforce_units'] = ['EV_district']
 
     # Initialize available units and grids
-    grids = initialize_grids({'Electricity': {},
+    grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
                                              'Gasoline': {},
                                              'Mobility': {},
                                              })
-    units = initialize_units(scenario, grids, district_data=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Set method options
     method = {'building-scale': True, 'external_district': True}

@@ -1,11 +1,6 @@
 import pytest
-from reho.model.infrastructure import initialize_grids, initialize_units
-from reho.model.preprocessing.QBuildings import QBuildingsReader
-from reho.model.reho import REHO
+from reho.model.reho import *
 from reho.plotting import plotting
-
-# Reads the QBuildings database, downloads the weather and solves a problem.
-pytestmark = [pytest.mark.slow, pytest.mark.needs_ampl, pytest.mark.needs_network]
 
 
 def test_run(save_results=True):
@@ -14,7 +9,7 @@ def test_run(save_results=True):
         # Set building parameters
         reader = QBuildingsReader()
         reader.establish_connection('Geneva')
-        qbuildings_data = reader.read_db({'transformers': 71, 'egid': 1009515})
+        qbuildings_data = reader.read_db(district_id=71, egid=['1009515'])
 
         # Select clustering options for weather data
         cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -32,8 +27,8 @@ def test_run(save_results=True):
         method = {'building-scale': True}
 
         # Initialize available units and grids
-        grids = initialize_grids()
-        units = initialize_units(scenario, grids)
+        grids = infrastructure.initialize_grids()
+        units = infrastructure.initialize_units(scenario, grids)
 
         # Run optimization
         reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="highs")

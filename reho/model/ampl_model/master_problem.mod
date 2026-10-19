@@ -9,7 +9,6 @@ set Layers;
 set LayerTypes;
 set LayersOfType{LayerTypes} within Layers;
 set ResourceBalances := if (exists{t in LayerTypes} t = 'ResourceBalance') then ({l in LayersOfType["ResourceBalance"]}) else ({});
-set Distances default {"long","short"}; 
 
 set UnitTypes default {};
 set Units default {};
@@ -78,7 +77,7 @@ param Units_flowrate_in{l in ResourceBalances, u in Units}  >=0 default 0;
 param Units_flowrate_out{l in ResourceBalances, u in Units} >=0 default 0;
 
 param Domestic_energy{l in ResourceBalances, p in Period, t in Time[p]} >= 0 default 0;
-param DailyDist{dist in Distances} default 36.8; # km - [1] Caution : unlinked default value duplicata in generate_mobility_parameters
+
 
 param data_EUD_avg{l in ResourceBalances: l = 'Data'} default 0;
 param data_EUD{l in ResourceBalances, p in Period, t in Time[p]} default data_EUD_avg[l];
@@ -96,12 +95,21 @@ var Profile_house{l in ResourceBalances, h in House,p in Period,t in Time[p]} >=
 
 
 # Constraints
+
+
+
+#Fixes the data demand from the network 
+subject to complicating_cst_data_profile_fix{l in ResourceBalances, p in Period,t in Time[p]: l = 'Data'}: #pi_c
+   Network_demand[l,p,t] = data_EUD[l,p,t]* dp[p] * dt[p];
+
+
 subject to complicating_cst{l in ResourceBalances, p in Period,t in Time[p]}: #pi_c
    Network_supply[l,p,t] - Network_demand[l,p,t]   = (Domestic_energy[l,p,t] +   sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
 
 
 subject to complicating_cst_GWP{l in ResourceBalances, p in Period, t in Time[p]}: #pi_g
    Network_supply_GWP[l,p,t] - Network_demand_GWP[l,p,t]   =  (Domestic_energy[l,p,t] +  sum{f in FeasibleSolutions, h in House}(lambda[f,h] *(Grid_supply[l,f,h,p,t]-Grid_demand[l,f,h,p,t])) +sum {r in Units} Units_demand[l,r,p,t]-sum {b in Units} Units_supply[l,b,p,t])* dp[p] * dt[p];
+
 
 
 subject to TOTAL_profile_c1{l in ResourceBalances, p in Period,t in Time[p]}:
@@ -121,19 +129,19 @@ Profile_house[l,h,p,t] =  sum{f in FeasibleSolutions} ( (Grid_supply[l,f,h,p,t] 
 
 param Units_Fmin{u in Units} default 0;
 param Units_Fmax{u in Units} default 0;
-param Units_Existing{u in Units} default 0;
+param Units_Ext{u in Units} default 0;
 
 var Units_Mult{u in Units} <= Units_Fmax[u];
 var Units_Use{u in Units} binary >= 0, default 0;
 
-var Units_Use_Existing{u in Units} binary >= 0, default 1;
+var Units_Use_Ext{u in Units} binary >= 0, default 1;
 var Units_Buy{u in Units} binary >= 0, default 0;
 
 subject to Unit_sizing_c1{u in Units}:
-Units_Mult[u]-Units_Use_Existing[u]*Units_Existing[u] >= Units_Buy[u]*Units_Fmin[u];
+Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u] >= Units_Buy[u]*Units_Fmin[u];
 
 subject to Unit_sizing_c2{u in Units}:
-Units_Mult[u]-Units_Use_Existing[u]*Units_Existing[u] <= Units_Buy[u]*(Units_Fmax[u]-Units_Existing[u]);
+Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u] <= Units_Buy[u]*(Units_Fmax[u]-Units_Ext[u]);
 
 subject to Unit_Use_constraint_c1{u in Units}:
 Units_Use[u]*Units_Fmax[u]>=Units_Mult[u];
@@ -216,35 +224,38 @@ var Costs_House_cft{h in House} >= -1e-4;
 var Costs_tot;
 var DHN_inv_house{h in House} >= 0;
 
-# Network capacity: the network keeps its existing capacity, or is reinforced to one of the larger capacities on offer
-param Network_capacity_existing{l in ResourceBalances} default 1e8;		# existing capacity [kW]
-set Network_capacity_options{ResourceBalances} default {};			# capacities the network can be reinforced to [kW]
-var Network_capacity{l in ResourceBalances} in {Network_capacity_existing[l]} union Network_capacity_options[l];	# capacity after optimization [kW]
-var Network_reinforced{l in ResourceBalances} binary;
+# Transformer additional capacity
+set ReinforcementOfNetwork{ResourceBalances} default {};
+var Network_capacity{l in ResourceBalances} in ReinforcementOfNetwork[l];
+var Use_Network_capacity{l in ResourceBalances} binary;
 param Cost_network_inv1{l in ResourceBalances}>=0 default 0;
 param Cost_network_inv2{l in ResourceBalances}>=0 default 0;
 param GWP_network_1{l in ResourceBalances} default 0;
 param GWP_network_2{l in ResourceBalances} default 0;
+param Network_ext{l in ResourceBalances} default 1000;
 param Network_lifetime{l in ResourceBalances} default 20;
 
-# A reinforced network takes one of the larger capacities on offer, and a network that is not keeps its existing capacity
-subject to Network_reinforcement_c1{l in ResourceBalances}:
-Network_capacity[l] - Network_capacity_existing[l] <= Network_reinforced[l] * (max {i in {Network_capacity_existing[l]} union Network_capacity_options[l]} i - Network_capacity_existing[l]);
+subject to transformer_additional_capacity_c1{l in ResourceBalances}:
+Use_Network_capacity[l] * (max {i in ReinforcementOfNetwork[l]} i)>= Network_capacity[l]-Network_ext[l];
 
-subject to Network_reinforcement_c2{l in ResourceBalances: card(Network_capacity_options[l]) > 0}:
-Network_capacity[l] - Network_capacity_existing[l] >= Network_reinforced[l] * (min {i in Network_capacity_options[l]} i - Network_capacity_existing[l]);
-
-subject to Network_reinforcement_c3{l in ResourceBalances: card(Network_capacity_options[l]) = 0}:
-Network_reinforced[l] = 0;
+subject to transformer_additional_capacity_c2{l in ResourceBalances}:
+Network_capacity[l]>=Network_ext[l];
 
 subject to Costs_Unit_capex{u in Units diff {"DHN_pipes_district"}}:
-Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Existing[u]*Units_Existing[u])*Cost_inv2[u];
+Costs_Unit_inv[u] = Units_Buy[u]*Cost_inv1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*Cost_inv2[u];
 
-# The n-th replacement of a unit takes place at the end of its n-th lifetime, and is charged for the share of its own
-# lifetime within the horizon: a unit lasting as long as the horizon, or longer, is never replaced.
 subject to Costs_Unit_replacement{u in Units diff {"DHN_pipes_district"}}:
-Costs_Unit_rep[u] = sum{n_rep in 1..floor(n_years/lifetime[u])}
-	min(1, n_years/lifetime[u] - n_rep) * (1/(1 + i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u];
+
+Costs_Unit_rep[u] =
+
+    sum{n_rep in 1..floor(n_years/lifetime[u]) - 1}
+    ((1/(1+i_rate))^(n_rep*lifetime[u]) * Costs_Unit_inv[u])
+    +
+    ((n_years - floor(n_years/lifetime[u])*lifetime[u])/ lifetime[u])
+    *
+    (1/(1+i_rate))^(floor(n_years/lifetime[u])*lifetime[u])
+    *
+    Costs_Unit_inv[u];
 
 subject to Costs_replacement:
 Costs_rep =  sum{u in Units diff {"DHN_pipes_district"}} Costs_Unit_rep[u];
@@ -253,7 +264,7 @@ subject to Costs_House_capex{h in House}:
 Costs_House_inv[h] =sum{f in FeasibleSolutions} lambda[f,h] * Costs_inv_rep_SPs[f,h] + DHN_inv_house[h];
 
 subject to Costs_capex:
-Costs_inv = sum{h in House}(Costs_House_inv[h]) + tau* ( sum{u in Units}(Costs_Unit_inv[u]) + Costs_rep + sum{l in ResourceBalances} (Cost_network_inv1[l]*Network_reinforced[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_capacity_existing[l] * (1- Network_reinforced[l]))) );
+Costs_inv = sum{h in House}(Costs_House_inv[h]) + tau* ( sum{u in Units}(Costs_Unit_inv[u]) + Costs_rep + sum{l in ResourceBalances} (Cost_network_inv1[l]*Use_Network_capacity[l]+Cost_network_inv2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l]))) );
 
 subject to cft_costs_house{h in House}: 
 Costs_House_cft[h] = sum{f in FeasibleSolutions} (lambda[f,h] * Costs_ft_SPs[f,h]);
@@ -285,13 +296,13 @@ var GWP_House_constr{h in House} >=0;
 var GWP_tot;
 
 subject to CO2_construction_unit{u in Units}:
-GWP_Unit_constr[u] = (Units_Buy[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Use_Existing[u]*Units_Existing[u])*GWP_unit2[u])/lifetime[u];
+GWP_Unit_constr[u] = (Units_Buy[u]*GWP_unit1[u] + (Units_Mult[u]-Units_Use_Ext[u]*Units_Ext[u])*GWP_unit2[u])/lifetime[u];
 
 subject to CO2_construction_house{h in House}:
 GWP_House_constr[h] = sum{f in FeasibleSolutions}(lambda[f,h] * GWP_house_constr_SPs[f,h]);
 
 subject to CO2_construction:
-GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_network_1[l]*Network_reinforced[l]+GWP_network_2[l] * (Network_capacity[l]-Network_capacity_existing[l] * (1- Network_reinforced[l])))/Network_lifetime[l];
+GWP_constr = sum {u in Units} (GWP_Unit_constr[u]) + sum{h in House} (GWP_House_constr[h])+ sum{l in ResourceBalances} (GWP_network_1[l]*Use_Network_capacity[l]+GWP_network_2[l] * (Network_capacity[l]-Network_ext[l] * (1- Use_Network_capacity[l])))/Network_lifetime[l];
 
 subject to Annual_CO2_operation:
 GWP_op = sum{l in ResourceBalances, p in PeriodStandard, t in Time[p]} (GWP_supply[l,p,t] * Network_supply_GWP[l,p,t] - GWP_demand[l,p,t] * Network_demand_GWP[l,p,t]);
@@ -347,8 +358,9 @@ Costs_grid_connection = sum{l in ResourceBalances, h in HousesOfLayer[l]} Costs_
 subject to Network_capacity_supply{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
 Network_supply[l,p,t] <= Network_capacity[l] * dp[p] * dt[p];
 
-subject to Network_capacity_demand{l in ResourceBalances,p in PeriodStandard,t in Time[p]}:
+subject to Network_capacity_demand{l in ResourceBalances  diff {'Data'},p in PeriodStandard,t in Time[p]}:
 Network_demand[l,p,t] <= Network_capacity[l] * dp[p] * dt[p];
+
 
 subject to EMOO_grid_constraint {l in ResourceBalances, p in Period, t in Time[p]: l =  'Electricity'}:
 Network_supply[l,p,t]-Network_demand[l,p,t] <= if EMOO_grid!=0 then EMOO_grid*sum{ts in Time[p]}((Network_supply[l,p,ts]-Network_demand[l,p,ts])*dt[p]/card(Time[p])) else 1e9;
@@ -384,12 +396,10 @@ var renter_subsidies{h in House} >= 0;
 var owner_subsidies{h in House} >= 0;
 var penalty_actors >= 0;
 
-param beta_GWP_MP default 0;
-
 subject to penalties_contraints:
 penalties = Costs_cft + penalty_ratio * (Costs_inv + Costs_op + penalty_actors + 
             sum{l in ResourceBalances,p in PeriodExtreme,t in Time[p]} (Network_supply[l,p,t] + Network_demand[l,p,t]))
-             + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]) + GWP_tot * beta_GWP_MP;
+             + sum{h in House}(renter_subsidies[h] + owner_subsidies[h]);
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Objective functions

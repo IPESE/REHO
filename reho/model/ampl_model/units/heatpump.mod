@@ -47,7 +47,7 @@ param HP_Tsource_low{u in UnitsOfType['HeatPump'], p in Period, t in Time[p]} :=
     if min{Tc in HP_Tsource} Tc >= T_source[u,p,t] then min{Tc in HP_Tsource} Tc
     else max{Tc in HP_Tsource: Tc < T_source[u,p,t]} Tc;
 
-# Default nominal efficiency for heat pumps (values get updated from HP_parameters.csv file)
+# Default nominal efficiency for heat pumps (values get updated from HP_parameters.txt file)
 param HP_Eta_nominal{u in UnitsOfType['HeatPump'], Th in HP_Tsink, Tc in HP_Tsource} default 0.3;
 
 param HP_Eta_low{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p],T in HP_Tsupply} :=
@@ -73,7 +73,7 @@ param HP_Eta{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in 
       HP_Eta_low[h,u,p,t,T] +
       (T - HP_Tsink_low[h,p,t,T]) * (HP_Eta_high[h,u,p,t,T] - HP_Eta_low[h,u,p,t,T]) / (HP_Tsink_high[h,p,t,T] - HP_Tsink_low[h,p,t,T]);
 
- # Power consumption ratio (values get updated from HP_parameters.csv file)
+ # Power consumption ratio (values get updated from HP_parameters.txt file)
 param HP_Pmax_nominal{u in UnitsOfType['HeatPump'],Th in HP_Tsink,Tc in HP_Tsource} default 1.00;
 
 param HP_Pmax_low{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p],T in HP_Tsupply} :=
@@ -105,8 +105,8 @@ param HP_COP{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in 
 	else
 		max{Th in HP_Tsink,Tc in HP_Tsource}(HP_Eta_nominal[u,Th,Tc]*(T+273.15)/(T-Tc));
 
-# Declaring electric power variable
-var HP_Power{h in House, u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h], p in Period, t in Time[p], T in HP_Tsupply} >= 0, <= Units_Fmax[u]/HP_COP[h,u,p,t,T];
+# Declaring heating power variable
+var HP_Power{h in House, u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h], p in Period, t in Time[p], T in HP_Tsupply} >= 0, <= Units_Fmax[u]*HP_COP[h,u,p,t,T];
 
 # Heating output
 subject to HP_heating_output{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],st in StreamsOfUnit[u],p in Period,t in Time[p],T in HP_Tsupply: T = Streams_Tin[st,p,t]}:
@@ -120,7 +120,7 @@ subject to HP_power_input{h in House, u in UnitsOfType['HeatPump'] inter UnitsOf
 subject to HP_sizing{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 	sum{T in HP_Tsupply} HP_COP[h,u,p,t,T]*(HP_Power[h,u,p,t,T]/HP_Pmax[h,u,p,t,T]) <= Units_Mult[u];
 
-# DHW production
+# DWH production
 subject to HP_EB_c2{h in House,u in UnitsOfType['HeatPump'] inter UnitsOfHouse[h],p in Period,t in Time[p]}:
 sum{st in StreamsOfUnit[u]: Streams_Tin[st,p,t] < 55} Streams_Q['DHW',st,p,t] = 0;
 

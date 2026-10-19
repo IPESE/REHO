@@ -1,12 +1,13 @@
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.model.reho import *
 from reho.model.preprocessing import electricity_prices
+
 
 if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 234, 'egid': ['1017073/1017074', '1017109', '1017079', '1030377/1030380']})
+    qbuildings_data = reader.read_db(district_id=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -24,10 +25,10 @@ if __name__ == '__main__':
     # Initialize available units and grids
     # You can use prices coming from the ELCOM public database
     prices = electricity_prices.get_prices_from_elcom_by_city(city=reader, category='H4')
-    grids = initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
+    grids = infrastructure.initialize_grids({'Electricity': {"Cost_supply_cst": prices['finalcosts'][0], "Cost_demand_cst": 0.16},
                                              'NaturalGas': {"Cost_supply_cst": 0.15},
                                              })
-    units = initialize_units(scenario, grids)
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

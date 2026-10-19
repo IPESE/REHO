@@ -1,15 +1,10 @@
 import math
-import os
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import calendar
-from reho.logger import get_logger
-from reho.paths import file_reader, path_handler
+from reho.paths import *
 from reho.model.preprocessing.clustering import Clustering
-
-logger = get_logger(__name__)
 import pvlib
 from pyproj import Transformer
 
@@ -25,10 +20,11 @@ def get_weather_data(qbuildings_data):
     lat, long = Transformer.from_crs("EPSG:2056", "EPSG:4326").transform(qbuildings_data['buildings_data']['Building1']['x'], qbuildings_data['buildings_data']['Building1']['y'])
 
     pvgis_data = pvlib.iotools.get_pvgis_tmy(lat, long, startyear=2005, endyear=2020)
-    coordinates = pvgis_data[1]['inputs']['location']
+    coordinates = pvgis_data[2]['location']
+    #coordinates = pvgis_data[1]['inputs']['location']
     weather_data = pvgis_data[0]
 
-    logger.info('Weather data extracted from the PVGIS database for %s.', coordinates)
+    print(f'The weather data have been extracted from the PVGIS database for : {coordinates}.')
 
     # Rename columns
     weather_data = weather_data.rename(columns={'temp_air': 'Text', 'ghi': 'Irr'})
@@ -49,52 +45,20 @@ def read_custom_weather(path_to_weather_file):
     """
 
     weather_data = file_reader(path_handler(path_to_weather_file), index_col=0)
-    logger.info('Annual weather data loaded from %s.', path_handler(path_to_weather_file))
+    print(f'Annual weather data have been loaded from {path_handler(path_to_weather_file)}.')
 
     return weather_data
 
 
-#: Version of the typical-period files written by :func:`generate_weather_data`. Increase it when
-#: these files change, so that the files cached by earlier versions of REHO are rebuilt. Version 2
-#: fixed a one-day shift between each typical period and the day of the year it was selected from.
-TYPICAL_PERIODS_VERSION = 2
-
-#: File, in each clustering directory, recording the version of its typical periods.
-TYPICAL_PERIODS_VERSION_FILE = "typical_periods_version.txt"
-
-
-def typical_periods_are_current(clustering_directory):
-    """
-    Whether a clustering directory holds typical periods written by this version of REHO.
-
-    Parameters
-    ----------
-    clustering_directory : str
-        Directory of the typical periods of a location, e.g. ``data/clustering/Geneva_10_24_T_I_W``.
-
-    Returns
-    -------
-    bool
-        False when the directory does not exist, or when its typical periods were written by an
-        earlier version of REHO and must be rebuilt.
-    """
-    try:
-        with open(os.path.join(clustering_directory, TYPICAL_PERIODS_VERSION_FILE)) as file:
-            return int(file.read().strip()) == TYPICAL_PERIODS_VERSION
-    except (OSError, ValueError):
-        return False
-
-
 def generate_weather_data(cluster, qbuildings_data, clustering_directory):
     """
-    This function is called if the clustered weather data specified by File_ID do not exist yet,
-    or were written by an earlier version of REHO (see :func:`typical_periods_are_current`).
+    This function is called if the clustered weather data specified by File_ID do not exist yet.
     Applies the clustering method (see Clustering class) and writes several files as output.
 
     Parameters
     ----------
     cluster : dict
-        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance) and 'W' (weekday)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
+        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
     qbuildings_data : dict
         Input data for the buildings.
     clustering_directory: str
@@ -127,6 +91,8 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
         attributes.append('Irr')
     if 'W' in cluster['Attributes']:
         attributes.append('Weekday')
+    if 'E' in cluster['Attributes']:
+        attributes.append('Emissions')
 
     # Execute clustering
     cl_data = weather_data[attributes].reset_index(drop=True)
@@ -181,9 +147,9 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
     # Get the max irradiance from the same period (for the max temperature)
     T_max['Irr'] = cl.data_org.loc[T_period[1] * hours_per_period: (T_period[1] + 1) * hours_per_period - 1, 'Irr'].max()
 
-    # Set the time for the new rows (variable hours per period); periods of the year are numbered from 1
-    T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0] + 1, 1, 1]
-    T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1] + 1, 1, 1]
+    # Set the time for the new rows (variable hours per period)
+    T_min[['time.dd', 'time.hh', 'dt']] = [T_period[0], 1, 1]
+    T_max[['time.dd', 'time.hh', 'dt']] = [T_period[1], 1, 1]
 
     # Append the new extreme values to the data
     new_index_min = len(data_cls)  # Dynamically find the next available index
@@ -197,15 +163,12 @@ def generate_weather_data(cluster, qbuildings_data, clustering_directory):
         max_time_dd = len(cl.attr_org)
         data_idy = pd.concat([data_idy, pd.DataFrame([[max_time_dd + 1, max_time_dd + 1]], columns=data_idy.columns)], ignore_index=True)
 
-    write_weather_files(clustering_directory, attributes, data_cls, data_idy, period_duration=hours_per_period)
-    # Written last, so that a generation interrupted midway is redone the next time
-    with open(os.path.join(clustering_directory, TYPICAL_PERIODS_VERSION_FILE), 'w') as file:
-        file.write(str(TYPICAL_PERIODS_VERSION))
+    write_weather_files(clustering_directory, attributes, data_cls, data_idy)
 
-    logger.info('Weather clustering finished, results saved in %s.', clustering_directory)
+    print(f'Clustering for weather data finished. Results have been saved in {clustering_directory}.')
 
 
-def write_weather_files(clustering_directory, attributes, values_cluster, index_inter, period_duration=24):
+def write_weather_files(clustering_directory, attributes, values_cluster, index_inter):
     """
     Writes the clustering results computed from ``generate_weather_data`` as CSV files in folder clustering_directory.
 
@@ -214,15 +177,11 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     clustering_directory: str
         Path to the directory where clustering files will be saved.
     attributes : list
-        Contains the clustering attributes, among 'Text', 'Irr' and 'Weekday'.
+        Contains the clustering attributes, among 'Text', 'Irr', 'Weekday', and 'Emissions'.
     values_cluster : pd.DataFrame
-        Produced by ``generate_weather_data``: the rows of every period, the typical periods first
-        and the two extreme periods last. Each period starts at ``time.hh`` = 1, and ``time.dd`` is
-        the number of the period of the year it comes from, counted from 1.
+        Produced by ``generate_weather_data``.
     index_inter : pd.DataFrame
         Produced by ``generate_weather_data``.
-    period_duration : int, optional
-        Number of hours of a period. Default is 24.
 
     Notes
     -----
@@ -241,23 +200,25 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     typical_data = values_cluster[typical_cols]
     typical_data.to_csv(os.path.join(clustering_directory, 'typical_data.csv'), index=False)
 
-    # Periods are told apart by their position, not by the period of the year they come from:
-    # an extreme period can come from the same day as a typical period.
-    starts = (values_cluster['time.hh'] == 1).to_numpy()
-    period_of_row = np.cumsum(starts)
-    days = values_cluster.loc[starts, 'time.dd'].astype(int).tolist()
-    durations = values_cluster.loc[starts, 'dt'].tolist()
-    timesteps = np.bincount(period_of_row)[1:].tolist()
-
     # Frequency
+    periods = values_cluster['time.dd'].unique()
+    period_mapping = {period: idx + 1 for idx, period in enumerate(periods)}
+
+    durations = []
+    timesteps = []
+    for period in periods:
+        period_df = values_cluster[values_cluster['time.dd'] == period]
+        durations.append(period_df['dt'].iloc[0])
+        timesteps.append(len(period_df))
+
     with open(os.path.join(clustering_directory, 'frequency.csv'), 'w') as file:
         file.write('set Period := \n')
-        for p in range(1, len(days) + 1):
+        for p in range(1, len(periods) + 1):
             file.write(f'{p}\n')
         file.write(';\n')
 
         file.write('set PeriodStandard := \n')
-        for p in range(1, len(days) - 1):
+        for p in range(1, len(periods) - 1):
             file.write(f'{p}\n')
         file.write(';\n')
 
@@ -271,16 +232,19 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
             file.write(f'{idx} {tstep}\n')
         file.write(';\n')
 
-    # Index: the typical period of each period of the year. The typical periods come before the
-    # extreme ones, so the first period coming from a given day is the typical one.
-    period_of_day = {}
-    for period, day in enumerate(days, start=1):
-        period_of_day.setdefault(day, period)
-    index_inter['index_r'] = index_inter['inter_t'].map(period_of_day)
+    # Index
+    df_time = pd.DataFrame({
+        'originalday': periods,
+        'frequency': durations,
+        'timesteps': timesteps
+    })
+
+    dict_index = {day: idx + 1 for idx, day in enumerate(df_time['originalday'])}
+    index_inter['index_r'] = index_inter['inter_t'].map(dict_index)
 
     df_aim = pd.DataFrame()
     for d in index_inter['index_r']:
-        nt = timesteps[d - 1]
+        nt = int(df_time.loc[df_time.index == (d - 1), 'timesteps'])
         df_d = pd.DataFrame([np.repeat(d, nt), np.arange(1, nt + 1)])
         df_aim = pd.concat([df_aim, df_d.T], ignore_index=True)
 
@@ -296,92 +260,66 @@ def write_weather_files(clustering_directory, attributes, values_cluster, index_
     annual_data = pd.read_csv(os.path.join(clustering_directory, 'annual_data.csv'), parse_dates=['time(UTC)'])
     timestamp_data = []
 
-    for period, day in enumerate(days, start=1):
-        row_offset = (day - 1) * period_duration
+    for original_period, mapped_period in period_mapping.items():
+        date_idx = (original_period-1) * 24
 
-        date = annual_data.iloc[row_offset]['time(UTC)']
+        date = annual_data.iloc[date_idx]['time(UTC)']
         entry = {
             'Date': date.strftime("%Y-%m-%d %H:%M:%S"),
-            'Day': period,
-            'Frequency': durations[period - 1],
-            'RowOffset': row_offset,
+            'Day': mapped_period,
+            'Frequency': durations[mapped_period - 1]
         }
         if 'Weekday' in attributes:
-            entry['Weekday'] = values_cluster.loc[period_of_row == period, 'Weekday'].iloc[0]
+            entry['Weekday'] = values_cluster.loc[values_cluster['time.dd'] == original_period, 'Weekday'].iloc[0]
 
         timestamp_data.append(entry)
 
-    df_timestamp = pd.DataFrame(timestamp_data)
+    df_timestamp = pd.DataFrame(timestamp_data).sort_values(by='Day')
     df_timestamp.to_csv(os.path.join(clustering_directory, 'timestamp.csv'), index=False)
-
-
-#: Clustering attribute -> the suffix it contributes to the weather file ID.
-CLUSTER_ATTRIBUTE_SUFFIXES = {"T": "_T", "I": "_I", "W": "_W"}
 
 
 def get_cluster_file_ID(cluster):
     """
-    Get the weather file ID corresponding to a set of clustering options.
+    Gets the weather file ID that corresponds to the specifications provided in the reho initalization.
 
-    The ID concatenates ``Location_Periods_PeriodDuration`` and the attributes, in
-    the canonical order T, I, W — not in the order the caller listed them, so
-    that two equivalent option dictionaries map to the same cached files.
+    The file ID is built by concatenating Location_Periods_PeriodDuration_Attributes.
+    ``cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}``
+    Will yield to:
+    ``File_ID = 'Geneva_10_24_T_I_W'``
 
     Parameters
     ----------
     cluster : dict
-        Contains a ``Location`` (str), some ``Attributes`` (list, among ``'T'``
-        for temperature, ``'I'`` for irradiance and ``'W'`` for weekday), a number of
-        periods ``Periods`` (int) and a ``PeriodDuration`` (int).
+        Contains a 'Location' (str), some 'Attributes' (list, among 'T' (temperature), 'I' (irradiance), 'W' (weekday) and 'E' (emissions)), a number of periods 'Periods' (int) and a 'PeriodDuration' (int).
 
     Returns
     -------
     str
-        Identifier of the location and clustering attributes, e.g.
-        ``'Geneva_10_24_T_I_W'``.
-
-    Raises
-    ------
-    ValueError
-        If an attribute is not one of the above.
-
-    Examples
-    --------
-    >>> get_cluster_file_ID({'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'],
-    ...                      'Periods': 10, 'PeriodDuration': 24})
-    'Geneva_10_24_T_I_W'
+        A literal representation to identify the location and clustering attritutes.
     """
-    unknown = [attribute for attribute in cluster["Attributes"] if attribute not in CLUSTER_ATTRIBUTE_SUFFIXES]
-    if unknown:
-        raise ValueError(
-            f"Unknown clustering attribute(s) {', '.join(map(repr, unknown))}: "
-            f"choose among {', '.join(map(repr, CLUSTER_ATTRIBUTE_SUFFIXES))}."
-        )
-    attributes = "".join(
-        suffix for attribute, suffix in CLUSTER_ATTRIBUTE_SUFFIXES.items()
-        if attribute in cluster["Attributes"]
-    )
-    return f"{cluster['Location']}_{cluster['Periods']}_{cluster['PeriodDuration']}{attributes}"
+    if 'T' in cluster['Attributes']:
+        T = '_T'
+    else:
+        T = ''
+    if 'I' in cluster['Attributes']:
+        I = '_I'
+    else:
+        I = ''
+    if 'W' in cluster['Attributes']:
+        W = '_W'
+    else:
+        W = ''
+    if 'E' in cluster['Attributes']:
+        E = '_E'
+    else:
+        E = ''
+
+    File_ID = cluster['Location'] + '_' + str(cluster['Periods']) + '_' + str(cluster['PeriodDuration']) + T + I + W + E
+
+    return File_ID
 
 
 def plot_cluster_KPI_separate(df, save_fig=False):
-    """
-    Plot the quality indicators of the clustering against the number of clusters.
-
-    Three figures compare the ambient temperature (solid lines) and the global irradiation (dashed
-    lines): RMSD and LDC error, MAE, and MAPE.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Indicators of each clustering solution, i.e. :attr:`Clustering.kpis_clu
-        <reho.model.preprocessing.clustering.Clustering>` after
-        :meth:`~reho.model.preprocessing.clustering.Clustering.run_clustering`, with attributes
-        ``Text`` and ``Irr``.
-    save_fig : bool, optional
-        Save the figures as ``Cluster_KPIs.pdf``, ``MAE_KPIs.pdf`` and ``MAPE_KPIs.pdf`` in the
-        working directory instead of showing them. Default is False.
-    """
     # Transpose the DataFrame
     df = df.transpose()
 
@@ -445,24 +383,8 @@ def plot_cluster_KPI_separate(df, save_fig=False):
 
 
 def plot_LDC(cl, save_fig=False):
-    """
-    Plot the typical periods selected by a clustering against the original year.
-
-    The first figure shows the hourly temperature and irradiation of the year, with the values of
-    the typical periods colored by period. The second compares their load duration curves.
-
-    Parameters
-    ----------
-    cl : Clustering
-        Clustering of ``Text`` and ``Irr``, after
-        :meth:`~reho.model.preprocessing.clustering.Clustering.run_clustering`. The selected
-        number of clusters, ``cl.nbr_opt``, is plotted.
-    save_fig : bool, optional
-        Save the figures as ``Year_Cluster.pdf`` and ``LDC.pdf`` in the working directory instead
-        of showing them. Default is False.
-    """
     nbr_plot = cl.nbr_opt
-    logger.info('Plotting for %s typical days.', nbr_plot)
+    print('Plotting for number of typical days:', nbr_plot)
 
     # Get original (non-clustered) data
     T_org = cl.data_org['Text']

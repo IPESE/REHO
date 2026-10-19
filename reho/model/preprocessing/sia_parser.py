@@ -7,22 +7,6 @@ Collects data from the `SIA Swiss norms <https://www.sia.ch/fr/services/sia-norm
 
 
 def read_sia2024_rooms_sia380_1(digit, df_SIA_380):
-    """
-    Room mix of a SIA 380/1 building category.
-
-    Parameters
-    ----------
-    digit : str
-        SIA 380/1 category, as a Roman numeral from ``'I'`` (collective housing) to ``'XIII'`` (other).
-    df_SIA_380 : pandas.DataFrame
-        Content of ``sia2024_rooms_sia380_1.csv``: one row per SIA 2024 room type, one column per
-        SIA 380/1 category named in words (``'collective housing'``, ...).
-
-    Returns
-    -------
-    pandas.Series
-        Area share of each SIA 2024 room type in the category, NaN for the room types it does not contain.
-    """
     dict_affiliation2digit = {'collective housing': 'I',
                               'individual housing': 'II',
                               'administrative': 'III',
@@ -43,41 +27,6 @@ def read_sia2024_rooms_sia380_1(digit, df_SIA_380):
 
 
 def read_sia_2024_profiles(status, df):
-    """
-    Daily profiles of every SIA 2024 room type, for a given energy standard.
-
-    Each profile has one row per room type and one column per hour of the day. The appliance
-    profiles are normalized by their peak, then scaled to the installed power of the chosen standard.
-
-    Parameters
-    ----------
-    status : str
-        Energy standard, which sets the power of the appliances: ``'existing'`` (high),
-        ``'standard'`` (medium), ``'aim'`` or ``'target'`` (low).
-    df : dict of pandas.DataFrame
-        Sheets of ``sia2024_data.xlsx``; ``calculs`` (hourly profiles) and ``data`` (installed
-        powers) are used.
-
-    Returns
-    -------
-    df_el_add : pandas.DataFrame
-        Additional lighting, e.g. of showrooms [W/m2].
-    df_el_light : pandas.DataFrame
-        Lighting [W/m2].
-    df_el_appliance : pandas.DataFrame
-        Electrical appliances [W/m2].
-    df_dhw : pandas.DataFrame
-        Useful domestic hot water [l/m2].
-    df_occupancy : pandas.DataFrame
-        Utilization rate [-].
-    df_heat_gain : pandas.DataFrame
-        Heat gains from people [W/m2].
-
-    Raises
-    ------
-    ValueError
-        If ``status`` is not one of the values above.
-    """
     df_el_appliance = df["calculs"].iloc[:, 1:25]
     df_el_ap_norm = df_el_appliance.div(df_el_appliance.max(axis=1), axis=0)  # normalize profile
     df_el_ap_norm = df_el_ap_norm.fillna(0)
@@ -93,9 +42,7 @@ def read_sia_2024_profiles(status, df):
         df_aim = df["data"].iloc[:, 37]
         df_el_appliance = df_el_ap_norm.mul(df_aim, axis=0)
     else:
-        raise ValueError(
-            f"Unknown building status {status!r}. Expected one of 'existing', 'standard', 'aim' or 'target'."
-        )
+        raise 'Building status unknown'
 
     df_el_light = df["calculs"].iloc[:, 26:50]
     df_el_light.columns = df_el_appliance.columns  # columns 1-24 - hours of the day
@@ -113,48 +60,6 @@ def read_sia_2024_profiles(status, df):
     df_occupancy.columns = df_el_appliance.columns  # columns 1-24 - hours of the day
 
     return df_el_add, df_el_light, df_el_appliance, df_dhw, df_occupancy, df_heat_gain
-
-
-_daily_profile_cache = {}
-
-
-def get_daily_profiles_cached(status, class_380, date, df_SIA_380, df_SIA_2024):
-    """
-    Memoized wrapper around :func:`daily_profiles_with_monthly_deviation`.
-
-    The daily profile only depends on the building status, the SIA 380/1 class and,
-    through the monthly and weekly deviation factors, on the month and the day
-    category (weekday / Saturday / Sunday) — not on the building itself. The SIA
-    norm tables are static, so results are cached at module level and shared
-    across buildings and across successive REHO instances.
-
-    Parameters
-    ----------
-    status : str
-        Energy standard of the building, see :func:`read_sia_2024_profiles`.
-    class_380 : str
-        SIA 380/1 category, see :func:`read_sia2024_rooms_sia380_1`.
-    date : datetime.datetime
-        Date of the typical period.
-    df_SIA_380 : pandas.DataFrame
-        Room mix of the SIA 380/1 categories.
-    df_SIA_2024 : dict of pandas.DataFrame
-        Sheets of ``sia2024_data.xlsx``.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The profiles of :func:`daily_profiles_with_monthly_deviation`. The object is shared by every
-        caller: copy it before modifying it in place.
-    """
-    day_category = date.weekday() if date.weekday() >= 5 else 0
-    key = (status, class_380, date.month, day_category)
-    profiles = _daily_profile_cache.get(key)
-    if profiles is None:
-        rooms = read_sia2024_rooms_sia380_1(class_380, df_SIA_380)
-        profiles = daily_profiles_with_monthly_deviation(status, rooms, date, df_SIA_2024)
-        _daily_profile_cache[key] = profiles
-    return profiles
 
 
 def daily_profiles_with_monthly_deviation(status, rooms, date, df):
@@ -182,7 +87,7 @@ def daily_profiles_with_monthly_deviation(status, rooms, date, df):
         weekly_factor[df_free == 2] = 0  # rooms which are not used on a Saturday
 
     # get 2024 profiles
-    df_el_add, df_el_light, df_el_appliance, df_dhw, df_occupancy, df_heat_gain = read_sia_2024_profiles(status, df)
+    df_el_appliance, df_el_light, df_el_add, df_dhw, df_occupancy, df_heat_gain = read_sia_2024_profiles(status, df)
     df_el = df_el_appliance + df_el_light + df_el_add  # W/m2
     df_el_gain = df_el_appliance + df_el_light
     # adjust for current day of the year

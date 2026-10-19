@@ -1,4 +1,5 @@
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.model.reho import *
+
 
 if __name__ == '__main__':
 
@@ -6,7 +7,7 @@ if __name__ == '__main__':
     # Roofs orientation for PV can be considered
     reader = QBuildingsReader(load_roofs=True)
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 2}, nb_buildings=2)
+    qbuildings_data = reader.read_db(district_id=2, nb_buildings=2)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -22,8 +23,8 @@ if __name__ == '__main__':
     method = {'use_pv_orientation': True}
 
     # Initialize available units and grids
-    grids = initialize_grids()
-    units = initialize_units(scenario, grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

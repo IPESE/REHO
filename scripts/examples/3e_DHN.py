@@ -1,14 +1,13 @@
-import numpy as np
-
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
+from reho.model.reho import *
 from reho.plotting import plotting
+
 
 if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 234}, nb_buildings=4)
+    qbuildings_data = reader.read_db(district_id=234, nb_buildings=4)
 
     # Select clustering options for weather data
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
@@ -30,11 +29,11 @@ if __name__ == '__main__':
     parameters = {'T_DHN_supply_cst': np.repeat(20.0, 4), "T_DHN_return_cst": np.repeat(15.0, 4)}
 
     # Initialize available units and grids
-    grids = initialize_grids({'Electricity': {},
+    grids = infrastructure.initialize_grids({'Electricity': {},
                                              'NaturalGas': {},
                                              'Heat': {}})
 
-    units = initialize_units(scenario, grids, district_data=True)
+    units = infrastructure.initialize_units(scenario, grids, district_data=True)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, parameters=parameters, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

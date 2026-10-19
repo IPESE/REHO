@@ -1,245 +1,22 @@
-"""District-scale optimization problem.
-
-:class:`MasterProblem` implements the Dantzig-Wolfe decomposition: it coordinates
-one :class:`~reho.model.sub_problem.SubProblem` per building, selects a convex
-combination of the configurations they propose, and returns the dual values that
-steer the next round of sub-problems.
-
-See also
---------
-reho.model.sub_problem.SubProblem : building-scale problem, generates the columns.
-reho.model.reho.REHO : user-facing entry point.
-"""
-
-import contextlib
 import copy
+import gc
+import time
 import multiprocessing as mp
-import os
-import warnings
 from itertools import groupby
 
-import geopandas as gpd
-import numpy as np
+import coloredlogs
 import pandas as pd
 
 import reho.model.infrastructure as infrastructure
-import reho.model.postprocessing.write_results as write_results
-import reho.model.preprocessing.actors as actors
-import reho.model.preprocessing.buildings_profiles as buildings_profiles
+from reho.model.preprocessing.local_data import *
 import reho.model.preprocessing.mobility_generator as mobility
-from reho.logger import configure_logging, get_logger
-from reho.model.ampl_interface import (
-    DISTRICT_UNIT_MODELS,
-    INTERPERIOD_DISTRICT_UNIT_MODELS,
-    create_ampl_session,
-    exitcode_from_ampl,
-    read_unit_models,
-)
-from reho.model.options import initialise_DW_params, initialize_default_methods
-from reho.model.preprocessing import renovation
-from reho.model.preprocessing.local_data import return_local_data
-from reho.model.sub_problem import SubProblem
-from reho.paths import (
-    path_to_ampl_model,
-    path_to_clustering,
-    path_to_district_units,
-    path_to_sia_equivalence,
-    path_to_sia_norms,
-    path_to_units,
-)
+import reho.model.postprocessing.write_results as write_results
 
-__all__ = ["MasterProblem", "fix_unit_sizes"]
+from reho.model.sub_problem import *
 
-logger = get_logger(__name__)
-
-#: Specific heat capacity of water, used to size district-heating flow rates [kJ/(kg.K)].
-CP_WATER = 4.18
-
-#: Latent enthalpy of the CO2 heat carrier, used when method['DHN_CO2'] is set [kJ/kg].
-DELTA_H_CO2 = 179.5
-
-#: Default temperature difference between DHN supply and return when none is given [K].
-DEFAULT_DHN_DELTA_T = 10.0
-
-#: Clustering options applied when the caller does not provide any.
-DEFAULT_CLUSTER = {"Location": "Geneva", "Attributes": ["T", "I", "W"], "Periods": 10, "PeriodDuration": 24}
-
-#: SIA norm tables, read once per process by :func:`_load_sia_data`.
-_sia_data_cache = {}
-
-
-def _load_sia_data():
-    """Read the SIA norm tables, once per process.
-
-    The tables are static package data, shared by every :class:`MasterProblem`: they must not be
-    modified in place.
-
-    Returns
-    -------
-    dict
-        ``df_SIA_380``, the room mix of the SIA 380/1 categories, and ``df_SIA_2024``, the sheets of
-        ``sia2024_data.xlsx``.
-    """
-    if not _sia_data_cache:
-        _sia_data_cache["df_SIA_380"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
-        _sia_data_cache["df_SIA_2024"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'],
-                                                       engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
-    return _sia_data_cache
-
-
-def _sp_solver_attributes(Scn_ID, Pareto_ID, ampl):
-    """Solver statistics of a solved AMPL session.
-
-    Parameters
-    ----------
-    Scn_ID : str
-        Name of the scenario.
-    Pareto_ID : int
-        Index of the Pareto point.
-    ampl : amplpy.AMPL
-        A session on which ``solve()`` has been called.
-
-    Returns
-    -------
-    pandas.DataFrame
-        One row, indexed by ``(Scn_ID, Pareto_ID)``: solving time, number of constraints and
-        variables before and after presolve, and value of the objective.
-    """
-    solving_time = ampl.getValue('_total_solve_time')
-    constr = ampl.getValue('_ncons')
-    pres_constr = ampl.getValue('_sncons')  # after presolve
-    var = ampl.getValue('_nvars')
-    pres_var = ampl.getValue('_snvars')  # after presolve
-    binaries = ampl.getValue('_snbvars')  # after presolve
-    integer = ampl.getValue('_snivars')  # after presolve
-    no_ojectives = ampl.getValue('_snobjs')  # after presolve
-    val_objectives = ampl.getCurrentObjective().getValues().toList()[0]
-
-    mux = pd.MultiIndex.from_tuples([(Scn_ID, Pareto_ID)], names=['Scn_ID', 'Pareto_ID'])
-    df = pd.DataFrame([[solving_time, constr, pres_constr, var, pres_var, binaries, integer, no_ojectives, val_objectives]], index=mux,
-                      columns=['solving_time', 'constraints', 'presolve_constraints', 'variables', 'presolve_variables',
-                               'presolve_binaries', 'presolve_integer', 'no_objective', 'val_objective'])
-    return df
-
-
-#: Former names of parameters, with the names that replaced them: existing is spelled out, ext standing for external
-#: elsewhere (``T_ext``, ``Cost_supply_ext``). A DataFrame names its column after the parameter it sets.
-RENAMED_PARAMETERS = {'Units_Ext': 'Units_Existing', 'Units_Ext_district': 'Units_Existing_district',
-                      'Line_ext': 'Line_capacity_existing'}
-
-#: Keys setting the capacity of a network, which belong to its grid, not to the parameters.
-NETWORK_GRID_KEYS = ['Network_ext', 'Network_capacity_existing', 'Network_capacity_options', 'Network_capacity']
-
-
-def check_parameters(parameters):
-    """Reject the parameters that were renamed, and those that belong to the grids.
-
-    Parameters
-    ----------
-    parameters : dict or None
-        Parameters given to :class:`MasterProblem`.
-
-    Raises
-    ------
-    ValueError
-        If a key, or the column of a DataFrame, is one of :data:`RENAMED_PARAMETERS`, or if a key is one of
-        :data:`NETWORK_GRID_KEYS`.
-    """
-    for key, value in (parameters or {}).items():
-        if key in NETWORK_GRID_KEYS:
-            raise ValueError(f"The parameters set {key}, which belongs to the grids, "
-                             f"e.g. grids['Electricity']['Network_capacity_existing'] = 100. {infrastructure.CAPACITY_KEYS_HELP}")
-        names = [key] + (list(value.columns) if isinstance(value, pd.DataFrame) else [])
-        renamed = [name for name in names if name in RENAMED_PARAMETERS]
-        if renamed:
-            raise ValueError(f"The parameter {renamed[0]} is renamed {RENAMED_PARAMETERS[renamed[0]]}: existing is spelled out, "
-                             f"as ext stands for external elsewhere (T_ext, Cost_supply_ext).")
-
-
-def fix_unit_sizes(ampl, df_fix_Units, units, targets=None):
-    """Fix the size and the use of units to the values of ``df_fix_Units``.
-
-    Used by ``method['fix_units']`` to evaluate the operation of a design decided elsewhere, for
-    instance the optimum of a previous scenario.
-
-    Parameters
-    ----------
-    ampl : amplpy.AMPL
-        A built, not yet solved session.
-    df_fix_Units : pandas.DataFrame
-        Columns ``Units_Mult`` and ``Units_Use``, indexed by unit, e.g. ``PV_Building1`` or ``rSOC_district``.
-    units : iterable of str
-        Units of the problem held by ``ampl``.
-    targets : iterable of str, optional
-        Units to fix, e.g. those of the technologies of ``fix_units_list``: the ones that ``df_fix_Units``
-        does not size are fixed to zero, i.e. not installed. By default, the units of the problem that
-        ``df_fix_Units`` sizes.
-
-    Notes
-    -----
-    PV capacities are relaxed by 1e-9 because the AMPL model bounds the panel area by the available
-    roof area; fixing the two to the exact same value makes the problem infeasible on rounding alone.
-    """
-    units = set(units)
-    targets = df_fix_Units.index if targets is None else targets
-    for unit in [unit for unit in targets if unit in units]:
-        if unit in df_fix_Units.index:
-            size = df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9 if unit.startswith("PV_") else 1)
-            use = float(df_fix_Units.Units_Use.loc[unit])
-        else:
-            size, use = 0, 0
-        ampl.getVariable('Units_Mult').get(unit).fix(size)
-        ampl.getVariable('Units_Use').get(unit).fix(use)
-
-
-def _solve_SP_task(task):
-    """Build, solve and extract the sub-problem of one building.
-
-    This function runs in a worker process when the sub-problems are solved in parallel. ``task``
-    holds the data of a single building, as assembled by :meth:`MasterProblem.prepare_SP_task`, so
-    that the whole master problem is not sent to the worker with each sub-problem.
-
-    Parameters
-    ----------
-    task : dict
-        Payload built by :meth:`MasterProblem.prepare_SP_task`.
-
-    Returns
-    -------
-    df_Results : dict of pandas.DataFrame
-        Results of the sub-problem, see :func:`~reho.model.postprocessing.write_results.get_df_Results_from_SP`.
-    attr : pandas.DataFrame
-        Solver statistics, see :func:`_sp_solver_attributes`.
-
-    Raises
-    ------
-    RuntimeError
-        If the sub-problem did not converge.
-    """
-    h = task['h']
-    sp = SubProblem(task['infrastructure_SP'], task['buildings_data_SP'], task['local_data'],
-                    task['parameters_SP'], task['set_indexed_SP'], task['cluster'],
-                    task['scenario'], task['method'], task['solver'], task.get('qbuildings_data'))
-    ampl = sp.build_model_without_solving()
-
-    if task['method']['fix_units']:
-        targets = [f"{technology}_{h}" for technology in task['fix_units_list']] if task['fix_units_list'] else None
-        fix_unit_sizes(ampl, task['df_fix_Units'], task['infrastructure_SP'].Units, targets)
-
-    ampl.solve()
-    exitcode = exitcode_from_ampl(ampl)
-
-    df_Results = write_results.get_df_Results_from_SP(ampl, task['scenario'], task['method'], task['buildings_data_SP'])
-    attr = _sp_solver_attributes(task['Scn_ID'], task['Pareto_ID'], ampl)
-
-    del ampl
-    if exitcode != 0:
-        # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
-        performance = df_Results["df_Performance"]
-        if exitcode != 'solved?' or performance['Costs_op'].iloc[0] + performance['Costs_inv'].iloc[0] == 0:
-            raise RuntimeError(f"The sub-problem of {h} did not converge (solve_result: {exitcode!r}).")
-
-    return df_Results, attr
+__doc__ = """
+File for handling data and optimization for an AMPL master problem.
+"""
 
 
 class MasterProblem:
@@ -280,15 +57,15 @@ class MasterProblem:
     def __init__(self, qbuildings_data, units, grids, parameters=None, set_indexed=None,
                  cluster=None, method=None, solver=None, DW_params=None):
 
-        check_parameters(parameters)
-
         # ampl solver
         self.solver = solver
 
         # methods
         self.method = initialize_default_methods(method)
-        self.logger = get_logger(__name__)
-        configure_logging(enabled=self.method['print_logs'])
+        self.logger = logging.getLogger(__name__)
+        if method['print_logs']:
+            coloredlogs.install(level=logging.INFO, logger=self.logger, isatty=True,
+                                fmt="%(message)s", stream=sys.stdout)
 
         # infrastructure
         self.qbuildings_data = qbuildings_data
@@ -299,13 +76,19 @@ class MasterProblem:
         self.infrastructure_SP = dict()
         self.build_infrastructure_SP()
 
-        self.cluster = copy.deepcopy(DEFAULT_CLUSTER if cluster is None else cluster)
+        if cluster is None:
+            self.cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
+        else:
+            self.cluster = copy.deepcopy(cluster)
 
-        # load SIA norms (cached at module level: static files, re-used across REHO instances)
-        sia_data = _load_sia_data()
+        # load SIA norms
+        sia_data = dict()
+        sia_data["df_SIA_380"] = pd.read_csv(path_to_sia_equivalence, sep=';', index_col=[0], header=[0])
+        sia_data["df_SIA_2024"] = pd.read_excel(path_to_sia_norms, sheet_name=['profiles', 'calculs', 'data'],
+                                                engine='openpyxl', index_col=[0], skiprows=[0, 2, 3, 4], header=[0])
 
         # retrieve location data
-        self.local_data = return_local_data(self.cluster, qbuildings_data)
+        self.local_data = return_local_data(cluster, qbuildings_data)
 
         if parameters is None:
             self.parameters = {}
@@ -333,20 +116,17 @@ class MasterProblem:
             self.DW_params = {}  # init of values in initiate_decomposition method
         else:
             self.DW_params = copy.deepcopy(DW_params)
-        self.DW_params = initialise_DW_params(self.DW_params, self.cluster, self.buildings_data,
-                                              building_scale=self.method['building-scale'])
+        self.DW_params = self.initialise_DW_params(self.DW_params, self.cluster, self.buildings_data)
         self.cpu_use = mp.cpu_count()
-        self.pool = None  # open only while sub-problems are being solved, see worker_pool
 
         # TODO change the nomenclature of these parameters to semi-automate the separation between MP and SP: (ex: all MP parameters end with _MP)
-        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound',
-                                                'Costs_House_upfront_m2_MP', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
-                                                "ff_EV", "ff_ICE", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
+        self.lists_MP = {"list_parameters_MP": ['Uh', 'Uh_ins', 'ins_target', 'ins_target_max', 'renter_subsidies_bound', 'renter_expense_max','utility_profit_min', 'owner_PIR_max', 'owner_PIR_min', 'EMOO_totex_renter',
+                                                'Network_ext', "ff_EV", 'monthly_grid_connection_cost', "Costs_House_upfront_m2_MP",
                                                 "area_district", "velocity", "density", "delta_enthalpy", "cinv1_dhn", "cinv2_dhn", "Population",
                                                 "transport_Units", "DailyDist", "Mode_Speed", "Cost_demand_ext", "EV_supply_ext", "share_activity", "Cost_supply_ext",
-                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity', "beta_GWP_MP",
+                                                'EV_y', 'EV_plugged_out', 'n_vehicles', 'EV_capacity',
                                                 "max_share", "min_share", "max_share_modes", "min_share_modes", "n_ICEperhab",
-                                                "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Existing_district",
+                                                "Cost_network_inv1", "Cost_network_inv2", "GWP_network_1", "GWP_network_2", "Units_Ext_district",
                                                 "Network_lifetime", "HydrogenAnnualExport_district","data_EUD_avg", "SOEC_conv_eff","SOFC_elec_eff_CH4"],
                          "list_constraints_MP": [],
                          "list_set_indexed_MP": ["Districts", "Distances"]
@@ -360,29 +140,13 @@ class MasterProblem:
             self.lists_MP["list_constraints_MP"] += ['forced_H2_annual_export_district']
 
         if self.method['actors_problem']:
-            self.lists_MP["list_constraints_MP"] += ['Owner_Link_Subsidy_to_renovation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub', 'Rent_fix_increase','Rent_fix_absolute']
+            self.lists_MP["list_constraints_MP"] += ['Owner_Link_Subsidy_to_renovation', 'Owner_profit_max_PIR', 'Owner_noSub', 'Renter_noSub']
 
         self.df_fix_Units = pd.DataFrame()
-        self.fix_units_list = []
 
     def initialize_optimization_tracking_attributes(self):
-        """
-        Reset the attributes that track the decomposition, before a new optimization.
-
-        - ``iter``: current iteration of the master problem.
-        - ``feasible_solutions``: number of rounds of sub-problems solved, i.e. of configurations
-          proposed by each building.
-        - ``flags``: whether the sub-problems were already initiated for each objective
-          (TOTEX, CAPEX, OPEX, GWP).
-        - ``results_SP`` and ``results_MP``: results of every sub-problem and master problem solved.
-        - ``number_SP_solutions`` and ``number_MP_solutions``: records of the solutions of each round.
-        - ``solver_attributes_SP`` and ``solver_attributes_MP``: solver statistics of each solve.
-        - ``stopping_criteria`` and ``reduced_costs``: convergence indicators of each iteration.
-
-        The pool of worker processes is left untouched: it belongs to the ``with`` block that opened it,
-        see :meth:`worker_pool`.
-        """
         # internal IT parameter
+        self.pool = None
         self.iter = 0  # keeps track of iterations, takes value of last iteration circle
         self.feasible_solutions = 0  # keeps track how many sets of SP solutions are proposed to the MP eg '2' means two per building
         list_obj = ["TOTEX", "CAPEX", "OPEX", "GWP"]
@@ -410,7 +174,6 @@ class MasterProblem:
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self.pool = None  # a pool of processes is not pickled
 
     def select_SP_obj_decomposition(self, scenario):
         """
@@ -440,24 +203,22 @@ class MasterProblem:
         SP_scenario_init['specific'] = scenario['specific'].copy()
 
         # use GM or GU only for initialization. Then pi dictates when to restrict power exchanges
-        SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999 if 'EMOO_grid' in SP_scenario_init['EMOO'] else 0
+        SP_scenario_init['EMOO']['EMOO_grid'] = SP_scenario_init['EMOO']['EMOO_grid'] * 0.999
 
-        capacity = self.infrastructure.Grids_Parameters.loc["Electricity", "Network_capacity_existing"]
+        if "Network_ext" in self.parameters:
+            capacity = self.parameters["Network_ext"].xs("Electricity")[0]
+            if isinstance(self.parameters["Network_ext"], pd.DataFrame):
+                capacity = self.parameters["Network_ext"].xs("Electricity")[0]
+            else:
+                capacity = self.parameters["Network_ext"][0]
+        else:
+            capacity = self.infrastructure.Grids_Parameters["Network_ext"].xs("Electricity")
         nb_buildings = round(self.parameters["Domestic_electricity"].shape[0] / self.DW_params['timesteps'])
         profile_building_x = self.parameters["Domestic_electricity"].reshape(nb_buildings, self.DW_params['timesteps'])
         max_DEL = profile_building_x.max(axis=1).sum()
+        #if not self.method['interperiod_storage']:
         SP_scenario_init['EMOO']['EMOO_GU_demand'] = capacity * 0.999 / max_DEL
         SP_scenario_init['EMOO']['EMOO_GU_supply'] = capacity * 0.999 / max_DEL
-        # This cap limits each building's grid exchange during initiation, relative to its peak domestic
-        # electricity. Below 1 the domestic demand alone saturates it, leaving nothing for heating: the
-        # sub-problems then turn out infeasible at the coldest hour rather than at the network balance.
-        if capacity < max_DEL:
-            self.logger.warning(
-                f"Electricity Network_capacity_existing ({float(capacity):.0f} kW) is below the district peak domestic demand "
-                f"({float(max_DEL):.0f} kW) over {nb_buildings} buildings, so the decomposition initiation caps "
-                f"grid use at {float(capacity) * 0.999 / max_DEL:.2f} of that peak. Sub-problems are likely to be "
-                f"infeasible; raise Network_capacity_existing to size the network for the district."
-            )
 
         for scenario_cst in scenario['specific']:
             if scenario_cst in self.lists_MP['list_constraints_MP']:
@@ -472,7 +233,7 @@ class MasterProblem:
         In case the optimization includes an epsilon constraint, there are two ways to initialize.
         Either the epsilon constraint is applied on the SPs, or the initialization is done with beta.
         The former has the risk to be infeasible for certain SPs, therefore the latter is preferred.
-        Three beta values are given to mark the extreme points and an average point.
+        Five beta values are given to mark the extreme points and an average point.
         Sets up the parallel optimization if needed
 
         Parameters
@@ -507,224 +268,34 @@ class MasterProblem:
 
         return
 
-    @contextlib.contextmanager
-    def worker_pool(self):
-        """
-        Keep a pool of worker processes open, for the sub-problems solved within a ``with`` block.
-
-        The block that opens the pool closes it, and waits for its workers to exit; the blocks nested
-        in it reuse the same pool. Each decomposition runs in such a block, and so do the successive
-        decompositions of a Pareto curve, of the actors samples and of a sensitivity analysis: their
-        sub-problems share one pool. On an exception, the workers are terminated rather than awaited.
-
-        No pool is opened with the compact formulation, or when ``method['parallel_computation']``
-        is disabled: the sub-problems are then solved in the main process.
-
-        Starting the workers takes a few seconds, as each of them imports REHO. A script that runs
-        several decompositions in a row can share one pool between them, by wrapping them in a block:
-
-        >>> with reho.worker_pool():
-        ...     for objective in ["TOTEX", "OPEX"]:
-        ...         reho.scenario["Objective"] = objective
-        ...         reho.single_optimization()
-
-        Yields
-        ------
-        multiprocessing.pool.Pool or None
-            The pool of ``cpu_use`` worker processes, or None when the sub-problems are solved in the
-            main process.
-
-        Notes
-        -----
-        A pool left open until the interpreter exits is destroyed after the modules it relies on, which
-        prints an ``Exception ignored in: <function Pool.__del__>`` traceback: the pool is therefore
-        never kept beyond the block.
-        """
-        decomposition = self.method['district-scale'] or self.method['building-scale']
-        if self.pool is not None or not (decomposition and self.method['parallel_computation']):
-            yield self.pool
-            return
-
-        pool = self.pool = mp.Pool(self.cpu_use)
-        try:
-            yield pool
-        except BaseException:
-            pool.terminate()
-            raise
-        else:
-            pool.close()
-        finally:
-            pool.join()
-            self.pool = None
-
     def launch_SP_multiprocessing(self, scenario, Scn_ID, Pareto_ID, epsilon_init, beta, initiation=True, renovation_options=None):
-        """
-        Solve the sub-problem of every building once, and store the configurations they propose.
 
-        The sub-problems are prepared in the main process by :meth:`prepare_SP_task`, then solved by
-        :func:`_solve_SP_task`: in parallel in the pool of :meth:`worker_pool` with
-        ``method['parallel_computation']``, otherwise one after the other. The results are stored by
-        :meth:`add_df_Results_SP`, and ``feasible_solutions`` is incremented.
-
-        Parameters
-        ----------
-        scenario : dict
-            Scenario of the optimization.
-        Scn_ID : str
-            Name of the scenario.
-        Pareto_ID : int
-            Index of the Pareto point.
-        epsilon_init : pd.Series or None
-            Epsilon constraint of each building, for the initiation at the building scale.
-        beta : float or None
-            Weight of the secondary objective, for the initiation, see :meth:`get_beta_values`.
-        initiation : bool, optional
-            Solve the sub-problems of the initiation (:meth:`SP_initiation_execution`) rather than those
-            of an iteration (:meth:`SP_execution`). Default is True.
-        renovation_options : str, optional
-            Elements of the envelope to renovate, e.g. ``'window/facade'``.
-        """
-
-        tasks = {h: self.prepare_SP_task(scenario, Scn_ID, Pareto_ID, h, epsilon_init=epsilon_init, beta=beta,
-                                         initiation=initiation, renovation_options=renovation_options)
-                 for h in self.infrastructure.houses}
-
-        with self.worker_pool() as pool:
-            if pool is None:
-                collected = {h: _solve_SP_task(task) for h, task in tasks.items()}
+        if self.method['parallel_computation']:
+            # to run multiprocesses, a copy of the model is performed with pickles -> make sure there are no ampl libraries
+            if initiation:
+                results = {h: self.pool.apply_async(self.SP_initiation_execution, args=(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, renovation_options)) for h in self.infrastructure.houses}
             else:
-                pending = {h: pool.apply_async(_solve_SP_task, args=(task,)) for h, task in tasks.items()}
-                # the results are stored in the main process, once every sub-problem is solved
-                collected = {h: result.get() for h, result in pending.items()}
+                results = {h: self.pool.apply_async(self.SP_execution, args=(scenario, Scn_ID, Pareto_ID, h, renovation_options)) for h in self.infrastructure.houses}
 
-        for h, (df_Results, attr) in collected.items():
-            self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+            # sometimes, python goes to fast and extract the results before calculating them. This step makes python wait finishing the calculations
+            while len(results[list(self.buildings_data.keys())[-1]].get()) != 2:
+                time.sleep(1)
+
+            # the memory to write and share results is not parallel -> results have to be stored outside calculation
+            for h in self.infrastructure.houses:
+                (df_Results, attr) = results[h].get()
+                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
+        else:
+            for h in self.infrastructure.houses:
+                if initiation:
+                    df_Results, attr = self.SP_initiation_execution(scenario, Scn_ID, Pareto_ID, h, epsilon_init, beta, renovation_options)
+                else:
+                    df_Results, attr = self.SP_execution(scenario, Scn_ID, Pareto_ID, h, renovation_options)
+
+                self.add_df_Results_SP(Scn_ID, Pareto_ID, self.iter, h, df_Results, attr)
 
         self.feasible_solutions += 1  # after each 'round' of SP execution the number of feasible solutions increase
         return
-
-    def prepare_SP_task(self, scenario, Scn_ID, Pareto_ID, h, epsilon_init=None, beta=None, initiation=True, renovation_options=None):
-        """
-        Assemble the data of the sub-problem of one building, to be solved by :func:`_solve_SP_task`.
-
-        Everything that needs the master problem (splitting the district parameters, reading the dual
-        values, setting the beta values) happens here, in the main process. The returned dictionary is
-        what is sent to a worker process: it holds only the data of this building.
-
-        Parameters
-        ----------
-        scenario : dict
-            Scenario of the optimization; it is copied, not modified.
-        Scn_ID : str
-            Name of the scenario.
-        Pareto_ID : int
-            Index of the Pareto point.
-        h : str
-            Building, e.g. ``'Building1'``.
-        epsilon_init : pandas.Series, optional
-            Epsilon constraint of each building, for the initiation at the building scale.
-        beta : float, optional
-            Weight of the secondary objective for the initiation, see :meth:`get_beta_values`.
-        initiation : bool, optional
-            Prepare a sub-problem of the initiation rather than of an iteration, which uses the dual
-            values of the last master problem. Default is True.
-        renovation_options : str, optional
-            Elements of the envelope to renovate, e.g. ``'window/facade'``.
-
-        Returns
-        -------
-        dict
-            The building ``h``, ``Scn_ID``, ``Pareto_ID``, and the arguments of
-            :class:`~reho.model.sub_problem.SubProblem`: ``infrastructure_SP``, ``buildings_data_SP``,
-            ``parameters_SP``, ``set_indexed_SP``, ``local_data``, ``cluster``, ``scenario``, ``method``,
-            ``solver``, ``df_fix_Units``, ``fix_units_list`` and, with ``use_facades`` or ``use_pv_orientation``,
-            ``qbuildings_data``.
-
-        Raises
-        ------
-        ValueError
-            If more than one epsilon constraint is given for the initiation at the building scale.
-        """
-        scenario = copy.deepcopy(scenario)
-
-        if initiation:
-            self.logger.info('INITIATE HOUSE: %s', h)
-
-            # find district structure and parameter for one single building
-            buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h)
-
-            # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
-            if epsilon_init is not None and self.method['building-scale']:
-                emoo = scenario["EMOO"].copy()
-                for key in ["EMOO_grid", "EMOO_GU_demand", "EMOO_GU_supply"]:
-                    emoo.pop(key)
-                if len(emoo) == 1:
-                    scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
-                else:
-                    raise ValueError(
-                        f"Expected a single epsilon constraint to initialise the decomposition of building {h}, "
-                        f"got {sorted(emoo)}. Constrain one objective at a time."
-                    )
-            elif not self.method['building-scale']:
-                scenario, beta_list = self.get_beta_values(scenario, beta)
-                parameters_SP['beta_duals'] = beta_list
-        else:
-            self.logger.info('ITERATE HOUSE: %s, iteration: %s', h, self.iter)
-
-            # Give dual variables to Subproblem
-            pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
-            pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
-            pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
-
-            parameters_SP = dict()
-            if self.method['actors_problem']:
-                parameters_SP.update(
-                    actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID,
-                                                self.iter, h))
-            # find district structure, objective, beta and parameter for one single building
-            buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
-
-            parameters_SP['Cost_supply_network'] = pi
-            parameters_SP['Cost_demand_network'] = pi * (1 - 1e-9)
-            parameters_SP['Cost_supply'] = pi_h
-            parameters_SP['Cost_demand'] = pi_h * (1 - 1e-9)
-            parameters_SP['GWP_supply'] = pi_GWP
-            parameters_SP['GWP_demand'] = pi_GWP.mul(0)
-
-            beta_series = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
-            scenario, beta_list = self.get_beta_values(scenario, beta_series)
-            if "beta_duals" in parameters_SP:
-                for key in parameters_SP["beta_duals"].index.get_level_values("Obj_fct").unique():
-                    beta_list.loc[key] = parameters_SP["beta_duals"].xs(key).xs(h)[0]
-            parameters_SP['beta_duals'] = beta_list
-
-        if renovation_options is not None:
-            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
-            buildings_data_SP[h]["renovation"] = renovation_options
-
-        # ship only the location data the sub-problem consumes (Irr_yearly is only needed with use_pv_orientation)
-        local_data_SP = dict(self.local_data)
-        if not (self.method['use_pv_orientation'] or self.method['use_facades']):
-            local_data_SP.pop('Irr_yearly', None)
-        local_data_SP.pop('sun_azimuth', None)
-        local_data_SP.pop('df_renovation', None)
-        local_data_SP.pop('df_renovation_targets', None)
-
-        task = {'h': h, 'Scn_ID': Scn_ID, 'Pareto_ID': Pareto_ID,
-                'infrastructure_SP': self.infrastructure_SP[h],
-                'buildings_data_SP': buildings_data_SP,
-                'parameters_SP': parameters_SP,
-                'set_indexed_SP': set_indexed_SP,
-                'local_data': local_data_SP,
-                'cluster': self.cluster,
-                'scenario': scenario,
-                'method': self.method,
-                'solver': self.solver,
-                'df_fix_Units': self.df_fix_Units if self.method['fix_units'] else None,
-                'fix_units_list': list(self.fix_units_list)}
-        if self.method['use_facades'] or self.method['use_pv_orientation']:
-            task['qbuildings_data'] = self.qbuildings_data
-        return task
 
     def SP_initiation_execution(self, scenario, Scn_ID=0, Pareto_ID=1, h=None, epsilon_init=None, beta=None, renovation_options=None):
         """
@@ -752,66 +323,105 @@ class MasterProblem:
         attr :
             results of the optimization process (CPU time, objective value, nb variables or constraints, ...)
         """
-        task = self.prepare_SP_task(scenario, Scn_ID, Pareto_ID, h, epsilon_init=epsilon_init, beta=beta,
-                                    initiation=True, renovation_options=renovation_options)
-        return _solve_SP_task(task)
+        if self.method["print_logs"]:
+            print('INITIATE HOUSE: ' + h)
 
-    def _build_MP_model(self, read_DHN=False):
-        """Open an AMPL session and read the master-problem model and its district units.
+        # find district structure and parameter for one single building
+        buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h)
 
-        Parameters
-        ----------
-        read_DHN : bool, optional
-            Also read ``dhn.mod``, which sizes the district-heating pipes.
+        if renovation_options is not None:
+            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
+            buildings_data_SP[h]["renovation"] = renovation_options
 
-        Returns
-        -------
-        amplpy.AMPL
-            A session holding the master problem, its technologies and the
-            typical-period frequencies of the current cluster.
+        # epsilon constraints on districts may lead to infeasibilities on building level -> apply them in MP only
+        if epsilon_init is not None and self.method['building-scale']:
+            emoo = scenario["EMOO"].copy()
+            for key in ["EMOO_grid", "EMOO_GU_demand", "EMOO_GU_supply"]:
+                emoo.pop(key)
+            if len(emoo) == 1:
+                scenario["EMOO"][list(emoo.keys())[0]] = epsilon_init.loc[h]
+            else:
+                raise warnings.warn("Multiple epsilon constraints")
+        elif not self.method['building-scale']:
+            scenario, beta_list = self.get_beta_values(scenario, beta)
+            parameters_SP['beta_duals'] = beta_list
 
-        See also
-        --------
-        reho.model.ampl_interface.DISTRICT_UNIT_MODELS : registry of district technology model files.
-        """
-        ampl_MP = create_ampl_session(
-            self.solver,
-            print_logs=self.method['print_logs'],
-            options={'rel_boundtol': 1e-12},
-            evals=('option show_boundtol 0;', 'option abs_boundtol 1e-10;'),
-        )
-        ampl_MP.read('master_problem.mod')
+        if self.method['use_facades'] or self.method['use_pv_orientation']:
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method,
+                              self.solver, self.qbuildings_data)
+        else:
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster, scenario, self.method,
+                              self.solver)
 
-        district_units = self.infrastructure.UnitsOfDistrict
+        ampl = REHO.build_model_without_solving()
 
-        # The district battery reuses the building-scale model file.
-        if "Battery_district" in district_units:
-            ampl_MP.cd(path_to_units)
-            ampl_MP.read('battery.mod')
+        if self.method['fix_units']:
+            fix_units_list = getattr(self, 'fix_units_list', [])
 
-        ampl_MP.cd(path_to_district_units)
-        if "Mobility" in self.infrastructure.UnitsOfLayer:
-            ampl_MP.read('mobility.mod')
-        read_unit_models(ampl_MP, DISTRICT_UNIT_MODELS, district_units)
+            if fix_units_list:
+                # Create regex pattern like 'rSOC|PV'
+                pattern = "|".join(fix_units_list)
+                # Filter rows that contain these substrings
+                self.fix_units_focus = self.df_fix_Units[
+                    self.df_fix_Units.index.to_series().str.contains(pattern, case=False, regex=True)
+                ]
+            else:
+                self.fix_units_focus = self.df_fix_Units
 
-        if read_DHN:
-            ampl_MP.cd(path_to_district_units)
-            ampl_MP.read('dhn.mod')
+            # Loop over technologies of interest
+            if fix_units_list:
+                for tech in self.fix_units_list:
+                    tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
 
-        if self.method["actors_problem"]:
-            ampl_MP.cd(path_to_ampl_model)
-            ampl_MP.read('actors_problem.mod')
-            if "EV_district" in district_units:
-                ampl_MP.read('actors_mobility.mod')  # needs the parameters of the mobility sector
+                    unit_name = f"{tech}_{h}"
+                    try:
+                        # --- Case 1: Unit exists in df -> fix to provided values
+                        if unit_name in self.df_fix_Units.index:
+                            if unit_name == f"PV_Building{h}":
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult'] * (1 - 1e-9)
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
+                            else:
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult']
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
 
-        if self.method["interperiod_storage"]:
-            read_unit_models(ampl_MP, INTERPERIOD_DISTRICT_UNIT_MODELS, district_units)
+                        # --- Case 2: Unit missing -> fix to 0
+                        else:
+                            ampl.getVariable('Units_Mult').get(unit_name).fix(0)
+                            ampl.getVariable('Units_Use').get(unit_name).fix(0)
+                    except:
+                        pass
+            else:
+                for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
+                    if unit == 'PV_' + h:
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
+                    else:
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                        ampl.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
 
-        ampl_MP.cd(os.path.join(path_to_clustering, self.local_data['File_ID']))
-        ampl_MP.readData('frequency.csv')
-        ampl_MP.readData('index.csv')
-        ampl_MP.cd(path_to_ampl_model)
-        return ampl_MP
+
+        ampl.solve()
+        exitcode = exitcode_from_ampl(ampl)
+
+        df_Results = write_results.get_df_Results_from_SP(ampl, scenario, self.method, buildings_data_SP)
+        attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
+
+        del ampl
+        gc.collect()  # free memory
+        if exitcode != 0:
+            # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
+            if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
+                raise Exception('Sub problem did not converge with building', h)
+
+        return df_Results, attr
 
     def MP_iteration(self, scenario, binary, Scn_ID=0, Pareto_ID=1, read_DHN=False):
         """
@@ -836,13 +446,107 @@ class MasterProblem:
 
         Raises
         ------
-        ValueError
-            If the sets are not arrays, or the parameters not arrays, floats or DataFrames.
-        RuntimeError
-            If the master problem did not converge, with its ``solve_result`` and what to check.
+        ValueError: If the sets are not arrays or if the parameters are not arrays or floats or dataframes. Or if the MP optimization did not converge
         """
 
-        ampl_MP = self._build_MP_model(read_DHN)
+        if "AMPL_PATH" in os.environ:
+            try:
+                ampl_MP = AMPL(Environment(os.environ["AMPL_PATH"]))
+            except:
+                raise Exception(f"Failed to use the local AMPL license as specified by AMPL_PATH: {os.environ['AMPL_PATH']}.")
+        else:
+            try:
+                from amplpy import modules
+                modules.load()
+                ampl_MP = AMPL()
+            except:
+                raise Exception(
+                    "No AMPL license was found. Please refer to the documentation to set the AMPL license: https://reho.readthedocs.io/en/main/sections/5_Getting_started.html#ampl-license")
+
+        # AMPL (GNU) OPTIONS
+        ampl_MP.setOption('solution_round', 11)
+        ampl_MP.setOption('rel_boundtol', 1e-12)
+        ampl_MP.setOption('presolve_eps', 1e-4)  # -ignore difference between upper and lower bound by this tolerance
+        ampl_MP.setOption('presolve_inteps', 1e-6)  # -tolerance added/substracted to each upper/lower bound
+        ampl_MP.setOption('presolve_fixeps', 1e-9)
+        if not self.method['print_logs']:
+            ampl_MP.setOption('show_stats', 0)
+            ampl_MP.setOption('solver_msg', 0)
+
+        # -SOLVER OPTIONS
+        ampl_MP.setOption('solver', self.solver)
+        if self.solver == "gurobi":
+            ampl_MP.eval("option gurobi_options 'NodeFileStart=0.5' 'IntFeasTol=1e-6';")
+
+        ampl_MP.eval('option show_boundtol 0;')
+        ampl_MP.eval('option abs_boundtol 1e-10;')
+
+        # Load Master Problem (MP) Formulation
+        ampl_MP.cd(path_to_ampl_model)
+        ampl_MP.read('master_problem.mod')
+
+        if self.method["actors_problem"]:
+            ampl_MP.read('actors_problem.mod')
+
+        # Load battery units (district-scale, but same model as building-scale)
+        ampl_MP.cd(path_to_units)
+        if "Battery_district" in self.infrastructure.UnitsOfDistrict:
+            ampl_MP.read('battery.mod')
+
+        # Load district units
+        ampl_MP.cd(path_to_district_units)
+        if len(self.infrastructure.UnitsOfDistrict) > 0:
+            ampl_MP.cd(path_to_district_units)
+            if "Mobility" in self.infrastructure.UnitsOfLayer:
+                ampl_MP.read('mobility.mod')
+            if "EV_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('evehicle.mod')
+            if "Bike_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('bike.mod')
+            if "ElectricBike_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('electricbike.mod')
+            if "ICE_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('icevehicle.mod')
+            if "NG_Boiler_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ng_boiler_district.mod')
+            if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('heatpump_district.mod')
+            if "NG_Cogeneration_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ng_cogeneration_district.mod')
+            if "rSOC_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('rsoc_district.mod')
+            if "MTR_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('methanator_district.mod')
+            if "ElectricalHeater_other_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('electrical_heater_district.mod')
+            if "Datacenter_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('datacenter_district.mod')
+            if "ORC_DC_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read('ORC_DC_district.mod')
+        if read_DHN:
+            ampl_MP.read('dhn.mod')
+
+        # Load interperiod storage units
+
+        if self.method["interperiod_storage"]:
+            ampl_MP.cd(path_to_units_interperiod)
+            if "Battery_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("battery_IP.mod")
+            if "CH4_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("CH4storage_IP.mod")
+            if "H2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("H2storage_IP.mod")
+            if "CO2_storage_IP_district" in self.infrastructure.UnitsOfDistrict:
+                ampl_MP.read("CO2storage_IP.mod")
+            if ("PTES_conv_IP_district" in self.infrastructure.UnitsOfDistrict) and ("PTES_storage_IP_district" in self.infrastructure.UnitsOfDistrict):
+                ampl_MP.read('ptes_IP.mod')
+
+        clustering_directory = os.path.join(path_to_clustering, self.local_data['File_ID'])
+        ampl_MP.cd(clustering_directory)
+
+        ampl_MP.readData('frequency.csv')
+        ampl_MP.readData('index.csv')
+        ampl_MP.cd(path_to_ampl_model)
 
         # -------------------------------------------------------------------------------------------------------------
         # Set Parameters, only bool to choose if including all solutions found also from other Pareto_IDs
@@ -853,15 +557,14 @@ class MasterProblem:
         df_Grid_t = np.round(self.return_combined_SP_results(self.results_SP, 'df_Grid_t'), 6)
         df_Buildings = self.return_combined_SP_results(self.results_SP, 'df_Buildings')
         df_Buildings = df_Buildings[df_Buildings.index.get_level_values('house') == df_Buildings.index.get_level_values('Hub')].droplevel('Hub')
-        df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
 
         # apply slicing or level-dropping uniformly to all three DataFrames
-        dfs = [df_Performance, df_Grid_t, df_Buildings, df_Unit_t]
-        if self.method['include_all_solutions']:
-            dfs = [df.droplevel(['Scn_ID', 'Pareto_ID']) for df in dfs]
-        else:
+        dfs = [df_Performance, df_Grid_t, df_Buildings]
+        if not self.method['include_all_solutions']:
             dfs = [df.xs((Scn_ID, Pareto_ID), level=('Scn_ID', 'Pareto_ID')) for df in dfs]
-        df_Performance, df_Grid_t, df_Buildings, df_Unit_t = dfs
+        else:
+            dfs = [df.droplevel(['Scn_ID', 'Pareto_ID']) for df in dfs]
+        df_Performance, df_Grid_t, df_Buildings = dfs
 
         df_Performance = df_Performance.droplevel(level='Iter')
         df_Grid_t = df_Grid_t.droplevel(level=['Iter', 'Hub']).reorder_levels(['Layer', 'FeasibleSolution', 'house', 'Period', 'Time'])
@@ -877,6 +580,10 @@ class MasterProblem:
         MP_parameters['Units_flowrate'] = self.infrastructure.Units_flowrate.query('Unit.str.contains("district")')
         MP_parameters['Units_Parameters'] = self.infrastructure.Units_Parameters.query('index.str.contains("district")')
 
+        if self.method['use_dynamic_emission_profiles']:
+            MP_parameters['GWP_supply'] = self.local_data["df_Emissions_GWP100a"]['GWP_supply']
+            MP_parameters['GWP_demand'] = MP_parameters["GWP_supply"] * (1 - 1e-9)
+
         MP_parameters['df_grid'] = df_Grid_t[['Grid_demand', 'Grid_supply']]
         MP_parameters['ERA'] = np.asarray([self.buildings_data[house]['ERA'] for house in self.buildings_data.keys()])
         MP_parameters['Area_tot'] = self.ERA
@@ -887,11 +594,11 @@ class MasterProblem:
                 MP_parameters[param] = mobility_parameters[param]
 
         if read_DHN:
-            has_dhn_temperatures = 'T_DHN_supply_cst' in self.parameters and 'T_DHN_return_cst' in self.parameters
-            if has_dhn_temperatures and not self.method["DHN_CO2"]:
-                dT = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"])
-                MP_parameters['delta_enthalpy'] = dT.mean() * CP_WATER
-                MP_parameters['density'] = 1000  # water [kg/m3]
+            if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
+                if not self.method["DHN_CO2"]:
+                    dT = np.array(self.parameters["T_DHN_supply_cst"] - self.parameters["T_DHN_return_cst"])
+                    MP_parameters['delta_enthalpy'] = dT.mean() * 4.18
+                    MP_parameters['density'] = 1000
 
             if "area_district" not in MP_parameters:
                 min_x, min_y, max_x, max_y = gpd.GeoDataFrame.from_dict(self.buildings_data, orient="index").total_bounds
@@ -902,8 +609,8 @@ class MasterProblem:
 
         for key in self.lists_MP['list_parameters_MP'] + ["Cost_supply_network", "Cost_demand_network"]:
             if key in self.parameters.keys():
-                if key == "Units_Existing_district":
-                    MP_parameters["Units_Existing"] = self.parameters[key]
+                if key == "Units_Ext_district":
+                    MP_parameters["Units_Ext"] = self.parameters[key]
                 else:
                     MP_parameters[key] = self.parameters[key]
 
@@ -911,7 +618,11 @@ class MasterProblem:
         # Set Sets
         # ------------------------------------------------------------------------------------------------------------
         MP_set_indexed = {}
-        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer', 'Network_capacity_options']:
+        additional = []
+        if 'ReinforcementOfNetwork' in self.infrastructure.Set.keys():
+            additional = additional + ["ReinforcementOfNetwork"]
+
+        for sets in ['House', 'Layers', 'LayerTypes', 'LayersOfType', 'HousesOfLayer'] + additional:
             MP_set_indexed[sets] = self.infrastructure.Set[sets]
         MP_set_indexed['LayersOfType']['ResourceBalance'].sort()
 
@@ -926,27 +637,24 @@ class MasterProblem:
             if "ActorObjective" in self.set_indexed:
                 MP_set_indexed['ActorObjective'] = self.set_indexed["ActorObjective"]
 
+            df_Unit_t = self.return_combined_SP_results(self.results_SP, 'df_Unit_t').xs("Electricity", level="Layer")
             df_PV_t = pd.DataFrame()
             for bui in self.infrastructure.houses:
                 df_PV_t = pd.concat([df_PV_t, df_Unit_t.xs("PV_" + bui, level="Unit")])
-            MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Iter"])
+            MP_parameters["PV_prod"] = df_PV_t["Units_supply"].droplevel(["Scn_ID", "Pareto_ID", "Iter"])
 
-        if self.method['renovation'] is not None or "U_h" in self.parameters:
+        if self.method['renovation'] is not None:
             MP_parameters["Uh"] = pd.DataFrame.from_dict({house: self.buildings_data[house]['U_h'] for house in self.buildings_data.keys()}, orient="Index").rename(columns={0: "Uh"})
             MP_parameters["Uh_ins"] = df_Buildings[["U_h"]].rename(columns={"U_h": "Uh_ins"})
-            if "U_h" in self.parameters:
-                for row in self.parameters["U_h"].index:
-                    mask = MP_parameters["Uh_ins"].index.get_level_values(1) == row
-                    MP_parameters["Uh_ins"].loc[mask, "Uh_ins"] = self.parameters["U_h"].loc[row][0]
 
-        if ("Heat" in self.infrastructure.grids
-                and "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict
-                and 'T_DHN_supply_cst' in self.parameters and 'T_DHN_return_cst' in self.parameters):
-            T_DHN_mean = (self.parameters["T_DHN_supply_cst"] + self.parameters["T_DHN_return_cst"]) / 2
-            MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
-            MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
+        if "Heat" in self.infrastructure.grids.keys():
+            if 'T_DHN_supply_cst' and 'T_DHN_return_cst' in self.parameters:
+                T_DHN_mean = (self.parameters["T_DHN_supply_cst"] + self.parameters["T_DHN_return_cst"]) / 2
+                if "HeatPump_Geothermal_district" in self.infrastructure.UnitsOfDistrict:
+                    MP_set_indexed["HP_Tsupply"] = np.array([T_DHN_mean.mean()])
+                    MP_set_indexed["HP_Tsink"] = np.array([T_DHN_mean.mean()])
         if read_DHN:
-            MP_set_indexed["House_ID"] = np.array([int(s.replace("Building", "")) for s in list(self.infrastructure.houses.keys())])
+            MP_set_indexed["House_ID"] = np.array(range(0, len(self.infrastructure.houses))) + 1
 
         if "Mobility" in self.infrastructure.UnitsOfLayer:
             MP_set_indexed['transport_Units'] = np.append(np.setdiff1d(self.infrastructure.UnitsOfLayer["Mobility"], ["EV_charger_district"]),
@@ -971,9 +679,6 @@ class MasterProblem:
                     MP_set_indexed['UnitTypes'] = np.append(MP_set_indexed['UnitTypes'], u['UnitOfType'])
                     MP_set_indexed['UnitsOfType'][u['UnitOfType']] = np.array([])
                 MP_set_indexed['UnitsOfType'][u['UnitOfType']] = np.append(MP_set_indexed['UnitsOfType'][u['UnitOfType']], [name])
-
-        if "i_rate" in self.parameters.keys():
-            MP_parameters["i_rate"] = self.parameters["i_rate"][0]
 
         # ---------------------------------------------------------------------------------------------------------------
         # give values to ampl
@@ -1045,7 +750,46 @@ class MasterProblem:
             ampl_MP.getConstraint('convexity_binary').drop()
 
         if self.method['fix_units']:
-            fix_unit_sizes(ampl_MP, self.df_fix_Units, self.infrastructure.UnitsOfDistrict, self.fix_units_list or None)
+
+            fix_units_list = getattr(self, 'fix_units_list', [])
+
+            if fix_units_list:
+                # Create regex pattern like 'rSOC|PV'
+                pattern = "|".join(fix_units_list)
+                # Filter rows that contain these substrings
+                self.fix_units_focus = self.df_fix_Units[
+                    self.df_fix_Units.index.to_series().str.contains(pattern, case=False, regex=True)
+                ]
+            else:
+                self.fix_units_focus = self.df_fix_Units
+
+            if fix_units_list:
+                # Loop over technologies of interest
+                for tech in self.fix_units_list:
+                    tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
+
+                    unit_name = tech
+                    #unit_name = f"{tech}_district"
+                    try:
+                        # --- Case 1: Unit exists in df -> fix to provided values
+                        if unit_name in self.df_fix_Units.index:
+
+                            ampl_MP.getVariable('Units_Mult').get(unit_name).fix(
+                                self.df_fix_Units.loc[unit_name, 'Units_Mult']
+                            )
+                            ampl_MP.getVariable('Units_Use').get(unit_name).fix(
+                                float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                            )
+                        # --- Case 2: Unit missing -> fix to 0
+                        else:
+                            ampl_MP.getVariable('Units_Mult').get(unit_name).fix(0)
+                            ampl_MP.getVariable('Units_Use').get(unit_name).fix(0)
+                    except:
+                        pass
+            else:
+                for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains('district')]:
+                    ampl_MP.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                    ampl_MP.getVariable('Units_Use').get(unit).fix(float(self.df_fix_Units.Units_Use.loc[unit]))
 
         # Solve ampl_MP
         ampl_MP.solve()
@@ -1058,13 +802,9 @@ class MasterProblem:
         exitcode = exitcode_from_ampl(ampl_MP)
 
         del ampl_MP
+        gc.collect()
         if exitcode != 0:
-            message = (f"The master problem of iteration {self.iter} did not converge (solve_result: {exitcode!r}). "
-                       "Check the network capacities (Network_capacity_existing) and the epsilon constraints of the scenario")
-            if self.method['actors_problem']:
-                message += (", and the bounds of the actors: renter_expense_max, utility_profit_min and owner_PIR_min, "
-                            "which the last master problem has to satisfy with a single configuration per building")
-            raise RuntimeError(message + ".")
+            raise Exception('Master problem did not converge')
 
     def SP_iteration(self, scenario, Scn_ID=0, Pareto_ID=1):
         """
@@ -1111,8 +851,114 @@ class MasterProblem:
         ------
         ValueError: If the SP optimization did not converge
         """
-        task = self.prepare_SP_task(scenario, Scn_ID, Pareto_ID, h, initiation=False, renovation_options=renovation_options)
-        return _solve_SP_task(task)
+        self.logger.info('iterate HOUSE: ' + h + 'iteration: ' + str(self.iter))
+
+        # Give dual variables to Subproblem
+        pi = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi').reorder_levels(['Layer', 'Period', 'Time'])
+        pi_GWP = self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'pi_GWP').reorder_levels(['Layer', 'Period', 'Time'])
+        pi_h = pd.concat([pi], keys=[h], names=['Building']).reorder_levels(['Building', 'Layer', 'Period', 'Time'])
+
+        parameters_SP = {'Cost_supply_network': pi,
+                         'Cost_demand_network': pi * (1 - 1e-9),
+                         'Cost_supply': pi_h,
+                         'Cost_demand': pi_h * (1 - 1e-9),
+                         'GWP_supply': pi_GWP,
+                         'GWP_demand': pi_GWP.mul(0),  # set emissions of feed in to 0 -> changed in  postcompute
+                         }
+
+        if self.method['actors_problem']:
+            parameters_SP.update(actors.get_actor_parameters(self.scenario, self.set_indexed, self.results_MP, Scn_ID, Pareto_ID, self.iter, h))
+        # find district structure, objective, beta and parameter for one single building
+        buildings_data_SP, parameters_SP, set_indexed_SP = self.split_parameter_sets_per_building(h, parameters_SP)
+        beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter - 1, h, 'beta')
+        scenario, beta_list = self.get_beta_values(scenario, beta)
+        parameters_SP['beta_duals'] = beta_list
+
+        if renovation_options is not None:
+            buildings_data_SP[h]['U_h'], parameters_SP['Costs_ins'], parameters_SP['GWP_ins'] = renovation.renovation_cost_co2(buildings_data_SP[h], self.local_data, renovation_options)
+            buildings_data_SP[h]["renovation"] = renovation_options
+
+        # Execute optimization
+        if self.method['use_facades'] or self.method['use_pv_orientation']:
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster,
+                              scenario, self.method, self.solver, self.qbuildings_data)
+        else:
+            REHO = SubProblem(self.infrastructure_SP[h], buildings_data_SP, self.local_data, parameters_SP, set_indexed_SP, self.cluster,
+                              scenario, self.method, self.solver)
+
+        ampl = REHO.build_model_without_solving()
+
+        if self.method['fix_units']:
+
+            fix_units_list = getattr(self, 'fix_units_list', [])
+
+            if fix_units_list:
+                # Create regex pattern like 'rSOC|PV'
+                pattern = "|".join(fix_units_list)
+                # Filter rows that contain these substrings
+                self.fix_units_focus = self.df_fix_Units[
+                    self.df_fix_Units.index.to_series().str.contains(pattern, case=False, regex=True)
+                ]
+            else:
+                self.fix_units_focus = self.df_fix_Units
+
+            if fix_units_list:
+                # Loop over technologies of interest
+                for tech in self.fix_units_list:
+                    tech_units = self.fix_units_focus[self.fix_units_focus.index.str.contains(tech, case=False)]
+
+                    unit_name = f"{tech}_{h}"
+                    try:
+                        # --- Case 1: Unit exists in df -> fix to provided values
+                        if unit_name in self.df_fix_Units.index:
+                            if unit_name == f"PV_Building{h}":
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult'] * (1 - 1e-9)
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
+                            else:
+                                ampl.getVariable('Units_Mult').get(unit_name).fix(
+                                    self.df_fix_Units.loc[unit_name, 'Units_Mult']
+                                )
+                                ampl.getVariable('Units_Use').get(unit_name).fix(
+                                    float(self.df_fix_Units.loc[unit_name, 'Units_Use'])
+                                )
+
+                        # --- Case 2: Unit missing -> fix to 0
+                        else:
+                            ampl.getVariable('Units_Mult').get(unit_name).fix(0)
+                            ampl.getVariable('Units_Use').get(unit_name).fix(0)
+                    except:
+                        pass
+            else:
+                for unit in self.df_fix_Units.index[self.df_fix_Units.index.str.contains(h)]:
+                    if unit == 'PV_' + h:
+                        ampl.getVariable('Units_Mult').get(unit).fix(
+                            self.df_fix_Units.Units_Mult.loc[unit] * (1 - 1e-9))
+                        ampl.getVariable('Units_Use').get(unit).fix(
+                            float(self.df_fix_Units.Units_Use.loc[unit]))
+                    else:
+                        ampl.getVariable('Units_Mult').get(unit).fix(self.df_fix_Units.Units_Mult.loc[unit])
+                        ampl.getVariable('Units_Use').get(unit).fix(
+                            float(self.df_fix_Units.Units_Use.loc[unit]))
+
+        ampl.solve()
+        exitcode = exitcode_from_ampl(ampl)
+
+        df_Results = write_results.get_df_Results_from_SP(ampl, scenario, self.method, buildings_data_SP)
+        attr = self.get_solver_attributes(Scn_ID, Pareto_ID, ampl)
+
+        del ampl
+        gc.collect()  # free memory
+
+        if exitcode != 0:
+            # It might be that the solution is optimal with unscaled infeasibilities. So we check if we really found a solution (via its cost value)
+            if exitcode != 'solved?' or df_Results["df_Performance"]['Costs_op'][0] + df_Results["df_Performance"]['Costs_inv'][0] == 0:
+                raise Exception('Sub problem did not converge with building', h)
+
+        return df_Results, attr
 
     def check_Termination_criteria(self, scenario, Scn_ID=0, Pareto_ID=1):
         """
@@ -1240,6 +1086,28 @@ class MasterProblem:
     #
     ####################################################################################################################
 
+    def initialise_DW_params(self, DW_params, cluster, buildings_datas):
+        if 'timesteps' not in DW_params:
+            DW_params['timesteps'] = cluster['Periods'] * cluster['PeriodDuration'] + 2
+        if 'max_iter' not in DW_params:
+            DW_params['max_iter'] = 15
+        if 'n_houses' not in DW_params:
+            DW_params['n_houses'] = len(buildings_datas.keys())
+        if 'iter_no_improv' not in DW_params:
+            DW_params['iter_no_improv'] = 5
+        if 'threshold_subP_value' not in DW_params:
+            DW_params['threshold_subP_value'] = 0
+        if 'threshold_no_improv' not in DW_params:
+            DW_params['threshold_no_improv'] = 0.00005
+        if 'grid_cost_exchange' not in DW_params:
+            DW_params['grid_cost_exchange'] = 0.0
+        if 'weight_lagrange_cst' not in DW_params:
+            DW_params['weight_lagrange_cst'] = 2.0
+        if self.method['building-scale']:
+            DW_params['max_iter'] = 1
+
+        return DW_params
+
     def get_final_MP_results(self, Pareto_ID=1, Scn_ID=0):
         """
         Builds the final design and operating results based on the optimal set of lambdas.
@@ -1310,35 +1178,13 @@ class MasterProblem:
         return annual_grid_costs
 
     def select_MP_objective(self, ampl, scenario):
-        """
-        Set the objective function and the constraints of the master problem.
-
-        The epsilon constraints and the optional constraints of the master problem are dropped, then
-        restored as the scenario requires: the epsilon constraints of ``scenario['EMOO']`` with their
-        values, and the constraints of ``scenario['specific']`` that belong to the master problem. The
-        objective ``scenario['Objective']`` is the only one kept.
-
-        Parameters
-        ----------
-        ampl : amplpy.AMPL
-            Session holding the master problem.
-        scenario : dict
-            Scenario of the optimization.
-
-        Returns
-        -------
-        amplpy.AMPL
-            The same session.
-        """
         list_constraints = ['EMOO_CAPEX_constraint', 'EMOO_OPEX_constraint', 'EMOO_GWP_constraint', 'EMOO_TOTEX_constraint', 'disallow_exchanges_1', 'disallow_exchanges_2', 'EMOO_elec_export_constraint'] + self.lists_MP["list_constraints_MP"]
 
         for cst in list_constraints:
             try:
                 ampl.getConstraint(cst).drop()
-            except Exception:
-                # Constraints belonging to technologies absent from this problem are
-                # simply not declared in the model: there is nothing to drop.
-                self.logger.debug("Constraint %r is not part of the master problem, not dropped.", cst)
+            except:
+                pass
 
         if 'EMOO' in scenario:
             emoo = scenario['EMOO'].copy()
@@ -1358,45 +1204,7 @@ class MasterProblem:
         return ampl
 
     def get_beta_values(self, scenario, beta=None):
-        """
-        Weights of the objectives in the objective function of the sub-problems.
-
-        In the decomposition, a sub-problem minimizes ``SP_obj_fct``, a weighted sum of its OPEX, CAPEX
-        and GWP. The objective of the scenario gets a weight of 1 (OPEX and CAPEX both, for TOTEX), the
-        others a negligible weight of 1e-6. A number ``beta`` is the weight of a secondary objective,
-        which diversifies the configurations proposed during the initiation: the objective constrained
-        by the epsilon constraint of the scenario if there is one; otherwise CAPEX when minimizing OPEX,
-        and OPEX for the other objectives. Finally, the epsilon constraints on the objectives are removed
-        from the scenario returned (see :meth:`remove_emoo_constraints`); the scenario given is left
-        unchanged.
-
-        Parameters
-        ----------
-        scenario : dict
-            Scenario of the optimization.
-        beta : float or int or pd.Series or None, optional
-            Weight of the secondary objective (ignored at the building scale), or directly the weight of
-            each objective as a Series indexed by objective, where zeros are replaced by 1e-6.
-
-        Returns
-        -------
-        scenario : dict
-            Scenario of the sub-problem, with the objective ``SP_obj_fct``.
-        beta_list : pd.Series
-            Weight of each objective, sent to AMPL as ``beta_duals``.
-
-        Raises
-        ------
-        TypeError
-            If ``beta`` is of another type.
-        ValueError
-            If the scenario has epsilon constraints on more than one objective.
-        """
         scenario = scenario.copy()
-        # The epsilon constraints are removed below: without a copy of their dictionary, the next
-        # buildings solved in the same process would no longer see them.
-        scenario['EMOO'] = dict(scenario.get('EMOO', {}))
-        objective = scenario['Objective']
         if isinstance(beta, (float, int, type(None))):
             index = list(self.flags.keys())  # list of objective function
             beta_list = pd.Series(np.zeros(len(index)), index=index) + 1e-6  # default penalty on other objectives
@@ -1404,13 +1212,13 @@ class MasterProblem:
             beta_list = beta
             beta_list = beta_list.replace(0, 1e-6)
         else:
-            raise TypeError(f"beta must be a float, an int, a pandas Series or None, got {type(beta).__name__}.")
+            raise warnings.warn("Wrong type beta")
 
         # select objective using beta values
-        if objective in ['TOTEX', 'TOTEX_actor']:
+        if scenario['Objective'] in ['TOTEX', 'TOTEX_actor']:
             beta_list[['CAPEX', 'OPEX']] = 1
         else:
-            beta_list[objective] = 1
+            beta_list[scenario['Objective']] = 1
         scenario['Objective'] = 'SP_obj_fct'
 
         # add beta values on emoo constraint
@@ -1422,37 +1230,18 @@ class MasterProblem:
                 key = list(emoo.keys())[0].replace("EMOO_", "")
                 beta_list[key] = beta
             elif len(emoo) == 0:
-                if objective == "OPEX":
+                if scenario["Objective"] == "OPEX":
                     beta_list["CAPEX"] = beta
                 else:
                     beta_list["OPEX"] = beta
             elif len(emoo) > 1:
-                raise ValueError(
-                    f"Expected at most one objective-level epsilon constraint, got {sorted(emoo)}. "
-                    "Constrain one objective at a time."
-                )
+                raise warnings.warn("Multiple epsilon constraints")
 
         scenario = self.remove_emoo_constraints(scenario)
         return scenario, beta_list
 
     @staticmethod
     def remove_emoo_constraints(scenario):
-        """
-        Remove the epsilon constraints on the objectives from a scenario.
-
-        These are ``EMOO_CAPEX``, ``EMOO_OPEX``, ``EMOO_GWP``, ``EMOO_TOTEX``, ``EMOO_elec_export`` and
-        ``EMOO_EV``; the other epsilon constraints, such as ``EMOO_grid``, are kept.
-
-        Parameters
-        ----------
-        scenario : dict
-            Scenario, modified in place.
-
-        Returns
-        -------
-        dict
-            The same scenario.
-        """
 
         EMOOs = list(scenario['EMOO'].keys())
         keys_to_remove = ['EMOO_CAPEX', 'EMOO_OPEX', 'EMOO_GWP', 'EMOO_TOTEX', "EMOO_elec_export", "EMOO_EV"]
@@ -1519,7 +1308,20 @@ class MasterProblem:
         df : pd.DataFrame
             Information on the optimization (CPU time, nb constraints, ...)
         """
-        df = _sp_solver_attributes(Scn_ID, Pareto_ID, ampl)
+        time = ampl.getValue('_total_solve_time')
+        constr = ampl.getValue('_ncons')
+        pres_constr = ampl.getValue('_sncons')  # after presolve
+        var = ampl.getValue('_nvars')
+        pres_var = ampl.getValue('_snvars')  # after presolve
+        binaries = ampl.getValue('_snbvars')  # after presolve
+        integer = ampl.getValue('_snivars')  # after presolve
+        no_ojectives = ampl.getValue('_snobjs')  # after presolve
+        val_objectives = ampl.getCurrentObjective().getValues().toList()[0]
+
+        mux = pd.MultiIndex.from_tuples([(Scn_ID, Pareto_ID)], names=['Scn_ID', 'Pareto_ID'])
+        df = pd.DataFrame([[time, constr, pres_constr, var, pres_var, binaries, integer, no_ojectives, val_objectives]], index=mux,
+                          columns=['solving_time', 'constraints', 'presolve_constraints', 'variables', 'presolve_variables',
+                                   'presolve_binaries', 'presolve_integer', 'no_objective', 'val_objective'])
 
         if not self.method['district-scale']:  # for decompose method, stored in solver_attributes_MP or _SP
             self.solver_attributes = pd.concat([self.solver_attributes, df])
@@ -1527,22 +1329,6 @@ class MasterProblem:
         return df
 
     def sort_decomp_result(self, Scn_ID, idxvalues):
-        """
-        Renumber the Pareto points of the decomposition results, in a given order.
-
-        Used by :meth:`~reho.model.reho.REHO.generate_pareto_curve` to order the points of a Pareto
-        front: point ``idxvalues[i]`` becomes point ``i + 1`` in ``results_SP`` and ``results_MP``. The
-        records ``number_SP_solutions``, ``number_MP_solutions``, ``solver_attributes_SP``,
-        ``solver_attributes_MP`` and ``reduced_costs`` are sorted by ``Pareto_ID``, whose values are left
-        unchanged.
-
-        Parameters
-        ----------
-        Scn_ID : str
-            Name of the scenario.
-        idxvalues : array-like
-            Current IDs of the Pareto points, in the new order.
-        """
 
         new_order_SPresults = {}
         new_order_MPresults = {}
@@ -1560,29 +1346,6 @@ class MasterProblem:
             self.reduced_costs = self.reduced_costs.sort_values(['Pareto_ID', 'Iter'])
 
     def add_df_Results_SP(self, Scn_ID, Pareto_ID, iter, house, df_Results, attr):
-        """
-        Store the results of a sub-problem, and record the solution.
-
-        The results are stored in ``results_SP[Scn_ID][Pareto_ID][iter][feasible_solutions][house]``,
-        the solver statistics are appended to ``solver_attributes_SP``, and the solution to
-        ``number_SP_solutions``.
-
-        Parameters
-        ----------
-        Scn_ID : str
-            Name of the scenario.
-        Pareto_ID : int
-            Index of the Pareto point.
-        iter : int
-            Iteration of the master problem.
-        house : str
-            Building of the sub-problem.
-        df_Results : dict
-            Result DataFrames of the sub-problem, see
-            :func:`~reho.model.postprocessing.write_results.get_df_Results_from_SP`.
-        attr : pd.DataFrame
-            Solver statistics, see :meth:`get_solver_attributes`.
-        """
         if Scn_ID not in self.results_SP:
             self.results_SP[Scn_ID] = {}
         if Pareto_ID not in self.results_SP[Scn_ID]:
@@ -1607,27 +1370,6 @@ class MasterProblem:
         self.number_SP_solutions.iloc[-1, self.number_SP_solutions.columns.get_loc('MP_solution')] = number_iter_global
 
     def add_df_Results_MP(self, Scn_ID, Pareto_ID, iter, df_Results, attr):
-        """
-        Store the results of the master problem, and update the record of the solutions.
-
-        The results are stored in ``results_MP[Scn_ID][Pareto_ID][iter]``, the solver statistics are
-        appended to ``solver_attributes_MP``, and ``number_MP_solutions`` is recomputed from
-        ``number_SP_solutions``.
-
-        Parameters
-        ----------
-        Scn_ID : str
-            Name of the scenario.
-        Pareto_ID : int
-            Index of the Pareto point.
-        iter : int
-            Iteration of the master problem.
-        df_Results : dict
-            Result DataFrames of the master problem, see
-            :func:`~reho.model.postprocessing.write_results.get_df_Results_from_MP`.
-        attr : pd.DataFrame
-            Solver statistics, see :meth:`get_solver_attributes`.
-        """
 
         if Scn_ID not in self.results_MP:
             self.results_MP[Scn_ID] = {}
@@ -1678,29 +1420,22 @@ class MasterProblem:
                     parameters_SP[key] = self.parameters[key]
                 elif isinstance(self.parameters[key], pd.DataFrame):
                     if "Hub" in self.parameters[key].index.names:
-                        if h in self.parameters[key].index.get_level_values("Hub"):
-                            if isinstance(self.parameters[key].index, pd.MultiIndex):
-                                parameters_SP[key] = self.parameters[key].xs(h, level="Hub", drop_level=False)
-                            else:
-                                parameters_SP[key] = self.parameters[key].loc[h].values[0]
+                        parameters_SP[key] = self.parameters[key].xs(h, level="Hub", drop_level=False)
                     else:
                         parameters_SP[key] = self.parameters[key]
                 else:
                     if len(self.parameters[key]) == len(self.buildings_data):
-                        # One value per building: positional for arrays and lists, label-based for pandas.
                         try:
-                            parameters_SP[key] = self.parameters[key][ID]
-                        except (KeyError, IndexError, TypeError):
-                            parameters_SP[key] = self.parameters[key].iloc[[ID]]
+                            parameters_SP[key] = self.parameters[key][ID]  # one parameter per building
+                        except:
+                            parameters_SP[key] = self.parameters[key].iloc[[ID]]  # one parameter per building
                     else:
-                        # One time series per building, stored as a single flat array.
                         try:
                             timesteps = int(len(self.parameters[key]) / len(self.buildings_data))
-                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps)
+                            profile_building_x = self.parameters[key].reshape(len(self.buildings_data), timesteps)  # for time series
                             parameters_SP[key] = profile_building_x[ID]
-                        except (AttributeError, ValueError):
-                            # Not reshapeable: a single value shared by every building.
-                            parameters_SP[key] = self.parameters[key]
+                        except:
+                            parameters_SP[key] = self.parameters[key]  # one parameter for all buildings
 
         for key in self.set_indexed:
             if key not in self.lists_MP["list_set_indexed_MP"]:
@@ -1709,14 +1444,6 @@ class MasterProblem:
         return buildings_data_SP, parameters_SP, set_indexed_SP
 
     def build_infrastructure_SP(self):
-        """
-        Build the infrastructure of the sub-problem of each building.
-
-        Each building gets its own :class:`~reho.model.infrastructure.Infrastructure`, restricted to
-        the building units, stored in ``infrastructure_SP[building]``. The maximum size (``Units_Fmax``)
-        and specific investment cost (``Cost_inv2``) of its units are copied from the infrastructure of
-        the district, which holds the values specific to each building.
-        """
         for h in self.buildings_data:
             single_building_data = {"buildings_data": {h: self.buildings_data[h]}}
             building_units = {"building_units": self.infrastructure.units}
@@ -1730,23 +1457,6 @@ class MasterProblem:
 
     @staticmethod
     def return_combined_SP_results(df_Results, df_name):
-        """
-        Concatenate one result DataFrame over every sub-problem solved.
-
-        Parameters
-        ----------
-        df_Results : dict
-            Results of the sub-problems, nested as
-            ``df_Results[Scn_ID][Pareto_ID][Iter][FeasibleSolution][house]``, i.e. ``results_SP``.
-        df_name : str
-            Name of the DataFrame to gather, e.g. ``'df_Unit'``.
-
-        Returns
-        -------
-        pd.DataFrame
-            The DataFrames stacked, with the index levels ``Scn_ID``, ``Pareto_ID``, ``Iter``,
-            ``FeasibleSolution`` and ``house`` prepended, sorted by index.
-        """
 
         t = {(i, j, k, l, m): df_Results[i][j][k][l][m][df_name]
              for i in df_Results.keys()

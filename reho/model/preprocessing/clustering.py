@@ -4,10 +4,6 @@ from pyclustering.utils import calculate_distance_matrix
 import numpy as np
 import pandas as pd
 
-from reho.logger import get_logger
-
-logger = get_logger(__name__)
-
 __doc__ = """
 Clustering algorithm for input data reduction.
 """
@@ -43,20 +39,6 @@ class Clustering:
         self.cluster = cluster
 
     def run_clustering(self):
-        """
-        Cluster the periods for each number of clusters, and select the number of clusters.
-
-        The data is normalized and cut into periods, clustered with the K-medoids algorithm for each
-        number of clusters in ``nb_clusters``, and each solution is compared with the original data.
-        The results are stored in the object:
-
-        - ``results['idx']``: for each number of clusters (column), the medoid that represents each
-          period, as the number of the medoid period, counted from 1.
-        - ``kpis_clu``: LDC, MAE, RMSD and MAPE of each solution, per attribute.
-        - ``attr_clu``: the normalized data rebuilt from the medoids, for each solution.
-        - ``nbr_opt``: the selected number of clusters, the first one whose successor improves the MAPE
-          of neither ``Text`` nor ``Irr`` by more than 0.01.
-        """
         self.__do_normalization()
         self.__execute_clustering()
         self.__compute_kpis()
@@ -102,9 +84,7 @@ class Clustering:
         cluster_assignments = np.zeros(len(matrix), dtype=int)
         for cluster_idx, cluster_points in enumerate(kmedoids_instance.get_clusters()):
             for point in cluster_points:
-                # Periods are numbered from 1, as in the single-period case above and wherever the
-                # assignments are read: pyclustering's medoid indices start at 0.
-                cluster_assignments[point] = kmedoids_instance.get_medoids()[cluster_idx] + 1
+                cluster_assignments[point] = kmedoids_instance.get_medoids()[cluster_idx]
 
         return pd.DataFrame({str(n_clusters): cluster_assignments})
 
@@ -137,7 +117,7 @@ class Clustering:
                     df_res[str(n_clust_tot)] = year_results[str(n_clusters)]
         else:
             for n_clusters in self.nb_clusters:
-                logger.info('Applying the clustering algorithm for %s clusters.', n_clusters)
+                print('Applying algorithm for', n_clusters, 'clusters')
                 df = self.__run_KMedoids(self.attr_nor, n_clusters)
                 df_res[str(n_clusters)] = df[str(n_clusters)]
 
@@ -228,4 +208,4 @@ class Clustering:
                     self.nbr_opt = iteration
                     break
 
-        logger.info('Optimal number of typical periods: %s', self.nbr_opt)
+        print("N_k optimal: " + str(self.nbr_opt))

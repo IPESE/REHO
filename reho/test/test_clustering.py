@@ -1,9 +1,5 @@
 import pytest
-from reho.model.preprocessing.clustering import Clustering
-from reho.model.preprocessing.weather import generate_weather_data, get_weather_data, plot_cluster_KPI_separate, plot_LDC
-
-# Downloads the weather from PVGIS.
-pytestmark = [pytest.mark.slow, pytest.mark.needs_network]
+from reho.model.preprocessing.weather import *
 
 
 @pytest.fixture
@@ -26,15 +22,17 @@ def test_clustering(weather_data):
         attributes.append('Irr')
     if 'W' in cluster['Attributes']:
         attributes.append('Weekday')
+    if 'E' in cluster['Attributes']:
+        attributes.append('Emissions')
 
     cl = Clustering(data=weather_data[attributes], nb_clusters=cluster['Periods'], period_duration=cluster['PeriodDuration'],
-                    cluster=cluster, options={"year-to-day": True, "extreme": []})
+                    options={"year-to-day": True, "extreme": []})
     cl.run_clustering()
 
     plot_cluster_KPI_separate(cl.kpis_clu)
     plot_LDC(cl)
 
 
-def test_write_weather_files(qbuildings_data, tmp_path):
+def test_write_weather_files(qbuildings_data):
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-    generate_weather_data(cluster, qbuildings_data, str(tmp_path))
+    generate_weather_data(cluster, qbuildings_data)

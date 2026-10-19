@@ -1,22 +1,6 @@
 from datetime import timedelta
-import numpy as np
-import pandas as pd
-
-from reho.logger import get_logger
-from reho.model.preprocessing.sia_parser import get_daily_profiles_cached, read_sia2024_rooms_sia380_1
-
-logger = get_logger(__name__)
-
-#: Total solar energy transmittance (g-value) of the windows, SIA 2024. A building may override it
-#: with ``g_glass``, see :func:`reho.model.preprocessing.QBuildings.get_Uh_corrected`.
-G_VALUE_WINDOWS = 0.45
-
-#: g-value of the windows with the sunblinds down. A building may override it with ``g_glass_shade``,
-#: the factor applied to its ``g_glass``.
-G_VALUE_SUNBLINDS = 0.1
-
-#: Global irradiance above which the sunblinds are assumed to be down [W/m2].
-SUNBLINDS_IRRADIANCE = 300
+from reho.model.preprocessing.sia_parser import *
+from reho.model.preprocessing.QBuildings import *
 
 __doc__ = """
 Generates the buildings profiles for domestic hot water (DHW) demand, domestic electricity demand, internal heat gains, and solar gains.
@@ -119,6 +103,8 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
         heat_capacity[b] = 0
 
         for i, class_380 in enumerate(classes):
+            # share of rooms for building type
+            rooms = read_sia2024_rooms_sia380_1(class_380, df_SIA_380)
             status = ''.join(filter(str.isalnum, status_buildings[i]))
             if class_380 == 'I' or class_380 == 'II':
                 area_net_floor = buildings_data[b]['ERA'] / 1.245
@@ -135,7 +121,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
 
             for p in df_Timestamp.index:  # get profiles for each typical day
 
-                df_profiles = get_daily_profiles_cached(status, class_380, df_Timestamp.xs(p).Date, df_SIA_380, df_SIA_2024)
+                df_profiles = daily_profiles_with_monthly_deviation(status, rooms, df_Timestamp.xs(p).Date, df_SIA_2024)
                 if include_stochasticity:
                     df_profiles = apply_stochasticity(df_profiles, RV_scaling, SF)
 
@@ -260,7 +246,7 @@ def create_random_var(sd_amplitude, sd_timeshift):
     mu = 1
     RV_scaling = np.random.normal(mu, sd_amplitude, 5)
     if RV_scaling.argmin() < 0:
-        logger.warning('Negative value in the intensity variation: the stochasticity standard deviation is too large.')
+        print("-------------- Negative value in the intensity variation --------------")
 
     # create the random variable for time-shift in standard profiles
     mu = 0
@@ -293,25 +279,18 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     # Load annual data
     df_annual = pd.read_csv(annual_file, parse_dates=['time(UTC)'])
     df_annual.set_index('time(UTC)', inplace=True)
-    if df_annual.index.tz is not None:
-        df_annual.index = df_annual.index.tz_localize(None)
 
-    period_duration = cluster['PeriodDuration']
+    # Ensure timezone consistency
+    # annual_tz = df_annual.index.tz
+
+    typical_dates = pd.to_datetime(df_Timestamp['Date']).dt.normalize()
+
     df_typical = pd.DataFrame()
 
-    # Use row offsets when available (written by generate_weather_data since pandas-3 migration).
-    # This makes extraction independent of the year stored in timestamp.csv, so PVGIS clustering
-    # files (year 1990) can be reused with a custom weather file that uses a different year.
-    if 'RowOffset' in df_Timestamp.columns:
-        for offset in df_Timestamp['RowOffset'].iloc[:-2]:
-            day_data = df_annual.iloc[int(offset): int(offset) + period_duration]
-            df_typical = pd.concat([df_typical, day_data])
-    else:
-        # Fallback for cached files that predate the RowOffset column
-        df_annual = df_annual.sort_index()
-        for date in pd.to_datetime(df_Timestamp['Date']).dt.normalize()[:-2]:
-            day_data = df_annual[date:date + timedelta(hours=23)]
-            df_typical = pd.concat([df_typical, day_data])
+    # Extract data for typical days (excluding extreme periods)
+    for date in typical_dates[:-2]:
+        day_data = df_annual[date:date + timedelta(hours=23)]
+        df_typical = pd.concat([df_typical, day_data])
 
     # Handle extreme periods (minimum and maximum of the annual data)
     min_values = df_annual.min().to_frame().T
@@ -320,17 +299,22 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     df_typical = pd.concat([df_typical, min_values, max_values], ignore_index=True)
 
     # Create multi-index [Period, Hour]
-    regular_periods = len(df_Timestamp) - 2
+    regular_periods = len(typical_dates) - 2
+    periods = list(range(1, regular_periods + 1))
+    hours = list(range(1, cluster['PeriodDuration'] + 1))
+
+    # Add extreme periods with duration = 1
+    periods += [regular_periods + 1, regular_periods + 2]
+    hours += [1, 1]
 
     df_typical.index = pd.MultiIndex.from_tuples(
-        [(p, h) for p in range(1, regular_periods + 1) for h in range(1, period_duration + 1)] +
+        [(p, h) for p in range(1, regular_periods + 1) for h in range(1, cluster['PeriodDuration'] + 1)] +
         [(regular_periods + 1, 1), (regular_periods + 2, 1)],
         names=['Period', 'Hour']
     )
 
     if typical_file:
         df_typical.to_csv(typical_file)
-
 
     return df_typical
 
@@ -353,29 +337,16 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
     np.array
         Solar gains for each timesteps.
     """
-    # TODO: verify the assumptions of g-value. Solar gains are very important in the final results.
 
-    irr = local_data["Irr"]
     buildings_data = qbuildings_data["buildings_data"]
-    # The g-values of the first building apply to the district; a sensitivity analysis may set them.
-    reference = next(iter(buildings_data.values()))
-    g_glass = reference.get("g_glass", G_VALUE_WINDOWS)
-    g_sunblinds = g_glass * reference["g_glass_shade"] if "g_glass_shade" in reference else G_VALUE_SUNBLINDS
-    g = np.repeat(g_glass, len(irr))
-    g[irr > SUNBLINDS_IRRADIANCE] = g_sunblinds
+    irr = local_data["Irr"] * 0.6  # factor to convert global to horizontal irradiance
+
+    g = np.repeat(0.5, len(irr))  # g-value SIA 2024
+    g[irr > 0.2] = 0.1  # assumption that if irradiation exceeds 200 W/m2, we use sunblinds
 
     np_gains = np.array([])
     for b in buildings_data:
-        id_building = buildings_data[b]["id_building"]
-        if "facades_data" in qbuildings_data.keys():
-            facades = qbuildings_data["facades_data"]
-            facades_b = facades[facades["id_building"] == id_building]
-            df_angles = pd.DataFrame({idx: 90 - (local_data["sun_azimuth"] - val) for idx, val in facades_b["AZIMUTH"].items()})
-            df_facade_irr = np.cos(df_angles) * facades_b["AREA"]
-            area_facade_irr = df_facade_irr[df_facade_irr > 0].sum(axis=1)
-        else:
-            area_facade_irr = buildings_data[b]['area_facade_m2']
-
+        A_facades = buildings_data[b]['area_facade_m2']
         classes = buildings_data[b]['id_class'].split('/')
         if isinstance(buildings_data[b]['ratio'], float):
             ratios = str(buildings_data[b]['ratio'])
@@ -384,13 +355,12 @@ def solar_gains_profile(qbuildings_data, sia_data, local_data):
         glass_fraction_building = 0
         for i, class_380 in enumerate(classes):
             # share of rooms for building type
-            if buildings_data[b]["period"] in ["1971-1980", "1981-1990", "1991-2000", "2001-2005", "2006-2010", ">2010"]: # for building < 1970, solar gains are negligible
-                rooms = read_sia2024_rooms_sia380_1(class_380, sia_data["df_SIA_380"])
-                df = sia_data["df_SIA_2024"]['data']
-                glass_fraction_2024 = df['Taux de surface vitrée']
-                glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
-                glass_fraction_building += glass_fraction_rooms * float(ratios[i])
-        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * area_facade_irr
+            rooms = read_sia2024_rooms_sia380_1(class_380, sia_data["df_SIA_380"])
+            df = sia_data["df_SIA_2024"]['data']
+            glass_fraction_2024 = df['Taux de surface vitrée']
+            glass_fraction_rooms = (glass_fraction_2024 * rooms).sum()
+            glass_fraction_building += glass_fraction_rooms * float(ratios[i])
+        gains = irr / 1000 * g * 0.9 * glass_fraction_building / 100 * A_facades
         # glass fraction on facades from SIA 2024, 0.9 SIA 2024: acknowledge perpendicular rays
         np_gains = np.append(np_gains, gains)
 

@@ -1,13 +1,12 @@
-from pathlib import Path
+from reho.model.reho import *
 
-from reho import QBuildingsReader, REHO, initialize_grids, initialize_units
 
 if __name__ == '__main__':
 
     # Set building parameters
     reader = QBuildingsReader()
     reader.establish_connection('Geneva')
-    qbuildings_data = reader.read_db({'transformers': 234, 'egid': ['1017073/1017074', '1017109', '1017079', '1030377/1030380']})
+    qbuildings_data = reader.read_db(district_id=234, egid=['1017073/1017074', '1017109', '1017079', '1030377/1030380'])
 
     # Select clustering options for weather data, with custom profiles
     custom_weather_profile = str(Path(__file__).parent / 'data' / 'profiles' / 'Geneva.csv')
@@ -26,8 +25,8 @@ if __name__ == '__main__':
     method = {'building-scale': True, 'use_custom_profiles': {'electricity': custom_elec_profile}}
 
     # Initialize available units and grids
-    grids = initialize_grids()
-    units = initialize_units(scenario, grids=grids)
+    grids = infrastructure.initialize_grids()
+    units = infrastructure.initialize_units(scenario, grids=grids)
 
     # Run optimization
     reho = REHO(qbuildings_data=qbuildings_data, units=units, grids=grids, cluster=cluster, scenario=scenario, method=method, solver="gurobi")

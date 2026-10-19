@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "setuptools-scm>=8", "wheel"]
+requires = ["setuptools", "setuptools-scm", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "REHO"
 keywords = ["MILP", "MOO decision support", "sustainable energy systems", "energy communities"]
 dynamic = ['version']
 description = "Renewable Energy Hub Optimizer (REHO) - A Decision Support Tool for Renewable Energy Communities"
-license = {text = "Apache-2.0"}
+license = {text = "Apache Software License"}
 authors = [
     {name = "Dorsan Lepour", email = "dorsan.lepour@epfl.ch"},
 ]
@@ -15,14 +15,15 @@ maintainers = [
     {name = "IPESE-IT", email = "it.ipese@epfl.ch"},
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 classifiers = [
     "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
@@ -30,97 +31,46 @@ dependencies = [
     "ampl_module_base",
     "ampl_module_highs",
     "coloredlogs",
-    "geopandas",
+    "geopandas<1.0.0",
     "kaleido",
     "matplotlib",
-    "numpy",
+    "numpy<2.0.0",
     "openpyxl",
-    "pandas>=3.0.0",
+    "pandas<2.0.0",
     "plotly",
-    "psycopg2-binary<3.0.0",
+    "psycopg2<3.0.0 ; sys_platform != 'win32'",
+    "psycopg2-binary<3.0.0 ; sys_platform == 'win32'",
     "pvlib==0.13.0",
     "pyclustering",
     "pyproj",
     "python-dotenv",
+    "pytest",
     "qmcpy",
     "requests",
     "SALib",
     "scipy",
     "setuptools",
     "shapely",
-    "sqlalchemy>=2.0.0",
+    "sqlalchemy<2.0.0",
     "sympy",
-    "urllib3<2"
-]
-
-# Optional dependency groups. Install with, e.g., `pip install "REHO[dev]"`.
-[project.optional-dependencies]
-test = [
-    "pytest>=7",
-    "pytest-cov",
-]
-docs = [
-    "sphinx",
-    "pydata-sphinx-theme",
-    "sphinx-design",
-    "sphinx-copybutton",
-    "sphinxcontrib-bibtex",
-    "myst-parser",
-]
-dev = [
-    "REHO[test,docs]",
-    "pyflakes",
-    "ruff",
+    "urllib3"
 ]
 
 [project.urls]
 "Documentation" = "https://reho.readthedocs.io/"
 "Repository" = "https://github.com/IPESE/REHO"
 "Download" = "https://pypi.org/project/REHO"
-"Changelog" = "https://github.com/IPESE/REHO/blob/main/CHANGELOG.md"
-"Issues" = "https://github.com/IPESE/REHO/issues"
+
+[tool.setuptools]
+packages = ["reho"]
+
+[tool.setuptools.package-data]
+"REHO" = ["*.csv", "*.xlsx", "*.dat", "*.txt", "*.mod", "*.ini"]
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
 
 [project.scripts]
 reho-test-import = "reho.test.test_import:test_import_reho_modules"
 reho-test-run = "reho.test.test_run:test_run"
 reho-download-examples = "reho.test.test_examples:test_download_examples"
-
-# `reho` and every sub-package must be listed, otherwise only the top-level
-# package reaches the wheel.
-[tool.setuptools.packages.find]
-include = ["reho*"]
-namespaces = false
-
-# Non-Python files (AMPL model, reference data) shipped inside the package.
-# The key is the package name, which is `reho` in lower case - `REHO` matches nothing.
-[tool.setuptools.package-data]
-"reho" = ["*.csv", "*.xlsx", "*.mod", "*.ini"]
-
-[tool.setuptools_scm]
-version_scheme = "post-release"
-
-[tool.pytest.ini_options]
-testpaths = ["reho/test"]
-# Tests that need an AMPL license, a solver or network access are marked; the
-# default run stays offline and fast.
-markers = [
-    "slow: solves an optimization problem; takes minutes",
-    "needs_ampl: requires a working AMPL license and solver",
-    "needs_network: requires internet access (QBuildings, PVGIS, ELCOM)",
-]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-]
-
-[tool.ruff]
-line-length = 160
-target-version = "py311"
-
-[tool.ruff.lint]
-# E501 (line length) is handled by line-length above; the scientific code uses
-# short names (h, u, l, dT) that N806-style rules would flag on every line.
-select = ["E", "F", "W", "I", "B", "UP"]
-ignore = ["E741", "B008"]
-
-[tool.ruff.lint.per-file-ignores]
-"reho/test/*" = ["B011"]

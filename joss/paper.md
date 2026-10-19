@@ -120,5 +120,6 @@ From a technical standpoint, REHO is designed to be user-friendly, with a modula
 # Acknowledgements
 
 The development of REHO was carried out within the _Industrial Process and Energy Systems Engineering_ research group (IPESE), EPFL. The authors acknowledge the financial support from the _Services Industriels de Genève_ (SIG), Switzerland, and from the _Swiss Federal Office of Energy_ (SFOE).
+The authors also express their gratitude to Paul Stadler and Luise Middelhauve, whose PhD theses have laid the foundations of the model.
 
 # References

@@ -1,9 +1,7 @@
-import os
-
 import numpy as np
 import pandas as pd
 
-from reho.paths import path_to_skydome
+from reho.paths import *
 
 __doc__ = """
 Generates a skydome decomposition into patches for PV orientation.
@@ -79,7 +77,7 @@ def irradiation_to_df(local_data):
     for date in df_time['Date'][:-2]:
         start_idx = date.timetuple().tm_yday*24
         df_period = df_irradiation.iloc[start_idx:start_idx + PeriodDuration].copy()
-        df_period.index = pd.date_range(start=pd.to_datetime(date), periods=PeriodDuration, freq='h')
+        df_period.index = pd.date_range(start=pd.to_datetime(date), periods=PeriodDuration, freq='H')
         df_p = pd.concat([df_p, df_period])
 
     # Handle extreme periods

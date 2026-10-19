@@ -9,29 +9,26 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from shapely import wkt
-from sqlalchemy import create_engine, MetaData, select, and_, func, String, text
+from sqlalchemy import create_engine, MetaData, select
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.exc import SAWarning
 
-from reho.logger import get_logger
-from reho.paths import file_reader, path_handler, path_to_infrastructure, path_to_qbuildings, path_to_sia, path_to_skydome
+from reho.paths import *
 
 __doc__ = """
 Handles data for buildings characterization.
 """
 
-logger = get_logger(__name__)
-
 df_dome = pd.read_csv(os.path.join(path_to_skydome, 'skydome.csv'))
-
-CRS_QBUILDINGS = 2056  # Swiss coordinate system (CH1903+ / LV95) used in QBuildings
 
 
 class QBuildingsReader:
     """
     Handles and prepares the data related to buildings.
 
-    There usually come from `QBuildings <https://qbuildings.epfl.ch/>`_ database. However,
-    one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in "Processed" tables.
+    There usually come from `GBuildings <https://ipese-web.epfl.ch/lepour/qbuildings/index.html>`_ database. However,
+    one can use data from a csv, in which case the column names should correspond to the GBuildings one, described in
+    `Processed GBuildings tables <https://ipese-web.epfl.ch/lepour/qbuildings/GBuildings/description.html#processed>`_.
 
     Parameters
     ----------
@@ -41,61 +38,7 @@ class QBuildingsReader:
         Whether the roofs data should be added.
     """
 
-    #: Filter layer -> column of the ``buildings`` table on which it is applied
-    LAYER_COLUMNS = {
-        'transformers': 'transformer',
-        'transformer': 'transformer',
-        'transformers_V2': 'id_transformers_V2',
-        'geo_girec': 'geo_girec',
-        'neighborhoods': 'id_neighborhood',
-        'neighborhood': 'id_neighborhood',
-        'egid': 'egid',
-        'id_building': 'id_building',
-    }
-
-    #: Filter layer -> table holding the corresponding district boundaries
-    DISTRICT_TABLES = {
-        'transformers': 'transformers',
-        'transformer': 'transformers',
-        'transformers_V2': 'transformers_V2',
-        'geo_girec': 'geo_girec',
-        'neighborhoods': 'neighborhoods',
-        'neighborhood': 'neighborhoods',
-    }
-
-    #: source_heating keyword -> unit(s) implementing it. Several sources can be listed (e.g. "Oil/Electricity").
-    HEATING_SOURCE_TO_UNITS = {
-        'oil':           ['OIL_Boiler'],
-        'gas':           ['NG_Boiler'],
-        'wood':          ['WOOD_Stove'],
-        'electricity':   ['ElectricalHeater_SH', 'ElectricalHeater_DHW'],
-        'district heat': ['DHN_hex'],
-    }
-
-    #: source_hotwater keyword -> unit(s) implementing it. 'wood' is absent: WOOD_Stove only serves SH.
-    HOTWATER_SOURCE_TO_UNITS = {
-        'oil':           ['OIL_Boiler'],
-        'gas':           ['NG_Boiler'],
-        'electricity':   ['ElectricalHeater_DHW'],
-        'district heat': ['DHN_hex'],
-        'solar':         ['ThermalSolar'],
-    }
-
-    #: Units that can be a primary heating/DHW system, i.e. that compete with each other.
-    PRIMARY_HEATING_UNITS = {unit for units in HEATING_SOURCE_TO_UNITS.values() for unit in units} | {
-        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
-    }
-
-    #: Units whose UnitOfService contains 'DHW'. WOOD_Stove and ElectricalHeater_SH serve SH only.
-    DHW_CAPABLE_UNITS = {
-        'OIL_Boiler', 'NG_Boiler', 'ElectricalHeater_DHW', 'DHN_hex',
-        'HeatPump_Air', 'HeatPump_Geothermal', 'HeatPump_DHN', 'HeatPump_Lake', 'ThermalSolar',
-    }
-
-    #: Date of the databases predating the [DATE] tag in their table descriptions
-    DEFAULT_DB_DATE = '2023'
-
-    def __init__(self, load_facades=False, load_roofs=False, correct_Uh=False):
+    def __init__(self, load_facades=False, load_roofs=False):
 
         self.db = None
         self.tables = None
@@ -105,97 +48,55 @@ class QBuildingsReader:
         self.data = {}
         self.load_facades = load_facades
         self.load_roofs = load_roofs
-        self.correct_Uh = correct_Uh
 
     def establish_connection(self, db):
         """
-        Connect to one of the QBuildings databases.
+        Allows to establish the connection with one of the QBuildings database.
 
         Parameters
         ----------
         db : str
-            Name of the database, matching a ``<db>.ini`` file in
-            ``reho/data/QBuildings/`` (``Geneva``, ``Suisse``, ...).
+            Name of the database to which we want to connect
 
-        Returns
-        -------
-        QBuildingsReader
-            ``self``, so the call can be chained with :meth:`read_db`.
-
-        Raises
-        ------
-        FileNotFoundError
-            If no configuration file exists for ``db``.
-        ConnectionError
-            If the database cannot be reached. Reading buildings from a CSV file
-            with :meth:`read_csv` needs no connection at all.
         """
-        file_ini = os.path.join(path_to_qbuildings, db + ".ini")
-        if not os.path.isfile(file_ini):
-            available = sorted(f[:-4] for f in os.listdir(path_to_qbuildings) if f.endswith(".ini"))
-            raise FileNotFoundError(f"No configuration file for the database {db!r}. Available: {available}.")
+        # Database connection
+        file_ini = path_to_qbuildings + "/" + db + ".ini"
 
         project = configparser.ConfigParser()
         project.read(file_ini)
-        if 'database' not in project:
-            raise KeyError(f"{file_ini} has no [database] section.")
 
-        settings = project['database']
+        # Database
         self.db_schema = "Processed"
         try:
-            self.db_engine = create_engine(
-                'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(
-                    settings['username'], settings['password'], settings['host'],
-                    settings['port'], settings['database'])
-            )
+            db_engine_str = 'postgresql+psycopg2://{}:{}@{}:{}/{}'.format(project['database']['username'],
+                                                                          project['database']['password'],
+                                                                          project['database']['host'],
+                                                                          project['database']['port'],
+                                                                          project['database']['database'])
+            self.db_engine = create_engine(db_engine_str)
             self.connection = self.db_engine.connect()  # test connection
-        except Exception as exc:
-            # Failing here used to be logged and ignored, which surfaced much later
-            # as an opaque error on a None engine.
-            raise ConnectionError(
-                f"Cannot connect to the QBuildings database {db!r} "
-                f"(host {settings['host']}:{settings['port']}, database {settings['database']}, "
-                f"user {settings['username']}): {exc}. Check your network access to the EPFL server, "
-                "or read the buildings from a CSV file with QBuildingsReader.read_csv()."
-            ) from exc
+            print('Connected to database')
 
-        logger.info('Connected to the %s QBuildings database (host %s:%s, database %s, user %s).',
-                    db, settings['host'], settings['port'], settings['database'], settings['username'])
+        except Exception as e:
+            print(f'Cannot connect to database engine: {e}')
 
+        if 'database' in project:
+            print('\thost: {}\n\tport: {}\n\tdatabase: {}\n\tusername: {}'.format(
+                project['database']['host'],
+                project['database']['port'],
+                project['database']['database'],
+                project['database']['username']))
+
+        # input
         warnings.filterwarnings('ignore', category=SAWarning)
-        metadata = MetaData()
-        metadata.reflect(bind=self.db_engine, schema=self.db_schema)
+        metadata = MetaData(bind=self.db_engine)
+        metadata.reflect(schema=self.db_schema)
         self.tables = metadata.tables
         self.db = db
 
-        return self
+        return
 
-    def read_date_from_description(self, table='buildings'):
-        """
-        Reads the date tagged as ``[DATE]`` in the description of a table of the database.
-
-        Parameters
-        ----------
-        table : str
-            Name of the table whose description is read.
-
-        Returns
-        -------
-        str
-            The date found, or ``DEFAULT_DB_DATE`` for the databases predating the tag.
-        """
-        description = None
-        if self.connection is not None:
-            query = text("SELECT obj_description(CAST(:table AS regclass))")
-            try:
-                description = self.connection.execute(query, {'table': '"%s".%s' % (self.db_schema, table)}).scalar()
-            except Exception as e:
-                warnings.warn("Could not read the description of the table '%s': %s" % (table, e))
-
-        match = re.search(r'\[DATE\]\s*:?\s*([\w-]+)', description or '')
-        return match.group(1) if match else self.DEFAULT_DB_DATE
-
-    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv'):
+    def read_csv(self, buildings_filename='data/buildings.csv', nb_buildings=None, roofs_filename='data/roofs.csv', facades_filename='data/facades.csv', correct_Uh=False):
         """
         Reads buildings-related data from CSV files and prepare it for the REHO model.
 
@@ -226,7 +127,7 @@ class QBuildingsReader:
 
         Example
         -------
-        >>> from reho import QBuildingsReader
+        >>> from reho.model.reho import *
         >>> reader = QBuildingsReader(load_roofs=True)
         >>> qbuildings_data = reader.read_csv("buildings.csv", roofs_filename="roofs.csv", nb_buildings=7)
 
@@ -241,7 +142,7 @@ class QBuildingsReader:
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
-        buildings = self.select_buildings_data(nb_buildings)
+        buildings = self.select_buildings_data(nb_buildings, None)
         qbuildings = {'buildings_data': buildings}
         if self.load_facades:
             self.data['facades'] = file_reader(path_handler(facades_filename))
@@ -260,44 +161,28 @@ class QBuildingsReader:
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
 
-        if self.correct_Uh:
+        if correct_Uh:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
-
-        qbuildings['data_source'] = buildings_filename
-        qbuildings['data_date'] = None
         return qbuildings
 
-    def read_db(self, filters=None, nb_buildings=None, to_csv=False,
-                district_boundary=None, district_id=None, egid=None, id_building=None):
+    def read_db(self, district_boundary="transformers", district_id=None, nb_buildings=None, egid=None, to_csv=False, correct_Uh=False):
         """
         Reads the database and extracts the relevant buildings data.
-
-        The selection is driven by a ``{layer: value}`` dictionary, where each entry restricts the
-        buildings to those matching the given layer. The district(s) to which the selected buildings
-        belong are retrieved as well, and the fields are translated to the nomenclature used in REHO.
+        If only some buildings from the district_id need to be extracted, you can specify the desired number of buildings or, if the EGIDs are known, provide a list of EGIDs.
+        The fields from the database are translated to the nomenclature used in REHO.
 
         Parameters
         ----------
-        filters : dict
-            Selection criteria, given as ``{layer: value}`` and combined with a logical AND. Values
-            can be a scalar or a list. The available layers are:
-
-            - ``transformers`` : LV transformer area (default district boundary in QBuildings)
-            - ``transformers_V2`` : alternative LV transformer areas
-            - ``geo_girec`` : GIREC statistical sectors
-            - ``neighborhoods`` : neighborhoods
-            - ``egid`` : buildings EGIDs
-            - ``id_building`` : QBuildings internal building IDs
-            - ``geometry`` : any geometry, given as a file path (.gpkg, .shp, .geojson...), a WKT
-              string, a shapely geometry or a (Geo)DataFrame. Buildings intersecting it are selected.
-
-            Not every layer exists in every database (e.g. ``geo_girec`` is specific to Geneva).
+        district_boundary : str
+            The boundary of the district. It can be either 'transformers' or 'geo_girec'. By default, a district corresponds to a LV tranformer area as defined in QBuidings database.
+        district_id : int or str
+            ID or name of the district where the buildings lie.
         nb_buildings : int
-            Number of buildings to select.
+            Number of buildings to select
+        egid : list
+            To specify a list of buildings their EGIDs
         to_csv : bool
-            To export the data into csv.
-        district_boundary, district_id, egid, id_building
-            Deprecated, kept for backward compatibility. Use ``filters`` instead.
+            To export the data into csv
 
         Returns
         -------
@@ -310,24 +195,15 @@ class QBuildingsReader:
         -----
         - The use of this function requires the previous creation of a ``QBuildingsReader`` and the use of ``establish_connection('Suisse')``.
         - EGIDs are the postal address unique identifier used in Switzerland. One can find the EGIDs of a given address at the `RegBL <https://www.housing-stat.ch/fr/query/adrtoegid.html>`_.
-        - Geometries are expected in EPSG:2056 (LV95); files carrying their own CRS are reprojected.
         - If ``load_roofs = True`` the roofs are returned as well in the dictionary as a DataFrame under the key ``roofs_data``.
         - If ``load_facades = True`` the facades and the shadows are returned as well in the dictionary as a DataFrame under the keys ``roofs_data`` and ``shadows_data``.
 
         Examples
         --------
-        >>> from reho import QBuildingsReader
+        >>> from reho.model.reho import *
         >>> reader = QBuildingsReader(load_roofs=True)
         >>> reader.establish_connection('Suisse')
-        >>> qbuildings_data = reader.read_db({'egid': 954117})
-        >>> qbuildings_data = reader.read_db({'id_building': [40214, 40215]})
-        >>> qbuildings_data = reader.read_db({'transformers': 3658}, nb_buildings=10)
-        >>> qbuildings_data = reader.read_db({'neighborhoods': 10302})
-        >>> qbuildings_data = reader.read_db({'geometry': 'boundary.gpkg'})
-        >>> qbuildings_data = reader.read_db({'geometry': 'MULTIPOLYGON (((2592684 1120074, ...)))'})
-
-        >>> # filters are combined, here the buildings of a transformer that lie in a given perimeter
-        >>> qbuildings_data = reader.read_db({'transformers': 3658, 'geometry': 'boundary.gpkg'})
+        >>> qbuildings_data = reader.read_db(district_id=3658, egid=[954117])
 
         >>> qbuildings_data['buildings_data']
         {'buildings_data': {'Building1': {'id_class': 'I', 'ratio': '1.0', 'status': "['existing', 'existing', 'existing']", 'ERA': 1396.0, 'SolarRoofArea': 1121.8206745917826, 'area_facade_m2': 848.6771960464813, 'height_m': 9.211343577064236, 'U_h': 0.00152, 'HeatCapacity': 120.29999999999991, 'T_comfort_min_0': 20.0, 'Th_supply_0': 65.0, 'Th_return_0': 50.0, 'Tc_supply_0': 12.0, 'Tc_return_0': 17.0, 'x': 2592703.9673297284, 'y': 1120087.7339999992, 'z': 572.4461527539248, 'geometry': <POLYGON ((2592684.383 1120074.623, 2592683.644 1120075.443, 2592679.083 112...>, 'transformer': 3658, 'id_building': '40214', 'egid': '954117', 'period': '1981-1990', 'n_p': 34.9, 'energy_heating_signature_kWh_y': 111855.52745599969, 'energy_cooling_signature_kWh_y': 0.0, 'energy_hotwater_signature_kWh_y': 4562.903646729638, 'energy_el_kWh_y': 39088.0}}
@@ -349,35 +225,30 @@ class QBuildingsReader:
 
         """
 
-        # TODO: SQL query to select only roofs and facades of interest
+        # TODO: SQL query to select only buildings, roofs and facades of interest
 
-        # geopandas looks for PostGIS's spatial_ref_sys table which may not exist in all deployments;
-        # suppress the benign fallback warning since epsg:2056 is always the correct CRS here.
-        warnings.filterwarnings("ignore", message="Could not find the spatial reference system table")
+        if district_boundary == "transformers":
+            id_key = "transformer"
+        elif district_boundary == "transformers_V2":
+            id_key = "id_transformers_V2"
+        elif district_boundary == "geo_girec":
+            id_key = "geo_girec"
+        elif district_boundary == "neighborhoods":
+            id_key = "id_neighborhood"
+        else:
+            raise Exception("The district boundary is not recognized.")
 
-        filters = dict(filters) if filters else {}
-        # Deprecated arguments are folded into the filters dictionary
-        if district_id is not None:
-            warnings.warn("district_boundary/district_id are deprecated, use filters={'%s': %r} instead."
-                           % (district_boundary or 'transformers', district_id), DeprecationWarning, stacklevel=2)
-            filters[district_boundary or 'transformers'] = district_id
-        if egid is not None:
-            warnings.warn("The egid argument is deprecated, use filters={'egid': %r} instead." % (egid,),
-                           DeprecationWarning, stacklevel=2)
-            filters['egid'] = egid
-        if id_building is not None:
-            warnings.warn("The id_building argument is deprecated, use filters={'id_building': %r} instead." % (id_building,),
-                           DeprecationWarning, stacklevel=2)
-            filters['id_building'] = id_building
-        if not filters:
-            raise ValueError("No filter given, e.g. {'transformers': 234}, {'egid': 1009515} or {'geometry': 'boundary.gpkg'}.")
+        # Select the right boundary
+        sqlQuery = select([self.tables[self.db_schema + '.' + district_boundary]]).where(
+            self.tables[self.db_schema + '.' + district_boundary].columns.id == district_id)
+        self.data[district_boundary] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
 
-        # Whatever the layer the buildings are given on, they are selected first, and the district
-        # they belong to is deduced from them afterwards.
-        self.select_buildings(filters)
-        district_boundary = next((layer for layer in filters if layer in self.DISTRICT_TABLES), 'transformers')
-        id_key = self.LAYER_COLUMNS[district_boundary]
-        self.select_district_from_buildings(district_boundary)
+        # Select buildings
+        sqlQuery = select([self.tables[self.db_schema + '.' + 'buildings']]).where(
+            getattr(self.tables[self.db_schema + '.' + 'buildings'].columns, id_key) == district_id)
+        self.data['buildings'] = gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()), con=self.db_engine, geom_col='geometry').fillna(np.nan)
+        mask = (self.data['buildings']['egid'].isnull())
+        self.data['buildings'] = self.data['buildings'].loc[~mask, :]
 
         if nb_buildings is None:
             nb_buildings = self.data['buildings'].shape[0]
@@ -385,8 +256,7 @@ class QBuildingsReader:
             self.data['buildings'].to_csv('buildings.csv', index=False)
 
         self.data['buildings'] = translate_buildings_to_REHO(self.data['buildings'], district_boundary=id_key)
-        # Buildings picked one by one (by EGID or ID) are kept as such, without filtering on their class
-        buildings = self.select_buildings_data(nb_buildings, filter_class=not {'egid', 'id_building'}.intersection(filters))
+        buildings = self.select_buildings_data(nb_buildings, egid)
         if to_csv:
             csv_columns = list(buildings[list(buildings.keys())[0]].keys())
             with open('reho_input.csv', 'w') as csvfile:
@@ -398,12 +268,13 @@ class QBuildingsReader:
         qbuildings = {'buildings_data': buildings}
 
         if self.load_facades:
+            # TODO: Correct the roofs and facades selection with the id filtered by select_buildings_data
             self.data['facades'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
-                sqlQuery = select(self.tables[self.db_schema + '.' + 'facades']) \
+                sqlQuery = select([self.tables[self.db_schema + '.' + 'facades']]) \
                     .where(self.tables[self.db_schema + '.' + 'facades'].columns.id_building == id)
                 self.data['facades'] = pd.concat(
-                    (self.data['facades'], gpd.read_postgis(sqlQuery,
+                    (self.data['facades'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
                                                             con=self.db_engine, geom_col='geometry').fillna(np.nan)))
             if to_csv:
                 self.data['facades'].to_csv('facades.csv', index=False)
@@ -414,209 +285,61 @@ class QBuildingsReader:
         if self.load_roofs:
             self.data['roofs'] = gpd.GeoDataFrame()
             for id in self.data['buildings'].id_building:
-                sqlQuery = select(self.tables[self.db_schema + '.' + 'roofs']) \
+                sqlQuery = select([self.tables[self.db_schema + '.' + 'roofs']]) \
                     .where(self.tables[self.db_schema + '.' + 'roofs'].columns.id_building == id)
                 self.data['roofs'] = pd.concat(
-                    (self.data['roofs'], gpd.read_postgis(sqlQuery,
+                    (self.data['roofs'], gpd.read_postgis(sqlQuery.compile(dialect=postgresql.dialect()),
                                                           con=self.db_engine, geom_col='geometry').fillna(np.nan)))
             if to_csv:
                 self.data['roofs'].to_csv('roofs.csv', index=False)
             self.data['roofs'] = translate_roofs_to_REHO(self.data['roofs'])
             qbuildings['roofs_data'] = self.data['roofs']
 
-        if self.correct_Uh:
+        if correct_Uh:
             qbuildings["buildings_data"] = get_Uh_corrected(qbuildings["buildings_data"], df_facades=qbuildings["facades_data"])
 
-        qbuildings['data_source'] = self.db
-        qbuildings['data_date'] = self.read_date_from_description()
+        if qbuildings["buildings_data"] == {}:
+            raise print("Empty building data")
+
         return qbuildings
 
-    def get_reference_reho_units(self, buildings_data):
-        """
-        Returns the units to enforce and exclude to reproduce the existing energy system.
+    def select_buildings_data(self, nb_buildings, egid=None):
 
-        For each building the DHW provider is resolved with this priority:
+        if egid is None:
+            nb_select = 0
+            selected_buildings = []
+            reindex = []
+            for i, building in self.data['buildings'].iterrows():
+                # Only execute optimization for complete dictionary else skip and count
+                if re.search('XIII', building['id_class']) is None:
+                    selected_buildings.append(building['id_building'])
+                    nb_select += 1
+                    reindex.append("Building" + str(nb_select))
+                if nb_select >= nb_buildings:
+                    break
+            self.data['buildings'] = self.data['buildings'][
+                self.data['buildings']['id_building'].isin(selected_buildings)]
+            self.data['buildings'].index = reindex
+            if self.db_engine is None:
+                self.data['buildings'] = read_geometry(self.data['buildings'])
+            buildings_data = self.data['buildings'].to_dict('index')
 
-        1. ``source_hotwater`` field → matched via ``HOTWATER_SOURCE_TO_UNITS``.
-        2. ``source_heating`` unit that also serves DHW (e.g. OIL_Boiler, NG_Boiler).
-        3. Fallback: ``ElectricalHeater_DHW`` (e.g. wood-stove buildings with a standalone
-           electric boiler for hot water, which is common in Switzerland).
+        else:
+            nb_select = 1
+            if not isinstance(egid, list):
+                egid = [egid]
 
-        Parameters
-        ----------
-        buildings_data : dict
-            Dictionary of buildings characteristics, as returned by ``read_db`` or ``read_csv``.
-
-        Returns
-        -------
-        enforce_units : list of str
-            Fully qualified unit names (``Unit_Building``) to enforce.
-        exclude_units : list of str
-            Fully qualified unit names (``Unit_Building``) to exclude.
-        pv_capacities : dict
-            Fully qualified PV unit names mapped to existing capacity in kW.
-
-        Notes
-        -----
-        An enforced unit is only kept if the grid layer it runs on is enabled: an oil-heated
-        building needs ``initialize_grids`` to be given the ``Oil`` layer.
-        """
-        enforce_units = []
-        exclude_units = []
-        pv_capacities = {}
-
-        for building, data in buildings_data.items():
-
-            source_sh = str(data.get('source_heating', '')).lower()
-            matched_sh = set()
-            for keyword, units in self.HEATING_SOURCE_TO_UNITS.items():
-                if keyword in source_sh:
-                    matched_sh.update(units)
-
-            source_hw = str(data.get('source_hotwater', '')).lower()
-            matched_hw = set()
-            for keyword, units in self.HOTWATER_SOURCE_TO_UNITS.items():
-                if keyword in source_hw:
-                    matched_hw.update(units)
-
-            if not matched_hw:
-                # Priority 2: inherit from source_heating if any of its units serve DHW
-                matched_hw = matched_sh & self.DHW_CAPABLE_UNITS
-
-            if not matched_hw and matched_sh:
-                # Priority 3: SH units exist but none cover DHW → electric boiler fallback
-                matched_hw = {'ElectricalHeater_DHW'}
-
-            matched_all = matched_sh | matched_hw
-            if matched_sh:
-                enforce_units += [u + '_' + building for u in matched_all]
-                exclude_units += [u + '_' + building for u in self.PRIMARY_HEATING_UNITS - matched_all]
-            elif matched_hw:
-                # Only the DHW system is known: leave the SH choice free
-                enforce_units += [u + '_' + building for u in matched_hw]
-
-            pv_kw = data.get('pv_installation_kW', 0)
-            pv_kw = 0.0 if pd.isna(pv_kw) else float(pv_kw)
-            if pv_kw > 0:
-                enforce_units.append('PV_' + building)
-                pv_capacities['PV_' + building] = pv_kw
-            else:
-                exclude_units.append('PV_' + building)
-
-        return enforce_units, exclude_units, pv_capacities
-
-    def select_buildings(self, filters):
-        """
-        Selects the buildings matching all the given ``{layer: value}`` filters.
-
-        This is the single entry point to the buildings table: selecting the buildings of a district
-        is just a filter on the corresponding column, as is selecting them by EGID, by ID or by a
-        geometry they intersect. All the criteria are combined into one query.
-        """
-
-        table = self.tables[self.db_schema + '.' + 'buildings']
-        sqlQuery = select(table).where(and_(*[self._filter_to_sql(table, layer, value) for layer, value in filters.items()]))
-        self.data['buildings'] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
-        # Buildings without EGID cannot be characterized
-        self.data['buildings'] = self.data['buildings'][self.data['buildings']['egid'].notnull()]
-        if self.data['buildings'].empty:
-            raise ValueError("No building found for the filters %s." % filters)
-
-        return self.data['buildings']
-
-    def select_district_from_buildings(self, district_boundary='transformers'):
-        """
-        Reads the boundaries of the district(s) in which the selected buildings lie.
-
-        The transformers are always read, as they carry the localization of the case study
-        (city and canton), used for instance to retrieve the electricity prices.
-        """
-
-        boundaries = {'transformers': 'transformer', self.DISTRICT_TABLES[district_boundary]: self.LAYER_COLUMNS[district_boundary]}
-        for table_name, id_key in boundaries.items():
-            table = self.tables[self.db_schema + '.' + table_name]
-            ids = pd.unique(self.data['buildings'][id_key].dropna()).tolist()
-            sqlQuery = select(table).where(table.columns.id.in_(ids))
-            self.data[table_name] = gpd.read_postgis(sqlQuery, con=self.db_engine, geom_col='geometry').fillna(np.nan)
-
-        return self.data[self.DISTRICT_TABLES[district_boundary]]
-
-    def _filter_to_sql(self, table, layer, value):
-        """Translates a single ``{layer: value}`` filter into a SQL condition on the buildings table."""
-
-        if layer == 'geometry':
-            geometry = to_shapely(value)
-            return func.ST_Intersects(table.columns.geometry, func.ST_GeomFromText(geometry.wkt, CRS_QBUILDINGS))
-
-        if layer not in self.LAYER_COLUMNS:
-            raise ValueError("Unknown filter layer '%s'. Available: %s and 'geometry'." % (layer, list(self.LAYER_COLUMNS)))
-        if self.LAYER_COLUMNS[layer] not in table.columns:
-            raise ValueError("The layer '%s' is not available in the '%s' database." % (layer, self.db))
-
-        column = table.columns[self.LAYER_COLUMNS[layer]]
-        values = list(value) if isinstance(value, (list, tuple, set, np.ndarray, pd.Series)) else [value]
-        if isinstance(column.type, String):
-            values = [str(v) for v in values]  # EGIDs and building IDs are stored as text
-
-        if layer == 'egid':
-            # EGIDs can be grouped ('1017073/1017074'): match any element of the group
-            return column.op('~')("(^|/)(%s)(/|$)" % '|'.join(re.escape(v) for v in values))
-        return column.in_(values)
-
-    def select_buildings_data(self, nb_buildings, filter_class=True):
-        """
-        Select the buildings to optimize, and name them ``Building1``, ``Building2``, ...
-
-        The first ``nb_buildings`` buildings of ``data['buildings']`` are kept, and ``data['buildings']``
-        is reduced to them. When the data come from a file rather than the database, their geometries
-        are parsed.
-
-        Parameters
-        ----------
-        nb_buildings : int
-            Number of buildings to select.
-        filter_class : bool, optional
-            Skip the buildings whose ``id_class`` contains the SIA category XIII (other). Default is True.
-
-        Returns
-        -------
-        dict
-            ``'Building<i>'`` -> characteristics of the building.
-        """
-
-        nb_select = 0
-        selected_buildings = []
-        reindex = []
-        for i, building in self.data['buildings'].iterrows():
-            # Only execute optimization for complete dictionary else skip and count
-            if not filter_class or re.search('XIII', building['id_class']) is None:
-                selected_buildings.append(building['id_building'])
+            buildings_data = gpd.GeoDataFrame()
+            for i in egid:
+                data_single_bui = self.data['buildings'][self.data['buildings']['egid'] == str(i)]
+                data_single_bui.index = ["Building" + str(nb_select)]
                 nb_select += 1
-                reindex.append("Building" + str(nb_select))
-            if nb_select >= nb_buildings:
-                break
-        self.data['buildings'] = self.data['buildings'][
-            self.data['buildings']['id_building'].isin(selected_buildings)]
-        self.data['buildings'].index = reindex
-        if self.db_engine is None:
-            self.data['buildings'] = read_geometry(self.data['buildings'])
+                buildings_data = pd.concat([buildings_data, data_single_bui])
+            buildings_data = buildings_data.to_dict('index')
 
-        return self.data['buildings'].to_dict('index')
+        return buildings_data
 
     def select_roofs_or_facades_data(self, roof):
-        """
-        Index of the roofs, or of the facades, of the selected buildings.
-
-        Parameters
-        ----------
-        roof : bool
-            Select in ``data['roofs']`` if True, in ``data['facades']`` otherwise.
-
-        Returns
-        -------
-        list
-            Index labels of the rows whose ``id_building`` is one of the buildings of ``data['buildings']``.
-        """
         selected_data = []
         for i, building in self.data['buildings'].iterrows():
             if roof:
@@ -629,63 +352,7 @@ class QBuildingsReader:
         return selected_data
 
 
-def to_shapely(geometry, crs=CRS_QBUILDINGS):
-    """
-    Converts a geometry into a single shapely geometry expressed in the QBuildings CRS.
-
-    Parameters
-    ----------
-    geometry : str, os.PathLike, shapely geometry, GeoDataFrame or GeoSeries
-        A path to a geographic file (.gpkg, .shp, .geojson...), a WKT string, an already opened
-        (Geo)DataFrame or a shapely geometry.
-    crs : int
-        The CRS in which the geometry is returned.
-
-    Returns
-    -------
-    shapely.geometry.base.BaseGeometry
-        The union of the given geometries.
-    """
-
-    if isinstance(geometry, (str, os.PathLike)) and os.path.exists(geometry):
-        geometry = gpd.read_file(geometry)
-    elif isinstance(geometry, str):
-        geometry = wkt.loads(geometry)
-
-    if isinstance(geometry, (gpd.GeoDataFrame, pd.DataFrame)):
-        geometry = geometry['geometry']
-    if isinstance(geometry, pd.Series) and not isinstance(geometry, gpd.GeoSeries):
-        geometry = gpd.GeoSeries(geometry.apply(lambda g: wkt.loads(g) if isinstance(g, str) else g))
-    if isinstance(geometry, gpd.GeoSeries):
-        if geometry.crs is not None:
-            geometry = geometry.to_crs(crs)
-        return geometry.union_all()
-
-    return geometry  # shapely geometry, assumed to be already in the right CRS
-
-
 def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
-    """
-    Rename the columns of a buildings table from QBuildings to the names REHO uses.
-
-    For instance, ``area_era_m2`` becomes ``ERA``, ``thermal_transmittance_signature_kW_m2_K``
-    becomes ``U_h`` and ``temperature_interior_C`` becomes ``T_comfort_min_0``. The columns absent
-    from the table are skipped, and the columns REHO does not use are dropped. When the geometries
-    are WKT strings, they are parsed, and the buildings with an invalid geometry are dropped.
-
-    Parameters
-    ----------
-    df_buildings : pandas.DataFrame
-        Buildings table, from the QBuildings database or from a file.
-    district_boundary : str, optional
-        Column identifying the district of each building, renamed ``transformer``.
-        Default is ``'transformers'``.
-
-    Returns
-    -------
-    geopandas.GeoDataFrame
-        The buildings, with the column names of REHO.
-    """
     dict_QBuildings_REHO = {
 
         #################################################
@@ -713,9 +380,6 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
         # Heating source
         'source_heating': 'source_heating',
         'source_hotwater': 'source_hotwater',
-
-        # Existing PV installation, used to build a 'reference' (as-is) scenario
-        'pv_installation_kW': 'pv_installation_kW',
 
         # Thermal envelope
         'thermal_transmittance_signature_kW_m2_K': 'U_h',
@@ -765,14 +429,13 @@ def translate_buildings_to_REHO(df_buildings, district_boundary="transformers"):
         try:
             translated_buildings_data[REHO_index] = df_buildings[key]
         except KeyError:
-            logger.debug('Key %s is absent from the buildings data and was skipped.', key)
+            print('Key %s not in the dictionary' % key)
 
     df_buildings = translated_buildings_data
 
     return df_buildings
 
-
-def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None, sample=None):
+def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None):
     """
     Parameters
     ----------
@@ -783,13 +446,6 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None, sample=None):
         Default values are based on SIA 2024 and Energy Performance Gap bei Instandsetzungen, Literaturstudie Schlussbericht, 17. Januar 2022
     df_facades : geodataframe
         Geoataframe of the facades in the case study
-    sample : pandas.Series, optional
-        Values drawn by a sensitivity analysis, which replace the typical ones: the U-values ``Uf``
-        (facade), ``Uw`` (window), ``Us`` (footprint) and ``Ur`` (roof) [W/(m2.K)], the outdoor air
-        flow ``vent`` per m2 of ERA [m3/(h.m2)], 0.7 in SIA 380/1, the reduction factor ``b`` of the
-        heat losses through the footprint, and
-        the g-value of the windows ``g`` and its factor with the sunblinds down ``g_shade``, stored as
-        ``g_glass`` and ``g_glass_shade`` for :func:`~reho.model.preprocessing.buildings_profiles.solar_gains_profile`.
 
     Returns
     -------
@@ -817,79 +473,40 @@ def get_Uh_corrected(df_buildings, uh_data=None, df_facades=None, sample=None):
         if df_facades is not None:
             facades = df_facades[df_facades["id_building"] == df_h["id_building"]]
             perimeter = np.sum([line.length for line in facades["geometry"]])
-            footprint_factor = df_h["area_footprint_m2"] / perimeter
+            height = df_h["ERA"] / df_h["area_footprint_m2"] / 0.93 * 2.5 # [1]
+            df_h["area_facade_m2"] = perimeter * height
+            footprint_factor = df_h["area_footprint_m2"]/perimeter
         else:
-            footprint_factor = df_h["area_footprint_m2"] / df_h['geometry'].length
-            perimeter = df_h['geometry'].length
-        df_h["area_facade_m2"] = perimeter * 2.5 * df_h["ERA"] / (0.93 * df_h["area_footprint_m2"])
+            footprint_factor = df_h["area_footprint_m2"]/(4*df_h["area_footprint_m2"]**0.5)
 
         b_value_floor = pd.read_csv(os.path.join(path_to_sia, 'b_value_floor.csv'), sep=";").set_index("U_footprint")
         b_value = b_value_floor[min(b_value_floor.columns, key=lambda x: abs(float(x) - footprint_factor))]
 
-        if df_h["ERA"] < 0.93 * df_h["area_footprint_m2"] * df_h['count_floor']:
-            # When we have case where the ERA is particularly lower than the footprint (because some spaces do not need to be heated),
-            # issues arise from gains and losses
-            downscaling = df_h["ERA"] / (0.93 * df_h["area_footprint_m2"] * df_h['count_floor'])
-            df_h["area_facade_m2"] = df_h["area_facade_m2"] * downscaling
-            df_h["SolarRoofArea"] = df_h["SolarRoofArea"] * downscaling
-            df_h["area_footprint_m2"] = df_h["area_footprint_m2"] * downscaling
+        if df_h["ERA"] < df_h["area_footprint_m2"]:
+            df_h["ERA"] = df_h["area_footprint_m2"]
 
         U_h_ins_data = 0
         for j in range(len(periods)):
             glass_fraction = 0.5
             if id_class[j] in ["I", "II"]:
                 glass_fraction = 0.3
-            thermal_capacity_air = (1200 - 0.14 * 610) / 3600   # Wh/K/m3 SIA 380/1
-            air_renewal = 0.7 / 2.5  # 1/h
-            volume = df_h['ERA'] * 2.5  # m3
-            ventilation = air_renewal * volume * thermal_capacity_air / 1000  # kW/K
+            # TODO: add heat recovery
+            ventilation = 0.7 / 3600 * df_h["ERA"] * 2.5 * (1200 - 0.14 * 400)  # SIA 380/1
 
             uh_period = uh_data.loc[periods[j]]
             b = b_value.loc[min(b_value.index, key=lambda x: abs(float(x) - uh_period["U_footprint"] * 1000))]
-            b_roof = 1
-            if df_h['SolarRoofArea'] > df_h["area_footprint_m2"]*1.1:  # non heated space under roof
-                b_roof = 0.9
-
-            if isinstance(sample, pd.Series):
-                uh_period["U_facade"] = sample["Uf"] / 1000
-                uh_period["U_window"] = sample["Uw"] / 1000
-                uh_period["U_footprint"] = sample["Us"] / 1000
-                uh_period["U_roof"] = sample["Ur"] / 1000
-                ventilation = ventilation / 0.7 * sample["vent"]
-                b = sample["b"]
-                df_buildings[i]["g_glass"] = sample["g"]
-                df_buildings[i]["g_glass_shade"] = sample["g_shade"]
 
             U_h_ins_data += (df_h['area_facade_m2'] * (1 - glass_fraction) * uh_period["U_facade"] +
-                             df_h["area_footprint_m2"] * uh_period["U_footprint"]*b +
+                             df_h['area_footprint_m2'] * uh_period["U_footprint"]*b +
                              df_h['area_facade_m2'] * glass_fraction * uh_period["U_window"] +
-                             df_h['SolarRoofArea'] * uh_period["U_roof"] * b_roof +
-                             ventilation) * ratios[j] / df_h['ERA']
+                             df_h['SolarRoofArea'] * uh_period["U_roof"] +
+                             ventilation/1000) * ratios[j] / df_h['ERA']
         df_buildings[i]["U_h"] = U_h_ins_data
 
     return df_buildings
 
 
 def translate_facades_to_REHO(df_facades, df_buildings):
-    """
-    Rename the columns of a facades table from QBuildings to the names REHO uses, and locate the facades.
-
-    ``id_facade`` becomes ``Facades_ID``, ``area_facade_solar_m2`` becomes ``AREA`` and ``azimuth``
-    becomes ``AZIMUTH``. The coordinates of the centroid of each facade are added (``CX``, ``CY``),
-    with the altitude of its building (``coord_Z0``).
-
-    Parameters
-    ----------
-    df_facades : pandas.DataFrame
-        Facades table, from the QBuildings database or from a file.
-    df_buildings : pandas.DataFrame
-        Buildings translated by :func:`translate_buildings_to_REHO`, whose column ``z`` gives the altitude.
-
-    Returns
-    -------
-    geopandas.GeoDataFrame
-        The facades, with the column names of REHO.
-    """
     dict_facades = {'azimuth': 'AZIMUTH',
                     'id_facade': 'Facades_ID',
                     'area_facade_solar_m2': 'AREA',
@@ -913,7 +530,7 @@ def translate_facades_to_REHO(df_facades, df_buildings):
         try:
             translated_facades_data[REHO_index] = df_facades[key]
         except KeyError:
-            logger.debug('Key %s is absent from the buildings data and was skipped.', key)
+            print('Key %s not in the dictionary' % key)
 
     df_facades = translated_facades_data
     df_facades['CX'] = df_facades['geometry'].centroid.x
@@ -929,23 +546,6 @@ def translate_facades_to_REHO(df_facades, df_buildings):
 
 
 def translate_roofs_to_REHO(df_roofs):
-    """
-    Rename the columns of a roofs table from QBuildings to the names REHO uses.
-
-    ``id_roof`` becomes ``ROOF_ID``, ``area_roof_solar_m2`` becomes ``AREA``, ``tilt`` becomes
-    ``TILT`` and ``azimuth`` becomes ``AZIMUTH``. When the geometries are WKT strings, they are
-    parsed, and the roofs with an invalid geometry are dropped.
-
-    Parameters
-    ----------
-    df_roofs : pandas.DataFrame
-        Roofs table, from the QBuildings database or from a file.
-
-    Returns
-    -------
-    geopandas.GeoDataFrame
-        The roofs, with the column names of REHO.
-    """
     dict_roofs = {'tilt': 'TILT',
                   'azimuth': 'AZIMUTH',
                   'id_roof': 'ROOF_ID',
@@ -968,7 +568,7 @@ def translate_roofs_to_REHO(df_roofs):
         try:
             translated_roofs_data[REHO_index] = df_roofs[key]
         except KeyError:
-            logger.debug('Key %s is absent from the buildings data and was skipped.', key)
+            print('Key %s not in the dictionary' % key)
 
     df_roofs = translated_roofs_data
 
@@ -976,24 +576,6 @@ def translate_roofs_to_REHO(df_roofs):
 
 
 def get_roofs(self, buildings):
-    """
-    Keep only the roofs of the given buildings in ``self.data['roofs']``.
-
-    A module-level function taking the reader as first argument. The reader itself uses
-    :meth:`QBuildingsReader.select_roofs_or_facades_data`.
-
-    Parameters
-    ----------
-    self : QBuildingsReader
-        Reader holding the roofs table in ``data['roofs']``.
-    buildings : pandas.DataFrame
-        Buildings whose roofs are kept, with a column ``id_building``.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The roofs kept.
-    """
     selected_roofs = []
     for i, building in buildings.iterrows():
         selected_roofs += \
@@ -1004,24 +586,6 @@ def get_roofs(self, buildings):
 
 
 def get_facades(self, buildings):
-    """
-    Keep only the facades of the given buildings in ``self.data['facades']``.
-
-    A module-level function taking the reader as first argument. The reader itself uses
-    :meth:`QBuildingsReader.select_roofs_or_facades_data`.
-
-    Parameters
-    ----------
-    self : QBuildingsReader
-        Reader holding the facades table in ``data['facades']``.
-    buildings : pandas.DataFrame
-        Buildings whose facades are kept, with a column ``id_building``.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The facades kept.
-    """
     selected_facades = []
     for i, building in buildings.iterrows():
         selected_facades += \
@@ -1032,27 +596,6 @@ def get_facades(self, buildings):
 
 
 def calculate_id_building_shadows(df_angles, id_building):
-    """
-    Limiting angle of each azimuth of the skydome, from the angles of :func:`neighbourhood_angles`.
-
-    The rows whose ``to_id_building`` is ``id_building`` are selected. For each azimuth of the sky
-    patches, the rows within 90 degrees of it are projected on it (``tanb`` times the cosine of the
-    difference of azimuths), and the largest projection gives the limiting angle.
-
-    Parameters
-    ----------
-    df_angles : pandas.DataFrame
-        Angles between the facades and the buildings of the district, see :func:`neighbourhood_angles`.
-    id_building : int
-        Value of ``to_id_building`` to select.
-
-    Returns
-    -------
-    pandas.DataFrame
-        One row per azimuth of the skydome: the largest projected tangent ``tanb``, its angle ``beta``
-        [degrees], the ``azimuth``, and the ``id_building`` of the row it comes from; zeros when no
-        row lies in that direction.
-    """
     df_angles['to_id_building'] = pd.to_numeric(df_angles['to_id_building'])
     df_angles = df_angles.set_index('to_id_building')
     df_angles = df_angles.xs(id_building)
@@ -1083,28 +626,6 @@ def calculate_id_building_shadows(df_angles, id_building):
 
 
 def neighbourhood_angles(buildings, facades):
-    """
-    Position of the other buildings of the district, as seen from each facade of each building.
-
-    For each facade and each other building: the horizontal distance ``dxy`` from the centroid of
-    the facade, the difference ``dz`` between the top of the other building and the base of the
-    facade, the elevation angle ``beta`` [degrees] and its tangent ``tanb``, and the ``azimuth``
-    [degrees] of the other building. A building without ``height_m`` is assigned the height of its
-    floors, estimated from its ERA and footprint area, at 2.5 m per floor.
-
-    Parameters
-    ----------
-    buildings : dict
-        Buildings data, i.e. ``qbuildings_data['buildings_data']``, with ``x``, ``y``, ``z`` and ``height_m``.
-    facades : pandas.DataFrame
-        Facades translated by :func:`translate_facades_to_REHO`, with ``CX``, ``CY`` and ``coord_Z0``.
-
-    Returns
-    -------
-    pandas.DataFrame
-        One row per facade (``UID``) and other building (``to_id_building``), with the
-        ``id_building`` that owns the facade. The facades without ``coord_Z0`` are skipped.
-    """
     df_angles = pd.DataFrame()
 
     for b in buildings:
@@ -1127,7 +648,7 @@ def neighbourhood_angles(buildings, facades):
             df_c['dxy'] = (df_c.dx * df_c.dx + df_c.dy * df_c.dy) ** 0.5
             heights = df_district.height_m.values
             if facades_build.loc[f]['coord_Z0'] is None:
-                logger.warning('Facade %s has no coord_Z0: it is skipped by the shadow model.', f)
+                print('Missing value coord_Z0, not possible to use_facades')
                 continue
             df_c['dz'] = df_district.z.values + heights - facades_build.loc[f]['coord_Z0']
             # facades.loc[f]['HEIGHT_Z'] + facades.loc[f]['HEIGHT'] #take foot of facades/ HEIGHT_Z is upperbound
@@ -1149,25 +670,6 @@ def neighbourhood_angles(buildings, facades):
 
 
 def return_shadows_district(buildings, facades):
-    """
-    Limiting angles of the skydome for every building of the district.
-
-    Combines :func:`neighbourhood_angles` and :func:`calculate_id_building_shadows`. A building for
-    which no angle can be computed gets a row of NaN, and a warning is logged.
-
-    Parameters
-    ----------
-    buildings : dict
-        Buildings data, i.e. ``qbuildings_data['buildings_data']``.
-    facades : pandas.DataFrame
-        Facades translated by :func:`translate_facades_to_REHO`.
-
-    Returns
-    -------
-    pandas.DataFrame
-        The rows of :func:`calculate_id_building_shadows` for each building, indexed by
-        ``id_building``. Stored as ``qbuildings_data['shadows_data']``.
-    """
     df_shadows = pd.DataFrame()
     df_angles = neighbourhood_angles(buildings, facades)
 
@@ -1178,7 +680,7 @@ def return_shadows_district(buildings, facades):
             idx = np.repeat(id_building, len(df_id_building))
             df_id_building = df_id_building.set_index(idx)
         else:
-            logger.warning('No shadow data available for id_building %s, filling with NaN.', id_building)
+            print('NO DATA AVAILABLE FOR id_building ' + str(id_building))
             df_id_building = pd.DataFrame(index=[id_building],
                                           columns=['tanb', 'beta', 'azimuth', 'id_building'])  # pass NaN instead
         df_shadows = pd.concat((df_shadows, df_id_building))
@@ -1188,22 +690,6 @@ def return_shadows_district(buildings, facades):
 
 
 def return_shadows_id_building(id_building, df):
-    """
-    Limiting angle of each sky patch, for the facades of a building.
-
-    Parameters
-    ----------
-    id_building : int or str
-        Building to select.
-    df : pandas.DataFrame
-        Limiting angles of the district, see :func:`return_shadows_district`.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Column ``Limiting_angle_shadow`` [degrees], one row per patch of the skydome, in the order
-        of ``skydome.csv``.
-    """
     id_building = int(id_building)
     df = df.xs(id_building)
 
@@ -1211,7 +697,7 @@ def return_shadows_id_building(id_building, df):
     for az in df_dome.azimuth:
         df_beta_dome = pd.concat((df_beta_dome, df.beta[df.azimuth == az]), ignore_index=True)
 
-    df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow', 'beta': 'Limiting_angle_shadow'})
+    df_beta_dome = df_beta_dome.rename(columns={0: 'Limiting_angle_shadow'})
 
     return df_beta_dome
 
@@ -1221,7 +707,7 @@ def read_geometry(df):
     Avoid issues with geometry when reading data from a csv
     """
     if 'geometry' not in df.columns:
-        logger.debug('No geometry column in the buildings data.')
+        print("No geometry specified in the dataframe.")
         return df
     else:
         if isinstance(df["geometry"], gpd.geoseries.GeoSeries):
@@ -1231,5 +717,5 @@ def read_geometry(df):
                 geometry = gpd.GeoSeries.from_wkt(df['geometry'])
                 return gpd.GeoDataFrame(df, geometry=geometry)
             except TypeError:
-                logger.warning('The geometry column is neither WKB nor WKT, so it comes from neither PostGIS nor QBuildings; leaving it untouched.')
+                print("Geometry passed is neither of format wkb or wkt so neither from PostGIS, neither from QBuildings.")
                 return df

@@ -1,9 +1,13 @@
+import matplotlib
 import pytest
-from reho.model.preprocessing.clustering import Clustering
-from reho.model.preprocessing.weather import generate_weather_data, get_weather_data, plot_cluster_KPI_separate, plot_LDC
+from perfectdays import get_typical_periods
+
+from reho.model.preprocessing.weather import generate_weather_data
 
 # Downloads the weather from PVGIS.
 pytestmark = [pytest.mark.slow, pytest.mark.needs_network]
+
+matplotlib.use("Agg")
 
 
 @pytest.fixture
@@ -11,30 +15,16 @@ def qbuildings_data():
     return {'buildings_data': {'Building1': {'x': 2496193, 'y': 1114279, 'z': 402}}}
 
 
-@pytest.fixture
-def weather_data(qbuildings_data):
-    return get_weather_data(qbuildings_data).reset_index(drop=True)
-
-
-def test_clustering(weather_data):
-    cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': [2, 4, 6, 8, 10, 12], 'PeriodDuration': 24}
-
-    attributes = []
-    if 'T' in cluster['Attributes']:
-        attributes.append('Text')
-    if 'I' in cluster['Attributes']:
-        attributes.append('Irr')
-    if 'W' in cluster['Attributes']:
-        attributes.append('Weekday')
-
-    cl = Clustering(data=weather_data[attributes], nb_clusters=cluster['Periods'], period_duration=cluster['PeriodDuration'],
-                    cluster=cluster, options={"year-to-day": True, "extreme": []})
-    cl.run_clustering()
-
-    plot_cluster_KPI_separate(cl.kpis_clu)
-    plot_LDC(cl)
+def test_clustering_quality():
+    # Geneva, through PVGIS so that no Swiss grid is needed
+    _, quality = get_typical_periods(46.21, 6.14, periods=10, source="pvgis", clustering_evaluation=True,
+                                     k_range=[2, 4, 6, 8, 10, 12])
+    for figure in (quality.kpis.plot(), quality.stability.plot(), quality.plot_ldc()):
+        assert figure.axes
 
 
 def test_write_weather_files(qbuildings_data, tmp_path):
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-    generate_weather_data(cluster, qbuildings_data, str(tmp_path))
+    typical_periods = generate_weather_data(cluster, qbuildings_data, str(tmp_path))
+    assert typical_periods.n_periods == 10
+    assert (tmp_path / "timestamp.csv").exists()

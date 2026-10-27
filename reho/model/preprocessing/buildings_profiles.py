@@ -1,4 +1,3 @@
-from datetime import timedelta
 import numpy as np
 import pandas as pd
 
@@ -280,7 +279,8 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     annual_file : str
         Path to annual CSV file containing at least a 'time(UTC)' column.
     df_Timestamp : pd.DataFrame
-        DataFrame containing at least a 'Date' column indicating typical day dates.
+        The typical periods, as in ``timestamp.csv``: at least a 'SourcePeriod' column giving the period of the
+        year each one was selected from, counted from 1.
     typical_file : str, optional
         Path to save the extracted typical day CSV file.
 
@@ -299,19 +299,12 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
     period_duration = cluster['PeriodDuration']
     df_typical = pd.DataFrame()
 
-    # Use row offsets when available (written by generate_weather_data since pandas-3 migration).
-    # This makes extraction independent of the year stored in timestamp.csv, so PVGIS clustering
-    # files (year 1990) can be reused with a custom weather file that uses a different year.
-    if 'RowOffset' in df_Timestamp.columns:
-        for offset in df_Timestamp['RowOffset'].iloc[:-2]:
-            day_data = df_annual.iloc[int(offset): int(offset) + period_duration]
-            df_typical = pd.concat([df_typical, day_data])
-    else:
-        # Fallback for cached files that predate the RowOffset column
-        df_annual = df_annual.sort_index()
-        for date in pd.to_datetime(df_Timestamp['Date']).dt.normalize()[:-2]:
-            day_data = df_annual[date:date + timedelta(hours=23)]
-            df_typical = pd.concat([df_typical, day_data])
+    # Each typical period is taken at the period of the year it was selected from, whatever the year: the
+    # weather may come from another year, or from several, than the annual profile.
+    for source_period in df_Timestamp['SourcePeriod'].iloc[:-2]:
+        offset = (int(source_period) - 1) * period_duration
+        day_data = df_annual.iloc[offset: offset + period_duration]
+        df_typical = pd.concat([df_typical, day_data])
 
     # Handle extreme periods (minimum and maximum of the annual data)
     min_values = df_annual.min().to_frame().T

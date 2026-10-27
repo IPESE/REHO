@@ -131,9 +131,7 @@ expects.
    * - :mod:`~reho.model.preprocessing.local_data`
      - Location-dependent data: weather, sun position, renovation references.
    * - :mod:`~reho.model.preprocessing.weather`
-     - Download annual weather data and reduce it to typical periods.
-   * - :mod:`~reho.model.preprocessing.clustering`
-     - K-medoids clustering used by the typical-period reduction.
+     - Annual weather data reduced to typical periods, by perfectdays.
    * - :mod:`~reho.model.preprocessing.buildings_profiles`
      - End-use demand profiles (heat gains, domestic hot water, electricity).
    * - :mod:`~reho.model.preprocessing.sia_parser`

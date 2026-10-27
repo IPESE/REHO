@@ -24,6 +24,24 @@ will break in a future release, 🟢 no action needed.
 [documentation]: https://img.shields.io/badge/-Documentation-yellow
 [packaging]: https://img.shields.io/badge/-Packaging-lightblue
 
+## [Unreleased]
+
+The weather step moves to [perfectdays](https://perfectdays.readthedocs.io/). In Switzerland, the weather now
+comes from its 1 km grid, which corrects the temperature of the 30 km PVGIS data in Alpine terrain, wherever the
+grid is available (downloaded once from its Zenodo record and cached, or from `$WEATHER_DATA_DSN` or local
+solution files); elsewhere, and as a fallback, from PVGIS. The
+clustering is the same method with another k-medoids algorithm, so the typical periods of a given location change
+slightly, and every cached clustering is rebuilt once.
+
+| Type                  | Category                          | Title | Description                                                                                                                                                                                        | Breaking |
+|-----------------------|------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+| ![Added][added]       | ![Preprocessing][preprocessing]    | **Weather year, scenario, source** | `cluster` takes optional `Year` (a year, or a list of years clustered together), `Scenario` (a climate scenario such as `'rcp45_2050'`, Switzerland only), `Source` (`'swissweathergrid'` or `'pvgis'`) and `Coordinates` (WGS 84 latitude and longitude, instead of the first building). Each is appended to the File_ID when set, so that runs differing in one never share cached files; existing File_IDs are unchanged, and `per_month` now has its own suffix too. | 🟢 |
+| ![Changed][changed]   | ![Preprocessing][preprocessing]    | **Weather from perfectdays** | `generate_weather_data` and `get_cluster_file_ID` delegate to `perfectdays.api.reho`. Given the same assignment of days, the files written are byte-identical to REHO's own; the assignment itself now comes from PAM, deterministic and at least as tight as the former pyclustering call on average. `TYPICAL_PERIODS_VERSION` is 3, so cached typical periods are rebuilt. | 🟢 |
+| ![Changed][changed]   | ![Preprocessing][preprocessing]    | **`SourceYear` and `SourcePeriod`** | `timestamp.csv` gives the year and the period of that year (from 1) each typical period comes from, instead of `RowOffset`, an hour offset into a single year that clustering several years cannot express. `annual_to_typical` reads `SourcePeriod`. | 🔴 |
+| ![Removed][removed]   | ![Preprocessing][preprocessing]    | **Clustering internals** | `reho.model.preprocessing.clustering.Clustering`, `weather.get_weather_data`, `read_custom_weather`, `write_weather_files`, `plot_cluster_KPI_separate` and `plot_LDC` are removed, with the `pyclustering` dependency. `perfectdays.get_typical_periods(..., clustering_evaluation=True)` returns the indicators, the stability across restarts and the duration curves, each with a `plot()` method. | 🔴 |
+| ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **Clustering on fewer attributes** | Clustering without `'I'` failed when writing `typical_data.csv`, which needs the irradiance; every weather column now travels with the typical periods, whatever they were clustered on. | 🟢 |
+| ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **LDC indicator** | The LDC of the clustering pooled every attribute into one number, repeated in each column; it is now computed per attribute. | 🟢 |
+
 ## [v2.2.0]
 
 Capacities of the networks and of the lines set explicitly, under names telling what is given and what the

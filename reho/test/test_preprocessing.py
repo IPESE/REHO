@@ -7,7 +7,6 @@ import pandas as pd
 import pytest
 
 from reho.model.preprocessing import weather
-from reho.model.preprocessing.clustering import Clustering
 from reho.model.preprocessing.electricity_prices import requests_retry_session
 from reho.model.preprocessing.sia_parser import (
     daily_profiles_with_monthly_deviation,
@@ -47,21 +46,6 @@ def _read_index_csv(directory):
     return {int(hour): int(period) for hour, period, _ in rows}
 
 
-class TestClustering:
-    def test_medoids_are_numbered_from_one(self):
-        # Every consumer of results['idx'] reads the medoids as period numbers counted from 1:
-        # 0-based numbers made each typical period the day before its medoid.
-        data = _three_kinds_of_day(days=30).reset_index(drop=True)[["Text", "Irr"]]
-        np.random.seed(0)
-        cl = Clustering(data=data, nb_clusters=[3], period_duration=HOURS, cluster={},
-                        options={"year-to-day": True, "extreme": []})
-        cl.run_clustering()
-
-        assignments = cl.results["idx"]["3"]
-        for medoid in assignments.unique():
-            assert assignments[medoid - 1] == medoid, "a medoid must represent its own cluster"
-
-
 class TestTypicalPeriods:
     @pytest.fixture(scope="class")
     def clustering_directory(self, tmp_path_factory):
@@ -70,7 +54,6 @@ class TestTypicalPeriods:
         _three_kinds_of_day().to_csv(weather_file)
         cluster = {"custom_weather": str(weather_file), "Location": "Synthetic", "Attributes": ["T", "I", "W"],
                    "Periods": 3, "PeriodDuration": HOURS}
-        np.random.seed(0)
         weather.generate_weather_data(cluster, {}, str(directory))
         return directory
 
@@ -83,11 +66,12 @@ class TestTypicalPeriods:
         typical_periods = timestamp.iloc[:-2]
         assert typical_periods["Frequency"].sum() == 365
         for position, period in enumerate(typical_periods.itertuples()):
-            day = annual.iloc[period.RowOffset: period.RowOffset + HOURS]
+            first_hour = (period.SourcePeriod - 1) * HOURS
+            day = annual.iloc[first_hour: first_hour + HOURS]
             profile = typical.iloc[position * HOURS: (position + 1) * HOURS]
             np.testing.assert_allclose(profile[["Text", "Irr"]].to_numpy(), day[["Text", "Irr"]].to_numpy())
             # The day the profile comes from belongs to the cluster it represents.
-            assert period_of_hour[period.RowOffset + 1] == period.Day
+            assert period_of_hour[first_hour + 1] == period.Day
 
     def test_extreme_periods_are_dated_on_their_day(self, clustering_directory):
         timestamp = pd.read_csv(clustering_directory / "timestamp.csv", parse_dates=["Date"])
@@ -105,29 +89,6 @@ class TestTypicalPeriods:
         (tmp_path / weather.TYPICAL_PERIODS_VERSION_FILE).write_text("not a version")
         assert not weather.typical_periods_are_current(str(tmp_path))
 
-    def test_an_extreme_period_can_fall_on_a_typical_day(self, tmp_path):
-        # Periods are told apart by position: an extreme period sharing the day number of a
-        # typical period must not be merged with it.
-        annual = pd.DataFrame({"time(UTC)": pd.date_range("2005-01-01", periods=7 * HOURS, freq="h"),
-                               "Text": 0.0, "Irr": 0.0})
-        annual.to_csv(tmp_path / "annual_data.csv", index=False)
-
-        def period(day, hours, frequency):
-            return pd.DataFrame({"time.dd": day, "time.hh": np.arange(1, hours + 1),
-                                 "Text": 0.0, "Irr": 0.0, "dt": frequency})
-
-        values = pd.concat([period(2, HOURS, 3), period(5, HOURS, 4), period(2, 1, 1), period(7, 1, 1)],
-                           ignore_index=True)
-        index = pd.DataFrame({"IndexYr": range(1, 8), "inter_t": [2, 2, 2, 5, 5, 5, 5]})
-
-        weather.write_weather_files(str(tmp_path), ["Text", "Irr"], values, index, period_duration=HOURS)
-
-        frequency = (tmp_path / "frequency.csv").read_text()
-        assert "param: TimeEnd := \n1 24\n2 24\n3 1\n4 1\n;" in frequency
-        assert set(_read_index_csv(tmp_path).values()) == {1, 2}
-        dates = pd.read_csv(tmp_path / "timestamp.csv", parse_dates=["Date"])["Date"].dt.day.tolist()
-        assert dates == [2, 5, 2, 7]
-
 
 class TestClusterFileID:
     def test_attributes_are_ordered(self):
@@ -138,6 +99,11 @@ class TestClusterFileID:
         cluster = {"Location": "Geneva", "Attributes": ["T", "I", "E"], "Periods": 10, "PeriodDuration": 24}
         with pytest.raises(ValueError, match="'E'"):
             weather.get_cluster_file_ID(cluster)
+
+    def test_new_options_are_part_of_the_id(self):
+        cluster = {"Location": "Geneva", "Attributes": ["T", "I", "W"], "Periods": 10, "PeriodDuration": 24,
+                   "Year": [2021, 2022, 2023], "Scenario": "rcp45_2050"}
+        assert weather.get_cluster_file_ID(cluster) == "Geneva_10_24_T_I_W_2021-2023_rcp45_2050"
 
 
 class TestSIAProfiles:

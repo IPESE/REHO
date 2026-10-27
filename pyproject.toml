@@ -39,7 +39,6 @@ dependencies = [
     "plotly",
     "psycopg2-binary<3.0.0",
     "pvlib==0.13.0",
-    "pyclustering",
     "pyproj",
     "python-dotenv",
     "qmcpy",
@@ -50,7 +49,8 @@ dependencies = [
     "shapely",
     "sqlalchemy>=2.0.0",
     "sympy",
-    "urllib3<2"
+    "urllib3<2",
+    "perfectdays>=0.0.1"
 ]
 
 # Optional dependency groups. Install with, e.g., `pip install "REHO[dev]"`.

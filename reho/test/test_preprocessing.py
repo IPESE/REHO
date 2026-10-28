@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from reho.model.preprocessing import weather
+from reho.model.preprocessing import local_data
 from reho.model.preprocessing.buildings_profiles import annual_to_typical
 from reho.model.preprocessing.electricity_prices import requests_retry_session
 from reho.model.preprocessing.sia_parser import (
@@ -55,7 +55,7 @@ class TestTypicalPeriods:
         _three_kinds_of_day().to_csv(weather_file)
         cluster = {"custom_weather": str(weather_file), "Location": "Synthetic", "Attributes": ["T", "I", "W"],
                    "Periods": 3, "PeriodDuration": HOURS}
-        weather.generate_weather_data(cluster, {}, str(directory))
+        local_data.write_typical_periods(cluster, {}, str(directory))
         return directory
 
     def test_typical_periods_are_the_medoid_days(self, clustering_directory):
@@ -81,14 +81,14 @@ class TestTypicalPeriods:
         assert hottest.dayofyear == 201
 
     def test_generated_files_are_marked_as_current(self, clustering_directory):
-        assert weather.typical_periods_are_current(str(clustering_directory))
+        assert local_data.typical_periods_are_current(str(clustering_directory))
 
     def test_outdated_or_foreign_files_are_not_current(self, tmp_path):
-        assert not weather.typical_periods_are_current(str(tmp_path))
-        (tmp_path / weather.TYPICAL_PERIODS_VERSION_FILE).write_text("1")
-        assert not weather.typical_periods_are_current(str(tmp_path))
-        (tmp_path / weather.TYPICAL_PERIODS_VERSION_FILE).write_text("not a version")
-        assert not weather.typical_periods_are_current(str(tmp_path))
+        assert not local_data.typical_periods_are_current(str(tmp_path))
+        (tmp_path / local_data.TYPICAL_PERIODS_VERSION_FILE).write_text("1")
+        assert not local_data.typical_periods_are_current(str(tmp_path))
+        (tmp_path / local_data.TYPICAL_PERIODS_VERSION_FILE).write_text("not a version")
+        assert not local_data.typical_periods_are_current(str(tmp_path))
 
 
 def test_annual_to_typical_with_a_leftover_period(tmp_path):
@@ -97,7 +97,7 @@ def test_annual_to_typical_with_a_leftover_period(tmp_path):
     _three_kinds_of_day().to_csv(weather_file)
     cluster = {"custom_weather": str(weather_file), "Location": "Synthetic", "Attributes": ["T", "I", "W"],
                "Periods": 3, "PeriodDuration": 168}
-    weather.generate_weather_data(cluster, {}, str(tmp_path))
+    local_data.write_typical_periods(cluster, {}, str(tmp_path))
     timestamp = pd.read_csv(tmp_path / "timestamp.csv")
 
     annual_file = tmp_path / "profile.csv"
@@ -115,17 +115,17 @@ def test_annual_to_typical_with_a_leftover_period(tmp_path):
 class TestClusterFileID:
     def test_attributes_are_ordered(self):
         cluster = {"Location": "Geneva", "Attributes": ["W", "T", "I"], "Periods": 10, "PeriodDuration": 24}
-        assert weather.get_cluster_file_ID(cluster) == "Geneva_10_24_T_I_W"
+        assert local_data.get_cluster_file_ID(cluster) == "Geneva_10_24_T_I_W"
 
     def test_unknown_attribute_raises(self):
         cluster = {"Location": "Geneva", "Attributes": ["T", "I", "E"], "Periods": 10, "PeriodDuration": 24}
         with pytest.raises(ValueError, match="'E'"):
-            weather.get_cluster_file_ID(cluster)
+            local_data.get_cluster_file_ID(cluster)
 
     def test_new_options_are_part_of_the_id(self):
         cluster = {"Location": "Geneva", "Attributes": ["T", "I", "W"], "Periods": 10, "PeriodDuration": 24,
                    "Year": [2021, 2022, 2023], "Scenario": "rcp45_2050"}
-        assert weather.get_cluster_file_ID(cluster) == "Geneva_10_24_T_I_W_2021-2023_rcp45_2050"
+        assert local_data.get_cluster_file_ID(cluster) == "Geneva_10_24_T_I_W_2021-2023_rcp45_2050"
 
 
 class TestSIAProfiles:

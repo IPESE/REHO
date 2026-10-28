@@ -33,7 +33,7 @@ def _day_type(days_mapping, day):
         raise KeyError(
             f"Day type {day!r} is not declared in the mobility day mapping (known: {sorted(days_mapping)})."
         ) from None
-import reho.model.preprocessing.weather as weather
+from perfectdays.api.reho import get_cluster_file_ID
 import pandas as pd
 import numpy as np
 
@@ -90,7 +90,7 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
     # Periods
     # TODO IMPLEMENTATION of flexible period duration
 
-    File_ID = weather.get_cluster_file_ID(cluster)
+    File_ID = get_cluster_file_ID(cluster)
     clustering_directory = os.path.join(path_to_clustering, File_ID)
 
     timestamp = pd.read_csv(os.path.join(clustering_directory, 'timestamp.csv'))

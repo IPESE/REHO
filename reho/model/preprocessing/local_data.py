@@ -12,11 +12,11 @@ import pandas as pd
 import pvlib
 from pyproj import Transformer
 
-import reho.model.preprocessing.weather as weather
+from perfectdays.api.reho import generate_weather_data, get_cluster_file_ID
 from reho.logger import get_logger
 from reho.paths import path_to_clustering, path_to_infrastructure, path_to_skydome
 
-__all__ = ["return_local_data"]
+__all__ = ["return_local_data", "write_typical_periods", "typical_periods_are_current", "get_cluster_file_ID"]
 
 logger = get_logger(__name__)
 
@@ -26,9 +26,35 @@ CRS_BUILDINGS = "EPSG:2056"
 #: Coordinate reference system expected by pvlib (WGS 84 latitude/longitude).
 CRS_WGS84 = "EPSG:4326"
 
+#: Version of the cached typical periods: bump it when their files change, so older caches are rebuilt.
+#: 3: weather and clustering by perfectdays, ``SourceYear``/``SourcePeriod`` instead of ``RowOffset``.
+TYPICAL_PERIODS_VERSION = 3
+TYPICAL_PERIODS_VERSION_FILE = "typical_periods_version.txt"
+
 #: Hour at which the sun position is evaluated for the two extreme periods, which
 #: last a single timestep and stand for the coldest and the warmest hour of the year.
 EXTREME_PERIOD_HOUR = 13
+
+
+def typical_periods_are_current(clustering_directory):
+    """Whether ``clustering_directory`` holds typical periods of the current ``TYPICAL_PERIODS_VERSION``."""
+    try:
+        with open(os.path.join(clustering_directory, TYPICAL_PERIODS_VERSION_FILE)) as file:
+            return int(file.read().strip()) == TYPICAL_PERIODS_VERSION
+    except (OSError, ValueError):
+        return False
+
+
+def write_typical_periods(cluster, qbuildings_data, clustering_directory):
+    """Builds the typical periods with perfectdays in ``clustering_directory`` and marks them current."""
+    os.makedirs(clustering_directory, exist_ok=True)
+    typical_periods = generate_weather_data(cluster, qbuildings_data, clustering_directory)
+    # marked last, so that an interrupted generation is redone
+    with open(os.path.join(clustering_directory, TYPICAL_PERIODS_VERSION_FILE), "w") as file:
+        file.write(str(TYPICAL_PERIODS_VERSION))
+    logger.info("Weather from %s, typical periods saved in %s.", typical_periods.meta.get("source"),
+                clustering_directory)
+    return typical_periods
 
 
 def return_local_data(cluster, qbuildings_data):
@@ -38,15 +64,16 @@ def return_local_data(cluster, qbuildings_data):
     The weather file of the requested location and clustering options is generated
     on first use and cached under ``data/clustering/<File_ID>/`` in the working
     directory, so a second run with the same options reuses it. A cache written by an
-    earlier version of REHO is rebuilt, see
-    :func:`~reho.model.preprocessing.weather.typical_periods_are_current`.
+    earlier version of REHO is rebuilt, see :func:`typical_periods_are_current`.
 
     Parameters
     ----------
     cluster : dict
         Defines the location of the buildings and the clustering attributes of the
         data-reduction process: ``Location``, ``Attributes``, ``Periods``,
-        ``PeriodDuration``, and optionally ``custom_weather``.
+        ``PeriodDuration``, and optionally ``custom_weather`` (an annual weather file), ``Year`` (one or a
+        list, clustered together), ``Scenario`` (e.g. ``'rcp45_2050'``, Switzerland only), ``Source``
+        (``'swissweathergrid'`` or ``'pvgis'``), ``Coordinates`` (WGS 84 lat, lon) and ``per_month``.
     qbuildings_data : dict
         Buildings characterization; only the coordinates of the first building are
         used, as the whole district shares one weather series.
@@ -66,23 +93,22 @@ def return_local_data(cluster, qbuildings_data):
 
     See also
     --------
-    reho.model.preprocessing.weather.generate_weather_data : builds the typical periods.
+    perfectdays.api.reho.generate_weather_data : builds the typical periods.
     """
     local_data = {"Cluster": cluster}
 
     # Weather: build the typical periods once, then reuse the cached files.
-    File_ID = weather.get_cluster_file_ID(cluster)
+    File_ID = get_cluster_file_ID(cluster)
     local_data["File_ID"] = File_ID
 
     clustering_directory = os.path.join(path_to_clustering, File_ID)
-    if not weather.typical_periods_are_current(clustering_directory):
+    if not typical_periods_are_current(clustering_directory):
         if os.path.isdir(clustering_directory):
             logger.warning(
                 "The typical periods cached in %s were written by an earlier version of REHO and are rebuilt: "
                 "results will differ from the runs that used them.", clustering_directory
             )
-        os.makedirs(clustering_directory, exist_ok=True)
-        weather.generate_weather_data(cluster, qbuildings_data, clustering_directory)
+        write_typical_periods(cluster, qbuildings_data, clustering_directory)
 
     df_timestamp = pd.read_csv(os.path.join(clustering_directory, "timestamp.csv"))
     df_timestamp["Date"] = pd.to_datetime(df_timestamp["Date"])

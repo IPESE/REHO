@@ -41,6 +41,7 @@ slightly, and every cached clustering is rebuilt once.
 | ![Removed][removed]   | ![Preprocessing][preprocessing]    | **Clustering internals** | `reho.model.preprocessing.clustering.Clustering`, `weather.get_weather_data`, `read_custom_weather`, `write_weather_files`, `plot_cluster_KPI_separate` and `plot_LDC` are removed, with the `pyclustering` dependency. `perfectdays.get_typical_periods(..., clustering_evaluation=True)` returns the indicators, the stability across restarts and the duration curves, each with a `plot()` method. | 🔴 |
 | ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **Clustering on fewer attributes** | Clustering without `'I'` failed when writing `typical_data.csv`, which needs the irradiance; every weather column now travels with the typical periods, whatever they were clustered on. | 🟢 |
 | ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **LDC indicator** | The LDC of the clustering pooled every attribute into one number, repeated in each column; it is now computed per attribute. | 🟢 |
+| ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **Periods that do not divide the year** | When `PeriodDuration` does not divide 8760 (e.g. 168 h), the hours left over form a shorter last period; `annual_to_typical` assumed every period full and failed. It now indexes each period by its own length. | 🟢 |
 
 ## [v2.2.0]
 

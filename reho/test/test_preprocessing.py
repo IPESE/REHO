@@ -7,6 +7,7 @@ import pandas as pd
 import pytest
 
 from reho.model.preprocessing import weather
+from reho.model.preprocessing.buildings_profiles import annual_to_typical
 from reho.model.preprocessing.electricity_prices import requests_retry_session
 from reho.model.preprocessing.sia_parser import (
     daily_profiles_with_monthly_deviation,
@@ -88,6 +89,27 @@ class TestTypicalPeriods:
         assert not weather.typical_periods_are_current(str(tmp_path))
         (tmp_path / weather.TYPICAL_PERIODS_VERSION_FILE).write_text("not a version")
         assert not weather.typical_periods_are_current(str(tmp_path))
+
+
+def test_annual_to_typical_with_a_leftover_period(tmp_path):
+    """Weekly periods leave 24 hours over in a year: they form a shorter period of their own."""
+    weather_file = tmp_path / "weather.csv"
+    _three_kinds_of_day().to_csv(weather_file)
+    cluster = {"custom_weather": str(weather_file), "Location": "Synthetic", "Attributes": ["T", "I", "W"],
+               "Periods": 3, "PeriodDuration": 168}
+    weather.generate_weather_data(cluster, {}, str(tmp_path))
+    timestamp = pd.read_csv(tmp_path / "timestamp.csv")
+
+    annual_file = tmp_path / "profile.csv"
+    pd.DataFrame({"time(UTC)": pd.date_range("2005-01-01", periods=8760, freq="h"),
+                  "Elec": np.arange(8760)}).to_csv(annual_file, index=False)
+    typical = annual_to_typical(cluster, annual_file, timestamp)
+
+    hours = typical.groupby(level="Period").size()
+    assert list(hours) == [168] * 3 + [24, 1, 1]
+    for period, source_period in enumerate(timestamp["SourcePeriod"].iloc[:-2], start=1):
+        assert typical.loc[(period, 1), "Elec"] == (source_period - 1) * 168
+    assert typical.loc[(5, 1), "Elec"] == 0 and typical.loc[(6, 1), "Elec"] == 8759
 
 
 class TestClusterFileID:

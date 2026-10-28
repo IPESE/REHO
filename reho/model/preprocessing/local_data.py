@@ -5,6 +5,7 @@ compose it — is gathered by :func:`return_local_data` into a single dictionary
 passed to every sub-problem.
 """
 
+import json
 import os
 from datetime import timedelta
 
@@ -61,6 +62,7 @@ def return_local_data(cluster, qbuildings_data):
     dict
         - ``Cluster`` (dict): the clustering options, echoed back.
         - ``File_ID`` (str): identifier of the location and clustering attributes.
+        - ``weather_metadata`` (dict): provenance of the weather and its clustering, from perfectdays.
         - ``df_Timestamp`` (pd.DataFrame): date and frequency of each typical period.
         - ``sun_azimuth`` (pd.Series): solar azimuth at each timestep [deg].
         - ``T_ext`` (np.ndarray): ambient temperature of the typical periods [degC].
@@ -89,6 +91,10 @@ def return_local_data(cluster, qbuildings_data):
         typical_periods = generate_weather_data(cluster, qbuildings_data, clustering_directory)
         logger.info("Weather from %s, typical periods saved in %s.", typical_periods.meta["source"],
                     clustering_directory)
+
+    # where the weather came from and how it was clustered, reported in df_Metadata
+    with open(os.path.join(clustering_directory, METADATA)) as file:
+        local_data["weather_metadata"] = json.load(file)
 
     df_timestamp = pd.read_csv(os.path.join(clustering_directory, "timestamp.csv"))
     df_timestamp["Date"] = pd.to_datetime(df_timestamp["Date"])

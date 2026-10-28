@@ -1072,9 +1072,12 @@ def get_reho_version():
         return 'unknown'
 
 
-def set_df_metadata(scenario, method, cluster, parameters, data_source=None, data_date=None):
+def set_df_metadata(scenario, method, cluster, parameters, data_source=None, data_date=None, weather=None):
     """
     Records what produced a result: the inputs of the run, the versions used and the run date.
+
+    ``weather`` is perfectdays's ``metadata.json``: its provenance goes under ``weather``, its clustering
+    settings under ``typical_periods``.
 
     Returns a DataFrame indexed on (category, key). The buildings themselves are reported in
     ``df_Buildings``, where egid and id_building are enough to retrieve them.
@@ -1084,7 +1087,10 @@ def set_df_metadata(scenario, method, cluster, parameters, data_source=None, dat
            'qbuildings_date': data_date,
            'run_date': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
-    metadata = {'run': run, 'scenario': scenario, 'method': method, 'cluster': cluster, 'parameters': parameters}
+    weather = dict(weather or {})
+    typical_periods = weather.pop('clustering', {})
+    metadata = {'run': run, 'weather': weather, 'typical_periods': typical_periods, 'scenario': scenario,
+                'method': method, 'cluster': cluster, 'parameters': parameters}
 
     records = []
     for category, entries in metadata.items():

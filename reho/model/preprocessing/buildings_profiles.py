@@ -297,29 +297,24 @@ def annual_to_typical(cluster, annual_file, df_Timestamp, typical_file=None):
         df_annual.index = df_annual.index.tz_localize(None)
 
     period_duration = cluster['PeriodDuration']
-    df_typical = pd.DataFrame()
+    periods, index = [], []
 
     # Each typical period is taken at the period of the year it was selected from, whatever the year: the
-    # weather may come from another year, or from several, than the annual profile.
-    for source_period in df_Timestamp['SourcePeriod'].iloc[:-2]:
+    # weather may come from another year, or from several, than the annual profile. When PeriodDuration does
+    # not divide the year, the last period holds only the hours left over, and is indexed by its own length.
+    for period, source_period in enumerate(df_Timestamp['SourcePeriod'].iloc[:-2], start=1):
         offset = (int(source_period) - 1) * period_duration
-        day_data = df_annual.iloc[offset: offset + period_duration]
-        df_typical = pd.concat([df_typical, day_data])
+        period_data = df_annual.iloc[offset: offset + period_duration]
+        periods.append(period_data)
+        index += [(period, hour) for hour in range(1, len(period_data) + 1)]
 
     # Handle extreme periods (minimum and maximum of the annual data)
-    min_values = df_annual.min().to_frame().T
-    max_values = df_annual.max().to_frame().T
+    regular_periods = len(periods)
+    periods += [df_annual.min().to_frame().T, df_annual.max().to_frame().T]
+    index += [(regular_periods + 1, 1), (regular_periods + 2, 1)]
 
-    df_typical = pd.concat([df_typical, min_values, max_values], ignore_index=True)
-
-    # Create multi-index [Period, Hour]
-    regular_periods = len(df_Timestamp) - 2
-
-    df_typical.index = pd.MultiIndex.from_tuples(
-        [(p, h) for p in range(1, regular_periods + 1) for h in range(1, period_duration + 1)] +
-        [(regular_periods + 1, 1), (regular_periods + 2, 1)],
-        names=['Period', 'Hour']
-    )
+    df_typical = pd.concat(periods, ignore_index=True)
+    df_typical.index = pd.MultiIndex.from_tuples(index, names=['Period', 'Hour'])
 
     if typical_file:
         df_typical.to_csv(typical_file)

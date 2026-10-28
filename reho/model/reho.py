@@ -610,7 +610,8 @@ class REHO(MasterProblem):
         self.results[Scn_ID][Pareto_ID]["df_Metadata"] = write_results.set_df_metadata(
             self.scenario, self.method, self.cluster, self.parameters,
             data_source=self.qbuildings_data.get('data_source'),
-            data_date=self.qbuildings_data.get('data_date'))
+            data_date=self.qbuildings_data.get('data_date'),
+            weather=self.local_data.get('weather_metadata'))
 
     def get_df_Results_from_MP_and_SPs(self, Scn_ID, Pareto_ID):
         """Assemble the results of the decomposition, from the last master problem and the selected sub-problems.

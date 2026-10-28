@@ -55,7 +55,7 @@ class TestTypicalPeriods:
         _three_kinds_of_day().to_csv(weather_file)
         cluster = {"custom_weather": str(weather_file), "Location": "Synthetic", "Attributes": ["T", "I", "W"],
                    "Periods": 3, "PeriodDuration": HOURS}
-        local_data.write_typical_periods(cluster, {}, str(directory))
+        local_data.generate_weather_data(cluster, {}, str(directory))
         return directory
 
     def test_typical_periods_are_the_medoid_days(self, clustering_directory):
@@ -85,9 +85,7 @@ class TestTypicalPeriods:
 
     def test_outdated_or_foreign_files_are_not_current(self, tmp_path):
         assert not local_data.typical_periods_are_current(str(tmp_path))
-        (tmp_path / local_data.TYPICAL_PERIODS_VERSION_FILE).write_text("1")
-        assert not local_data.typical_periods_are_current(str(tmp_path))
-        (tmp_path / local_data.TYPICAL_PERIODS_VERSION_FILE).write_text("not a version")
+        (tmp_path / "typical_periods_version.txt").write_text("2")   # a cache from before perfectdays
         assert not local_data.typical_periods_are_current(str(tmp_path))
 
 
@@ -97,7 +95,7 @@ def test_annual_to_typical_with_a_leftover_period(tmp_path):
     _three_kinds_of_day().to_csv(weather_file)
     cluster = {"custom_weather": str(weather_file), "Location": "Synthetic", "Attributes": ["T", "I", "W"],
                "Periods": 3, "PeriodDuration": 168}
-    local_data.write_typical_periods(cluster, {}, str(tmp_path))
+    local_data.generate_weather_data(cluster, {}, str(tmp_path))
     timestamp = pd.read_csv(tmp_path / "timestamp.csv")
 
     annual_file = tmp_path / "profile.csv"

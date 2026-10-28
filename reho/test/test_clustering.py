@@ -2,7 +2,7 @@ import matplotlib
 import pytest
 from perfectdays import get_typical_periods
 
-from reho.model.preprocessing.local_data import write_typical_periods
+from perfectdays.api.reho import generate_weather_data
 
 # Downloads the weather from PVGIS.
 pytestmark = [pytest.mark.slow, pytest.mark.needs_network]
@@ -25,6 +25,6 @@ def test_clustering_quality():
 
 def test_write_weather_files(qbuildings_data, tmp_path):
     cluster = {'Location': 'Geneva', 'Attributes': ['T', 'I', 'W'], 'Periods': 10, 'PeriodDuration': 24}
-    typical_periods = write_typical_periods(cluster, qbuildings_data, str(tmp_path))
+    typical_periods = generate_weather_data(cluster, qbuildings_data, str(tmp_path))
     assert typical_periods.n_periods == 10
     assert (tmp_path / "timestamp.csv").exists()

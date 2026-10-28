@@ -50,7 +50,7 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "sympy",
     "urllib3<2",
-    "perfectdays>=0.0.1"
+    "perfectdays>=0.0.3"
 ]
 
 # Optional dependency groups. Install with, e.g., `pip install "REHO[dev]"`.

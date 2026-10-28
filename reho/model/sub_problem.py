@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 import reho.model.preprocessing.buildings_profiles as buildings_profiles
-import reho.model.preprocessing.weather as weather
+from perfectdays.api.reho import get_cluster_file_ID
 from reho.logger import get_logger
 from reho.model.ampl_interface import (
     BUILDING_UNIT_MODELS,
@@ -240,7 +240,7 @@ class SubProblem:
         # -Setting DATA
         # -----------------------------------------------------------------------------------------------------#
 
-        File_ID = weather.get_cluster_file_ID(self.cluster_sp)
+        File_ID = get_cluster_file_ID(self.cluster_sp)
         clustering_directory = os.path.join(path_to_clustering, File_ID)
         ampl.cd(clustering_directory)
 

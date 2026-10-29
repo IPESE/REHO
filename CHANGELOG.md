@@ -43,6 +43,7 @@ slightly, and every cached clustering is rebuilt once.
 | ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **Clustering on fewer attributes** | Clustering without `'I'` failed when writing `typical_data.csv`, which needs the irradiance; every weather column now travels with the typical periods, whatever they were clustered on. | 🟢 |
 | ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **LDC indicator** | The LDC of the clustering pooled every attribute into one number, repeated in each column; it is now computed per attribute. | 🟢 |
 | ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **Periods that do not divide the year** | When `PeriodDuration` does not divide 8760 (e.g. 168 h), the hours left over form a shorter last period; `annual_to_typical` assumed every period full and failed. It now indexes each period by its own length. | 🟢 |
+| ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **Mobility demand profiles** | Since v2.1.0, `demwdy_def` and `demwnd_def` in `dailyprofiles.csv` held a copy of `EV_atravelwdy` and `EV_atravelwnd`, which sum to 1.0177 and 1.0079 over a day: the mobility demand exceeded `Population * DailyDist` by up to 1.8 %, while the modal shares are fractions of it, so a 100 % share of one mode (e.g. all cars) made the master problem infeasible. The profiles of v2.0 are restored, `get_mobility_demand` rescales any `dem*` profile to a daily sum of 1 with a warning, and a test checks the file. Mobility results change by up to 1.8 %. | 🟢 |
 
 ## [v2.2.0]
 

@@ -160,6 +160,13 @@ class TestOtherDataFiles:
         df = file_reader(path)
         assert not df.empty, f"{path} is empty"
 
+    def test_mobility_demand_profiles_sum_to_one(self):
+        # Domestic_energy_pkm is the profile times Population * DailyDist, which bounds the modal shares too:
+        # a profile summing above 1 makes a 100 % modal share infeasible.
+        profiles = file_reader(os.path.join(path_to_mobility, "dailyprofiles.csv"))
+        sums = profiles.loc[:, profiles.columns.str.startswith("dem")].sum()
+        assert ((sums - 1).abs() < 1e-6).all(), f"Mobility demand profiles not summing to 1: {sums.to_dict()}"
+
     def test_u_values_are_positive_and_periods_unique(self):
         u_values = file_reader(os.path.join(path_to_infrastructure, "U_values.csv"))
         assert u_values["period"].is_unique

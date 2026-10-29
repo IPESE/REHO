@@ -164,7 +164,13 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
     """
     # The labels look like this : demwdy_def, demwdy_long => normalized mobility demand of a weekday
     profiles_demand = profiles_input.loc[:, profiles_input.columns.str.startswith("dem")]
-    profiles_demand = profiles_demand * Population
+    # Each profile spreads the daily distance over the hours of a day, so it must sum to 1: the modal shares
+    # bound the pkm by Population * DailyDist, and a profile summing above 1 makes a 100 % share infeasible.
+    daily_sums = profiles_demand.sum()
+    off = daily_sums[(daily_sums - 1).abs() > 1e-6]
+    if not off.empty:
+        logger.warning(f"Mobility demand profiles {off.round(4).to_dict()} do not sum to 1 over a day; they are rescaled to 1.")
+    profiles_demand = profiles_demand / daily_sums * Population
 
     distances = DailyDist.index
     demand_pkm = pd.DataFrame(columns=['dist', 'p', 't', 'Domestic_energy_pkm'])

@@ -406,5 +406,9 @@ Costs_inv + penalties;
 minimize GWP:
 GWP_tot + penalties;
 
+# operational GWP only (added for the self-sufficiency base point)
+minimize GWP_OP:
+GWP_op + penalties;
+
 minimize MAX_EXPORT:
 -sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) / 1000 + penalties;

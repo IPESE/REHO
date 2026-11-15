@@ -385,7 +385,7 @@ class MasterProblem:
         # internal IT parameter
         self.iter = 0  # keeps track of iterations, takes value of last iteration circle
         self.feasible_solutions = 0  # keeps track how many sets of SP solutions are proposed to the MP eg '2' means two per building
-        list_obj = ["TOTEX", "CAPEX", "OPEX", "GWP"]
+        list_obj = ["TOTEX", "CAPEX", "OPEX", "GWP", "GWP_OP"]
         self.flags = {obj: 0 for obj in list_obj}  # keep track if the initialization has already been done
 
         # output attributes
@@ -1197,6 +1197,7 @@ class MasterProblem:
             obj_fct = pd.Series([Cinv_house["TOTEX"], Cop_house["TOTEX"]], index=["CAPEX", "OPEX"])
             impacts = Cop_house + Cinv_house
             obj_fct = pd.concat([obj_fct, impacts.replace(np.nan, 0)])
+            obj_fct["GWP_OP"] = Cop_house["GWP"]  # operational part only (GWP_OP objective)
 
             beta = - self.get_dual_values_SPs(Scn_ID, Pareto_ID, self.iter, h, "beta")
             if beta.sum() == 0 and len(scenario["EMOO"].keys()) > 1:

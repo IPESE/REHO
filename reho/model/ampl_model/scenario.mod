@@ -27,13 +27,17 @@ tau*(Costs_inv + Costs_rep) + Costs_op + Costs_grid_connection + penalties;
 minimize GWP:
 GWP_op + GWP_constr + penalties;
 
+# operational GWP only (added for the self-sufficiency base point)
+minimize GWP_OP:
+GWP_op + penalties;
+
 minimize MAX_EXPORT:
 -sum{p in PeriodStandard,t in Time[p]} ( Network_demand['Electricity',p,t] - Network_supply['Electricity',p,t] ) * dp[p] * dt[p] / 1000 + penalties;
 
 #--------------------------------------------------------------------------------------------------------------------#
 # Actors
 #--------------------------------------------------------------------------------------------------------------------#
-set Obj_fct := {'TOTEX', 'OPEX', 'CAPEX', 'GWP', "Owners", "Renters", "Utility"};
+set Obj_fct := {'TOTEX', 'OPEX', 'CAPEX', 'GWP', 'GWP_OP', "Owners", "Renters", "Utility"};
 param beta_duals{o in Obj_fct} default 0;
 
 param nu_Renters{h in House} default beta_duals["Renters"];
@@ -80,6 +84,7 @@ cost_actors = sum{h in House} (nu_Renters[h] * objective_renters[h]) + sum{h in 
 
 minimize SP_obj_fct:
 beta_duals['OPEX'] * (Costs_op + Costs_grid_connection) + beta_duals['CAPEX'] * tau * (Costs_inv + Costs_rep) + beta_duals['GWP'] * (GWP_op  + GWP_constr) +
+beta_duals['GWP_OP'] * GWP_op +
 penalties + cost_actors;
 
 ######################################################################################################################

@@ -162,7 +162,9 @@ git clone https://github.com/IPESE/REHO.git
 ```
 
 
-## Funding projects
+## Fundings
+
+The authors of REHO have been supported by the following fundings in the context of their research.
 
 ::::{grid} 2
 :gutter: 2
@@ -178,7 +180,6 @@ git clone https://github.com/IPESE/REHO.git
 :align: center
 ```
 
-2020–present
 :::
 
 :::{grid-item-card} Swiss Federal Office of Energy (SWEET–SWICE)
@@ -191,6 +192,5 @@ git clone https://github.com/IPESE/REHO.git
 :align: center
 ```
 
-2022–present
 :::
 ::::

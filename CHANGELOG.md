@@ -24,6 +24,19 @@ will break in a future release, 🟢 no action needed.
 [documentation]: https://img.shields.io/badge/-Documentation-yellow
 [packaging]: https://img.shields.io/badge/-Packaging-lightblue
 
+## [Unreleased]
+
+Faster building-scale runs and lighter profile plots, with the same results. Measured on one building and
+six scenarios: the optimization takes 6.4 s instead of 9.2 s, and `plot_combined_profiles` 0.14 s instead
+of 0.67 s with its default options.
+
+| Type                  | Category                          | Title | Description                                                                                                                                                                                        | Breaking |
+|-----------------------|------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+| ![Added][added]       | ![Plotting][plotting]              | **Lighter profile plots** | `plot_hourly_profiles` and `plot_combined_profiles` take `show_raw` (default True), to leave out the faded hourly values drawn behind the moving average, and `sampling` (`'hours'` by default, `'daily'`, `'weekly'`, `'monthly'`), to keep one point of the smoothed profile per step. A weekly moving average hardly moves within a day: `sampling='daily'` draws the same curve with 24 times fewer points, e.g. a combined figure of 0.12 MB instead of 2.8 MB once exported to HTML. | 🟢 |
+| ![Changed][changed]   | ![Model][model]                    | **Building-scale decomposition** | Without iterations (`DW_params['max_iter'] <= 1`, which `building-scale` imposes), the relaxed master problem of the initiation is no longer solved: it only provides the dual values of a round of sub-problems that never comes, and the binary master problem that follows is the one the results are read from. One model less per scenario, the same results; `results_MP` no longer holds the iteration 0 of these runs. The actors problem keeps it, as it reports the duals of every iteration. | 🟢 |
+| ![Changed][changed]   | ![Plotting][plotting]              | **Faster profile plots** | The profiles of the year are unfolded from the typical periods in one pass instead of one `xs` per day, the traces receive numpy arrays, which plotly validates at once rather than value by value, and the month separators are added in one layout update. The figures are unchanged. | 🟢 |
+| ![Fixed][fixed]       | ![Plotting][plotting]              | **`return_df` of the profile plots** | With `return_df=True`, `plot_hourly_profiles` and `plot_daily_profiles` returned an empty DataFrame in the plotly style, and nothing in the matplotlib one. They now return the plotted series, positive, a column per series (a unit both consuming and supplying, such as a battery, gets a `demand` and a `supply` column), indexed on the hour, with the `Date` of each point for the year. `plot_combined_profiles` takes `return_df` too, and returns the series of its five panels, indexed on (`Panel`, `Hour`). | 🟢 |
+
 ## [v2.2.0]
 
 Capacities of the networks and of the lines set explicitly, under names telling what is given and what the

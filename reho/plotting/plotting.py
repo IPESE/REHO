@@ -1369,8 +1369,6 @@ def plot_eud(results, label='EN_long', title=None, filename=None, export_format=
             fig.write_image(filename + '.' + export_format)
 
     if return_df:
-        logger.error('Sunburst parents (%s) and children (%s) have different lengths: %s vs %s.',
-                     parents_name, child_name, len(parents_name), len(child_name))
         df = pd.DataFrame()
         df["Energy Use"] = child_name
         df["Building Type"] = parents_name

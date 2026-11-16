@@ -442,7 +442,9 @@ The order does not matter. It can be helpful to explore the files `scripts/examp
 
 ### Select weather data
 
-Based on the building's coordinates, REHO automatically connects to the PVGIS database (using the [pvlib](https://pvlib-python.readthedocs.io/en/stable/) library) to extract annual weather data.
+Based on the building's coordinates, REHO gets annual weather data from [perfectdays](https://perfectdays.readthedocs.io/):
+in Switzerland, from its 1 km grid when it is available, which corrects the temperature of the 30 km PVGIS data in
+Alpine terrain; elsewhere in Europe, from PVGIS.
 
 Yearly weather data is then clustered into typical days. The `cluster` dictionary contains the clustering specifications:
 
@@ -456,6 +458,10 @@ Where:
 - `'Attributes'` indicates the features among which the clustering is applied (T refers to Temperature, I to Irradiance, and W to Weekday).
 - `'Periods'` relates to the desired number of typical periods.
 - `'PeriodDuration'` is the typical period duration (24h is the default choice, corresponding to a typical day).
+
+Optional keys choose the weather itself: `'Year'` (a year, or a list of years clustered together), `'Scenario'` (a
+climate scenario such as `'rcp45_2050'`, in Switzerland only), `'Source'` (`'swissweathergrid'` or `'pvgis'`) and
+`'Coordinates'` (WGS 84 latitude and longitude, instead of the first building's position).
 
 The typical periods are written to `data/clustering/<Location>_<Periods>_<PeriodDuration>_<Attributes>/`, next to the run
 script, and reused by the next runs with the same options. REHO rebuilds them when they were written by an earlier

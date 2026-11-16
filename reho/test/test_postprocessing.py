@@ -10,7 +10,8 @@ import pytest
 from reho.model import reho as reho_module
 from reho.model.postprocessing.KPIs import postcompute_annual_COP
 from reho.model.postprocessing.sensitivity_analysis import SensitivityAnalysis
-from reho.model.postprocessing.write_results import INTERPERIOD_STORAGE_VARIABLES, get_ampl_parameters
+from reho.model.postprocessing.write_results import (INTERPERIOD_STORAGE_VARIABLES, get_ampl_parameters,
+                                                     set_df_metadata)
 from reho.plotting.plotting import INTERPERIOD_STORAGE_LAYOUT
 from reho.plotting.utils import layout, monthly_average
 
@@ -159,3 +160,14 @@ def test_every_interperiod_storage_has_a_plot_layout():
     # plot_electricity_flows colours the state of charge of each inter-period storage after its row of layout.csv
     assert set(INTERPERIOD_STORAGE_LAYOUT) == set(INTERPERIOD_STORAGE_VARIABLES)
     assert set(INTERPERIOD_STORAGE_LAYOUT.values()) <= set(layout.index)
+
+
+def test_metadata_reports_the_weather_and_its_clustering():
+    weather = {"perfectdays": "0.0.3", "source": "pvgis", "datasets": {"2019": "PVGIS-ERA5"}, "years": [2019],
+               "clustering": {"periods": 10, "seed": 0}}
+    df = set_df_metadata({}, {}, {}, {}, weather=weather)
+    assert df.loc[("weather", "source"), "value"] == "pvgis"
+    assert df.loc[("weather", "datasets"), "value"] == "{'2019': 'PVGIS-ERA5'}"
+    assert df.loc[("typical_periods", "periods"), "value"] == "10"
+    assert ("weather", "clustering") not in df.index
+    assert "clustering" in weather   # the caller's dictionary is left as it was

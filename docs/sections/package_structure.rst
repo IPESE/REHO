@@ -129,11 +129,8 @@ expects.
    * - :mod:`~reho.model.preprocessing.QBuildings`
      - Read the buildings, from the QBuildings database or from a CSV file.
    * - :mod:`~reho.model.preprocessing.local_data`
-     - Location-dependent data: weather, sun position, renovation references.
-   * - :mod:`~reho.model.preprocessing.weather`
-     - Download annual weather data and reduce it to typical periods.
-   * - :mod:`~reho.model.preprocessing.clustering`
-     - K-medoids clustering used by the typical-period reduction.
+     - Location-dependent data: weather reduced to typical periods (by perfectdays), sun position, renovation
+       references.
    * - :mod:`~reho.model.preprocessing.buildings_profiles`
      - End-use demand profiles (heat gains, domestic hot water, electricity).
    * - :mod:`~reho.model.preprocessing.sia_parser`

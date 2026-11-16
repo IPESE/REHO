@@ -267,7 +267,11 @@ embodied emissions, of each unit). See
 ### `df_Metadata`
 
 Provenance of the run: the REHO version, the date, the `scenario`, `method` and
-`cluster` dictionaries, and the source and date of the buildings data. Written into
+`cluster` dictionaries, and the source and date of the buildings data. The weather
+has two categories, read from the `metadata.json` that perfectdays writes with the
+typical periods: `weather` (source, dataset of each year, coordinates, scenario,
+years, perfectdays version) and `typical_periods` (number and duration of the
+periods, clustered attributes, restarts, seed, reference year). Written into
 every exported file, so a result can always be traced back to the configuration
 that produced it.
 

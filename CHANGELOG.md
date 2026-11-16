@@ -24,6 +24,17 @@ will break in a future release, 🟢 no action needed.
 [documentation]: https://img.shields.io/badge/-Documentation-yellow
 [packaging]: https://img.shields.io/badge/-Packaging-lightblue
 
+## [v2.3.0]
+
+Typical periods now come from perfectdays, and building-scale runs and profile plots are faster: one building and six scenarios optimize in 6.4 s instead of 9.2 s.
+
+| Type                  | Category                          | Title | Description                                                                                                                                                                                        | Breaking |
+|-----------------------|------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|
+| ![Changed][changed]   | ![Preprocessing][preprocessing]    | **Clustering by perfectdays** | The weather and the typical periods come from [perfectdays](https://perfectdays.readthedocs.io/): its 1 km grid in Switzerland, PVGIS elsewhere. `cluster` takes optional `Year`, `Scenario`, `Source` and `Coordinates`, appended to the File_ID when set, and `df_Metadata` reports the weather and clustering used. Breaking: `reho.model.preprocessing.weather` and `clustering` are removed with `pyclustering` (import `generate_weather_data` and `get_cluster_file_ID` from `perfectdays.api.reho`); `timestamp.csv` gives `SourceYear` and `SourcePeriod` instead of `RowOffset`; cached typical periods are rebuilt once, so results change slightly. Also fixes clustering without `'I'`, the LDC indicator and periods that do not divide the year. | 🔴 |
+| ![Changed][changed]   | ![Model][model]                    | **Building-scale decomposition** | Without iterations (`DW_params['max_iter'] <= 1`, which `building-scale` imposes), the relaxed master problem of the initiation is no longer solved: it only provides the dual values of a round of sub-problems that never comes, and the binary master problem that follows is the one the results are read from. One model less per scenario, the same results; `results_MP` no longer holds the iteration 0 of these runs. The actors problem keeps it, as it reports the duals of every iteration. | 🟢 |
+| ![Fixed][fixed]       | ![Plotting][plotting]              | **Profile plots** | `plot_hourly_profiles` and `plot_combined_profiles` are about 5 times faster and take `show_raw` (hide the faded hourly values) and `sampling` (`'daily'`, `'weekly'`, `'monthly'`: one point per step, e.g. 0.12 MB instead of 2.8 MB). Their `return_df` now returns the plotted series, and `plot_eud` no longer logs a false error with `return_df=True`. | 🟢 |
+| ![Fixed][fixed]       | ![Preprocessing][preprocessing]    | **Mobility demand profiles** | Since v2.1.0, `demwdy_def` and `demwnd_def` in `dailyprofiles.csv` held a copy of `EV_atravelwdy` and `EV_atravelwnd`, which sum to 1.0177 and 1.0079 over a day: the mobility demand exceeded `Population * DailyDist` by up to 1.8 %, while the modal shares are fractions of it, so a 100 % share of one mode (e.g. all cars) made the master problem infeasible. The profiles of v2.0 are restored, `get_mobility_demand` rescales any `dem*` profile to a daily sum of 1 with a warning, and a test checks the file. Mobility results change by up to 1.8 %. | 🟢 |
+
 ## [v2.2.0]
 
 Capacities of the networks and of the lines set explicitly, under names telling what is given and what the

@@ -221,7 +221,8 @@ class REHO(MasterProblem):
 
         1. Initiation: the sub-problem of each building is solved
            (:meth:`~reho.model.master_problem.MasterProblem.initiate_decomposition`), and a first
-           master problem combines the configurations they propose.
+           master problem combines the configurations they propose. It is skipped when
+           ``DW_params['max_iter'] <= 1`` (building-scale), since no iteration uses its duals.
         2. Iterations: the sub-problems are solved with the dual values of the master problem
            (:meth:`~reho.model.master_problem.MasterProblem.SP_iteration`), then the master
            problem again (:meth:`~reho.model.master_problem.MasterProblem.MP_iteration`), until
@@ -262,8 +263,13 @@ class REHO(MasterProblem):
 
             self.logger.info('INITIATION, Iter:' + str(self.iter) + ' Pareto_ID: ' + str(Pareto_ID))
             self.initiate_decomposition(SP_scenario_init, Scn_ID=Scn_ID, Pareto_ID=Pareto_ID, epsilon_init=epsilon_init)
-            self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
-            self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
+            # The relaxed master problem only provides the dual values of the next round of
+            # sub-problems. Without iterations (max_iter <= 1, e.g. building-scale), no round
+            # follows and the binary master problem below is the only one read: skip it.
+            # The actors problem keeps it, as it reports the duals of every iteration.
+            if self.DW_params['max_iter'] > 1 or self.method['actors_problem']:
+                self.logger.info('MASTER INITIATION, Iter:' + str(self.iter))
+                self.MP_iteration(scenario, Scn_ID=Scn_ID, binary=False, Pareto_ID=Pareto_ID, read_DHN=read_DHN)
 
             # Iteration
             while self.iter < self.DW_params['max_iter'] - 1:  # last iteration is used to run the binary MP.
@@ -610,7 +616,8 @@ class REHO(MasterProblem):
         self.results[Scn_ID][Pareto_ID]["df_Metadata"] = write_results.set_df_metadata(
             self.scenario, self.method, self.cluster, self.parameters,
             data_source=self.qbuildings_data.get('data_source'),
-            data_date=self.qbuildings_data.get('data_date'))
+            data_date=self.qbuildings_data.get('data_date'),
+            weather=self.local_data.get('weather_metadata'))
 
     def get_df_Results_from_MP_and_SPs(self, Scn_ID, Pareto_ID):
         """Assemble the results of the decomposition, from the last master problem and the selected sub-problems.

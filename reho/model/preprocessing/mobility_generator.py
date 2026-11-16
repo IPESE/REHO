@@ -33,7 +33,7 @@ def _day_type(days_mapping, day):
         raise KeyError(
             f"Day type {day!r} is not declared in the mobility day mapping (known: {sorted(days_mapping)})."
         ) from None
-import reho.model.preprocessing.weather as weather
+from perfectdays.api.reho import get_cluster_file_ID
 import pandas as pd
 import numpy as np
 
@@ -90,7 +90,7 @@ def generate_mobility_parameters(cluster, parameters, infrastructure, modal_spli
     # Periods
     # TODO IMPLEMENTATION of flexible period duration
 
-    File_ID = weather.get_cluster_file_ID(cluster)
+    File_ID = get_cluster_file_ID(cluster)
     clustering_directory = os.path.join(path_to_clustering, File_ID)
 
     timestamp = pd.read_csv(os.path.join(clustering_directory, 'timestamp.csv'))
@@ -164,7 +164,13 @@ def get_mobility_demand(profiles_input, timestamp, days_mapping, DailyDist, Popu
     """
     # The labels look like this : demwdy_def, demwdy_long => normalized mobility demand of a weekday
     profiles_demand = profiles_input.loc[:, profiles_input.columns.str.startswith("dem")]
-    profiles_demand = profiles_demand * Population
+    # Each profile spreads the daily distance over the hours of a day, so it must sum to 1: the modal shares
+    # bound the pkm by Population * DailyDist, and a profile summing above 1 makes a 100 % share infeasible.
+    daily_sums = profiles_demand.sum()
+    off = daily_sums[(daily_sums - 1).abs() > 1e-6]
+    if not off.empty:
+        logger.warning(f"Mobility demand profiles {off.round(4).to_dict()} do not sum to 1 over a day; they are rescaled to 1.")
+    profiles_demand = profiles_demand / daily_sums * Population
 
     distances = DailyDist.index
     demand_pkm = pd.DataFrame(columns=['dist', 'p', 't', 'Domestic_energy_pkm'])

@@ -683,8 +683,40 @@ def plot_sankey(df_Results, label='EN_long', color='ColorPastel', title=None, fi
         return fig
 
 
+def _annual_profile(series, days):
+    """Unfold a (Period, Time) series over the year: the values of each day's typical period, in turn.
+
+    ``days`` is the typical period of each day. Grouping once replaces one ``xs`` per day.
+    """
+    by_period = {period: group.to_numpy() for period, group in series.groupby(level=0, sort=False)}
+    return np.concatenate([by_period[period] for period in days])
+
+
+#: Number of hourly values per step, for the ``resolution`` and ``sampling`` of the profile plots.
+_PROFILE_STEPS = {'hours': 1, 'daily': 24, 'weekly': 168, 'monthly': 730}
+
+
+def _profile_frame(index, imports, exports, demands, supplies, curtailment, layout, label):
+    """The series of a profile plot as one DataFrame, a column per series, values positive.
+
+    A unit both consuming and supplying (Battery, EV_district) gets two columns, suffixed
+    ``demand`` and ``supply``; the other series are named as in the legend.
+    """
+    columns = {}
+    for layer, values in imports.items():
+        columns[layout.loc[layer + '_import', label]] = values
+    columns[layout.loc['Electricity_export', label]] = exports['Electricity']
+    for kind, series in (('demand', demands), ('supply', supplies)):
+        for unit, values in series.items():
+            both = unit in demands and unit in supplies
+            columns[f"{layout.loc[unit, label]} {kind}" if both else layout.loc[unit, label]] = values
+    if curtailment is not None:
+        columns[layout.loc['Curtailment', label]] = curtailment
+    return pd.DataFrame(columns, index=index)
+
+
 def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_long', color='ColorPastel', resolution='weekly', plot_curtailment=False,
-                  title=None, filename=None, export_format='html', return_df=False):
+                  title=None, filename=None, export_format='html', return_df=False, show_raw=True, sampling='hours'):
     """
     Plots an hourly profile for an entire year of operation.
 
@@ -713,15 +745,24 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
     export_format: str
         Can be either 'html', 'png', or 'pdf'.
     return_df: bool
-        A dataframe can be returned for further post-processing or reporting purposes.
+        Also return the plotted series: the smoothed and sampled values, positive, a column
+        per series, indexed on the hour of the year, with the ``Date`` of each point.
+    show_raw: bool
+        With a moving average, also draw the hourly values behind it, faded. Default True.
+    sampling: str
+        Keep one point of the smoothed profile per 'hours' (all, default), 'daily', 'weekly' or
+        'monthly' step. A weekly moving average hardly changes within a day: 'daily' draws the
+        same curve with 24 times fewer points, hence a much lighter figure.
 
     Returns
     ----------
     plotly.graph_objs.Figure
         The generated plotly figure.
     pd.DataFrame
-        (Optional) A dataframe for further post-processing or reporting purposes.
+        (Optional) The plotted series, see ``return_df``.
     """
+    if sampling not in _PROFILE_STEPS:
+        raise ValueError(f"sampling must be one of {list(_PROFILE_STEPS)}, got {sampling!r}")
     _lang = 'FR' if label.startswith('FR') else 'EN'
     _t = _TRANSLATIONS[_lang]
     _MONTH_NAMES = _t['months']
@@ -746,15 +787,10 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
         imports[layer] = df_Results['df_Grid_t'].xs((layer, 'Network'), level=('Layer', 'Hub')).Grid_supply[:-2]
         exports[layer] = df_Results['df_Grid_t'].xs((layer, 'Network'), level=('Layer', 'Hub')).Grid_demand[:-2]
 
-    import_profile = {}
-    export_profile = {}
-    for layer in layers:
-        import_profile[layer] = np.array([])
-        export_profile[layer] = np.array([])
-        for i in range(1, 366):
-            id = df_Results['df_Index'].PeriodOfYear[i * 24]
-            import_profile[layer] = np.concatenate((import_profile[layer], imports[layer].xs(id)))
-            export_profile[layer] = np.concatenate((export_profile[layer], exports[layer].xs(id)))
+    # Typical period of each day of the year, read at its last hour.
+    days = [df_Results['df_Index'].PeriodOfYear[i * 24] for i in range(1, 366)]
+    import_profile = {layer: _annual_profile(imports[layer], days) for layer in layers}
+    export_profile = {layer: _annual_profile(exports[layer], days) for layer in layers}
 
     # Units
     demands = dict()
@@ -764,33 +800,18 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
         df_aggregated = df_Results['df_Unit_t'][df_Results['df_Unit_t'].index.get_level_values('Unit').str.contains(unit)]
         if unit in units_demand:
             demand = df_aggregated.droplevel('Layer').Units_demand[:-2].groupby(['Period', 'Time']).sum()
-            demands[unit] = np.array([])
-            for i in range(1, 366):
-                t = df_Results['df_Index'].PeriodOfYear[i * 24]
-                demands[unit] = np.concatenate((demands[unit], demand.xs(t)))
+            demands[unit] = _annual_profile(demand, days)
         if unit in units_supply:
             supply = df_aggregated.droplevel('Layer').Units_supply[:-2].groupby(['Period', 'Time']).sum()
-            supplies[unit] = np.array([])
-            for i in range(1, 366):
-                t = df_Results['df_Index'].PeriodOfYear[i * 24]
-                supplies[unit] = np.concatenate((supplies[unit], supply.xs(t)))
+            supplies[unit] = _annual_profile(supply, days)
         if unit == 'PV' and plot_curtailment:
             curtailment = df_aggregated.droplevel('Layer').Units_curtailment[:-2].groupby(['Period', 'Time']).sum()
-            curtailments[unit] = np.array([])
-            for i in range(1, 366):
-                t = df_Results['df_Index'].PeriodOfYear[i * 24]
-                curtailments[unit] = np.concatenate((curtailments[unit], curtailment.xs(t)))
+            curtailments[unit] = _annual_profile(curtailment, days)
 
-    if resolution == 'monthly':
-        items_average = 730
-    elif resolution == 'weekly':
-        items_average = 168
-    elif resolution == 'daily':
-        items_average = 24
-    else:  # 'hours'
-        items_average = 1
+    items_average = _PROFILE_STEPS.get(resolution, 1)  # unknown resolution: no smoothing, as 'hours'
+    show_raw = show_raw and items_average > 1
 
-    if items_average > 1:
+    if show_raw:
         import_profile_raw = {layer: import_profile[layer].copy() for layer in layers}
         export_profile_raw = {layer: export_profile[layer].copy() for layer in layers}
         demands_raw = {unit: demands[unit].copy() for unit in units_demand}
@@ -808,14 +829,22 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
     if plot_curtailment:
         curtailments['PV'] = moving_average(curtailments['PV'], items_average)
 
+    # Keep one point per sampling step. numpy arrays throughout: plotly validates a list
+    # element by element, which dominated the cost of this figure.
     n = len(import_profile["Electricity"])
-    x_data = list(range(1, n + 1))
-    x_raw = list(range(1, 8761))
-    _hover_dates = []
-    for _h in range(8760):
-        _d = datetime.date(2001, 1, 1) + datetime.timedelta(days=_h // 24)
-        _hover_dates.append(f"{_d.day} {_MONTH_NAMES[_d.month - 1]}, {(_h % 24):02d}:00")
-    _hover_dates_data = _hover_dates[:n]
+    keep = np.arange(0, n, _PROFILE_STEPS[sampling])
+    for series in (import_profile, export_profile, demands, supplies, curtailments):
+        for key in series:
+            series[key] = series[key][keep]
+    x_data = keep + 1
+    x_raw = np.arange(1, 8761)
+    _hover_dates = np.array([
+        f"{_d.day} {_MONTH_NAMES[_d.month - 1]}, {(_h % 24):02d}:00"
+        for _h in range(8760) for _d in [datetime.date(2001, 1, 1) + datetime.timedelta(days=_h // 24)]])
+    _hover_dates_data = _hover_dates[keep]
+    df_profiles = _profile_frame(pd.Index(x_data, name='Hour'), import_profile, export_profile, demands, supplies,
+                                 curtailments.get('PV') if plot_curtailment else None, layout, label)
+    df_profiles.insert(0, 'Date', _hover_dates_data)
     month_tick_vals, month_start_vals, pos = [], [], 1
     for h in _MONTH_HOURS:
         month_start_vals.append(pos)
@@ -827,7 +856,7 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
 
     if style == 'matplotlib':
         fig, ax = plt.subplots()
-        if items_average > 1:
+        if show_raw:
             ax.plot(x_raw, import_profile_raw["Electricity"], color=layout.loc['Electricity_import', color], alpha=0.3)
             ax.plot(x_raw, -export_profile_raw["Electricity"], color=layout.loc['Electricity_export', color], alpha=0.3)
             for layer in list(layers)[1:]:
@@ -870,6 +899,8 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
                 plt.tight_layout()
                 plt.savefig((filename + '.' + export_format), format=export_format, dpi=300)
 
+        if return_df:
+            return plt, df_profiles
         return plt
 
     else:
@@ -877,7 +908,7 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
 
         _ht = '<b>%{fullData.name}</b><br>%{customdata}<br>%{y:.1f} kWh<extra></extra>'
 
-        if items_average > 1:
+        if show_raw:
             fig.add_trace(go.Scatter(
                 x=x_raw, y=import_profile_raw["Electricity"], mode="lines",
                 showlegend=False, opacity=0.3, hoverinfo='skip',
@@ -961,8 +992,10 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
                 customdata=_hover_dates_data, hovertemplate=_ht,
                 line=dict(color=layout.loc['Curtailment', color], dash='dot', width=2)
             ))
-        for x_start in month_start_vals[1:]:
-            fig.add_vline(x=x_start, line=dict(color='lightgrey', width=1, dash='dot'))
+        # One layout update for the month separators: add_vline validates the layout on every call.
+        fig.update_layout(shapes=[dict(type='line', xref='x', yref='y domain', x0=x_start, x1=x_start, y0=0, y1=1,
+                                       line=dict(color='lightgrey', width=1, dash='dot'))
+                                  for x_start in month_start_vals[1:]])
         fig.update_layout(
             template='plotly_white',
             xaxis=dict(tickvals=month_tick_vals, ticktext=_MONTH_NAMES, showgrid=False),
@@ -982,7 +1015,7 @@ def plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label='EN_lo
                 fig.write_image(filename + '.' + export_format)
 
         if return_df:
-            return fig, pd.DataFrame()
+            return fig, df_profiles
         else:
             return fig
 
@@ -1015,7 +1048,7 @@ def plot_daily_profiles(df_Results, units_to_plot, period, season_name=None, sty
     export_format: str
         Can be either 'html', 'png', or 'pdf'.
     return_df: bool
-        A dataframe can be returned for further post-processing or reporting purposes.
+        Also return the plotted series: positive values, a column per series, indexed on the hour.
 
     Returns
     ----------
@@ -1055,11 +1088,13 @@ def plot_daily_profiles(df_Results, units_to_plot, period, season_name=None, sty
     _lang = 'FR' if label.startswith('FR') else 'EN'
     _t = _TRANSLATIONS[_lang]
     n_hours = len(import_day["Electricity"])
-    x_day = list(range(1, n_hours + 1))
+    x_day = np.arange(1, n_hours + 1)
     obj_x = _t['time_h']
     obj_y = _t['kwh']
     _prefix = f"{season_name}, " if season_name else ""
-    _hover_times = [f"{_prefix}{h:02d}:00" for h in range(n_hours)]
+    _hover_times = np.array([f"{_prefix}{h:02d}:00" for h in range(n_hours)])
+    df_profiles = _profile_frame(pd.Index(x_day, name='Hour'), import_day, export_day, demands_day, supplies_day,
+                                 curtailments_day.get('PV') if plot_curtailment else None, layout, label)
     _ht_daily = '<b>%{fullData.name}</b><br>%{customdata}<br>%{y:.1f} kWh<extra></extra>'
 
     if style == 'matplotlib':
@@ -1090,6 +1125,8 @@ def plot_daily_profiles(df_Results, units_to_plot, period, season_name=None, sty
             if export_format in ('png', 'pdf'):
                 plt.tight_layout()
                 plt.savefig(filename + '.' + export_format, format=export_format, dpi=300)
+        if return_df:
+            return plt, df_profiles
         return plt
 
     else:
@@ -1153,13 +1190,14 @@ def plot_daily_profiles(df_Results, units_to_plot, period, season_name=None, sty
             if export_format in ('png', 'pdf'):
                 fig.write_image(filename + '.' + export_format)
         if return_df:
-            return fig, pd.DataFrame()
+            return fig, df_profiles
         else:
             return fig
 
 
 def plot_combined_profiles(df_Results, units_to_plot, label='EN_long', color='ColorPastel', resolution='weekly',
-                           plot_curtailment=False, title=None, filename=None, export_format='html'):
+                           plot_curtailment=False, title=None, filename=None, export_format='html',
+                           return_df=False, show_raw=True, sampling='hours'):
     """
     Combines an annual hourly profile with four seasonal typical-day profiles in a single figure.
 
@@ -1186,10 +1224,19 @@ def plot_combined_profiles(df_Results, units_to_plot, label='EN_long', color='Co
         Name of the file to be saved.
     export_format: str
         Can be either 'html', 'png', or 'pdf'.
+    return_df: bool
+        Also return the plotted series of the five panels, indexed on (Panel, Hour): 'Annual'
+        (see plot_hourly_profiles) and the four seasons.
+    show_raw: bool
+        Draw the faded hourly values behind the annual moving average. See plot_hourly_profiles.
+    sampling: str
+        Points kept in the annual profile. See plot_hourly_profiles.
 
     Returns
     ----------
     plotly.graph_objs.Figure
+    pd.DataFrame
+        (Optional) The plotted series, see ``return_df``.
     """
     _lang = 'FR' if label.startswith('FR') else 'EN'
     _t = _TRANSLATIONS[_lang]
@@ -1200,14 +1247,16 @@ def plot_combined_profiles(df_Results, units_to_plot, label='EN_long', color='Co
         for season, day in season_days.items()
     }
 
-    hourly_fig = plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label=label, color=color,
-                                      resolution=resolution, plot_curtailment=plot_curtailment)
-    daily_figs = {
+    hourly_fig, hourly_df = plot_hourly_profiles(df_Results, units_to_plot, style='plotly', label=label, color=color,
+                                                 resolution=resolution, plot_curtailment=plot_curtailment,
+                                                 return_df=True, show_raw=show_raw, sampling=sampling)
+    daily = {
         season: plot_daily_profiles(df_Results, units_to_plot, period=period,
                                     season_name=_t['seasons'][season], style='plotly',
-                                    label=label, color=color, plot_curtailment=plot_curtailment)
+                                    label=label, color=color, plot_curtailment=plot_curtailment, return_df=True)
         for season, period in season_periods.items()
     }
+    daily_figs = {season: fig for season, (fig, _) in daily.items()}
 
     season_labels = [_t['seasons'][s] for s in season_days]
     combined = make_subplots(
@@ -1227,8 +1276,9 @@ def plot_combined_profiles(df_Results, units_to_plot, label='EN_long', color='Co
             t.showlegend = False
             combined.add_trace(t, row=row, col=col)
 
-    for shape in hourly_fig.layout.shapes:
-        combined.add_shape(copy.deepcopy(shape), row=1, col=1)
+    # The annual panel is the first subplot, on axes x and y like the hourly figure: its shapes
+    # are kept as they are, in one update (add_shape validates the layout on every call).
+    combined.update_layout(shapes=hourly_fig.layout.shapes)
 
     hourly_xaxis = hourly_fig.layout.xaxis
     combined.update_layout(
@@ -1251,6 +1301,9 @@ def plot_combined_profiles(df_Results, units_to_plot, label='EN_long', color='Co
         if export_format in ('png', 'pdf'):
             combined.write_image(filename + '.' + export_format)
 
+    if return_df:
+        panels = {'Annual': hourly_df, **{season: df for season, (_, df) in daily.items()}}
+        return combined, pd.concat(panels, names=['Panel'])
     return combined
 
 

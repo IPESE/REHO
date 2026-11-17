@@ -520,10 +520,30 @@ def kpis(res, era):
             'el_export': 1000 * net.loc['Electricity', 'Demand_MWh'] / era, **grid_usage(res), **s.to_dict()}
 
 
+STORAGE_CLASSES = ['none', 'battery', 'rsoc', 'battery+rsoc']        # class (colour, order) = installed storage set
+
+
 def tech_set(row):
-    b, r = row['Battery_district'] > SIZE_TOL, row['rSOC_district'] > SIZE_TOL
-    return {(False, False): ('PV+HP (no storage)', 'none'), (True, False): ('PV+HP+battery', 'battery'),
-            (False, True): ('PV+HP+rSOC', 'rsoc'), (True, True): ('PV+HP+battery+rSOC', 'battery+rsoc')}[(b, r)]
+    """(name, storage class). Name = installed technologies among PV, HP, battery, rSOC (size > 0), e.g.
+    'PV+HP+battery', 'HP (no storage)', 'grid only'; class = storage set only (file names, colours, order)."""
+    has = {k: row.get(c, 0) > SIZE_TOL for k, c in (('PV', 'PV'), ('HP', 'HeatPump_Air'), ('battery', 'Battery_district'),
+                                                    ('rSOC', 'rSOC_district'))}
+    name = '+'.join(k for k, v in has.items() if v)
+    if not (has['battery'] or has['rSOC']):
+        name = f'{name} (no storage)' if name else 'grid only'
+    return name, {(False, False): 'none', (True, False): 'battery', (False, True): 'rsoc',
+                  (True, True): 'battery+rsoc'}[(has['battery'], has['rSOC'])]
+
+
+def storage_class(name):
+    """Storage class of a technology-set name made by tech_set()."""
+    b, r = 'battery' in name, 'rSOC' in name
+    return {(False, False): 'none', (True, False): 'battery', (False, True): 'rsoc', (True, True): 'battery+rsoc'}[(b, r)]
+
+
+def class_order(names):
+    """Technology-set names sorted by storage class, then name."""
+    return sorted(dict.fromkeys(names), key=lambda n: (STORAGE_CLASSES.index(storage_class(n)), n))
 
 
 # Design codes: G<generator>-<nn>, numbered in the order of the lever specification (stable for the same inputs).
@@ -568,7 +588,7 @@ def _clean(s):
 
 def pool_table(results, era, levers):
     """One row per evaluated design. Index = design code (G<generator>-<nn>), 'description' says what it is,
-    'tech_set' is its storage class (cluster): no storage / battery / rSOC / battery + rSOC."""
+    'tech_set' names the installed technologies (e.g. PV+HP+battery); its cluster is the storage set (tech_short)."""
     if ANCHOR not in results:
         raise RuntimeError('the TOTEX optimum could not be evaluated: check the errors printed during generation.')
     codes = design_codes(levers)
@@ -586,7 +606,6 @@ def pool_table(results, era, levers):
     return T.loc[sorted(T.index)]
 
 
-TECH_ORDER = ['PV+HP (no storage)', 'PV+HP+battery', 'PV+HP+rSOC', 'PV+HP+battery+rSOC']
 TABLE_COLUMNS = {'TOTEX': 'TOTEX [CHF/m2/yr]', 'CAPEX': 'CAPEX [CHF/m2/yr]', 'OPEX': 'OPEX [CHF/m2/yr]',
                  'SS': 'SS [%]', 'GU': 'GU [-]', 'el_import': 'Import [kWh/m2/yr]', 'el_export': 'Export [kWh/m2/yr]',
                  'PV': 'PV [kW/1000m2]', 'HeatPump_Air': 'HP [kW/1000m2]', 'Battery_district': 'Battery [kWh/1000m2]',
@@ -596,7 +615,7 @@ TABLE_COLUMNS = {'TOTEX': 'TOTEX [CHF/m2/yr]', 'CAPEX': 'CAPEX [CHF/m2/yr]', 'OP
 def cluster_table(T):
     """Designs grouped by storage class (cluster) -> design code, with KPIs and installed capacities."""
     d = T[['tech_set', 'description'] + list(TABLE_COLUMNS)].rename(columns=TABLE_COLUMNS)
-    d['tech_set'] = pd.Categorical(d['tech_set'], TECH_ORDER, ordered=True)
+    d['tech_set'] = pd.Categorical(d['tech_set'], class_order(d['tech_set']), ordered=True)
     d = d.rename_axis('design').reset_index().sort_values(['tech_set', 'design'])
     return d.rename(columns={'tech_set': 'cluster'}).set_index(['cluster', 'design'])
 
@@ -728,8 +747,22 @@ def summarize(ctx, files, T, postprocess_dir=None):
     return summary_df, kw
 
 
-TECH_COLOR = {'PV+HP (no storage)': '#7f7f7f', 'PV+HP+battery': '#1f77b4', 'PV+HP+rSOC': '#2ca02c',
-              'PV+HP+battery+rSOC': '#d62728'}
+CLASS_COLOR = {'none': '#7f7f7f', 'battery': '#1f77b4', 'rsoc': '#2ca02c', 'battery+rsoc': '#d62728'}
+
+
+class _TechColor(dict):
+    """TECH_COLOR[name] = colour of the storage class of any technology-set name (PV / HP may be absent)."""
+    def __missing__(self, name):
+        return CLASS_COLOR[storage_class(name)]
+
+    def get(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            return default
+
+
+TECH_COLOR = _TechColor()
 CTX_SYMBOL = {'attractive': 'triangle-up', 'baseline': 'circle', 'harsh': 'triangle-down'}
 SYMBOLS = ['circle', 'triangle-up', 'triangle-down', 'square', 'diamond', 'cross', 'x', 'star', 'pentagon', 'hexagon']
 PATTERNS = ['/', '', '.', 'x', '+', '\\', '-', '|']
@@ -779,7 +812,7 @@ def make_figures(ctx, summary_df, uncertain_var_link, reference_context='baselin
     """Selected designs only. Colour = technology class (cluster), symbol = economic context."""
     figs = {}
     d = summary_df.reset_index()
-    d['tech_set'] = pd.Categorical(d['tech_set'], TECH_ORDER, ordered=True)
+    d['tech_set'] = pd.Categorical(d['tech_set'], class_order(d['tech_set']), ordered=True)
     d = d.sort_values(['tech_set', 'design'])
     ctx_symbol, ctx_pattern = context_styles(list(dict.fromkeys(summary_df.index.get_level_values('context'))))
 
@@ -808,7 +841,7 @@ def make_figures(ctx, summary_df, uncertain_var_link, reference_context='baselin
     #    the design, so they are the same in every context)
     ref = d[d['context'] == reference_context].copy()
     ref['tech_set'] = ref['tech_set'].astype(str)
-    classes = [t for t in TECH_ORDER if (ref['tech_set'] == t).any()]
+    classes = class_order(ref['tech_set'])
     ypos = {t: len(classes) - 1 - i for i, t in enumerate(classes)}
     jitter = pd.Series(np.random.default_rng(0).uniform(-0.15, 0.15, len(ref)), index=ref.index)
     panels = [('SS', 'Self-sufficiency [%]', 1), ('GU', 'GU, consumption peak / mean [-]', 1),

@@ -30,8 +30,13 @@ Two generic functions on top of REHO:
 
 ## Run
 
-Open the notebook in `diverse_configs/` and run it top to bottom. Results are written to
-`diverse_configs/results/<district>10_gc_quick/` (not versioned); an interrupted run resumes where it stopped.
-`QUICK = True` runs a reduced lever set (about 30 + 3N REHO optimisations).
+Open the notebook in `diverse_configs/` and run it top to bottom; an interrupted run resumes where it stopped.
+
+- `QUICK = False` (default): full lever set, 42 pool designs, about 84 + 3N REHO optimisations (≈ 2.5 h with Gurobi).
+  Results in `diverse_configs/results/<district>10_gc/`.
+- `QUICK = True`: reduced lever set (16 pool designs, about 32 + 3N optimisations), only to check that every stage runs.
+  Results in `diverse_configs/results/<district>10_gc_quick/`.
+
+Results are not versioned (`scripts/` is ignored by git).
 
 Note: `scripts/` is in `.gitignore`; add changes to these files with `git add -f`.

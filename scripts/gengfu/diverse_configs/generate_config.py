@@ -30,7 +30,9 @@ Selection rule (all thresholds are SHARES OF THE DISTRICT'S OWN POOL RANGE, so t
     d. every feature range is split in n_bands (4 x 25 %); every non-empty band gets >= 1 design
     e. farthest-point fill
     f. N = smallest N >= n_min such that (d) holds, every feature covers >= min_range (95 %) of its range and the
-       KS distance between selected and pool distributions is <= max_ks (0.25) for every feature; capped by n_max.
+       KS distance between selected and pool distributions is <= max_ks (0.25) for every feature.
+    g. if an integer n_max < N: the n_max designs are re-chosen to cover the 4 KPIs as widely as possible (must keep,
+       min and max of each KPI, every KPI band, farthest-point fill in KPI space); 'capped' = True, 'rule_met' may be False.
 
 Not changed: REHO itself. Levers use only existing REHO options (EMOO_TOTEX, EMOO_GWP, enforce/exclude units,
 Units_Fmin, tariffs, roof share). GU is a KPI only (no lever).
@@ -53,7 +55,6 @@ from reho.model.reho import *  # noqa: F401,F403  (REHO, infrastructure)
 # Defaults (override any of them through the function arguments)
 # =====================================================================================================================
 
-# Slide 2026-11-10, fixed on purpose (user 2026-11-13): they test how the designs extend beyond the MC tariff ranges.
 DEFAULT_CONTEXTS = {'attractive': {'RT': 0.20, 'FI': 0.15},
                     'baseline': {'RT': 0.30, 'FI': 0.10},
                     'harsh': {'RT': 0.04, 'FI': 0.02}}
@@ -67,12 +68,12 @@ DEFAULT_UNCERTAIN_VAR_LINK = {'electricity_feed_in': 'el_export',      # keys = 
                               'ch4_tank_capex': 'CH4_storage_IP_district'}
 
 # Which lever generates diversity for which KPI. Every lever is relative to the district (percent / per 1000 m2 ERA).
-#   mga       : TOTEX <= (1 + eps) * TOTEX_opt, objectives push CAPEX down/up and SS up
+#   mga       : TOTEX <= TOTEX_opt + eps * |TOTEX_opt|, objectives push CAPEX down/up and SS up
 #   ss_target : import fixed at a share of the way from the TOTEX optimum to the SS maximum
 #   tariffs   : TOTEX optimum under other (RT, FI) pairs
 #   tech_sets : storage technology sets (exclude units)
 #   sizes     : forced minimum sizes [per 1000 m2 ERA] and reduced PV roof share
-#   GU        : None -> KPI only, no lever (user decision 2026-11-13)
+#   GU        : None -> KPI only, no lever
 DEFAULT_KPIS_OBJECTIVE_LINK = {
     'TOTEX': {'lever': 'mga', 'eps': [0.1, 0.2, 0.3, 0.5, 1.0], 'objectives': ['CAPEX_min', 'CAPEX_max', 'SS_max']},
     'SS': {'lever': 'ss_target', 'fractions': [0.25, 0.50, 0.75]},
@@ -217,7 +218,7 @@ def generate_config(district_id, uncertain_var_link=None, KPIs_objective_link=No
 
     # 3. select N diverse configurations (percent-based rule)                                          (no REHO)
     features = sel_cfg['kpis'] + sel_cfg['capacities']
-    sel = select_configurations(T, features, n_max=n_max,
+    sel = select_configurations(T, features, n_max=n_max, cap_features=sel_cfg['kpis'],
                                 **{k: sel_cfg[k] for k in ('dup_tol', 'n_bands', 'min_range', 'max_ks', 'n_min')})
     ctx.dump('selection', sel)
     out['selection'] = sel
@@ -306,7 +307,8 @@ class District:
         if ss_mode:                                                        # SS runs: no credit for exports,
             for layer in grids:                                            # heat import never replaces electricity
                 grids[layer]['GWP_demand_cst'] = 0.0
-            grids['Heat']['GWP_supply_cst'] = 1e3
+            if 'Heat' in grids:
+                grids['Heat']['GWP_supply_cst'] = 1e3
         units = infrastructure.initialize_units(scenario, grids, district_data=True, interperiod_data='district')
         present = {r['Unit'] for r in units['district_units']}
         missing = [u for u in ('rSOC_district', 'MTR_district')
@@ -367,6 +369,10 @@ class District:
         ref, ssm = anchors['totex_opt'], anchors['ss_max']
         p = ref['df_Performance'].loc['Network']
         totex_opt = (p['Costs_inv'] + p['Costs_op']) / self.era           # what EMOO_TOTEX bounds
+        # MGA slack = eps x |TOTEX_opt|: still a relaxation when TOTEX_opt <= 0 (high feed-in tariff / large export)
+        slack = abs(totex_opt)
+        if slack < 1.0:
+            print(f'WARNING: |TOTEX_opt| = {slack:.3f} CHF/m2/yr is very small, the MGA slack eps x |TOTEX_opt| is narrow')
         imp = lambda r: 1000 * r['df_Annuals'].xs('Network', level='Hub').loc['Electricity', 'Supply_MWh']
 
         for kpi, spec in levers.items():
@@ -383,7 +389,7 @@ class District:
                     for e, o in todo:
                         name = f'mga_{e:g}_{o}'
                         reho.scenario.update(name=name, Objective=obj[o],
-                                             EMOO={'EMOO_grid': 0, 'EMOO_TOTEX': totex_opt * (1 + e)})
+                                             EMOO={'EMOO_grid': 0, 'EMOO_TOTEX': totex_opt + e * slack})
                         self.solve(st, (e, o), reho, name, {'lever': lever, 'eps_share': e, 'objective': o})
             elif lever == 'ss_target':
                 f_el = self.build_inputs({'exclude_units': [], 'enforce_units': []}, **self._p())[0][
@@ -523,7 +529,7 @@ def tech_set(row):
 # Design codes: G<generator>-<nn>, numbered in the order of the lever specification (stable for the same inputs).
 GENERATOR_CODES = {'anchor': ('G0', 'Anchors: TOTEX optimum and SS maximum'),
                    'tariffs': ('G1', 'TOTEX optimum under other retail / feed-in tariffs'),
-                   'mga': ('G2', 'MGA: TOTEX <= (1 + eps) x TOTEX_opt, then min CAPEX / max CAPEX / max SS'),
+                   'mga': ('G2', 'MGA: TOTEX <= TOTEX_opt + eps x |TOTEX_opt|, then min CAPEX / max CAPEX / max SS'),
                    'ss_target': ('G3', 'Grid import fixed between the TOTEX optimum (0 %) and the SS maximum (100 %)'),
                    'tech_sets': ('G4', 'TOTEX optimum with a restricted storage technology set'),
                    'sizes': ('G5', 'TOTEX optimum with a forced minimum size or a reduced PV roof share')}
@@ -605,8 +611,14 @@ def _ks(a, b):
 
 
 def select_configurations(T, features, n_max='auto', dup_tol=0.05, n_bands=4, min_range=0.95, max_ks=0.25, n_min=10,
-                          cost_col='TOTEX', group_col='tech_set', anchor_col='is_anchor'):
-    """Percent-based diversity selection. Returns {'selected', 'dropped_duplicates', 'report', 'n_auto', 'rule'}."""
+                          cap_features=None, cost_col='TOTEX', group_col='tech_set', anchor_col='is_anchor'):
+    """Percent-based diversity selection. Returns {'selected', 'dropped_duplicates', 'report', 'n_auto', 'capped', 'rule'}.
+
+    If the rule needs more designs than an integer n_max (n_auto > n_max), the n_max designs are NOT the first n_max of
+    the rule's order; they are re-chosen to cover cap_features (default: the KPIs TOTEX, CAPEX, SS, GU) as widely as
+    possible: must-keep designs, then the min and max design of every cap feature (100 % range), then every band of the
+    cap features, then farthest-point fill in the cap-feature space.
+    """
     F = T[features].astype(float)
     X = (F - F.min()) / (F.max() - F.min()).replace(0, 1)                # share of the pool range
     keep, dup = [], {}
@@ -638,6 +650,24 @@ def select_configurations(T, features, n_max='auto', dup_tol=0.05, n_bands=4, mi
             sel.append(max((i for i in keep if i not in sel), key=lambda i: dist(i, sel)))
         return sel
 
+    def pick_capped(n, feats):                                              # n_max < n_auto: widest cover of feats
+        Xk = Xc[feats]
+        dk = lambda i, S: min(np.linalg.norm(Xk.loc[i] - Xk.loc[j]) for j in S)
+        sel = list(must)
+        for f in feats:                                                     # extremes -> 100 % range of every feat
+            for i in (Xk[f].idxmin(), Xk[f].idxmax()):
+                if i not in sel and len(sel) < n:
+                    sel.append(i)
+        ck = {i: {(f, band.loc[i, f]) for f in feats} for i in keep}
+        need_k, cov = set().union(*ck.values()), set().union(*(ck[i] for i in sel))
+        while cov != need_k and len(sel) < n:                               # every band of every feat
+            best = max((i for i in keep if i not in sel), key=lambda i: (len(ck[i] - cov), dk(i, sel)))
+            sel.append(best)
+            cov |= ck[best]
+        while len(sel) < n:                                                 # farthest point in the feat space
+            sel.append(max((i for i in keep if i not in sel), key=lambda i: dk(i, sel)))
+        return sel
+
     def report(sel):
         rows = []
         for f in features:
@@ -649,16 +679,20 @@ def select_configurations(T, features, n_max='auto', dup_tol=0.05, n_bands=4, mi
         return pd.DataFrame(rows).set_index('feature')
 
     ok = lambda r: r['bands_ok'].all() and (r['range_cov_%'] >= 100 * min_range - 1e-9).all() and (r['KS'] <= max_ks).all()
+    cap_features = [f for f in (cap_features or features) if f in features]
+    capped = False
     if n_max is None:
         sel, n_auto = keep, None
     else:
         hi = len(keep) if n_max == 'auto' else min(max(int(n_max), len(must)), len(keep))
         n_auto = next((n for n in range(max(n_min, len(must)), len(keep) + 1) if ok(report(pick(n)))), len(keep))
-        sel = pick(min(n_auto, hi))
+        capped = n_auto > hi
+        sel = pick_capped(hi, cap_features) if capped else pick(n_auto)
     return {'selected': sel, 'n_pool': len(T), 'dropped_duplicates': dup, 'report': report(sel), 'n_auto': n_auto,
+            'capped': capped,                                            # True: n_max < n_auto, chosen on cap_features
             'rule_met': bool(ok(report(sel))),                           # False if n_max is too small for the rule
             'rule': dict(features=features, dup_tol=dup_tol, n_bands=n_bands, min_range=min_range, max_ks=max_ks,
-                         n_min=n_min, n_max=n_max)}
+                         n_min=n_min, n_max=n_max, cap_features=cap_features)}
 
 
 # =====================================================================================================================
@@ -697,6 +731,16 @@ def summarize(ctx, files, T, postprocess_dir=None):
 TECH_COLOR = {'PV+HP (no storage)': '#7f7f7f', 'PV+HP+battery': '#1f77b4', 'PV+HP+rSOC': '#2ca02c',
               'PV+HP+battery+rSOC': '#d62728'}
 CTX_SYMBOL = {'attractive': 'triangle-up', 'baseline': 'circle', 'harsh': 'triangle-down'}
+SYMBOLS = ['circle', 'triangle-up', 'triangle-down', 'square', 'diamond', 'cross', 'x', 'star', 'pentagon', 'hexagon']
+PATTERNS = ['/', '', '.', 'x', '+', '\\', '-', '|']
+
+
+def context_styles(contexts):
+    """{context: marker symbol} and {context: bar pattern} for ANY number / names of contexts (known names keep theirs)."""
+    free = iter([m for m in SYMBOLS if m not in CTX_SYMBOL.values()] + SYMBOLS * 3)
+    sym = {c: CTX_SYMBOL.get(c) or next(free) for c in contexts}
+    pat = {c: PATTERNS[i % len(PATTERNS)] for i, c in enumerate(contexts)}
+    return sym, pat
 LABEL = {'TOTEX': 'TOTEX [CHF/m²/yr]', 'CAPEX': 'CAPEX [CHF/m²/yr]', 'SS': 'Self-sufficiency [%]', 'GU': 'GU [-]',
          'el_import': 'Import [kWh/m²/yr]', 'el_export': 'Export [kWh/m²/yr]', 'PV': 'PV [kW/1000 m²]',
          'HeatPump_Air': 'Heat pump [kW/1000 m²]', 'Battery_district': 'Daily battery [kWh/1000 m²]',
@@ -737,13 +781,14 @@ def make_figures(ctx, summary_df, uncertain_var_link, reference_context='baselin
     d = summary_df.reset_index()
     d['tech_set'] = pd.Categorical(d['tech_set'], TECH_ORDER, ordered=True)
     d = d.sort_values(['tech_set', 'design'])
+    ctx_symbol, ctx_pattern = context_styles(list(dict.fromkeys(summary_df.index.get_level_values('context'))))
 
     def add(fig, x, y, row, col, first, data=None):
         for (ts, c), g in (d if data is None else data).groupby(['tech_set', 'context'], observed=True):
             fig.add_trace(go.Scatter(x=x(g), y=g[y], mode='markers', name=f'{ts} | {c}', legendgroup=f'{ts}|{c}',
                                      showlegend=first, text=g['design'],
                                      hovertemplate='%{text}<br>x %{x}<br>y %{y:.2f}<extra></extra>',
-                                     marker=dict(color=TECH_COLOR[ts], symbol=CTX_SYMBOL.get(c, 'circle'), size=10,
+                                     marker=dict(color=TECH_COLOR[ts], symbol=ctx_symbol[c], size=10,
                                                  line=dict(color='black', width=0.5))), row=row, col=col)
 
     # 1. KPIs (y) against CAPEX (x) under every context
@@ -820,7 +865,6 @@ def make_figures(ctx, summary_df, uncertain_var_link, reference_context='baselin
     #    one bar per context side by side (pattern); capacities are fixed by the design -> one bar (reference context).
     order = list(dict.fromkeys(g['design']))                                # class, then CAPEX (as the TOTEX bars)
     colour = {r['design']: TECH_COLOR[r['tech_set']] for _, r in g.iterrows()}
-    ctx_pattern = {c: p for c, p in zip(dict.fromkeys(d['context']), ['/', '', '.', 'x', '+'])}
     links = list(uncertain_var_link.items())
     n_rows = (len(links) + 1) // 2
     fig = make_subplots(rows=n_rows, cols=2, horizontal_spacing=0.08, vertical_spacing=0.16,

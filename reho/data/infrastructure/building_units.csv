@@ -13,7 +13,7 @@ PV;kWe;0.01;100000;38609;1245;0.0001;613;30;0.1940;2037;PV;Electricity;;;"";Elec
 ThermalSolar;m2;0.1;100000;7000;820;0.0001;383;20;0.1;2037;ThermalSolar;HeatCascade;DHW;h_ht;;;62;48;"";;
 Battery;kWh;5;100000;5000;550;100;100;15;0.1;2037;Battery;Electricity;;;Electricity;Electricity;;;`Tesla Powerwall <https://www.tesla.com/fr_ch/powerwall>`_;;
 WaterTankSH;L;0.1;100000;1022;5.2;0.0001;0.49;20;0.1;2037;WaterTankSH;HeatCascade;SH;h_ht/ c_lt;;;35/ 35;35/ 35;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_;;`ecoQuery <https://ecoquery.ecoinvent.org/3.11/cutoff/dataset/5991/impact_assessment>`
-WaterTankDHW;L;0.1;100000000;1022;5.2;0.0001;0.49;20;0.1;2037;WaterTankDHW;HeatCascade;DHW;c_ht ;;;10;60;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_;;`ecoQuery <https://ecoquery.ecoinvent.org/3.11/cutoff/dataset/5991/impact_assessment>`
+WaterTankDHW;L;0.1;100000000;1022;5.2;0.0001;0.49;20;0.1;2037;WaterTankDHW;HeatCascade;DHW;c_ht;;;10;60;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_;;`ecoQuery <https://ecoquery.ecoinvent.org/3.11/cutoff/dataset/5991/impact_assessment>`
 DHN_hex;m2;0.01;100000;2034;200;400;100;20;0.1;2037;DHN_hex;Heat/ HeatCascade;SH/ DHW;h_ht;Heat;;80;60;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`;;
 DHN_pipes;kW;0.01;100000;47105;129;2000;10;60;0.1;2037;DHN_pipes;Heat;;;;;;;`Energies <https://www.mdpi.com/1996-1073/12/15/2945>`;;
 DataHeat_SH;kWth;0.1;100000;1000;5000;1000;500;4;0.1;2037;DataHeat;Electricity/ Data/ HeatCascade;SH;h_ht;Electricity;Data;80;60;;;
@@ -22,3 +22,4 @@ MTR;kW;0.1;100000;15000;1000;2000;10;20;0.1;2037;Methanator;Biomethane/ NaturalG
 rSOC;kW;0.1;100000;20000;3000;3000;50;10;0.1;2037;rSOC;Electricity/ Hydrogen/ CO2/ Biomethane/ HeatCascade;SH/ DHW;h_ht;Hydrogen/ Biomethane/ Electricity;Electricity/ CO2/ Hydrogen;120;60;`Joule <https://www.cell.com/joule/fulltext/S2542-4351(24)00425-2>`;;
 FC;kW;0.1;100000;15000;2000;2000;50;20;0.1;2037;FuelCell;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Hydrogen;Electricity;80;60;;;
 ETZ;kWh;0.1;100000;10000;1000;2000;50;10;0.1;2037;Electrolyzer;Electricity/ Hydrogen/ HeatCascade;SH;h_ht;Electricity;Hydrogen;80;60;;;
+HeatPump_DWW;kWth;0.1;100000;18292;702;136;174;20;0.1;2037;HeatPump_DWW;HeatCascade/ Electricity;DHW;h_ht;Electricity;;55;50;`Viesmann <https://www.viessmann.ch/fr/connaissances/technique-et-systemes.html>`_;;`ecoQuery <https://ecoquery.ecoinvent.org/3.11/cutoff/dataset/5991/impact_assessment>`

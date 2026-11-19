@@ -104,6 +104,10 @@ class MasterProblem:
         # build solar gains profile
         self.parameters['SolarGains'] = buildings_profiles.solar_gains_profile(self.buildings_data, sia_data, self.local_data)
 
+        # build wastewater profile
+        if 'HeatPump_DWW' in self.infrastructure.UnitTypes:
+            self.parameters['DWW_flowrate'] = buildings_profiles.dww_profile(self.parameters['DHW_flowrate'])
+
         if set_indexed is None:
             self.set_indexed = {}
         else:

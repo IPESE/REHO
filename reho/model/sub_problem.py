@@ -182,6 +182,8 @@ class SubProblem:
             ampl.read('dhwstorage.mod')
         if 'Battery' in self.infrastructure_sp.UnitTypes:
             ampl.read('battery.mod')
+        if 'HeatPump_DWW' in self.infrastructure_sp.UnitTypes:
+            ampl.read('heatpump_dww.mod')
         # ampl.read('heat_curtailment.mod')
 
         # Load interperiod storage units

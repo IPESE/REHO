@@ -230,12 +230,14 @@ class Infrastructure:
         for h in self.House:
 
             for u in self.houses[h]['units']:
-                if u['UnitOfType'] == 'AirConditioner' or u['UnitOfType'] == 'HeatPump':
+                if u['UnitOfType'] == 'AirConditioner' or u['UnitOfType'] == 'HeatPump' or u['UnitOfType'] == 'HeatPump_DWW':
                     complete_name = u['name'] + '_' + h
                     if u['UnitOfType'] == 'AirConditioner':
                         file = os.path.join(path_to_infrastructure, 'AC_parameters.txt')
                     elif u['UnitOfType'] == 'HeatPump':
                         file = os.path.join(path_to_infrastructure, 'HP_parameters.txt')
+                    elif u['UnitOfType'] == 'HeatPump_DWW':
+                        file = os.path.join(path_to_infrastructure, 'DWW_parameters.txt')
 
                     df = pd.read_csv(file, delimiter=';', index_col=[0, 1])
                     df = pd.concat([df], keys=[complete_name])
@@ -376,7 +378,7 @@ def prepare_units_array(file, exclude_units=[], grids=None):
     return units
 
 
-def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"), district_data=None, interperiod_data=None):
+def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_infrastructure, "building_units.csv"), district_data=None, interperiod_data=None, building_wastewater_hp=False):
     """
     Initializes the available units for the energy system.
 
@@ -412,10 +414,12 @@ def initialize_units(scenario, grids=None, building_data=os.path.join(path_to_in
     Examples
     --------
     >>> units = infrastructure.initialize_units(scenario, grids, building_data="custom_building_units.csv",
-    ...                                         district_data="custom_district_units.csv", interperiod_data=True)
+    ...                                         district_data="custom_district_units.csv", interperiod_data=True, building_wastewater_hp=False)
     """
 
     default_units_to_exclude = ['HeatPump_Lake', 'DataHeat_SH']
+    if not building_wastewater_hp:
+        default_units_to_exclude = default_units_to_exclude + ['HeatPump_DWW']
     if "exclude_units" not in scenario:
         exclude_units = default_units_to_exclude
     else:

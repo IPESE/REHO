@@ -174,7 +174,7 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
         # Heat gains from people
         conv_heat_factor = 0.70
         np_gain_people = np.maximum(np_gain_all - conv_heat_factor * np_el_all, 0)
-
+        '''
         if 'electricity' in use_custom_profiles:
             df = annual_to_typical(cluster, annual_file=use_custom_profiles['electricity'], df_Timestamp=df_Timestamp)
             np_el_all = np.array([])
@@ -191,6 +191,22 @@ def eud_profiles(buildings_data, cluster, df_SIA_380, df_SIA_2024, df_Timestamp,
             for b in buildings_data:
                 dhw_b = df[b].values
                 np_dhw_all = np.append(np_dhw_all, dhw_b)
+        '''
+        # it only replaces the profiles of the buildings that are in custom profile
+        if 'electricity' in use_custom_profiles:
+            df = annual_to_typical(cluster, annual_file=use_custom_profiles['electricity'], df_Timestamp=df_Timestamp)
+            period_length = cluster['Periods'] * cluster['PeriodDuration'] + 2
+            for i, b in enumerate(buildings_data):
+                if b in df.columns:
+                    np_el_all[i * period_length:(i + 1) * period_length] = df[b].values / 1000
+            np_gain_all = np_gain_people + conv_heat_factor * np_el_all
+
+        if 'dhw' in use_custom_profiles:
+            df = annual_to_typical(cluster, annual_file=use_custom_profiles['dhw'], df_Timestamp=df_Timestamp)
+            period_length = cluster['Periods'] * cluster['PeriodDuration'] + 2
+            for i, b in enumerate(buildings_data):
+                if b in df.columns:
+                    np_dhw_all[i * period_length:(i + 1) * period_length] = df[b].values
 
     return np_gain_all, np_dhw_all, np_el_all
 
@@ -358,3 +374,54 @@ def solar_gains_profile(buildings_data, sia_data, local_data):
         np_gains = np.append(np_gains, gains)
 
     return np_gains
+
+def dww_profile(dhw_flowrate, T_hotwater=60.0, T_fresh=10.0, T_use=40.0):
+    """
+    Computes the domestic waste water (DWW) volumetric flow from the domestic hot water (DHW) draw-off.
+
+    Hot water stored at ``T_hotwater`` is mixed with fresh water at ``T_fresh`` to reach the end-use
+    temperature ``T_use`` at the tap. Conserving the energy above ``T_fresh`` gives the volume leaving
+    the end-use towards the drain.
+
+    Parameters
+    ----------
+    dhw_flowrate : np.array
+        Domestic hot water draw-off at ``T_hotwater``, in L/h, as returned by :func:`eud_profiles`.
+    T_hotwater : float, optional
+        Hot water storage temperature, in °C. Default is 60 (``DHW_T_max`` in ``dhwstorage.mod``).
+    T_fresh : float, optional
+        Fresh water temperature, in °C. Default is 10 (``DHW_T_min`` in ``dhwstorage.mod``).
+    T_use : float, optional
+        End-use temperature at the tap, in °C. Default is 40.
+
+    Returns
+    -------
+    np.array
+        Domestic waste water flow, in L/h, with the same shape as ``dhw_flowrate``.
+
+    Raises
+    ------
+    ValueError
+        If the temperatures do not satisfy ``T_fresh < T_use <= T_hotwater``.
+
+    Notes
+    -----
+    - Evaporation and water retained at the end-use are neglected, so the volume reaching the drain
+      equals the volume drawn at the tap. Bertrand [1]_ makes the same assumption (balanced fresh and
+      waste water mass flows) for showers, which represent 80-84% of residential DHW energy demand.
+    - ``T_use`` = 40 °C corresponds to showering and bath filling, which dominate the DHW demand.
+      Weighting the end-use temperatures reported by Bertrand [1]_ (40 °C showers and baths, 35 °C hand
+      washing, 55 °C hand dish washing) by their energy shares gives an effective value of 40.4 °C.
+    - The share of this flow that actually reaches a heat recovery unit (collection and simultaneity)
+      is a plant design choice and is not applied here.
+
+    References
+    ----------
+    .. [1] Bertrand, Waste heat valorisation at multiple scales, PhD Thesis, 2017.
+    """
+
+    if not T_fresh < T_use <= T_hotwater:
+        raise ValueError(f"dww_profile requires T_fresh < T_use <= T_hotwater, got "
+                         f"T_fresh={T_fresh}, T_use={T_use}, T_hotwater={T_hotwater}.")
+
+    return np.asarray(dhw_flowrate) * (T_hotwater - T_fresh) / (T_use - T_fresh)

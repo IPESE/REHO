@@ -59,7 +59,7 @@ def read_sia_2024_profiles(status, df):
     df_occupancy = df["calculs"].iloc[:, 208:232]
     df_occupancy.columns = df_el_appliance.columns  # columns 1-24 - hours of the day
 
-    return df_el_add, df_el_light, df_el_appliance, df_dhw, df_occupancy, df_heat_gain
+    return df_el_appliance, df_el_light, df_el_add, df_dhw, df_occupancy, df_heat_gain
 
 
 def daily_profiles_with_monthly_deviation(status, rooms, date, df):

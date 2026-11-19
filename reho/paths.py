@@ -50,7 +50,8 @@ path_to_mobility = os.path.join(path_to_data, 'mobility')
 
 path_to_sia = os.path.join(path_to_data, 'SIA')
 path_to_sia_equivalence = os.path.join(path_to_sia, 'sia2024_rooms_sia380_1.csv')
-path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
+#path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data.xlsx')
+path_to_sia_norms = os.path.join(path_to_sia, 'sia2024_data_C2-2025.xlsx') #-> whith 2025 corrections
 
 path_to_skydome = os.path.join(path_to_data, 'skydome')
 

@@ -323,6 +323,7 @@ scripts/examples/results
 #!scripts/Lausanne/
 #!scripts/CRYOS/
 !scripts/Pathways/
+!scripts/data
 /scripts/Pathways/results/
 
 *.json
@@ -330,7 +331,7 @@ scripts/examples/results
 *.txt
 *.pickle
 
-scripts/examples/data/clustering
+#scripts/examples/data/clustering
 scripts/Pathways/QBuildings/Pathway_SDEWES_test_no_EH_change_PV_300000871_886466.csv
 scripts/Pathways/QBuildings/Pathway_SDEWES_test_no_EH_change_PV_300000871_886466_no_PV.csv
 scripts/Pathways/QBuildings/QBuildings_SDEWES_updated_2_G1.csv
@@ -346,3 +347,14 @@ scripts/Pathways/Generate_Pathways_SDEWES.py
 scripts/Pathways/Pathways_SDEWES_old.py
 scripts/Pathways/Pathways_test_HP.py
 scripts/Pathways/data/preprocessing
+/scripts/data/building_units_UrbanTwin.xlsx
+/scripts/data/layers_UrbanTwin.xlsx
+
+
+~$*
+_to_delete/
+scripts/Pathways/data/clustering/
+scripts/Pathways/data/postprocessing/
+scripts/Pathways/data/profiles/
+scripts/Pathways/QBuildings/*.csv
+scripts/Pathways/QBuildings/*.xlsx

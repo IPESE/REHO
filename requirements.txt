@@ -20,7 +20,7 @@ pytest
 qmcpy
 requests
 SALib
-scipy
+scipy<1.18
 setuptools
 shapely
 sqlalchemy<2.0.0

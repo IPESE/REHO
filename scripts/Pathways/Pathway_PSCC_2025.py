@@ -3,35 +3,41 @@ from reho.plotting import plotting
 import time
 
 if __name__ == '__main__':
-    results_folder = 'results_PSCC'
+    results_folder = 'results_lausanne'
+    results_path = str(Path(__file__).parent / 'results' / f'{results_folder}')
 
     year = 2025
     path_methods = dict()
     #path_methods['optimize_pathway'] = True
     path_methods['enforce_pathway'] = True
 
-    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'QBuildings_SDEWES_updated_regbl_60B.csv')
-    pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_SDEWES.csv')
+    # For City of Lausanne run
+    #buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'qb_for_reho_delete_egids.csv')
+    #pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_lausanne_2_pv_max.csv')
     #pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_SDEWES_phase_out.csv')
+    # For DESL run
+    buildings_filename = str(Path(__file__).parent / 'QBuildings' / 'buildings_XIII_replaced_rebl_60B_pvmax_delete_egids.csv')
+    pathways_filename = str(Path(__file__).parent / 'QBuildings' / 'System_pathway_lausanne_SiL_pvmax.csv')
+
 
     # read specific column from csv file
     transf = pd.read_csv(buildings_filename, usecols=['transformer_new'])
-    transf_list = transf['transformer_new'].unique().tolist()
-    #transf_list = ['group_1']
+    #transf_list = transf['transformer_new'].unique().tolist()
+    transf_list = ['group_89']
 
     process_time_list = []
     transf_list_2 = []
     n_build_list = []
     error_transf = []
     error_list = []
-    #transf_list = [ 'group_24']
+
     for transformer in transf_list:
         tic = time.perf_counter()
         try:
             # Set building parameters
             reader = QBuildingsReader()
             qbuildings_data = reader.read_csv(buildings_filename=buildings_filename,transformer_new=transformer)
-            #qbuildings_data = reader.read_csv(buildings_filename=buildings_filename, egid = [883347, 882759, 886145, 886827, 884388, 886398, 2118598, 280002000, 886772])
+            #qbuildings_data = reader.read_csv(buildings_filename=buildings_filename, egid = [881546])
 
             nb_buildings = len(qbuildings_data['buildings_data'])
 
@@ -55,7 +61,10 @@ if __name__ == '__main__':
                                     ]
 
             # Set method options
-            method = {'building-scale': True, 'parallel_computation': True}
+            # For DESL run
+            custom_elec_profile = str(Path(__file__).parent / 'data' / 'profiles' / 'electricity' / f'electricity_{transformer}.csv')
+            method = {'building-scale': True, 'parallel_computation': True,
+                      'use_custom_profiles': {'electricity': custom_elec_profile}}
 
             path_to_custom_layers = str(Path(__file__).parent.parent / 'data' / 'layers_UrbanTwin_wood.csv')
             available_grids = {'Electricity': {}, 'NaturalGas': {}, 'Heat': {}, 'Oil': {}, 'Wood': {}}
@@ -63,17 +72,18 @@ if __name__ == '__main__':
             # Initialize available units and grids
             grids = infrastructure.initialize_grids(available_grids, file=path_to_custom_layers)
 
-            grids['Electricity']['ReinforcementOfNetwork'] = np.array([1E6])
-            grids['NaturalGas']['ReinforcementOfNetwork'] = np.array([1E6])
-            grids['Oil']['ReinforcementOfNetwork'] = np.array([1E6])
-            grids['Heat']['ReinforcementOfNetwork'] = np.array([1E8])
-            grids['Electricity']['Network_ext'] = 1E6
-            grids['NaturalGas']['Network_ext'] = 1E6
-            grids['Oil']['Network_ext'] = 1E6
-            grids['Heat']['Network_ext'] = 1E8
+            grids['Electricity']['ReinforcementOfNetwork'] = np.array([5E6])
+            grids['NaturalGas']['ReinforcementOfNetwork'] = np.array([5E6])
+            grids['Oil']['ReinforcementOfNetwork'] = np.array([5E6])
+            grids['Heat']['ReinforcementOfNetwork'] = np.array([5E8])
+            grids['Electricity']['Network_ext'] = 5E6
+            grids['NaturalGas']['Network_ext'] = 5E6
+            grids['Oil']['Network_ext'] = 5E6
+            grids['Heat']['Network_ext'] = 5E8
 
             path_to_custom_units = str(Path(__file__).parent.parent / 'data' / 'building_units_UrbanTwin.csv')
             units = infrastructure.initialize_units(scenario, grids, building_data=path_to_custom_units)
+            print(units['building_units'])
 
             pathway_data = pd.read_csv(pathways_filename)
 
@@ -98,10 +108,12 @@ if __name__ == '__main__':
             parameters = dict()
 
             for unit in list(np.unique(Ext_heat_Units)):
-                if f'enforce_{unit}' not in scenario['specific']:
-                    scenario['specific'].append(f'enforce_{unit}')
-                # Add the heating system to the parameters
-                parameters['{}_install'.format(unit)] = np.array([[1] if qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit else [0] for key in qbuildings_data['buildings_data'].keys()])
+                # ignore if unit == No_system
+                if unit != 'No_system':
+                    if f'enforce_{unit}' not in scenario['specific']:
+                        scenario['specific'].append(f'enforce_{unit}')
+                    # Add the heating system to the parameters
+                    parameters['{}_install'.format(unit)] = np.array([[1] if qbuildings_data['buildings_data'][key][f'heating_system_{year}'] == unit else [0] for key in qbuildings_data['buildings_data'].keys()])
 
             # TODO: Add option for other heating systems for DHW
             if f'heating_system_2_{year}' in pathway_data.columns:
@@ -130,7 +142,10 @@ if __name__ == '__main__':
 
             #plotting.plot_performance(reho.results,plot='costs',indexed_on='Pareto_ID',label='EN_long',title="Economical performance").show()
             # Save results
-            reho.save_results(format=['pickle'], filename=f'{results_folder}/pathway_{year}_{transformer}')
+            # check if path exists
+            if not os.path.exists(f'{results_path}/Results {year}'):
+                os.makedirs(f'{results_path}/Results {year}')
+            reho.save_results(format=['pickle'], filename=f'{results_folder}/Results {year}/pathway_{year}_{transformer}')
 
         except Exception as e:
             error_transf.append(transformer)
@@ -143,7 +158,7 @@ if __name__ == '__main__':
 
     # save the process time in a csv file
     process_time_df = pd.DataFrame({'Transformer': transf_list, 'N Buildings': n_build_list, 'Process time': process_time_list})
-    process_time_df.to_csv(str(Path(__file__).parent /'results'/f'{results_folder}/process_time_{year}.csv'), index=False)
+    process_time_df.to_csv(f'{results_path}/Results {year}/process_time_{year}.csv', index=False)
 
     error_transf_df = pd.DataFrame({'Transformers': error_transf, 'Error': error_list})
-    error_transf_df.to_csv(str(Path(__file__).parent /'results'/f'{results_folder}/error_transf_{year}.csv'), index=False)
+    error_transf_df.to_csv(f'{results_path}/Results {year}/error_transf_{year}.csv', index=False)

@@ -18,8 +18,8 @@ if __name__ == '__main__':
 
     # read specific column from csv file
     transf = pd.read_csv(buildings_filename, usecols=['transformer_new'])
-    #transf_list = transf['transformer_new'].unique().tolist()
-    transf_list = ['group_1']
+    transf_list = transf['transformer_new'].unique().tolist()
+    #transf_list = ['group_1']
 
     process_time_list = []
     transf_list_2 = []
@@ -145,7 +145,7 @@ if __name__ == '__main__':
             # check if path exists
             if not os.path.exists(f'{results_path}/Results {year}'):
                 os.makedirs(f'{results_path}/Results {year}')
-            #reho.save_results(format=['pickle'], filename=f'{results_folder}/Results {year}/pathway_{year}_{transformer}')
+            reho.save_results(format=['pickle'], filename=f'{results_folder}/Results {year}/pathway_{year}_{transformer}')
 
         except Exception as e:
             error_transf.append(transformer)
@@ -158,7 +158,7 @@ if __name__ == '__main__':
 
     # save the process time in a csv file
     process_time_df = pd.DataFrame({'Transformer': transf_list, 'N Buildings': n_build_list, 'Process time': process_time_list})
-    #process_time_df.to_csv(f'{results_path}/Results {year}/process_time_{year}.csv', index=False)
+    process_time_df.to_csv(f'{results_path}/Results {year}/process_time_{year}.csv', index=False)
 
     error_transf_df = pd.DataFrame({'Transformers': error_transf, 'Error': error_list})
-    #error_transf_df.to_csv(f'{results_path}/Results {year}/error_transf_{year}.csv', index=False)
+    error_transf_df.to_csv(f'{results_path}/Results {year}/error_transf_{year}.csv', index=False)
